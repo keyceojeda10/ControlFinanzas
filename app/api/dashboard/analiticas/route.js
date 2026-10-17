@@ -192,7 +192,7 @@ export async function GET() {
         id: true, estado: true, montoPrestado: true, ...CAMPOS_DEL_REPARTO, totalAPagar: true, totalPagado: true, abonadoCapital: true,
         cuotaDiaria: true, frecuencia: true, fechaInicio: true, fechaFin: true,
         diasPlazo: true, ultimoPagoAt: true, modoInteres: true, sinPlazo: true, tasaInteres: true,
-        proximoCobroManual: true,
+        proximoCobroManual: true, proximoCobroPorInteres: true,
         /* ⚠ LOS DIAS SIN COBRO SON DEL CLIENTE, NO SOLO DEL NEGOCIO.
            Aqui se usaban los de la organizacion para TODOS. En este negocio la
            mayoria de los clientes semanales llevan los suyos —«[0,1,2,3,4,5]»

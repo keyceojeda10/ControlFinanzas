@@ -176,6 +176,11 @@ function CifraResumen({ rotulo, valor, tam = 22, color = 'var(--cf-ink)', pie })
 }
 
 // Wrapper con Suspense requerido por useSearchParams en Next.js build
+/* El período de un abierto, en palabras, y cuántos caben en un mes (para decir
+   cuánto suma al mes un interés que se cobra cada semana o cada día). */
+const PERIODO_ABIERTO = { diario: 'día', semanal: 'semana', quincenal: 'quincena', mensual: 'mes' }
+const POR_MES = { diario: 30, semanal: 52 / 12, quincenal: 2, mensual: 1 }
+
 export default function NuevoPrestamoPage() {
   return (
     <Suspense fallback={
@@ -1707,7 +1712,10 @@ function NuevoPrestamo() {
                 <div>
                   <div className="flex items-center justify-between gap-2">
                     <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
-                      {pesos.enPesos ? rotuloCuotaEnPesos(frecuencia, esAbierto) : 'Interés mensual'}
+                      {/* En un abierto el % se cobra CADA período de la frecuencia (decisión
+                          del dueño, 17 oct 2026): «Interés mensual» sobre un diario hacía
+                          leer 20 % al mes donde se cobra 20 % al día. (DETALLES-PRESTAMOS #5.) */}
+                      {pesos.enPesos || esAbierto ? rotuloCuotaEnPesos(frecuencia, esAbierto) : 'Interés mensual'}
                     </label>
                     {puedeEnPesos && <SelectorPorcentajePesos enPesos={pesos.enPesos} onElegir={pesos.elegir} />}
                   </div>
@@ -1837,7 +1845,7 @@ function NuevoPrestamo() {
                   </div>
                   <p className="text-[11px] mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>
                     Si no sabes cuándo te paga, toca <span style={{ fontWeight: 600 }}>No sé</span>: el
-                    préstamo queda sin fecha de vencimiento y solo cobra el interés de cada mes.
+                    préstamo queda sin fecha de vencimiento y solo cobra el interés de cada {PERIODO_ABIERTO[frecuencia] ?? 'mes'}.
                   </p>
                 </div>
                 )}
@@ -1845,9 +1853,21 @@ function NuevoPrestamo() {
 
               {Number(monto) > 0 && Number(tasa) > 0 && (
                 <p className="text-[12px] -mt-2" style={{ color: 'var(--cf-ink-3)' }}>
-                  Al {formatearTasa(tasa)}% sobre {formatMoney(Number(monto))} = {formatMoney(Math.round(Number(monto) * Number(tasa) / 100))} de interés por mes
-                  {esAbierto ? ' · sin fecha de vencimiento'
+                  Al {formatearTasa(tasa)}% sobre {formatMoney(Number(monto))} = {formatMoney(Math.round(Number(monto) * Number(tasa) / 100))} de interés {esAbierto ? `cada ${PERIODO_ABIERTO[frecuencia] ?? 'mes'}` : 'por mes'}
+                  {esAbierto
+                    ? `${frecuencia !== 'mensual' ? ` · unos ${formatMoney(Math.round(Number(monto) * Number(tasa) / 100 * (POR_MES[frecuencia] ?? 1)))} al mes` : ''} · sin fecha de vencimiento`
                     : (frecuencia !== 'diario' && plazoUnidades ? ` · ${plazo} días en total` : '')}
+                </p>
+              )}
+
+              {/* ⚠ EL AVISO QUE NO SALÍA. El de la tasa alta mira el interés TOTAL, y
+                  en un abierto el total es 0 (no tiene fin). Un abierto diario al 20 %
+                  cobra el 20 % CADA DÍA, y nada lo decía. (DETALLES-PRESTAMOS #5.) */}
+              {esAbierto && frecuencia === 'diario' && Number(monto) > 0 && Number(tasa) > 0 && (
+                <p role="alert" className="text-[12px] font-semibold -mt-1 rounded-[12px] px-3 py-2"
+                  style={{ color: 'var(--cf-red-dark)', background: 'var(--cf-red-pill-bg)' }}>
+                  Ojo: cobra el {formatearTasa(tasa)}% CADA DÍA. En 30 días son {formatMoney(Math.round(Number(monto) * Number(tasa) / 100 * 30))} de interés.
+                  Si pactaste el interés al mes, cobra mensual.
                 </p>
               )}
 

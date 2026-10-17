@@ -118,6 +118,9 @@ const tipoPagoBadge = {
  *
  * Cuando el próximo #300 diga qué componente es, esto sobra y se quita.
  */
+// «el mes que viene» solo vale en mensual (DETALLES-PRESTAMOS #26).
+const PROXIMO_PERIODO = { diario: 'mañana', semanal: 'la semana que viene', quincenal: 'la próxima quincena', mensual: 'el mes que viene' }
+
 export default function PrestamoDetallePage(props) {
   return (
     <CazadorDeErrores>
@@ -159,6 +162,13 @@ function PrestamoDetalleContenido({ params }) {
 
   const [loading,      setLoading]      = useState(true)
   const [error,        setError]        = useState('')
+  /* ⚠ EL ERROR DE UNA ACCIÓN NO ES EL DE CARGAR LA FICHA.
+     Compartían estado, y `if (error)` reemplaza la pantalla entera por «No
+     pudimos cargar el préstamo · Revisa tu conexión». Un anular rechazado por el
+     servidor («hay un abono más reciente…») borraba la ficha, escondía el motivo
+     y «Reintentar» no la recuperaba porque nadie limpiaba el error.
+     (Agente de los tutoriales, DETALLES-PRESTAMOS #9, 17 oct 2026.) */
+  const [errorAccion,  setErrorAccion]  = useState('')
   const [modalPago,    setModalPago]    = useState(false)
   const [modalAtajosCobro, setModalAtajosCobro] = useState(false)
   const [modalGestionPrestamo, setModalGestionPrestamo] = useState(false)
@@ -194,6 +204,10 @@ function PrestamoDetalleContenido({ params }) {
   const [ultimoPago,   setUltimoPago]   = useState(null)    // para botón WA pago
   const [aprobando,    setAprobando]    = useState(false)
   const [rechazando,   setRechazando]   = useState(false)
+  // Rechazar BORRA la solicitud: se pregunta antes y se pide el motivo, que le
+  // llega al cobrador con el aviso (DETALLES-PRESTAMOS #11).
+  const [confirmRechazo, setConfirmRechazo] = useState(false)
+  const [motivoRechazo,  setMotivoRechazo]  = useState('')
   const [cancelando,   setCancelando]   = useState(false)
   const [confirmCancel, setConfirmCancel] = useState(false)
   const [confirmEliminar, setConfirmEliminar] = useState(false)
@@ -306,6 +320,10 @@ function PrestamoDetalleContenido({ params }) {
   // tecla. Se limpia al elegir una de las opciones calculadas.
   const [liqTecleado, setLiqTecleado] = useState(null)
   const [liqNota, setLiqNota] = useState('')
+  // Por dónde entra la plata del cierre. Iba siempre sin medio, o sea como
+  // efectivo: una transferencia le sumaba al fajo del cobrador plata que no
+  // tenía (DETALLES-PRESTAMOS #8).
+  const [liqMetodo, setLiqMetodo] = useState({ metodoPago: 'efectivo', metodoPagoId: null })
   const [liqCargando, setLiqCargando] = useState(false)
   const [liqEnviando, setLiqEnviando] = useState(false)
   const [liqError, setLiqError] = useState('')
@@ -333,7 +351,7 @@ function PrestamoDetalleContenido({ params }) {
 
   const fetchPrestamo = useCallback(async ({ soft = false } = {}) => {
     const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
-    if (!shouldUseSoftRefresh) setLoading(true)
+    if (!shouldUseSoftRefresh) { setLoading(true); setError('') }
 
     // Temp ID (creado offline) — si ya se sincronizó, redirigir al ID real
     if (typeof id === 'string' && id.startsWith('offline-')) {
@@ -373,6 +391,7 @@ function PrestamoDetalleContenido({ params }) {
       const data = await res.json()
       if (data.offline) throw new Error('offline')
       setPrestamo(data)
+      setError('')
     } catch {
       try {
         const cached = await obtenerPrestamoOffline(id)
@@ -451,19 +470,30 @@ function PrestamoDetalleContenido({ params }) {
   }
 
   async function quitarClavo() {
+    // Fallaba callado: sin `else` ni `catch` que dijera nada (DETALLES-PRESTAMOS #13).
     try {
       const res = await fetch(`/api/prestamos/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ esClavo: false }),
       })
-      if (res.ok) await fetchPrestamo()
-    } catch {}
+      if (res.ok) { await fetchPrestamo({ soft: true }); return }
+      const d = await res.json().catch(() => ({}))
+      setErrorAccion(d.error || 'No se pudo sacar de perdidos.')
+    } catch {
+      setErrorAccion('No se pudo sacar de perdidos. Revisa la conexión.')
+    }
   }
 
   // ── Liquidacion anticipada ──────────────────────────────────────
+  // El piso del cierre: el capital que falta (nunca más que lo que debe). Lo
+  // mismo exige el servidor; aquí es para decirlo antes de deslizar.
+  const pisoDelCierre = liqData
+    ? Math.max(0, Math.round(Math.min(Number(liqData.saldoActual ?? Infinity), Number(liqData.capitalRestante ?? 0))))
+    : 0
   async function abrirLiquidacion() {
     setLiqError(''); setLiqData(null); setLiqNota('')
+    setLiqMetodo({ metodoPago: 'efectivo', metodoPagoId: null })
     setModalLiquidacion(true)
     setLiqCargando(true)
     try {
@@ -471,9 +501,12 @@ function PrestamoDetalleContenido({ params }) {
       const data = await res.json()
       if (!res.ok) { setLiqError(data.error || 'No se pudo calcular'); return }
       setLiqData(data)
-      // Por defecto, modalidad mes completo (la mas comun en gota a gota)
-      setLiqModalidad('mesCompleto')
-      setLiqTecleado(null); setLiqMonto(data.mesCompleto?.restanteHoy ?? 0)
+      /* ⚠ ABRE CON LA CIFRA QUE SE TOCÓ. La fila del menú y «Si lo cancela hoy»
+         enseñan la prorrateada (ver `cierre`), y la hoja abría con el mes
+         completo: se tocaba $X y aparecía otra cifra (DETALLES-PRESTAMOS #8). */
+      const inicial = data.proporcional ? 'proporcional' : 'mesCompleto'
+      setLiqModalidad(inicial)
+      setLiqTecleado(null); setLiqMonto(data[inicial]?.restanteHoy ?? 0)
     } catch {
       setLiqError('Error de red')
     } finally {
@@ -504,6 +537,7 @@ function PrestamoDetalleContenido({ params }) {
     if (liqEnviando) return
     // monto puede ser 0: el cliente ya pago lo justo y solo se perdona el interes futuro
     if (liqMonto < 0) { setLiqError('El monto no puede ser negativo'); return }
+    if (liqMonto < pisoDelCierre) { setLiqError(`Tiene que ser al menos el capital que falta: ${formatMoney(pisoDelCierre)}`); return }
     if (!liqNota.trim()) { setLiqError('Indica el motivo (ej: pago anticipado pactado)'); return }
     setLiqEnviando(true); setLiqError('')
     try {
@@ -511,7 +545,11 @@ function PrestamoDetalleContenido({ params }) {
       const res = await conPantalla('cobro', () => fetch(`/api/prestamos/${id}/pagos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ montoPagado: cobrado, tipo: 'liquidacion', nota: liqNota.trim(), modalidad: liqModalidad }),
+        body: JSON.stringify({
+          montoPagado: cobrado, tipo: 'liquidacion', nota: liqNota.trim(), modalidad: liqModalidad,
+          metodoPago: liqMetodo?.metodoPago ?? 'efectivo',
+          ...(liqMetodo?.metodoPagoId ? { metodoPagoId: liqMetodo.metodoPagoId } : {}),
+        }),
       }))
       const data = await res.json()
       if (!res.ok) { setLiqError(data.error || 'No se pudo cerrar el préstamo'); return }
@@ -522,7 +560,8 @@ function PrestamoDetalleContenido({ params }) {
       if (cobrado > 0) {
         abrirReciboDe({
           id: data.saldoAntesDelPagoId ?? data.pagos?.[0]?.id ?? null,
-          montoPagado: cobrado, tipo: 'liquidacion', fechaPago: new Date().toISOString(), metodoPago: 'efectivo',
+          montoPagado: cobrado, tipo: 'liquidacion', fechaPago: new Date().toISOString(),
+          metodoPago: liqMetodo?.metodoPago ?? 'efectivo', metodoPagoId: liqMetodo?.metodoPagoId ?? null,
         }, data)
       }
     } catch {
@@ -594,8 +633,18 @@ function PrestamoDetalleContenido({ params }) {
     return () => { cancel = true }
   }, [prestamo?.cliente?.id, prestamo?.id])
 
+  /* ⚠ LA RESPUESTA DEL COBRO NO ES LA FICHA. Trae menos campos que el GET: sin
+     `minimoRenovacion`, `moratorio`, `diasExcluidos` ni varios del cliente. Se
+     ponía tal cual y, hasta recargar, Renovar en un préstamo con tabla caía a la
+     deuda entera en vez del capital: la pantalla decía entregar $350.000 y la
+     caja registraba $500.000 (DETALLES-PRESTAMOS, Nuevas de la ficha). Ahora se
+     mezcla para que no parpadee y se vuelve a pedir la ficha entera. */
+  const mezclarRespuestaDelCobro = (r) => setPrestamo((prev) => ({
+    ...prev, ...r, cliente: { ...(prev?.cliente ?? {}), ...(r?.cliente ?? {}) },
+  }))
   const handlePagoExito = (prestamoActualizado, pagoRegistrado) => {
-    setPrestamo(prestamoActualizado)
+    mezclarRespuestaDelCobro(prestamoActualizado)
+    fetchPrestamo({ soft: true })
     setUltimoPago(pagoRegistrado ?? null)
     setExito(true)
     if (prestamoActualizado.estado === 'completado') setCompletado(true)
@@ -626,9 +675,9 @@ function PrestamoDetalleContenido({ params }) {
   // que elegir. Reportado por el dueño: «aun las renovaciones no dejan escoger
   // de que medio salen».
   useEffect(() => {
-    if ((!modalIntereses && !modalRenovar) || metodosPagoOrg.length) return
+    if ((!modalIntereses && !modalRenovar && !modalLiquidacion) || metodosPagoOrg.length) return
     fetch('/api/metodos-pago').then((r) => (r.ok ? r.json() : [])).then(setMetodosPagoOrg).catch(() => {})
-  }, [modalIntereses, modalRenovar, metodosPagoOrg.length])
+  }, [modalIntereses, modalRenovar, modalLiquidacion, metodosPagoOrg.length])
 
   useCabecera({
     titulo: prestamo?.cliente?.nombre,
@@ -1010,13 +1059,11 @@ function PrestamoDetalleContenido({ params }) {
   // (un cobrador con solo permiso de descuentos también debe poder abrirlo).
 
 
-  const esDeHoy = (() => {
-    if (!prestamo?.createdAt) return false
-    const col = new Date(Date.now() - 5 * 60 * 60 * 1000)
-    const hoyISO = col.toISOString().slice(0, 10)
-    const creadoISO = new Date(prestamo.createdAt).toISOString().slice(0, 10)
-    return creadoISO === hoyISO
-  })()
+  /* El día del PAÍS del negocio, como lo mide el servidor. Comparaba la fecha
+     UTC de creación con la de Colombia: un préstamo creado después de las 7 p. m.
+     no se podía editar esa noche, y al día siguiente el botón salía y el servidor
+     lo rechazaba. (DETALLES-PRESTAMOS #20.) */
+  const esDeHoy = esDelDiaAbierto(prestamo?.createdAt, country)
   const puedeEditar = esOwner || esDeHoy
 
   // ── LO QUE VE CADA FILA DE «GESTIONAR EL PRÉSTAMO» ──
@@ -1110,7 +1157,8 @@ function PrestamoDetalleContenido({ params }) {
         completarUbicacionDelPago(pagoId)
           .then((ok) => { if (ok) setReciboDe((r) => (r ? { ...r, pago: { ...r.pago, conUbicacion: true } } : r)) })
       }
-      setPrestamo(data)
+      mezclarRespuestaDelCobro(data)
+      fetchPrestamo({ soft: true })
       setModalIntereses(false)
       // ANTES SOLO SE CERRABA LA HOJA. Ahora acaba donde acaba cualquier cobro:
       // en el comprobante, con su WhatsApp y su «Llevas hoy».
@@ -1191,10 +1239,11 @@ function PrestamoDetalleContenido({ params }) {
         setAjusteError(data?.error || 'No se pudo aplicar')
         return
       }
-      if (data?.prestamo) {
-        setPrestamo(data.prestamo)
-        if (data.prestamo.estado === 'completado') setCompletado(true)
-      }
+      // La respuesta trae el préstamo PLANO, no en `data.prestamo`: este `if`
+      // nunca entraba y la ficha seguía con el saldo viejo; tampoco salía
+      // «Préstamo completado» cuando el descuento lo saldaba (DETALLES-PRESTAMOS #14).
+      if (data?.estado === 'completado') setCompletado(true)
+      await fetchPrestamo({ soft: true })
       setModalRecargo(false)
       setModalDescuento(false)
       setAjusteMonto('')
@@ -1236,7 +1285,10 @@ function PrestamoDetalleContenido({ params }) {
     if (puedeAplicarDescuentos) {
       cobra.push({ id: 'descuento', nombre: 'Descuento', hacer: () => setModalDescuento(true) })
     }
-    if (puedeGestionarPrestamos) {
+    /* Ni en un abierto (no tiene plazo: reescribía su interés del período) ni con
+       tabla (no rehace las cuotas). Extender es financiar sin interés y el modo
+       nuevo es sin tabla. (DETALLES-PRESTAMOS #4 y Nuevas.) */
+    if (puedeGestionarPrestamos && !esAbierto && !tieneTablaAmortizacion(prestamo)) {
       cobra.push({
         id: 'plazo', nombre: 'Modificar el plazo',
         valor: diasPlazo ? `${diasPlazo} días` : null,
@@ -1308,7 +1360,10 @@ function PrestamoDetalleContenido({ params }) {
     if (puedeAplicarDescuentos) {
       cierra.push({ id: 'anticipado', nombre: 'Cerrar anticipado', valor: cierreTexto, hacer: () => abrirLiquidacion() })
     }
-    if (puedeGestionarPrestamos) {
+    // Solo el dueño: el servidor no deja a nadie más marcar o desmarcar, y la
+    // fila se le ofrecía al cobrador con permiso para fallar al final de la hoja
+    // (DETALLES-PRESTAMOS #13).
+    if (esOwner) {
       cierra.push(esClavo
         ? { id: 'recuperar', nombre: 'Sacar de perdidos', hacer: () => quitarClavo() }
         : { id: 'perdidos', nombre: 'Mover a perdidos', peligro: true, hacer: () => setModalClavo(true) })
@@ -1354,6 +1409,15 @@ function PrestamoDetalleContenido({ params }) {
     }
     if (cierra.length) g.push({ titulo: 'Cierra el préstamo', acciones: cierra })
 
+    /* ⚠ EN UN PRÉSTAMO QUE YA NO ESTÁ VIVO SOLO QUEDA ELIMINAR. El menú salía
+       igual en completados, cancelados y pendientes, y todo lo demás lo rechazaba
+       el servidor al final («Solo se pueden renovar préstamos activos»…).
+       (DETALLES-PRESTAMOS #12.) */
+    if (!(estaActivo && !completado)) {
+      return g
+        .map((gr) => ({ ...gr, acciones: gr.acciones.filter((a) => a.id === 'eliminar') }))
+        .filter((gr) => gr.acciones.length > 0)
+    }
     return g
   })()
 
@@ -1467,6 +1531,24 @@ function PrestamoDetalleContenido({ params }) {
   // —mide el último elemento con contenido, no el hueco que se ve—.
   return (
     <div className="max-w-2xl lg:max-w-6xl mx-auto space-y-4 pb-4">
+
+      {/* El motivo de una acción que el servidor rechazó, arriba y fijo hasta
+          que se cierre: la acción suele lanzarse desde el historial, abajo, y un
+          aviso en el sitio de siempre se quedaría fuera de la vista. */}
+      {errorAccion && !confirmRechazo && (
+        <div role="alert" className="fixed left-4 right-4 z-50 mx-auto max-w-xl flex items-start gap-2.5 rounded-[16px] px-4 py-3"
+          style={{ top: 'calc(env(safe-area-inset-top, 0px) + 12px)', background: 'var(--cf-red-pill-bg)', border: '1px solid color-mix(in srgb, var(--cf-red-dark) 30%, transparent)', boxShadow: '0 8px 24px rgba(20,20,28,.18)' }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--cf-red-dark)" strokeWidth="2.2"
+            strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16h.01" />
+          </svg>
+          <span className="flex-1 min-w-0 text-sm font-semibold" style={{ color: 'var(--cf-red-dark)' }}>{errorAccion}</span>
+          <button type="button" aria-label="Cerrar el aviso" onClick={() => setErrorAccion('')}
+            className="shrink-0 -my-2 -mr-2 flex items-center justify-center" style={{ width: 44, height: 44 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cf-red-dark)" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+        </div>
+      )}
 
       {/* ── UNA SOLA FRANJA ROJA ──
           Iban dos apiladas: «Préstamo perdido» y debajo «62 días en mora · 62
@@ -2019,19 +2101,7 @@ function PrestamoDetalleContenido({ params }) {
                 variant="danger"
                 loading={rechazando}
                 disabled={aprobando}
-                onClick={async () => {
-                  setRechazando(true)
-                  try {
-                    const res = await fetch(`/api/prestamos/${id}/rechazar`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({}),
-                    })
-                    if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.error || 'Error al rechazar'); return }
-                    router.push('/prestamos')
-                  } catch { alert('Error de conexion') }
-                  finally { setRechazando(false) }
-                }}
+                onClick={() => { setMotivoRechazo(''); setConfirmRechazo(true) }}
               >
                 <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -2415,11 +2485,15 @@ function PrestamoDetalleContenido({ params }) {
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ fechaPago: nuevaFecha.toISOString() }),
                               })
-                              if (!res.ok) throw new Error()
+                              if (!res.ok) {
+                                const d = await res.json().catch(() => ({}))
+                                setErrorAccion(d.error || 'No se pudo cambiar la fecha.')
+                                return
+                              }
                               setEditandoFecha(null)
-                              await fetchPrestamo()
+                              await fetchPrestamo({ soft: true })
                             } catch {
-                              setError('No se pudo cambiar la fecha.')
+                              setErrorAccion('No se pudo cambiar la fecha. Revisa la conexión.')
                             }
                           }}
                           className="h-9 px-3 rounded-[12px] text-xs font-medium text-[var(--cf-ink)] bg-[var(--cf-ink-2)] hover:bg-[#2563eb] transition-colors active:scale-[0.97]"
@@ -2542,7 +2616,7 @@ function PrestamoDetalleContenido({ params }) {
                      404. Se vuelve al cliente, que es de donde venía. */
                   router.replace(cliente?.id ? `/clientes/${cliente.id}` : '/prestamos')
                 } catch (err) {
-                  setError(err.message || 'No se pudo eliminar el préstamo.')
+                  setErrorAccion(err.message || 'No se pudo eliminar el préstamo.')
                   setConfirmEliminar(false)
                 } finally {
                   setEliminando(false)
@@ -2648,7 +2722,7 @@ function PrestamoDetalleContenido({ params }) {
                       await fetchPrestamo()
                       setConfirmCancel(false)
                     } catch (err) {
-                      setError(err.message || 'No se pudo cancelar el préstamo.')
+                      setErrorAccion(err.message || 'No se pudo cancelar el préstamo.')
                     } finally {
                       setCancelando(false)
                     }
@@ -2853,13 +2927,15 @@ function PrestamoDetalleContenido({ params }) {
                   const res = await fetch(`/api/prestamos/${id}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ diasSinCobro: dscDias }),
+                    body: JSON.stringify({ modo: 'diasSinCobro', diasSinCobro: dscDias }),
                   })
-                  const data = await res.json()
-                  if (!res.ok) { alert(data.error || 'Error'); return }
-                  setPrestamo(prev => ({ ...prev, diasSinCobro: data.diasSinCobro ?? JSON.stringify(dscDias) }))
+                  const data = await res.json().catch(() => ({}))
+                  if (!res.ok) { setErrorAccion(data.error || 'No se pudieron guardar los días sin cobro.'); return }
                   setModalDscPrestamo(false)
-                } catch { alert('Error al guardar') }
+                  setVinoDeGestion(false)
+                  // La mora y el próximo cobro cambian con los días: se vuelven a pedir.
+                  await fetchPrestamo({ soft: true })
+                } catch { setErrorAccion('No se pudieron guardar los días sin cobro. Revisa la conexión.') }
               }}
             >
               Guardar
@@ -2910,6 +2986,7 @@ function PrestamoDetalleContenido({ params }) {
         montoAlDia={montoParaPonerseAlDia}
         cuotaQueToca={prestamo?.cuotaQueToca ?? null}
         cancelarHoy={hayCierre ? Math.round(cierre.restanteHoy ?? 0) : 0}
+        onCancelarHoy={puedeAplicarDescuentos ? () => { setModalPago(false); abrirLiquidacion() } : null}
       />
 
       {/* ── RECARGO Y DESCUENTO, EN SU HOJA ──
@@ -3052,8 +3129,8 @@ function PrestamoDetalleContenido({ params }) {
           <p style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--cf-ink-2)', margin: 0 }}>
             Cubre el interés que ya corrió. <strong>El capital no baja</strong>
             {prestamo?.capitalRestante > 0
-              ? `: sigue en ${formatMoney(Math.round(prestamo.capitalRestante))}, y el mes que viene vuelve a generar interés.`
-              : ' — el mes que viene vuelve a generar interés.'}
+              ? `: sigue en ${formatMoney(Math.round(prestamo.capitalRestante))}, y ${PROXIMO_PERIODO[frecuencia] ?? 'el próximo período'} vuelve a generar interés.`
+              : ` — ${PROXIMO_PERIODO[frecuencia] ?? 'el próximo período'} vuelve a generar interés.`}
           </p>
 
           <MetodoPagoSelector
@@ -3080,7 +3157,11 @@ function PrestamoDetalleContenido({ params }) {
           permite «un punto medio» de la lámina sin inventar una cuarta modalidad. */}
       {modalLiquidacion && (() => {
         const comp = adaptarCerrar(liqData)
-        const resumen = resumenCerrar(liqData, liqModalidad) ?? {}
+        // «Recibes» y «dejas de ganar» siguen al MONTO de la hoja, también al
+        // tecleado a mano: con la cifra de la modalidad, la hoja decía recibir
+        // una plata y se cobraba otra (DETALLES-PRESTAMOS #8).
+        const resumen = resumenCerrar(liqData, liqModalidad, undefined, Math.round(liqMonto || 0)) ?? {}
+        const bajoElPiso = liqData && Math.round(liqMonto || 0) < pisoDelCierre
         // Cuando el dueño teclea un monto propio, ninguna de las tres queda marcada:
         // marcar una que no coincide con la cifra sería decirle que eligió algo que no
         // eligió.
@@ -3103,9 +3184,10 @@ function PrestamoDetalleContenido({ params }) {
                 cifra={liqMonto > 0 ? formatMoney(Math.round(liqMonto)) : null}
                 deslizar
                 aceptando={liqEnviando}
-                deshabilitado={liqMonto < 0 || !liqNota.trim()}
-                error={liqError || (!liqNota.trim() && liqMonto > 0
-                  ? 'Escribe el motivo: queda en el historial.' : null)}
+                deshabilitado={liqMonto < 0 || bajoElPiso || !liqNota.trim()}
+                error={liqError || (bajoElPiso
+                  ? `Tiene que ser al menos el capital que falta: ${formatMoney(pisoDelCierre)}. Para perdonar capital usa Descuento.`
+                  : (!liqNota.trim() && liqMonto > 0 ? 'Escribe el motivo: queda en el historial.' : null))}
               />
             }
           >
@@ -3178,6 +3260,14 @@ function PrestamoDetalleContenido({ params }) {
                 }}
               />
             </label>
+
+            {Math.round(liqMonto || 0) > 0 && (
+              <MetodoPagoSelector
+                metodosPago={metodosPagoOrg}
+                value={liqMetodo}
+                onSelect={(v) => setLiqMetodo(v)}
+              />
+            )}
 
             <label style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 'none' }}>
               <span style={{
@@ -3359,6 +3449,41 @@ function PrestamoDetalleContenido({ params }) {
         </div>
       </Modal>
 
+      <Modal open={confirmRechazo} onClose={() => !rechazando && setConfirmRechazo(false)} title="Rechazar el préstamo" size="sm">
+        <div className="space-y-4">
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--cf-ink-2)' }}>
+            Se borra la solicitud de {formatMoney(montoPrestado)} para {cliente?.nombre ?? 'el cliente'}. No sale plata:
+            todavía no se había entregado. {creadoPor?.nombre ?? 'El cobrador'} recibe el aviso con el motivo.
+          </p>
+          <label className="block">
+            <span className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--cf-ink-2)' }}>Motivo (se le envía al cobrador)</span>
+            <textarea value={motivoRechazo} onChange={(e) => setMotivoRechazo(e.target.value)} rows={3} maxLength={300}
+              placeholder="Ej.: el cliente ya tiene un préstamo atrasado"
+              className="w-full rounded-[12px] px-3 py-2.5 text-base"
+              style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }} />
+          </label>
+          {errorAccion && <p className="text-sm font-semibold" style={{ color: 'var(--cf-red-dark)' }}>{errorAccion}</p>}
+          <div className="flex gap-2 justify-end">
+            <Button variant="ghost" size="sm" disabled={rechazando} onClick={() => setConfirmRechazo(false)}>Volver</Button>
+            <Button variant="danger" size="sm" loading={rechazando} onClick={async () => {
+              setRechazando(true)
+              setErrorAccion('')
+              try {
+                const res = await fetch(`/api/prestamos/${id}/rechazar`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ motivo: motivoRechazo.trim() || undefined }),
+                })
+                if (!res.ok) { const d = await res.json().catch(() => ({})); setErrorAccion(d.error || 'No se pudo rechazar.'); return }
+                setConfirmRechazo(false)
+                router.push('/prestamos')
+              } catch { setErrorAccion('No se pudo rechazar. Revisa la conexión.') }
+              finally { setRechazando(false) }
+            }}>Rechazar</Button>
+          </div>
+        </div>
+      </Modal>
+
       <ConfirmModal
         open={!!confirmAnularPago}
         title="Anular pago"
@@ -3376,12 +3501,12 @@ function PrestamoDetalleContenido({ params }) {
             // a la persona sin saber qué hacer.
             if (!res.ok) {
               const d = await res.json().catch(() => ({}))
-              setError(d.error || 'No se pudo anular el pago.')
+              setErrorAccion(d.error || 'No se pudo anular el pago.')
               return
             }
-            await fetchPrestamo()
+            await fetchPrestamo({ soft: true })
           } catch {
-            setError('No se pudo anular el pago. Revisa la conexión.')
+            setErrorAccion('No se pudo anular el pago. Revisa la conexión.')
           } finally {
             setAnulando(null)
           }

@@ -10,7 +10,8 @@ import { sincronizarTabla } from '@/lib/dinero/tabla-sync'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { logActividad } from '@/lib/activity-log'
 import { reajustarDevengosTrasCambio } from '@/lib/dinero/devengar'
-import { motivoParaNoDeshacerAbono } from '@/lib/dinero/deshacer-abono'
+import { motivoParaNoDeshacerAbono, motivoParaNoDeshacerLiquidacion } from '@/lib/dinero/deshacer-abono'
+import { elInteresSubeLaDeuda } from '@/lib/dinero/modos'
 
 // ─── PATCH /api/pagos/[id] — Editar fecha del pago (solo owner) ──
 export async function PATCH(request, { params }) {
@@ -145,6 +146,11 @@ export async function DELETE(request, { params }) {
     const motivo = motivoParaNoDeshacerAbono(pago, pago.prestamo)
     if (motivo) return Response.json({ error: motivo }, { status: 409 })
   }
+  const esLiquidacion = pago.tipo === 'liquidacion'
+  if (esLiquidacion) {
+    const motivo = motivoParaNoDeshacerLiquidacion(pago)
+    if (motivo) return Response.json({ error: motivo }, { status: 409 })
+  }
 
   const org = await prisma.organization.findUnique({
     where: { id: organizationId },
@@ -166,6 +172,16 @@ export async function DELETE(request, { params }) {
 
     // 1b. Refrescar totalPagado/ultimoPagoAt despues de borrar.
     await refrescarTotalesPrestamo(tx, pago.prestamoId)
+
+    /* 1b'. LIQUIDACIÓN: la deuda vuelve a la de antes de cerrar, y en un abierto
+       se borra el período que asentó al liquidar (si no, la clave única le
+       impide al cron asentarlo entero). Ver `motivoParaNoDeshacerLiquidacion`. */
+    if (esLiquidacion) {
+      if (pago.tablaAntes.devengo) {
+        await tx.devengoInteres.deleteMany({ where: { prestamoId: prestamo.id, periodo: pago.tablaAntes.devengo } })
+      }
+      await tx.prestamo.update({ where: { id: prestamo.id }, data: { totalAPagar: pago.tablaAntes.totalAPagar } })
+    }
 
     // 1b. Si era abono a capital, reversar la reducción de totalAPagar
     // Debe replicar EXACTAMENTE la formula del POST (pagos/route.js) para que
@@ -211,6 +227,18 @@ export async function DELETE(request, { params }) {
       await tx.prestamo.update({
         where: { id: prestamo.id },
         data: { totalAPagar: prestamo.totalAPagar + pago.montoPagado },
+      })
+    }
+
+    /* 1d''. «SOLO INTERÉS» SIN TABLA: el cobro subió la deuda lo mismo que entró
+       (el interés compra tiempo, ver el POST). Anularlo restaba lo pagado y
+       dejaba la subida: el cliente quedaba debiendo ese interés DE MÁS.
+       Misma pregunta que el POST, con el préstamo de antes de borrar.
+       (DETALLES-PRESTAMOS #6.) */
+    if (pago.tipo === 'intereses' && elInteresSubeLaDeuda(prestamo)) {
+      await tx.prestamo.update({
+        where: { id: prestamo.id },
+        data: { totalAPagar: { decrement: pago.montoPagado } },
       })
     }
 
@@ -309,6 +337,23 @@ export async function DELETE(request, { params }) {
         creadoPorId: session.user.id,
         /* A la par con el descuento: si aquél no mueve la caja, deshacerlo
            tampoco puede meter una plata que nunca salió. */
+        noMueveCapital: true,
+      })
+    }
+
+    // 5. La liquidación apuntó «Interés perdonado»: anularla lo deshace, igual
+    //    sin mover la caja (ese interés nunca estuvo en ella).
+    if (esLiquidacion && Number(pago.tablaAntes.interesPerdonado) > 0) {
+      await registrarMovimientoCapital(tx, {
+        organizationId,
+        tipo: 'ajuste',
+        monto: Number(pago.tablaAntes.interesPerdonado),
+        direccion: 'ingreso',
+        descripcion: 'Reverso interés perdonado (cierre anulado) - préstamo',
+        referenciaId: prestamo.id,
+        referenciaTipo: 'pago',
+        rutaId: rutaIdReverso,
+        creadoPorId: session.user.id,
         noMueveCapital: true,
       })
     }

@@ -188,7 +188,7 @@ export async function GET(request) {
           // Saldo financiado: la tarjeta lo marca (lib/financiar.js `esFinanciacion`).
           interesFinanciado: true,
           createdAt: true,
-          proximoCobroManual: true,
+          proximoCobroManual: true, proximoCobroPorInteres: true,
           // Denormalizados: evitan iterar todos los pagos.
           totalPagado: true, abonadoCapital: true,
           ultimoPagoAt: true,

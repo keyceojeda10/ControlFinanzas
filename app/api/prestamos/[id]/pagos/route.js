@@ -464,6 +464,12 @@ export async function POST(request, { params }) {
      *   · liquidando — solo lo que se cobra. El prestamo se cierra ahi y los
      *     dias que no corrieron no llegan a nacer: es exactamente la modalidad
      *     «proporcional» de la pantalla de liquidacion. */
+    /* La foto de una LIQUIDACIÓN, para poder anularla (DETALLES-PRESTAMOS #7):
+       el total antes de cerrar y, en un abierto, el período que se asienta aquí
+       abajo. Anular borraba el pago y dejaba el total rebajado: el préstamo
+       revivía debiendo menos y el «Interés perdonado» seguía en el libro. */
+    const totalAntesDeLiquidar = prestamoLocked.totalAPagar
+    let devengoDeLaLiquidacion = null
     if (['intereses', 'liquidacion'].includes(tipo) && esAbiertoConDevengo(prestamoLocked)) {
       const enCurso = periodoEnCursoAbierto(prestamoLocked)
       if (enCurso) {
@@ -500,6 +506,7 @@ export async function POST(request, { params }) {
                 where: { id: prestamoId },
                 data: { totalAPagar: { increment: aAsentar } },
               })
+              if (tipo === 'liquidacion') devengoDeLaLiquidacion = enCurso.periodo
               prestamoLocked = await tx.prestamo.findUnique({
                 where: { id: prestamoId },
                 include: incluirParaLock,
@@ -520,9 +527,20 @@ export async function POST(request, { params }) {
     // Re-acotar el monto al saldo real ya committeado por otras tx.
     if (!['recargo', 'descuento'].includes(tipo)) {
       montoFinal = Math.min(montoFinal, saldoLocked)
-      if (montoFinal <= 0) {
+      // Una liquidación por $0 es válida (ya pagó lo justo y se perdona el
+      // interés que queda); lo que no lo es, en ningún tipo, es un saldo en cero.
+      if (tipo === 'liquidacion' ? saldoLocked <= 0 : montoFinal <= 0) {
         throw new Error('SALDO_CERO')
       }
+    }
+    /* ⚠ CERRAR ANTICIPADO PERDONA INTERÉS, NUNCA CAPITAL (decisión del dueño, 17
+       oct 2026). Aceptaba hasta $1 y apuntaba todo lo demás como «interés
+       perdonado», aunque fuera capital. El piso es el capital que falta, la
+       misma cifra que enseña la ficha; para perdonar capital están Descuento y
+       Mover a perdidos, que lo apuntan como lo que es. (DETALLES-PRESTAMOS #8.) */
+    if (tipo === 'liquidacion') {
+      const pisoCapital = Math.min(Math.round(saldoLocked), Math.round(calcularCapitalRestante(prestamoLocked) ?? 0))
+      if (montoFinal < pisoCapital) throw new Error(`LIQUIDACION_BAJO_CAPITAL:${pisoCapital}`)
     }
     if (tipo === 'capital') {
       const capitalRestanteLocked = capitalVivoSegunTabla(prestamoLocked)
@@ -842,6 +860,12 @@ export async function POST(request, { params }) {
         where: { id: prestamoId },
         data: { totalAPagar: Math.round(totalPagadoReal) },
       })
+      if (saldoAntesDelPagoId) {
+        await tx.pago.update({
+          where: { id: saldoAntesDelPagoId },
+          data: { tablaAntes: { totalAPagar: totalAntesDeLiquidar, devengo: devengoDeLaLiquidacion, interesPerdonado } },
+        })
+      }
 
       // Modo lineal: marcar todas las cuotas como pagadas (saldo queda en 0).
       if (tieneTablaAmortizacion(prestamoActualizado)) {
@@ -1088,6 +1112,13 @@ export async function POST(request, { params }) {
     if (err?.message === 'SALDO_CERO') {
       return Response.json({ error: 'El préstamo ya fue saldado por otro pago' }, { status: 409 })
     }
+    if (err?.message?.startsWith('LIQUIDACION_BAJO_CAPITAL:')) {
+      const piso = Number(err.message.split(':')[1])
+      return Response.json({
+        error: `Para cerrarlo tiene que pagar al menos el capital que falta: $${piso.toLocaleString('es-CO')}. Para perdonar capital usa Descuento o Mover a perdidos.`,
+        pisoCapital: piso,
+      }, { status: 400 })
+    }
     if (err?.message === 'CAPITAL_AGOTADO') {
       return Response.json({ error: 'El capital del préstamo ya fue cubierto por otro abono' }, { status: 409 })
     }
@@ -1167,7 +1198,7 @@ export async function POST(request, { params }) {
     if (nueva) {
       await prisma.prestamo.update({
         where: { id: prestamoId },
-        data: { proximoCobroManual: nueva },
+        data: { proximoCobroManual: nueva, proximoCobroPorInteres: true },
       })
       proximoCobroFinal = nueva
       aplazadoA = nueva

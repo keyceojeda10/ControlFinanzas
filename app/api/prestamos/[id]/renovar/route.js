@@ -262,7 +262,13 @@ export async function POST(request, { params }) {
     }, { status: 400 })
   }
 
-  const { totalAPagar, cuotaDiaria, fechaFin } = calc
+  const { cuotaDiaria, fechaFin } = calc
+  /* ⚠ SIN INTERÉS ES SIN INTERÉS. La cuota se redondea a la unidad del país y
+     `cuota × cuotas` pasaba la deuda: extender $500.000 en 30 cuotas dejaba
+     $501.000 (medido en el espejo, 17 oct 2026). Con $0 de interés —que es
+     extender el plazo— la deuda queda exacta y la última cuota es la menor: un
+     préstamo sin tabla se cobra hasta saldar (ver `plazo_no_es_tope`). */
+  const totalAPagar = financiar && interesFinanciado === 0 ? Math.round(montoFinal) : calc.totalAPagar
   const modoInteresFinal = calc.modoInteres
 
   /* ══ LO QUE RECIBE EN MANO, EN BILLETES ══════════════════════════════════

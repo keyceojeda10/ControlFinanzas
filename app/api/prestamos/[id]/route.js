@@ -23,7 +23,7 @@ import {
   mensajePrestamoConPerdida,
   primerCobroMensual,
 } from '@/lib/calculos'
-import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
+import { obtenerDiasSinCobro, validarDiasSinCobro, nombresDias } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { revivirPrestamoRenovado, efectivoQueSalio, capitalYaDevuelto } from '@/lib/dinero/revertir-renovacion'
@@ -468,6 +468,17 @@ export async function PATCH(request, { params }) {
     if (p.estado !== 'activo') {
       return Response.json({ error: 'Solo se puede modificar el plazo de préstamos activos' }, { status: 400 })
     }
+    /* ⚠ EXTENDER YA NO PASA POR AQUÍ. Repartía el saldo entre los períodos «que
+       quedan» por calendario: al atrasado le SUBÍA la cuota y al que iba al día
+       le saltaba el próximo cobro. Desde el 17 oct 2026 extender es financiar
+       con $0 de interés (`/renovar`, `financiar: true`). Esta rama solo queda
+       para una app vieja o un cambio encolado sin señal: se rechaza con motivo
+       en vez de guardar una cuota que nadie vio. (DETALLES-PRESTAMOS #4.) */
+    if (modo === 'extender') {
+      return Response.json({
+        error: 'Extender el plazo cambió: ahora arranca de cero desde hoy. Actualiza la app y vuelve a hacerlo desde «Modificar el plazo».',
+      }, { status: 409 })
+    }
     if (!nuevaFechaFinRaw) {
       return Response.json({ error: 'La nueva fecha de finalización es requerida' }, { status: 400 })
     }
@@ -634,6 +645,41 @@ export async function PATCH(request, { params }) {
   }
 
   // ─── Modo: cambiar fecha de próximo cobro manualmente ──────────
+  // ─── Modo: días sin cobro de ESTE préstamo ─────────────────────
+  // La hoja de la ficha mandaba `{ diasSinCobro }` sin modo y ninguna rama lo
+  // recibía: «Operación no válida», siempre (DETALLES-PRESTAMOS #2, 17 oct 2026).
+  // Vacío = hereda del cliente, la ruta o el negocio (null), como dice la hoja.
+  if (modo === 'diasSinCobro') {
+    const puedeGestionar = session.user.rol === 'owner'
+      ? true
+      : (session.user.rol === 'cobrador' && await cobradorPuedeGestionarPrestamos(session.user.id))
+    if (!puedeGestionar) {
+      return Response.json({ error: 'No tienes permiso para cambiar los días sin cobro' }, { status: 403 })
+    }
+    if (p.estado !== 'activo') {
+      return Response.json({ error: 'Solo se pueden cambiar los días sin cobro de préstamos activos' }, { status: 400 })
+    }
+    let valor
+    try {
+      const lista = Array.isArray(body.diasSinCobro) ? body.diasSinCobro : null
+      if (lista === null && body.diasSinCobro != null) throw new Error('Debe ser una lista de días')
+      valor = lista && lista.length > 0 ? validarDiasSinCobro(lista) : null
+    } catch (e) {
+      return Response.json({ error: e.message || 'Días inválidos' }, { status: 400 })
+    }
+    const actualizado = await prisma.prestamo.update({ where: { id }, data: { diasSinCobro: valor } })
+    logActividad({
+      session,
+      accion: 'editar_prestamo',
+      entidadTipo: 'prestamo',
+      entidadId: id,
+      detalle: valor ? `Días sin cobro del préstamo: ${nombresDias(JSON.parse(valor))}` : 'Días sin cobro del préstamo: los del cliente o la ruta',
+      ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+    })
+    if (idempKey) setCachedMutation(idempKey, actualizado)
+    return Response.json(actualizado)
+  }
+
   if (modo === 'proximoCobro') {
     const puedeGestionar = session.user.rol === 'owner'
       ? true
@@ -649,7 +695,7 @@ export async function PATCH(request, { params }) {
     if (fechaRaw === null) {
       const actualizado = await prisma.prestamo.update({
         where: { id },
-        data: { proximoCobroManual: null },
+        data: { proximoCobroManual: null, proximoCobroPorInteres: false },
       })
       logActividad({
         session,
@@ -670,7 +716,8 @@ export async function PATCH(request, { params }) {
 
     const actualizado = await prisma.prestamo.update({
       where: { id },
-      data: { proximoCobroManual: fecha },
+      // Aplazar sin plata: el atraso sigue contando (ver `fechaInicioMora`).
+      data: { proximoCobroManual: fecha, proximoCobroPorInteres: false },
     })
 
     logActividad({
@@ -764,6 +811,7 @@ export async function PATCH(request, { params }) {
     // calcularProximoCobro devuelve proximoCobroManual antes que el ancla
     // (bug reportado: dia del mes 27 pero seguia saliendo "12 de ago").
     dataUpdate.proximoCobroManual = null
+    dataUpdate.proximoCobroPorInteres = false
 
     // Prestamos con tabla de amortizacion (solo_interes/lineal/saldo): la tabla
     // es la fuente de fechas, no el ancla en vivo. Hay que correr la fechaEsperada
@@ -1064,6 +1112,7 @@ export async function PATCH(request, { params }) {
       // dia ancla). Un proximoCobroManual viejo pisaria ese nuevo calendario y
       // dejaria "la fecha de proximo pago completamente equivocada" — se limpia.
       proximoCobroManual: null,
+      proximoCobroPorInteres: false,
       ...(nuevoSocioId !== undefined && { socioId: nuevoSocioId || null }),
       ...(Array.isArray(calc.capitalExtra) && calc.capitalExtra.length > 0
         ? { capitalExtra: calc.capitalExtra }

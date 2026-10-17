@@ -78,7 +78,7 @@ export async function GET(request) {
                  viene seguía contando para hoy. Ver el aviso gemelo en
                  `api/dashboard/resumen`. */
               id: true,
-              proximoCobroManual: true,
+              proximoCobroManual: true, proximoCobroPorInteres: true,
               modoInteres: true,
               sinPlazo: true,
               diasSinCobro: true,

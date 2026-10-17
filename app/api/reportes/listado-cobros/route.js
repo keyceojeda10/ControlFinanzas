@@ -75,7 +75,7 @@ export async function GET(req) {
                 fechaInicio: true,
                 diasPlazo: true,
                 modoInteres: true,
-                proximoCobroManual: true,
+                proximoCobroManual: true, proximoCobroPorInteres: true,
                 /* ⚠ SIN ESTO UN PRÉSTAMO ABIERTO SALE «AL DÍA» SIEMPRE: su mora es el
                    interés devengado sin pagar, y un campo que no se pide vale `undefined`
                    —no da error, decide en silencio—. Ver lib/dinero/devengar.js. */
@@ -134,7 +134,7 @@ export async function GET(req) {
             fechaInicio: true,
             diasPlazo: true,
             modoInteres: true,
-            proximoCobroManual: true,
+            proximoCobroManual: true, proximoCobroPorInteres: true,
             cuotasAmortizacion: { select: { numeroPeriodo: true, cuotaTotal: true, capital: true, pagado: true, fechaEsperada: true } },
             pagos: { select: { montoPagado: true, tipo: true } },
           },

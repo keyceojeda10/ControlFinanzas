@@ -2,7 +2,8 @@
 // components/prestamos/ModificarPlazo.jsx — Modal para extender o corregir fecha fin
 
 import { useState, useEffect, useMemo } from 'react'
-import HojaInferior from '@/components/cf/HojaInferior'
+import { useRouter } from 'next/navigation'
+import HojaInferior, { salirDeHojaHacia } from '@/components/cf/HojaInferior'
 import { ModificarPlazo as HojaPlazo, PieGestion } from '@/components/pantallas/Gestion'
 import { adaptarPlazo } from '@/lib/adaptadores/gestion'
 import { useCountry } from '@/hooks/useCountry'
@@ -45,6 +46,7 @@ export default function ModificarPlazo({
   onSuccess,
 }) {
   const { formatMoney } = useCountry()
+  const router = useRouter()
   const [modo, setModo] = useState('extender') // 'extender' | 'corregir'
 
   const [diasExtra,   setDiasExtra]   = useState('')
@@ -120,6 +122,39 @@ export default function ModificarPlazo({
     if (!val || !fechaFinActual) return
     const dias = diffDays(fechaFinActual, val)
     setDiasExtra(dias > 0 ? String(dias) : '')
+  }
+
+  /* ⚠ EXTENDER = FINANCIAR SIN INTERÉS (decisión del dueño, 17 oct 2026).
+     Va a la ruta de renovar con `financiar: true` e `interes: 0`: lo que debe,
+     repartido en las cuotas elegidas, desde hoy y con la mora en cero. El
+     servidor pone la deuda y la fecha; la pantalla solo manda el plazo. Sin
+     señal no se puede: abre una cartulina nueva, y eso no se encola.
+     Ver `adaptarPlazo`. (DETALLES-PRESTAMOS #4.) */
+  const extender = async (diasPlazoNuevo) => {
+    if (!diasPlazoNuevo) return
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setError('Para extender el plazo necesitas señal: se abre una cartulina nueva desde hoy.')
+      return
+    }
+    setLoading(true)
+    setError('')
+    try {
+      const res = await conPantalla('financiar', () => fetch(`/api/prestamos/${prestamoId}/renovar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ financiar: true, interes: 0, diasPlazo: diasPlazoNuevo, frecuencia }),
+      }))
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) { setError(data.error || 'No se pudo extender el plazo.'); return }
+      // A la cartulina nueva, que es la que se cobra desde hoy. Ver la nota de
+      // `salirDeHojaHacia` en FinanciarSaldo: cerrar + replace aborta la navegación.
+      onClose?.()
+      salirDeHojaHacia(router, `/prestamos/${data.id}`)
+    } catch {
+      setError('Sin conexión. No se guardó nada: intenta de nuevo.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSubmit = async () => {
@@ -223,7 +258,7 @@ export default function ModificarPlazo({
     // en las que faltan y los `diasExtra` lo mueven.
     const extra = Math.max(0, Number(diasExtra) || 0)
     const cuotas = pendientes + Math.round(extra / porPeriodo)
-    const datos = adaptarPlazo(prestamo, cuotas) ?? {}
+    const { diasPlazo: diasPlazoNuevo, ...datos } = adaptarPlazo(prestamo, cuotas) ?? {}
 
     const mover = (delta) => {
       const nuevas = Math.max(pendientes, cuotas + delta)
@@ -243,8 +278,8 @@ export default function ModificarPlazo({
         accion={
           <PieGestion
             onCancelar={handleClose}
-            onAceptar={handleSubmit}
-            textoAceptar={cuotas > pendientes ? `Guardar ${cuotas} cuotas` : 'Guardar'}
+            onAceptar={() => extender(diasPlazoNuevo)}
+            textoAceptar={cuotas > pendientes ? `Extender a ${cuotas} cuotas` : 'Extender'}
             aceptando={loading}
             deshabilitado={cuotas <= pendientes}
             error={error}
@@ -254,7 +289,7 @@ export default function ModificarPlazo({
         <HojaPlazo
           intenciones={[
             { id: 'extender', etiqueta: 'Extender plazo' },
-            { id: 'corregirFin', etiqueta: 'Corregir fin' },
+            { id: 'corregir', etiqueta: 'Corregir fin' },
             { id: 'corregirInicio', etiqueta: 'Corregir inicio' },
           ]}
           intencion="extender"

@@ -122,7 +122,7 @@ export async function GET(request) {
         totalPagado: true, abonadoCapital: true,
         ultimoPagoAt: true,
         modoInteres: true,
-        proximoCobroManual: true,
+        proximoCobroManual: true, proximoCobroPorInteres: true,
         /* ⚠ LOS CAMPOS DEL DÍA DE COBRO. FALTABAN LOS CINCO, y `tienePeriodoEsperadoHoy`
            los lee: sin `diaCobroSemana`/`diaCobroMes` un semanal que cobra los
            martes o un quincenal de «los 5 y 20» se medía contra su fecha de inicio,

@@ -48,6 +48,10 @@ import { conPantalla } from '@/components/cf/Procesando'
 
 import { frenteACuotaDe, cuotaDeReferencia, comoFueElPago } from '@/lib/dinero/cuota-de-referencia'
 
+// En un abierto el interés es de cada período de su frecuencia, no siempre del
+// mes (DETALLES-PRESTAMOS #5 y #26).
+const PERIODO_DEL = { diario: 'día', semanal: 'la semana', quincenal: 'la quincena', mensual: 'mes' }
+
 export default function RegistrarPago({
   prestamoId, cuotaDiaria, saldoPendiente,
   open, onClose, onSuccess,
@@ -62,6 +66,12 @@ export default function RegistrarPago({
   tabInicial = 'pago',
   montoAlDia = 0,
   cancelarHoy = 0,
+  /* ⚠ «CANCELAR HOY» ES CERRAR EL PRÉSTAMO, NO UNA CIFRA. El atajo ponía el
+     monto rebajado y mandaba un cobro normal: no perdonaba nada, el préstamo
+     seguía activo con el interés «perdonado» como saldo, y lo podía usar quien
+     no tiene permiso de descuentos (DETALLES-PRESTAMOS #1). Ahora abre la hoja
+     de cerrar anticipado, que es la que liquida. Sin esto, el atajo no sale. */
+  onCancelarHoy = null,
   /* La cuota que toca ahora, del servidor (`calcularCuotaQueToca`): cuenta lo
      que ya se adelantó de ella. La ficha la trae; si no llega, la hoja la pide
      al abrirse (ver abajo). Soporte del 12 oct 2026. */
@@ -1045,7 +1055,7 @@ export default function RegistrarPago({
       // decía a Inversiones Jk algo que no pasa.
       return {
         titulo: 'Pago a intereses',
-        texto: `Paga el interés del mes. El capital no baja: sigue en ${formatMoney(capitalAbierto)}. `
+        texto: `Paga el interés del ${PERIODO_DEL[prestamo?.frecuencia] ?? 'mes'}. El capital no baja: sigue en ${formatMoney(capitalAbierto)}. `
           + 'Si además abona capital, regístralo aparte en «Capital».',
         cifra: null,
       }
@@ -1227,7 +1237,7 @@ export default function RegistrarPago({
     // es un atajo suyo, no uno de la cuota. Sale solo, sin los otros tres.
     const conAtajos = tipo === 'completo' || tipo === 'parcial'
     const atajos = conAtajos
-      ? atajosDeMonto({ saldoPendiente, cuotaDiaria, montoAlDia, cancelarHoy })
+      ? atajosDeMonto({ saldoPendiente, cuotaDiaria, montoAlDia, cancelarHoy: onCancelarHoy ? cancelarHoy : 0 })
       : tipo === 'intereses' && interesDelPeriodo
         ? [{
             id: 'interesperiodo',
@@ -1367,7 +1377,10 @@ export default function RegistrarPago({
           notaCuota={notaDeCuota}
           atajos={atajos}
           atajoActivo={atajoActivo}
-          onAtajo={(a) => fijarMonto(String(a.monto))}
+          onAtajo={(a) => {
+            if (a.id === 'cancelar' && onCancelarHoy) { onCancelarHoy(); return }
+            fijarMonto(String(a.monto))
+          }}
           aplicaciones={aplicacionesDePago}
           aplicacion={tipo}
           // La hoja NO se desmonta al cambiar de aplicación: las tres opciones
@@ -1846,7 +1859,7 @@ export default function RegistrarPago({
               </p>
               <p className="text-[var(--cf-ink-3)]">
                 {esAbierto
-                  ? `Paga el interés del mes. El capital no baja: sigue en ${formatMoney(capitalAbierto)}. Si además abona capital, regístralo aparte en «Capital».`
+                  ? `Paga el interés del ${PERIODO_DEL[prestamo?.frecuencia] ?? 'mes'}. El capital no baja: sigue en ${formatMoney(capitalAbierto)}. Si además abona capital, regístralo aparte en «Capital».`
                   : subeLaDeuda
                   ? 'El capital NO baja: el cliente paga la ganancia y sigue debiendo lo mismo. El préstamo se alarga y ese interés es tuyo.'
                   : 'Cubre el interés que ya debía. El capital de la cuota sigue vencido, así que el préstamo queda en mora por esa parte. Si lo que quieres es que el interés le compre tiempo y le corra la cuota, ese es el modo «Solo interés, capital al final».'}

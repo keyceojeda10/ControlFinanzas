@@ -541,6 +541,10 @@ model Prestamo {
   // Tarjeta clavo: prestamo malo/incobrable. Se excluye de saldos/cartera/capital
   // normales y se lleva en contabilidad aparte. Sigue cobrable (pagos van aparte).
   proximoCobroManual DateTime? // override manual de la fecha de proximo cobro (null = automatico)
+  // true = esa fecha la COMPRÓ un pago de solo interés (deja al día hasta ella).
+  // false = es un aplazo sin plata: solo saca de la lista de hoy, el atraso sigue
+  // contando (decisión del dueño, 17 oct 2026, DETALLES-PRESTAMOS #10).
+  proximoCobroPorInteres Boolean @default(false)
   firmaUrl       String? // ruta a la imagen PNG de la firma del cliente
   interesAdelantado Boolean     @default(false) // globo: interes se cobra adelantado, ultima cuota solo capital
   capitalExtra   Json? // [{numeroPeriodo, monto}] cuotas extra programadas

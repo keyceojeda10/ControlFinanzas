@@ -603,7 +603,7 @@ export function Financiar({
 export function ModificarPlazo({
   intenciones, intencion, onIntencion,
   cuotas, cuotasAntes, unidad, onMenos, onMas, minimoCuotas,
-  cuotaAntes, cuotaDespues, terminaAntes, terminaDespues, totalIgual,
+  cuotaAntes, cuotaDespues, terminaAntes, terminaDespues, totalIgual, atrasoAntes,
 }) {
   return (
     <>
@@ -645,13 +645,18 @@ export function ModificarPlazo({
                 texto: true,
               }
             : null,
-          totalIgual ? { etiqueta: 'Lo que vas a recibir', valor: totalIgual } : null,
+          totalIgual ? { etiqueta: 'Lo que falta por recibir', valor: totalIgual } : null,
+          atrasoAntes ? { etiqueta: 'Días de atraso', valor: `${atrasoAntes} → vuelven a cero`, texto: true } : null,
         ].filter(Boolean)}
       />
 
+      {/* Extender ES financiar sin interés (decisión del dueño, 17 oct 2026): se
+          dice que arranca de cero, que se abre otra cartulina y que no cobra
+          nada de más. Ver `adaptarPlazo`. */}
       <Aviso>
-        Estirar el plazo no cobra más intereses: reparte el mismo saldo en más
-        cuotas. Sirve para que un cliente apretado no caiga en mora.
+        Arranca de cero desde hoy: se cierra esta cartulina por lo que debe y se
+        abre una nueva con el mismo saldo en más cuotas. No cobra intereses, no
+        sale plata de la caja y queda enlazada a la anterior.
       </Aviso>
     </>
   )

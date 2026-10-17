@@ -25,11 +25,14 @@ export async function GET(request, { params }) {
          —no da error, decide en silencio—. Ver lib/dinero/devengar.js. */
       devengos: { select: { periodo: true, interes: true } },
       cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
-      cliente: { select: { diasSinCobro: true, ruta: { select: { diasSinCobro: true } } } },
+      cliente: { select: { rutaId: true, diasSinCobro: true, ruta: { select: { diasSinCobro: true } } } },
       organization: { select: { diasSinCobro: true } },
     },
   })
-  if (!prestamo) {
+  // Un cobrador solo ve los préstamos de sus rutas, igual que la ficha
+  // (`obtenerPrestamo`). Aquí no se miraba y cualquiera pedía las cifras de
+  // cierre de cualquier préstamo del negocio.
+  if (!prestamo || (session.user.rol === 'cobrador' && !(session.user.rutaIds ?? []).includes(prestamo.cliente?.rutaId))) {
     return Response.json({ error: 'Préstamo no encontrado' }, { status: 404 })
   }
   if (prestamo.estado !== 'activo') {

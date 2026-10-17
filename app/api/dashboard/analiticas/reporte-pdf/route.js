@@ -209,7 +209,7 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
         id: true, estado: true, montoPrestado: true, ...CAMPOS_DEL_REPARTO, totalAPagar: true, totalPagado: true, abonadoCapital: true,
         cuotaDiaria: true, frecuencia: true, fechaInicio: true, fechaFin: true,
         diasPlazo: true, ultimoPagoAt: true, modoInteres: true, sinPlazo: true, tasaInteres: true,
-        proximoCobroManual: true,
+        proximoCobroManual: true, proximoCobroPorInteres: true,
         /* ⚠ Los dias sin cobro son del CLIENTE, no solo del negocio: ver la
            nota igual en /api/dashboard/analiticas. */
         diasSinCobro: true,
