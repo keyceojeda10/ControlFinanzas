@@ -42,10 +42,11 @@ export async function GET(request) {
 
   const { organizationId, rol, rutaIds = [] } = session.user
 
-  // Cobrador sin rutas asignadas no ve nada (previene fuga multi-tenant)
-  if (rol === 'cobrador' && rutaIds.length === 0) {
-    return Response.json(page != null ? { clientes: [], total: 0, page, totalPages: 0 } : [])
-  }
+  /* ⚠ Aquí había una salida: un cobrador SIN RUTAS recibía la lista vacía. Pero
+     el alta sí le deja crear clientes (quedan sin ruta, a su nombre), y luego no
+     los veía en ningún sitio: «Tu cartera está vacía» con sus clientes ahí
+     (17 oct 2026). El filtro de abajo ya cuida la fuga: `in: []` no devuelve
+     nada y la otra mitad son solo los que él creó, dentro de su negocio. */
 
   // Cobrador → clientes de sus rutas + clientes sin ruta que el cobrador creó.
   // Owner puede filtrar por ruta específica.
@@ -414,7 +415,9 @@ export async function GET(request) {
       telefono:         c.telefono,
       referencia:       c.referencia,
       fotoUrl:          c.fotoUrl ?? null,
-      estado:           calcularEstadoCliente(c.prestamos, diasExcluidos, festivos),
+      /* El inactivo se queda inactivo: `calcularEstadoCliente` solo sabe de
+         activo y mora, y lo pintaba «al día» (17 oct 2026). */
+      estado:           c.estado === 'inactivo' ? 'inactivo' : calcularEstadoCliente(c.prestamos, diasExcluidos, festivos),
       rutaId:           c.rutaId,
       rutaNombre:       c.ruta?.nombre ?? null,
       prestamosActivos: c.prestamos.length,
@@ -480,13 +483,14 @@ export async function GET(request) {
     /* Los conteos van EN LA MISMA PASADA y con la MISMA regla que el filtro de
        arriba. Si se cuentan por un lado y se filtran por otro, la pastilla dice
        «22» y la lista enseña 18 — que es de donde salen las preguntas. */
-    const conteos = { total: resultado.length, activo: 0, mora: 0, cancelado: 0,
+    const conteos = { total: resultado.length, activo: 0, mora: 0, cancelado: 0, inactivo: 0,
       meDeben: 0, yaPago: 0, sinPrestamo: 0 }
     for (const c of resultado) {
       const vivos = Number(c.prestamosActivos ?? 0)
       const todos = Number(c.prestamosTotales ?? 0)
       if (c.estado === 'mora') conteos.mora += 1
       if (c.estado === 'cancelado') conteos.cancelado += 1
+      if (c.estado === 'inactivo') conteos.inactivo += 1
       if (vivos > 0) {
         conteos.meDeben += 1
         if (c.estado !== 'mora') conteos.activo += 1

@@ -94,7 +94,9 @@ const ESTADOS_CLIENTE = [
      probarlo — está escrito tres líneas más abajo, en el sitio donde se pintan. */
   { value: 'nuevos',    label: 'De hoy', sinConteo: true },
   { value: 'clavo',     label: 'Con perdidos', color: 'var(--cf-red-dark)', sinConteo: true },
-  { value: 'cancelado', label: 'Cancelados' },
+  /* «Cancelados» siempre salía en 0: nadie queda en ese estado. Los que sí
+     existen son los INACTIVOS, y se pintaban «al día» (17 oct 2026). */
+  { value: 'inactivo', label: 'Inactivos' },
 ]
 
 const LIMIT = 50
@@ -323,8 +325,27 @@ export default function ClientesPage() {
   const [califFiltro, setCalifFiltro] = useState('')
   // Cartera vacia DE VERDAD, no "el filtro no devolvio nada": son dos
   // pantallas distintas. Una dice como empezar; la otra, como volver atras.
-  const carteraVacia = !loading && !error && clientes.length === 0 &&
-    !buscar && !estado && !rutaIdFiltro
+  /* ⚠ Con un filtro de «Más filtros» o de la URL sin resultados, salía «Tu
+     cartera está vacía» y se escondían el buscador y los filtros: no había cómo
+     quitarlo (17 oct 2026). Vacía es cuando la cartera ENTERA está en cero, y
+     eso lo dicen los conteos, que se piden sin filtros. */
+  // Declarado AQUÍ, antes de `carteraVacia`, que lo lee: más abajo sería un
+  // `const` usado antes de existir y la pantalla saldría en blanco.
+  const [conteos, setConteos] = useState(null)
+  const [filtroDeUrl, setFiltroDeUrl] = useState(false)
+  useEffect(() => {
+    try {
+      const q = new URLSearchParams(window.location.search)
+      setFiltroDeUrl(q.get('sinRuta') === '1' || q.get('sinTelefono') === '1')
+    } catch {}
+  }, [searchParams])
+  const hayFiltros = Boolean(buscar || estado || rutaIdFiltro || moraMin || pagaHoy || sinPrestamo || califFiltro || filtroDeUrl)
+  const carteraVacia = !loading && !error && clientes.length === 0 && !buscar && !rutaIdFiltro &&
+    (conteos ? conteos.total === 0 : !hayFiltros)
+  const quitarFiltros = () => {
+    setEstado(''); setMoraMin(''); setPagaHoy(false); setSinPrestamo(false); setCalifFiltro(''); setRutaIdFiltro('')
+    if (filtroDeUrl) router.replace('/clientes')
+  }
   const [rutas,        setRutas]       = useState([])
   // Si hay sitio para la tabla. En un efecto, no leyendo `matchMedia` al
   // pintar: eso hace que el servidor diga una cosa y el cliente otra y React
@@ -415,6 +436,7 @@ export default function ClientesPage() {
 
   const [isOffline, setIsOffline] = useState(false)
   const hasLoadedOnceRef = useRef(false)
+  const ultimoPedidoRef = useRef(0)
   const [refreshKey, setRefreshKey] = useState(0)
   const [hojaFiltros, setHojaFiltros] = useState(false)
   // Los grupos de la hoja. Van con el mismo contrato que en prestamos, para que
@@ -501,7 +523,6 @@ export default function ClientesPage() {
     const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
     setError('')
     setIsOffline(false)
-    const cacheKey = `clientes:${q || ''}:${p}:${rutaId || 'all'}`
 
     /* ── LA PETICIÓN SALE ANTES DE MIRAR EL TELÉFONO ───────────────────────
        Los parámetros se armaban DENTRO del `try`, después de `await
@@ -551,6 +572,14 @@ export default function ClientesPage() {
     if (calculados.calificacion) params.set('calificacion', calculados.calificacion)
     params.set('page', String(p))
     params.set('limit', String(LIMIT))
+    /* ⚠ LA CLAVE LLEVA LOS FILTROS. Sin ellos, «En mora» se guardaba encima de
+       «Todos» y sin conexión se veía la lista de otra pestaña (17 oct 2026).
+       Sin filtros la clave es la de siempre: otras pantallas la precargan. */
+    const filtrosClave = ['estado', 'nuevos', 'clavo', 'mora', 'pagaHoy', 'sinPrestamo', 'calificacion', 'sinRuta', 'sinTelefono']
+      .filter((k) => params.has(k)).map((k) => `${k}=${params.get(k)}`).join('&')
+    const cacheKey = `clientes:${q || ''}:${p}:${rutaId || 'all'}${filtrosClave ? `:${filtrosClave}` : ''}`
+    // La última petición manda: una que llega tarde no pisa a la nueva.
+    const pedido = ++ultimoPedidoRef.current
     const enCamino = navigator.onLine
       ? fetch(`/api/clientes?${params}`).then((r) => (r.ok ? r.json() : null)).catch(() => null)
       : null
@@ -598,6 +627,7 @@ export default function ClientesPage() {
       // `enCamino` ya llega resuelto a JSON, o a null si no hubo red o el
       // servidor respondió mal. Las dos cosas caen al mismo sitio de siempre.
       const data = await enCamino
+      if (pedido !== ultimoPedidoRef.current) return
       if (!data) throw new Error('offline')
       if (data.offline) throw new Error('offline')
       setClientes(data.clientes)
@@ -657,11 +687,15 @@ export default function ClientesPage() {
     return () => clearTimeout(t)
   }, [fetchClientes, buscar, page, rutaIdFiltro, refreshKey, estado, moraMin, pagaHoy, sinPrestamo, califFiltro])
 
-  // Refresh silencioso cuando hay nueva sincronización global.
+  /* Refresh silencioso cuando hay nueva sincronización global. ⚠ Por la MISMA
+     vía que la carga normal (`refreshKey`): llamando a `fetchClientes` a pelo
+     se pedía sin los filtros y la lista volvía a «Todos» con la pestaña de
+     «En mora» marcada; y como dependía de la búsqueda, se disparaba a cada
+     letra (17 oct 2026). */
   useEffect(() => {
     if (!lastSyncedAt) return
-    fetchClientes(buscar, page, rutaIdFiltro, { soft: true })
-  }, [lastSyncedAt, fetchClientes, buscar, page, rutaIdFiltro])
+    setRefreshKey((k) => k + 1)
+  }, [lastSyncedAt])
 
   const getApiError = async (res, fallback) => {
     try {
@@ -676,7 +710,6 @@ export default function ClientesPage() {
   // Se contaban sobre `clientes`, que son los 50 de la pagina. Ahora los da el
   // servidor con una pasada completa. Mientras no lleguen se enseñan sin
   // numero: un «· 0» que todavia no es cierto hace descartar el filtro.
-  const [conteos, setConteos] = useState(null)
   useEffect(() => {
     let vivo = true
     const p = new URLSearchParams({ soloConteos: '1' })
@@ -798,7 +831,7 @@ export default function ClientesPage() {
             <BuscadorLista
               valor={buscar}
               onCambiar={(e) => { setBuscar(e.target.value); setPage(1) }}
-              placeholder="Nombre o cédula"
+              placeholder="Nombre, cédula o teléfono"
             />
           </div>
           {/* ── POR QUÉ VUELVE A ESTAR AQUÍ, TAMBIÉN EN MÓVIL ──
@@ -1116,7 +1149,7 @@ export default function ClientesPage() {
           <Button
             size="sm"
             className="mt-4"
-            onClick={() => fetchClientes(buscar, page, rutaIdFiltro)}
+            onClick={() => setRefreshKey((k) => k + 1)}
           >
             Reintentar
           </Button>
@@ -1162,7 +1195,7 @@ export default function ClientesPage() {
       )}
 
       {/* El filtro dejó la lista en cero — la cartera sí tiene clientes. */}
-      {!loading && !error && clientes.length === 0 && (buscar || estado || rutaIdFiltro) && (
+      {!loading && !error && clientes.length === 0 && hayFiltros && !carteraVacia && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="mb-4">
             <MonedaCF pose="busca" size={100} />
@@ -1184,7 +1217,7 @@ export default function ClientesPage() {
               {/* DONDE SE BUSCO, dicho. Sin esto no se sabe si la cedula cuenta,
                   y se acaba probando la misma busqueda de cuatro formas. */}
               <p className="text-[13px] mt-1.5" style={{ color: 'var(--cf-ink-3)', maxWidth: '46ch' }}>
-                Buscamos «{buscar}» en nombre, cédula, teléfono y dirección
+                Buscamos «{buscar}» en nombre, cédula, teléfono, dirección y referencia
                 {total > 0 ? ` de tus ${total} clientes` : ''}.
               </p>
 
@@ -1219,17 +1252,22 @@ export default function ClientesPage() {
               )}
 
               <div className="w-full max-w-xl grid gap-3 mt-3 sm:grid-cols-2 text-left">
+                {/* Decía «esta búsqueda no mira los cancelados ni los
+                    inactivos», y era falso: busca en todos menos los
+                    eliminados. Lo que sí puede esconderlo es un filtro puesto. */}
+                {(estado || rutaIdFiltro || moraMin || pagaHoy || sinPrestamo || califFiltro || filtroDeUrl) && (
                 <div className="rounded-[14px] p-4" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
-                  <p className="text-[15px] font-bold" style={{ color: 'var(--cf-ink)', margin: 0 }}>Puede estar en otro estado</p>
+                  <p className="text-[15px] font-bold" style={{ color: 'var(--cf-ink)', margin: 0 }}>Puede estar filtrado</p>
                   <p className="text-[12.5px] mt-1.5 leading-relaxed" style={{ color: 'var(--cf-ink-2)' }}>
-                    Esta búsqueda no mira los cancelados ni los inactivos.
+                    Tienes un filtro puesto. Quítalo y buscamos en toda la cartera.
                   </p>
-                  <button type="button" onClick={() => setEstado('')}
+                  <button type="button" onClick={quitarFiltros}
                     className="mt-3 h-10 px-4 rounded-[11px] text-[13.5px] font-semibold"
                     style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)', color: 'var(--cf-ink)' }}>
-                    Buscar ahí también
+                    Quitar los filtros
                   </button>
                 </div>
+                )}
 
                 {puedeCrearClientes && (
                   <div className="rounded-[14px] p-4" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
@@ -1272,16 +1310,11 @@ export default function ClientesPage() {
 
       {/* Sticky bar: modo asignación activo (posicionada encima del BottomNav móvil) */}
 
-      {/* Paginación */}
-      {/* Con un chip de estado activo el paginador es mentira: filtra sobre la
-          pagina actual, asi que "Pagina 1 de 6" sugiere que hay mas morosos
-          adelante cuando en realidad cada pagina se filtra por separado. */}
-      {!loading && estado && totalPages > 1 && (
-        <p className="text-center text-[12px] mt-4 px-4" style={{ color: 'var(--cf-ink-3)' }}>
-          Mostrando los de esta página. Para ver toda la cartera en mora, usa la alerta del inicio.
-        </p>
-      )}
-      {!loading && !estado && totalPages > 1 && (
+      {/* Paginación. ⚠ Con una pestaña puesta se escondía («filtra sobre la
+          página actual»), pero el servidor ya filtra la cartera entera y luego
+          pagina: con más de 50 en mora, del 51 en adelante no se podía ver
+          (17 oct 2026). */}
+      {!loading && totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 mt-6">
           <button
             onClick={() => setPage(p => Math.max(1, p - 1))}
@@ -1320,7 +1353,7 @@ export default function ClientesPage() {
              cobraba y no veía comprobante ni podía mandarlo (reportado el 19 sep
              en Clientes; la lista de préstamos y el QR tenían lo mismo). Aquí
              solo se recarga; se cierra con `onClose`, al salir del recibo. */
-          onSuccess={() => fetchClientes(buscar, page, rutaIdFiltro, { soft: true })}
+          onSuccess={() => setRefreshKey((k) => k + 1)}
           cliente={cobroRapido.cliente}
           prestamo={cobroRapido.prestamo}
         />

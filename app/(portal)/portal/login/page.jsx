@@ -28,6 +28,7 @@ function Acceso() {
   const [pin, setPin] = useState([])
   const [error, setError] = useState('')
   const [entrando, setEntrando] = useState(false)
+  const [comoPedirPin, setComoPedirPin] = useState(false)
 
   const entrar = async () => {
     if (!identificador.trim() || !pinCompleto(pin)) {
@@ -68,7 +69,9 @@ function Acceso() {
       <div style={{ width: '100%', maxWidth: 430, minHeight: '100dvh', display: 'flex' }}>
         <PortalAcceso
           rotuloCedula="Documento o teléfono"
-          ayuda="Con tu documento y el PIN que te dio quien te prestó. No necesitas descargar nada ni crear una cuenta."
+          ayuda={comoPedirPin
+            ? 'El PIN te lo da quien te prestó: escríbele por WhatsApp o pídeselo en persona. Si lo olvidaste, él te pone uno nuevo desde tu ficha.'
+            : 'Con tu documento y el PIN que te dio quien te prestó. No necesitas descargar nada ni crear una cuenta.'}
           cedula={identificador}
           onCedula={setIdentificador}
           pin={pin}
@@ -78,7 +81,10 @@ function Acceso() {
           entrando={entrando}
           // No hay recuperación automática: el cliente no tiene cuenta ni correo.
           // Se le pide a quien presta, que es quien lo puso.
-          onPedirPin={() => router.push(`/portal/recuperar${orgId ? `?org=${orgId}` : ''}`)}
+          /* Llevaba a `/portal/recuperar`, que no existe (17 oct 2026). Y el
+             PIN no se puede recuperar: se guarda cifrado. Se dice a quién
+             pedírselo, aquí mismo. */
+          onPedirPin={() => setComoPedirPin(true)}
         />
       </div>
     </div>

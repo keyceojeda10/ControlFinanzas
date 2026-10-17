@@ -70,15 +70,17 @@ const COLOR_ESTADO = {
   // préstamo cerrado compite por la atención con uno al día que sí hay que
   // seguir cobrando.
   pagado: 'var(--cf-ink-4)',
+  // El inactivo, igual que el pagado: gris, sin alarma (17 oct 2026).
+  inactivo: 'var(--cf-ink-4)',
 }
 
 /* `Pastilla` solo conoce mora/atraso/aldia/neutro/destacado, así que los dos
    estados propios de T02-06 hay que traducirlos: `renovar` toma el verde de «al
    día», y `pagado` la neutra — no hay «color de terminado», hay ausencia de
    alarma. */
-const TONO_PASTILLA = { mora: 'mora', atraso: 'atraso', aldia: 'aldia', renovar: 'aldia', pagado: 'neutro' }
+const TONO_PASTILLA = { mora: 'mora', atraso: 'atraso', aldia: 'aldia', renovar: 'aldia', pagado: 'neutro', inactivo: 'neutro' }
 
-const TONO_BARRA = { mora: 'mal', atraso: 'oro', aldia: 'ok', renovar: 'ok', pagado: 'neutro' }
+const TONO_BARRA = { mora: 'mal', atraso: 'oro', aldia: 'ok', renovar: 'ok', pagado: 'neutro', inactivo: 'neutro' }
 
 /** Los seis números que cambian entre las dos láminas, juntos y con nombre. */
 const MEDIDAS = {

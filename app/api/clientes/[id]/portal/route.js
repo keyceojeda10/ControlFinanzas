@@ -57,8 +57,9 @@ export async function PATCH(request, { params }) {
 
   if (body.pin) {
     const pin = String(body.pin).trim()
-    if (pin.length < 4 || pin.length > 6) {
-      return Response.json({ error: 'El PIN debe tener entre 4 y 6 dígitos' }, { status: 400 })
+    // Exactamente 4: el portal solo deja entrar con 4 (17 oct 2026).
+    if (pin.length !== 4) {
+      return Response.json({ error: 'El PIN son 4 números' }, { status: 400 })
     }
     if (!/^\d+$/.test(pin)) {
       return Response.json({ error: 'El PIN solo puede contener números' }, { status: 400 })

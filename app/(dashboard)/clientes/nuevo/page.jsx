@@ -43,16 +43,36 @@ export default function NuevoClientePage() {
   // Estaba `router.replace('/clientes')`: pulsabas «cliente nuevo» y la app te
   // escupía de vuelta a la lista SIN UNA PALABRA. T35-03 existe para esto y
   // llevaba construida sin montar.
-  const [datosPlan, setDatosPlan] = useState(null)
+  /* ⚠ DOS COSAS DISTINTAS QUE AQUÍ SE MEZCLABAN (17 oct 2026):
+   *   · `puedeCrearClientes` es el PERMISO del cobrador, no el plan. Sin él se
+   *     enseñaba la pantalla de subir de plan —y como no llegaban los datos,
+   *     en realidad rebotaba a la lista sin decir nada—.
+   *   · El TOPE del plan no se miraba aquí: el dueño llenaba el formulario
+   *     entero y se enteraba al tocar «Crear cliente». Ahora se pregunta antes
+   *     (`/api/plan/uso`, el mismo tope que bloquea en el servidor). */
+  const [usoPlan, setUsoPlan] = useState(null)
   useEffect(() => {
-    if (loading || puedeCrearClientes) return
+    if (loading || !puedeCrearClientes) return
     let vivo = true
-    fetch('/api/pagos/estado')
+    fetch('/api/plan/uso')
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (vivo && d) setDatosPlan(d) })
+      .then((d) => { if (vivo && d) setUsoPlan(d) })
       .catch(() => {})
     return () => { vivo = false }
   }, [loading, puedeCrearClientes])
+  const enElTope = Boolean(usoPlan?.clientes && Number.isFinite(usoPlan.clientes.limite)
+    && usoPlan.clientes.usado >= usoPlan.clientes.limite)
+
+  /* «Crear «X»» desde el buscador de la lista manda `?nombre=X`. Nadie lo leía:
+     salía el selector de método y había que volver a escribirlo. Se lee de
+     `window.location` (sin `useSearchParams`, que pediría un Suspense). */
+  const [nombreInicial, setNombreInicial] = useState('')
+  useEffect(() => {
+    try {
+      const n = new URLSearchParams(window.location.search).get('nombre')
+      if (n && n.trim()) { setNombreInicial(n.trim()); setMetodo('manual') }
+    } catch {}
+  }, [])
 
   const handleFotoUpload = async (e) => {
     const archivos = Array.from(e.target.files ?? [])
@@ -103,28 +123,55 @@ export default function NuevoClientePage() {
     )
   }
 
-  // Enseña dónde estás, qué plan te sirve —solo por ENCIMA del tuyo— y una
-  // salida que NO es pagar. Se decide SOLO con los datos delante: mientras
-  // cargan, `info` sería null y redirigir ahí es el mismo exilio en silencio
-  // que este bloque vino a quitar.
+  // Un cobrador sin el permiso: se le dice, con a quién pedírselo.
   if (!loading && !puedeCrearClientes) {
-    if (!datosPlan) return null
+    return (
+      <div className="max-w-md mx-auto py-16 px-4 text-center flex flex-col items-center gap-3">
+        <p className="text-[18px] font-bold" style={{ color: 'var(--cf-ink)' }}>No tienes permiso para crear clientes</p>
+        <p className="text-[14px]" style={{ color: 'var(--cf-ink-2)' }}>
+          Pídele al administrador del negocio que te lo active en Cobradores.
+        </p>
+        <button type="button" onClick={() => router.push('/clientes')}
+          className="mt-2 h-11 px-5 rounded-[12px] text-[14px] font-semibold"
+          style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)', color: 'var(--cf-ink)' }}>
+          Volver a clientes
+        </button>
+      </div>
+    )
+  }
+
+  // El dueño en el tope de su plan: antes de llenar nada. Enseña qué plan le
+  // sirve —solo por encima del suyo— y una salida que no es pagar.
+  if (enElTope) {
     const info = adaptarPlanExcedido({
-      plan: datosPlan.plan,
-      clientes: datosPlan.clientesActivos ?? 0,
-      carteraPorCobrar: datosPlan.carteraPorCobrar ?? 0,
+      plan: usoPlan.plan,
+      clientes: usoPlan.clientes.usado,
+      carteraPorCobrar: 0,
       pais: session?.user?.country,
     }, (n) => formatMoney(n, session?.user?.country))
-    // Sin nada que recomendar —ya está en el plan más alto— no se inventa una
-    // pantalla de venta: ahí sí se vuelve a la lista.
-    if (!info) { router.replace('/clientes'); return null }
+    if (info) {
+      return (
+        <PlanExcedido
+          {...info}
+          onElegirPlan={() => router.push('/configuracion/plan')}
+          onSubir={() => router.push('/configuracion/plan')}
+          onSeguir={() => router.push('/clientes')}
+        />
+      )
+    }
+    // Ya está en el plan más alto: no hay qué venderle, pero sí qué decirle.
     return (
-      <PlanExcedido
-        {...info}
-        onElegirPlan={() => router.push('/configuracion/plan')}
-        onSubir={() => router.push('/configuracion/plan')}
-        onSeguir={() => router.push('/clientes')}
-      />
+      <div className="max-w-md mx-auto py-16 px-4 text-center flex flex-col items-center gap-3">
+        <p className="text-[18px] font-bold" style={{ color: 'var(--cf-ink)' }}>Llegaste al tope de clientes de tu plan</p>
+        <p className="text-[14px]" style={{ color: 'var(--cf-ink-2)' }}>
+          Tienes {usoPlan.clientes.usado} de {usoPlan.clientes.limite}. Escríbenos y te ampliamos el cupo.
+        </p>
+        <button type="button" onClick={() => router.push('/clientes')}
+          className="mt-2 h-11 px-5 rounded-[12px] text-[14px] font-semibold"
+          style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)', color: 'var(--cf-ink)' }}>
+          Volver a clientes
+        </button>
+      </div>
     )
   }
 
@@ -293,6 +340,7 @@ export default function NuevoClientePage() {
         puedeSubirFoto={planTieneFotos(session?.user?.plan)}
         datosIniciales={datosCartulina}
         esOwner={esOwner}
+        nombreInicial={nombreInicial}
       />
     </div>
   )

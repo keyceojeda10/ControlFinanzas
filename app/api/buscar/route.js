@@ -25,7 +25,13 @@ export async function GET(request) {
   // Cobrador: solo ve clientes de sus rutas
   // Sin el gate de longitud: un cobrador sin ruta asignada buscaba sobre toda
   // la organizacion. `in: []` no devuelve nada, que es lo correcto.
-  const filtroRuta = rol === 'cobrador' ? { rutaId: { in: rutaIds } } : {}
+  /* ⚠ LA MISMA REGLA QUE LA LISTA (`/api/clientes`): sus rutas Y los clientes
+     sin ruta que él mismo creó. Con solo las rutas, un cliente que el cobrador
+     cargó sin ruta salía en su lista y no en el buscador (17 oct 2026). En un
+     `AND` porque la búsqueda ya trae su propio `OR`. */
+  const filtroRuta = rol === 'cobrador'
+    ? { AND: [{ OR: [{ rutaId: { in: rutaIds } }, { rutaId: null, creadoPorId: session.user.id }] }] }
+    : {}
 
   const [clientes, prestamos, rutas] = await Promise.all([
     // Buscar clientes

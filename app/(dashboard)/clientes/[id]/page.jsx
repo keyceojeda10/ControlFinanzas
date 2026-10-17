@@ -40,15 +40,11 @@ import QueNecesitas from '@/components/acciones/QueNecesitas'
 
 const LocationPicker = dynamic(() => import('@/components/clientes/LocationPicker'), { ssr: false })
 
-const estadoBadge = {
-  activo:    { variant: 'green',  label: 'Al día'    },
-  mora:      { variant: 'red',    label: 'En mora'   },
-  cancelado: { variant: 'gray',   label: 'Cancelado' },
-  inactivo:  { variant: 'gray',   label: 'Inactivo'  },
-}
 
 const estadoPrestamoBadge = {
   activo:     { variant: 'blue',   label: 'Activo'     },
+  // Sin esta clave caían en «Activo» dentro del historial (17 oct 2026).
+  pendiente_aprobacion: { variant: 'gold', label: 'Por aprobar' },
   completado: { variant: 'green',  label: 'Completado' },
   cancelado:  { variant: 'gray',   label: 'Cancelado'  },
 }
@@ -457,7 +453,6 @@ export default function ClienteDetallePage({ params }) {
     )
   }
 
-  const badge = estadoBadge[cliente.estado] ?? estadoBadge.cancelado
   const prestamosActivos = cliente.prestamos?.filter((p) => p.estado === 'activo') ?? []
 
   /* EL NÚMERO DE CADA PRÉSTAMO CON ESTE CLIENTE.
@@ -548,7 +543,7 @@ export default function ClienteDetallePage({ params }) {
       sinonimos: ['prestar', 'nuevo prestamo', 'hacerle un credito', 'darle plata'],
       disponible: puedeCrearPrestamos,
       ejecutar: () => router.push(`/prestamos/nuevo?clienteId=${cliente?.id}`) },
-    { id: 'cli-wa', label: 'Escribirle por WhatsApp', pista: 'Recordatorio o recibo',
+    { id: 'cli-wa', label: 'Escribirle por WhatsApp', pista: 'Recordatorio de cobro',
       sinonimos: ['whatsapp', 'mandarle mensaje', 'recordarle', 'escribirle'],
       disponible: Boolean(cliente?.telefono),
       ejecutar: () => setModalWA(true) },
@@ -901,8 +896,11 @@ export default function ClienteDetallePage({ params }) {
           en la pantalla — salio como parrafo en la ficha del cliente. Es la
           trampa contraria a la de `return (`, donde las llaves sobran. */}
 
-      {/* Acciones rapidas como chips */}
-      {(puedeCrearPrestamos || puedeEditarClientes || esOwner) && (
+      {/* Acciones rapidas como chips. ⚠ SIEMPRE: cada chip ya mira su propio
+          permiso. Con la puerta de antes, un cobrador sin «crear préstamos» ni
+          «editar clientes» perdía también WhatsApp, Reagendar, Cómo llegar,
+          Historial y QR, que no piden ninguno (17 oct 2026). */}
+      {(
         <AccionesClienteChips
           acciones={[
             ...(puedeCrearPrestamos ? [{
@@ -1333,7 +1331,9 @@ function PortalClienteCard({ clienteId, organizationId, nombre }) {
   }, [clienteId])
 
   const guardarPin = async () => {
-    if (pinInput.length < 4) { setMsg('Mínimo 4 dígitos'); return }
+    /* Exactamente 4: el portal solo deja entrar con 4 (`PortalAcceso`). Con 5 o
+       6 se guardaba un PIN con el que el cliente nunca podía entrar (17 oct 2026). */
+    if (pinInput.length !== 4) { setMsg('El PIN son 4 números'); return }
     setSaving(true); setMsg('')
     try {
       const res = await fetch(`/api/clientes/${clienteId}/portal`, {
@@ -1415,15 +1415,15 @@ function PortalClienteCard({ clienteId, organizationId, nombre }) {
               <input
                 type="text"
                 inputMode="numeric"
-                maxLength={6}
-                placeholder="PIN (4-6 dígitos)"
+                maxLength={4}
+                placeholder="PIN de 4 números"
                 value={pinInput}
                 onChange={e => setPinInput(e.target.value.replace(/\D/g, ''))}
                 className="flex-1 h-9 px-3 rounded-[10px] bg-[var(--cf-surface)] border border-[var(--cf-border)] text-[var(--cf-ink)] text-[13px] font-mono tracking-widest text-center focus:outline-none focus:border-[var(--cf-gold)]"
               />
               <button
                 onClick={guardarPin}
-                disabled={saving || pinInput.length < 4}
+                disabled={saving || pinInput.length !== 4}
                 className="h-9 px-4 rounded-[10px] bg-[var(--cf-gold)] text-[var(--cf-gold-ink)] text-[12px] font-bold disabled:opacity-50"
               >
                 {saving ? '...' : 'Guardar'}
@@ -1466,7 +1466,7 @@ function PortalClienteCard({ clienteId, organizationId, nombre }) {
               <input
                 type="text"
                 inputMode="numeric"
-                maxLength={6}
+                maxLength={4}
                 placeholder="Nuevo PIN"
                 value={pinInput}
                 onChange={e => setPinInput(e.target.value.replace(/\D/g, ''))}
@@ -1474,7 +1474,7 @@ function PortalClienteCard({ clienteId, organizationId, nombre }) {
               />
               <button
                 onClick={guardarPin}
-                disabled={saving || pinInput.length < 4}
+                disabled={saving || pinInput.length !== 4}
                 className="h-9 px-4 rounded-[10px] bg-[var(--cf-gold)] text-[var(--cf-gold-ink)] text-[12px] font-bold disabled:opacity-50"
               >
                 {saving ? '...' : 'Guardar'}

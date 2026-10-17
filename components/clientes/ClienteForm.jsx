@@ -11,7 +11,7 @@ import { Input, Select }       from '@/components/ui/Input'
 import { Button }              from '@/components/ui/Button'
 import MoneyInput              from '@/components/ui/MoneyInput'
 import DiasSinCobroSelector    from '@/components/ui/DiasSinCobroSelector'
-import { guardarClientePendiente, encolarMutacion, invalidarCachePorPrefijo, obtenerRutasOffline, obtenerRutaOffline, leerDeCache } from '@/lib/offline'
+import { guardarClientePendiente, encolarMutacion, invalidarCachePorPrefijo, obtenerRutasOffline, obtenerRutaOffline } from '@/lib/offline'
 import { useCountry } from '@/hooks/useCountry'
 import ClienteCreado from '@/components/cf/ClienteCreado'
 
@@ -39,7 +39,7 @@ function Etiqueta({ texto, opcional = false }) {
   )
 }
 
-export default function ClienteForm({ clienteInicial = null, plan = 'basic', puedeSubirFoto = false, datosIniciales = null, esOwner = false }) {
+export default function ClienteForm({ clienteInicial = null, plan = 'basic', puedeSubirFoto = false, datosIniciales = null, esOwner = false, nombreInicial = '' }) {
   const router = useRouter()
   const { validatePhone, validateDocument, documentConfig, phoneConfig, country } = useCountry()
   const esEdicion = !!clienteInicial
@@ -52,7 +52,8 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
   const [sinCedula, setSinCedula] = useState(cedulaExistente.startsWith('SIN-'))
 
   const [form, setForm] = useState({
-    nombre:     clienteInicial?.nombre     ?? datosIniciales?.nombre     ?? '',
+    // `nombreInicial`: el que se escribió en el buscador («Crear «X»»).
+    nombre:     clienteInicial?.nombre     ?? datosIniciales?.nombre     ?? nombreInicial ?? '',
     cedula:     sinCedula ? '' : cedulaExistente,
     telefono:   clienteInicial?.telefono   ?? datosIniciales?.telefono   ?? '',
     direccion:  clienteInicial?.direccion  ?? datosIniciales?.direccion  ?? '',
@@ -65,7 +66,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
   })
   const [errores, setErrores]   = useState({})
   const [rutas,   setRutas]     = useState([])
-  const [grupos,  setGrupos]    = useState([])
+  const [rutasEstado, setRutasEstado] = useState('cargando') // cargando | ok | error
   const [loading, setLoading]   = useState(false)
   const [error,   setError]     = useState('')
   const [scoreData, setScoreData] = useState(null)
@@ -117,15 +118,23 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
     return () => clearTimeout(timer)
   }, [form.cedula, habilitadoScore])
 
+  /* ⚠ «TODAVÍA NO TIENES RUTAS» SALÍA MIENTRAS CARGABAN (y `/api/rutas` es
+     pesado), o si la petición fallaba: con rutas de verdad (agente de los
+     tutoriales, 17 oct 2026). Ahora se sabe si está cargando, si cargó o si
+     falló, y el aviso de «no tienes» solo sale con la respuesta en la mano.
+     Y ya no se corta por plan: Inicial y Básico traen 1 ruta (`lib/planes.js`). */
   useEffect(() => {
-    if (['starter', 'basic'].includes(plan)) return
+    setRutasEstado('cargando')
     fetch('/api/rutas')
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) setRutas(data)
-        else return obtenerRutasOffline().then(cached => { if (cached.length) setRutas(cached) })
+        if (Array.isArray(data) && data.length > 0) { setRutas(data); setRutasEstado('ok'); return }
+        if (Array.isArray(data)) { setRutasEstado('ok'); return }
+        return Promise.reject(new Error('forma'))
       })
-      .catch(() => obtenerRutasOffline().then(cached => setRutas(cached)))
+      .catch(() => obtenerRutasOffline()
+        .then((cached) => { if (cached?.length) { setRutas(cached); setRutasEstado('ok') } else setRutasEstado('error') })
+        .catch(() => setRutasEstado('error')))
   }, [plan])
 
   useEffect(() => {
@@ -147,16 +156,6 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
   // `vueltaOrden`: al cargar otro cliente seguido, la lista de la ruta tiene que
   // traer al que se acaba de crear, o «después de…» elige sobre una lista vieja.
   }, [form.rutaId, vueltaOrden])
-
-  useEffect(() => {
-    fetch('/api/grupos')
-      .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) setGrupos(data)
-        else return leerDeCache('sync:grupos').then(cached => { if (cached?.length) setGrupos(cached) })
-      })
-      .catch(() => leerDeCache('sync:grupos').then(cached => setGrupos(cached || [])))
-  }, [])
 
   const handleFotoSelect = (e) => {
     const file = e.target.files?.[0]
@@ -406,7 +405,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
   // Los planes de entrada no traen rutas: ahí el mensaje es otro —no es que no
   // tengas, es que no vienen— y ofrecer «crear una ruta» sería mandar a una
   // pantalla que va a decir que no.
-  const planSinRutas = ['starter', 'basic'].includes(plan)
+  const planSinRutas = false
 
   return (
     /* En escritorio la caja se ensancha y el formulario descansa sobre una
@@ -731,6 +730,15 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                   Las rutas vienen con los planes de más arriba. Puedes crear el
                   cliente igual: se le asigna ruta después, sin volver a teclear
                   nada.
+                </p>
+              </div>
+            ) : rutasEstado === 'cargando' && rutas.length === 0 ? (
+              <p className="text-[13px]" style={{ color: 'var(--cf-ink-3)' }}>Cargando tus rutas…</p>
+            ) : rutasEstado === 'error' && rutas.length === 0 ? (
+              <div className="rounded-[14px] px-4 py-3.5" style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}>
+                <p className="text-[13px] leading-relaxed" style={{ color: 'var(--cf-ink-2)' }}>
+                  No pudimos cargar tus rutas. Crea el cliente sin ruta y se la asignas
+                  después desde su ficha: no se pierde nada.
                 </p>
               </div>
             ) : rutas.length === 0 ? (

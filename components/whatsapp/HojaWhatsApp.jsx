@@ -390,7 +390,9 @@ export default function HojaWhatsApp({
           onTextoEditable={setTextoEditado}
           copiado={copiado}
           onCopiar={() => {
-            const t = textoEditado ?? textoConSecciones
+            // El mismo respaldo que `textoEditable` de arriba: sin él, «Copiar»
+            // no hacía nada en las 7 plantillas sin secciones (17 oct 2026).
+            const t = textoEditado ?? textoConSecciones ?? textoDePlantilla
             if (!t) return
             navigator.clipboard?.writeText(t).then(() => {
               setCopiado(true)

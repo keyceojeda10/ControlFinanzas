@@ -114,7 +114,13 @@ describe('GET /api/buscar', () => {
     await GET(makeRequest('test'))
 
     const clienteCall = mockClienteFindMany.mock.calls[0][0]
-    expect(clienteCall.where.rutaId).toEqual({ in: ['ruta-1', 'ruta-2'] })
+    // Desde el 17 oct 2026: sus rutas Y los clientes sin ruta que él creó (la
+    // misma regla que la lista), dentro de su negocio.
+    expect(clienteCall.where.organizationId).toBe('org-1')
+    expect(clienteCall.where.AND[0].OR).toEqual([
+      { rutaId: { in: ['ruta-1', 'ruta-2'] } },
+      { rutaId: null, creadoPorId: 'user-2' },
+    ])
   })
 
   // Este test antes afirmaba lo contrario ("no filtra por ruta") y por eso el
@@ -128,6 +134,12 @@ describe('GET /api/buscar', () => {
     await GET(makeRequest('test'))
 
     const clienteCall = mockClienteFindMany.mock.calls[0][0]
-    expect(clienteCall.where.rutaId).toEqual({ in: [] })
+    // Sin rutas: ninguno de rutas (`in: []`) y solo los que él mismo creó sin
+    // ruta. Nunca toda la organización.
+    expect(clienteCall.where.organizationId).toBe('org-1')
+    expect(clienteCall.where.AND[0].OR).toEqual([
+      { rutaId: { in: [] } },
+      { rutaId: null, creadoPorId: 'user-2' },
+    ])
   })
 })

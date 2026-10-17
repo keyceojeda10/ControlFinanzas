@@ -725,8 +725,8 @@ export default function RutasPage() {
             resumen={resumenDelDia(rutas, country)}
             acciones={accionesRutas}
             onAbrir={(r) => { window.location.href = `/rutas/${r.id}` }}
-            onAsignar={(r) => { window.location.href = r?.id ? `/rutas/${r.id}` : '/clientes?filtro=sinruta' }}
-            onVerSinRuta={() => { window.location.href = '/clientes?filtro=sinruta' }}
+            onAsignar={(r) => { window.location.href = r?.id ? `/rutas/${r.id}` : '/clientes?sinRuta=1' }}
+            onVerSinRuta={() => { window.location.href = '/clientes?sinRuta=1' }}
           />
         </div>
       )}
@@ -767,7 +767,7 @@ export default function RutasPage() {
               // Dos agujeros distintos: la ruta SIN COBRADOR se resuelve
               // asignandole uno en su detalle; el cliente SIN RUTA, filtrando la
               // lista de clientes. Antes los dos iban al mismo sitio.
-              window.location.href = r?.id ? `/rutas/${r.id}` : '/clientes?filtro=sinruta'
+              window.location.href = r?.id ? `/rutas/${r.id}` : '/clientes?sinRuta=1'
             }}
             onSalirACobrar={() => { window.location.href = '/cobros-hoy' }}
           />
