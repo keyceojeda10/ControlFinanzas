@@ -74,6 +74,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
   const [clientesRuta, setClientesRuta] = useState([])
   const [loadingClientesRuta, setLoadingClientesRuta] = useState(false)
   const [clienteCreado, setClienteCreado] = useState(null)
+  const [vueltaOrden, setVueltaOrden] = useState(0)
 
   // Cuando llegan datos de cartulina despues del montaje, pre-llenar los campos
   useEffect(() => {
@@ -143,7 +144,9 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       }).catch(() => setClientesRuta([])))
       .finally(() => setLoadingClientesRuta(false))
     setPosicionEnRuta('final')
-  }, [form.rutaId])
+  // `vueltaOrden`: al cargar otro cliente seguido, la lista de la ruta tiene que
+  // traer al que se acaba de crear, o «después de…» elige sobre una lista vieja.
+  }, [form.rutaId, vueltaOrden])
 
   useEffect(() => {
     fetch('/api/grupos')
@@ -284,7 +287,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
     if (esEdicion && typeof navigator !== 'undefined' && !navigator.onLine) {
       try {
         await encolarMutacion({ tipo: 'cliente.update', entityId: clienteInicial.id, payload })
-        try { sessionStorage.setItem('cf-toast', 'Cambios guardados. Se sincronizaran al volver online.') } catch {}
+        try { sessionStorage.setItem('cf-toast', 'Cambios guardados. Se sincronizarán al volver online.') } catch {}
         router.push(`/clientes/${clienteInicial.id}`)
         return
       } catch (err) {
@@ -323,7 +326,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       }
       if (res.status === 503 && esEdicion && !navigator.onLine) {
         await encolarMutacion({ tipo: 'cliente.update', entityId: clienteInicial.id, payload })
-        try { sessionStorage.setItem('cf-toast', 'Cambios guardados. Se sincronizaran al volver online.') } catch {}
+        try { sessionStorage.setItem('cf-toast', 'Cambios guardados. Se sincronizarán al volver online.') } catch {}
         router.push(`/clientes/${clienteInicial.id}`)
         return
       }
@@ -348,12 +351,17 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
           datosPrestamo.yaAbonado = datosIniciales.montoPagadoHasta || 0
           datosPrestamo.esEnCurso = true
         }
+        /* ⚠ SALTABA SIEMPRE a `/prestamos/nuevo`, SIN `fromCartulina` NI EL
+           CLIENTE: la pantalla del préstamo solo lee lo guardado si viene
+           `fromCartulina`, así que lo que la foto leyó del préstamo se perdía
+           siempre, y aunque la foto no trajera préstamo se saltaba la tarjeta
+           de «Cliente creado» (agente de los tutoriales, 17 oct 2026). */
         if (Object.keys(datosPrestamo).length > 0) {
           datosPrestamo.clienteId = data.id
           try { sessionStorage.setItem('cf-cartulina-prestamo', JSON.stringify(datosPrestamo)) } catch {}
+          router.push(`/prestamos/nuevo?clienteId=${data.id}&fromCartulina=1`)
+          return
         }
-        router.push(`/prestamos/nuevo`)
-        return
       }
 
       if (esEdicion) {
@@ -383,7 +391,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       if (esEdicion && !navigator.onLine) {
         try {
           await encolarMutacion({ tipo: 'cliente.update', entityId: clienteInicial.id, payload })
-          try { sessionStorage.setItem('cf-toast', 'Cambios guardados. Se sincronizaran al volver online.') } catch {}
+          try { sessionStorage.setItem('cf-toast', 'Cambios guardados. Se sincronizarán al volver online.') } catch {}
           router.push(`/clientes/${clienteInicial.id}`)
           return
         } catch (err) { setError(err?.soloLectura ? err.message : 'Error de conexión. Intenta de nuevo.'); return }
@@ -870,6 +878,15 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                   }))
                   setErrores({})
                   setSinCedula(false)
+                  /* ⚠ LO QUE ERA DEL CLIENTE ANTERIOR TAMBIÉN SE VA: su foto se
+                     subía al siguiente y sus días sin cobro le cambiaban el
+                     calendario (agente de los tutoriales, 17 oct 2026). La ruta
+                     se queda: suele ser la misma; su lista se vuelve a pedir. */
+                  setFotoFile(null)
+                  setFotoPreview(null)
+                  setDiasSinCobro([])
+                  setPosicionEnRuta('final')
+                  setVueltaOrden((n) => n + 1)
                   setPaso(0)
                   setClienteCreado(null)
                   window.scrollTo({ top: 0 })

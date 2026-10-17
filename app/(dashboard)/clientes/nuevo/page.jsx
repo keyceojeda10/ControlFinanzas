@@ -273,6 +273,21 @@ export default function NuevoClientePage() {
         </button>
       </div>
 
+      {/* ⚠ LOS AVISOS DE LA FOTO SE VEN AQUÍ, encima de lo leído. Solo se
+          pintaban en el selector, y una lectura buena cambia de pantalla: «dos
+          préstamos en la cartulina», «los montos no cuadran» y las fotos que no
+          se pudieron leer se perdían siempre (agente de los tutoriales, 17 oct
+          2026). Son cosas que hay que revisar ANTES de guardar. */}
+      {metodo === 'foto' && ocrAdvertencias.length > 0 && (
+        <div role="status" className="mb-4 rounded-[12px] px-4 py-3 flex flex-col gap-1"
+          style={{ background: 'var(--cf-gold-tint)', border: '1px solid var(--cf-gold-border)' }}>
+          <p className="text-[13px] font-bold" style={{ color: 'var(--cf-gold-text)' }}>Revisa esto antes de guardar</p>
+          {ocrAdvertencias.map((a, i) => (
+            <p key={i} className="text-[13px]" style={{ color: 'var(--cf-gold-text)' }}>{a}</p>
+          ))}
+        </div>
+      )}
+
       <ClienteForm
         plan={session?.user?.plan ?? 'starter'}
         puedeSubirFoto={planTieneFotos(session?.user?.plan)}

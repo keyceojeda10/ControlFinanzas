@@ -655,6 +655,18 @@ export async function POST(request) {
     return Response.json({ error: e.message }, { status: 400 })
   }
 
+  /* ⚠ EL TOPE DE PRÉSTAMO NO SE GUARDABA AL CREAR: el formulario lo manda y
+     aquí ni se leía (solo la edición lo guardaba). El dueño lo escribía y Lucas
+     y el aviso de tope seguían sin cifra (agente de los tutoriales, 17 oct
+     2026). Solo el dueño lo pone, igual que en la edición; de un cobrador se
+     ignora (su formulario no lo muestra). */
+  const topeCrudo = body.montoMaximoPrestamo
+  const topeVal = session.user.rol === 'owner' && topeCrudo !== undefined && topeCrudo !== null && topeCrudo !== ''
+    ? Number(topeCrudo) : undefined
+  if (topeVal !== undefined && (!Number.isFinite(topeVal) || topeVal < 0)) {
+    return Response.json({ error: 'El tope de prestamo no puede ser negativo' }, { status: 400 })
+  }
+
   // Validaciones básicas
   // ── SOLO EL NOMBRE (T07-03) ──
   // Exigia los tres. La carga masiva desde Excel ya aceptaba clientes sin
@@ -681,27 +693,13 @@ export async function POST(request) {
     where: { organizationId_cedula: { organizationId, cedula: cedula.trim() } },
     select: { id: true, estado: true },
   }) : null
-  if (existe) {
-    // Si el cliente fue eliminado (soft-delete), reactivarlo con los datos nuevos
-    if (existe.estado === 'eliminado') {
-      const reactivado = await prisma.cliente.update({
-        where: { id: existe.id },
-        data: {
-          nombre:     nombre.trim(),
-          telefono:   telefono.trim(),
-          direccion:  direccion?.trim()  || null,
-          referencia: referencia?.trim()  || null,
-          notas:      notas?.trim()      || null,
-          fotoUrl:    fotoUrl?.trim() && /^https?:\/\/.+/i.test(fotoUrl.trim()) ? fotoUrl.trim() : null,
-          rutaId:     rutaId || null,
-          estado:     'activo',
-          eliminadoEn: null,
-        },
-      })
-      logActividad({ session, accion: 'reactivar_cliente', entidadTipo: 'cliente', entidadId: reactivado.id, detalle: `Cliente reactivado ${nombre.trim()} (${cedula.trim()})`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
-      trackEvent({ organizationId, userId: session.user.id, evento: 'reactivar_cliente' })
-      return Response.json(reactivado, { status: 201 })
-    }
+  /* ⚠ UN CLIENTE ELIMINADO CON ESA CÉDULA SE REACTIVA, pero DESPUÉS de validar
+     la ruta y con los mismos datos que un cliente nuevo. Antes se reactivaba
+     aquí arriba: un cobrador podía meterlo en una ruta que no era suya, y se
+     perdían el tope, los días sin cobro, el punto del mapa, la posición en la
+     ruta y la foto que ya tenía (agente de los tutoriales, 17 oct 2026). */
+  const reactivar = existe?.estado === 'eliminado' ? existe : null
+  if (existe && !reactivar) {
     // Devolver existingId permite al sync offline mapear su tempId al cliente
     // que ya existía (p.ej. el mismo cobrador creó el cliente desde otra sesión).
     return Response.json(
@@ -797,22 +795,44 @@ export async function POST(request) {
     ordenRutaFinal = (maxOrden._max.ordenRuta ?? -1) + 1
   }
 
+  const fotoValida = fotoUrl?.trim() && /^https?:\/\/.+/i.test(fotoUrl.trim()) ? fotoUrl.trim() : null
+  const datosCliente = {
+    nombre:     nombre.trim(),
+    telefono:   (telefono ?? '').trim(),
+    direccion:  direccion?.trim()  || null,
+    referencia: referencia?.trim()  || null,
+    notas:      notas?.trim()      || null,
+    rutaId:     rutaFinal,
+    latitud:    lat,
+    longitud:   lng,
+    ...(diasSinCobroVal !== undefined && { diasSinCobro: diasSinCobroVal }),
+    ...(ordenRutaFinal != null && { ordenRuta: ordenRutaFinal }),
+    ...(topeVal !== undefined && { montoMaximoPrestamo: topeVal > 0 ? topeVal : null }),
+  }
+
+  if (reactivar) {
+    const reactivado = await prisma.cliente.update({
+      where: { id: reactivar.id },
+      data: {
+        ...datosCliente,
+        // La foto que ya tenía se queda si no mandan otra.
+        ...(fotoValida && { fotoUrl: fotoValida }),
+        estado:     'activo',
+        eliminadoEn: null,
+      },
+    })
+    logActividad({ session, accion: 'reactivar_cliente', entidadTipo: 'cliente', entidadId: reactivado.id, detalle: `Cliente reactivado ${nombre.trim()} (${cedula.trim()})`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
+    trackEvent({ organizationId, userId: session.user.id, evento: 'reactivar_cliente' })
+    return Response.json(reactivado, { status: 201 })
+  }
+
   const cliente = await prisma.cliente.create({
     data: {
       organizationId,
-      nombre:     nombre.trim(),
       cedula:     cedula.trim(),
-      telefono:   telefono.trim(),
-      direccion:  direccion?.trim()  || null,
-      referencia: referencia?.trim()  || null,
-      notas:      notas?.trim()      || null,
-      fotoUrl:    fotoUrl?.trim() && /^https?:\/\/.+/i.test(fotoUrl.trim()) ? fotoUrl.trim() : null,
-      rutaId:     rutaFinal,
-      latitud:    lat,
-      longitud:   lng,
+      fotoUrl:    fotoValida,
       creadoPorId: session.user.id,
-      ...(diasSinCobroVal !== undefined && { diasSinCobro: diasSinCobroVal }),
-      ...(ordenRutaFinal != null && { ordenRuta: ordenRutaFinal }),
+      ...datosCliente,
     },
   })
 

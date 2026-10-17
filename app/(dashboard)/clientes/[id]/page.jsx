@@ -90,13 +90,22 @@ export default function ClienteDetallePage({ params }) {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showConfirmDelete, setShowConfirmDelete] = useState(false)
   const [deleteData, setDeleteData] = useState(null)
+  /* ⚠ DE DÓNDE VINO EL CUADRO DE «TIENE PRÉSTAMOS». «Inactivar» y «Eliminar» abren
+     el mismo cuadro, y al quedarse sin préstamos reintentaba SIEMPRE eliminar:
+     quien solo quería inactivar perdía al cliente (agente de los tutoriales,
+     17 oct 2026). Ahora el cuadro sabe qué se pidió y repite eso. */
+  const [motivoBloqueo, setMotivoBloqueo] = useState('eliminar')
   const [actionLoading, setActionLoading] = useState(false)
   const [modalWA, setModalWA] = useState(false)
   const [modalReagendar, setModalReagendar] = useState(false)
+  /* «No pagó · Siguiente» abre Reagendar y, al guardarlo, pasa al siguiente. */
+  const [noPagoEnRuta, setNoPagoEnRuta] = useState(false)
+  const [avisoVisita, setAvisoVisita] = useState('')
   const [modalQR, setModalQR] = useState(false)
   const [modalCalificar, setModalCalificar] = useState(false)
   const [rutaNav, setRutaNav]   = useState(null)
   const [festivoHoy, setFestivoHoy] = useState(null)
+  const [confirmarFestivo, setConfirmarFestivo] = useState(false)
   const [guardandoFestivo, setGuardandoFestivo] = useState(false)
   const [confirmGPS, setConfirmGPS] = useState(null)
   const [confirmDeletePrestamo, setConfirmDeletePrestamo] = useState(null)
@@ -237,6 +246,7 @@ export default function ClienteDetallePage({ params }) {
       const res = await fetch(`/api/clientes/${id}`, { method: 'DELETE' })
       const data = await res.json()
       if (data.error === 'tiene_prestamos') {
+        setMotivoBloqueo('eliminar')
         setDeleteData(data.prestamos)
         setShowDeleteModal(true)
         return
@@ -285,6 +295,7 @@ export default function ClienteDetallePage({ params }) {
         // Mismo flujo que el borrado: si tiene préstamos activos, mostrar el modal
         // para eliminarlos/trasladarlos (eliminar devuelve el capital al saldo).
         if (d.error === 'tiene_prestamos') {
+          setMotivoBloqueo('inactivar')
           setDeleteData(d.prestamos)
           setShowDeleteModal(true)
           return
@@ -292,6 +303,7 @@ export default function ClienteDetallePage({ params }) {
         alert(d.error || 'Error'); return
       }
       const updated = await res.json()
+      setShowDeleteModal(false); setDeleteData(null)
       setCliente(prev => ({ ...prev, estado: updated.estado }))
     } catch { alert('Error de conexión') }
     finally { setActionLoading(false) }
@@ -470,6 +482,12 @@ export default function ClienteDetallePage({ params }) {
     return (id) => orden.indexOf(id) + 1
   })()
   const historial        = cliente.prestamos?.filter((p) => p.estado !== 'activo')  ?? []
+  /* ⚠ EL PRÉSTAMO «PRINCIPAL» ES EL MÁS ANTIGUO, el #1 que se ve arriba. El API
+     los manda del más nuevo al más viejo, y WhatsApp, Reagendar y Lucas tomaban
+     `prestamosActivos[0]`: el mensaje citaba el saldo y la mora del préstamo más
+     nuevo (el de menos atraso) mientras la pantalla enseñaba otro (17 oct 2026). */
+  const prestamosEnOrden = [...prestamosActivos].sort((a, b) => numeroDelPrestamo(a.id) - numeroDelPrestamo(b.id))
+  const prestamoPrincipal = prestamosEnOrden[0] || null
 
   const getRutaCobroUrl = (clienteRuta) => {
     const prestamosIds = Array.isArray(clienteRuta?.prestamosActivosIds)
@@ -506,7 +524,11 @@ export default function ClienteDetallePage({ params }) {
   }
 
   const irSiguienteEnRuta = () => navegarEnRuta(1)
-  const noPagoSiguiente = () => navegarEnRuta(1)
+  /* ⚠ «No pagó · Siguiente» hacía lo mismo que «Siguiente»: no quedaba rastro
+     del no-pago (agente de los tutoriales, 17 oct 2026). La ruta sí lo anota
+     (`registrarNoPago`, como `VisitaReagendada`). Aquí se pide el motivo y la
+     fecha con el mismo cuadro de Reagendar y, al guardarlo, se pasa al siguiente. */
+  const noPagoSiguiente = () => { setNoPagoEnRuta(true); setModalReagendar(true) }
 
   const esUltimoEnRuta = rutaNav && rutaNav.currentIndex >= rutaNav.clientes.length - 1
   const esPrimeroEnRuta = rutaNav && rutaNav.currentIndex <= 0
@@ -687,12 +709,14 @@ export default function ClienteDetallePage({ params }) {
           el botón para prestarlo. Con mora o con varios préstamos abiertos no
           ofrece nada: avisa. */}
       <LucasSugiere
-        sugerencia={generarTipCliente(cliente, prestamosActivos, {
+        sugerencia={generarTipCliente(cliente, prestamosEnOrden, {
           completados: historial.filter((p) => p.estado === 'completado').length,
           incumplidos: historial.filter((p) => p.estado === 'cancelado').length,
         })}
-        onPrestar={(monto) => router.push(`/prestamos/nuevo?clienteId=${id}&monto=${monto}`)}
-        onOtroMonto={() => router.push(`/prestamos/nuevo?clienteId=${id}`)}
+        /* Sin permiso de crear préstamos no hay botón: tocarlo rebotaba en
+           silencio a /prestamos. Sin `onPrestar` la oferta queda como aviso. */
+        onPrestar={puedeCrearPrestamos ? (monto) => router.push(`/prestamos/nuevo?clienteId=${id}&monto=${monto}`) : undefined}
+        onOtroMonto={puedeCrearPrestamos ? () => router.push(`/prestamos/nuevo?clienteId=${id}`) : undefined}
         /* Deja cerrar el aviso cuando NO es una oferta. Por cliente, para que
            cerrar el de uno no calle el de los demás. */
         claveCierre={id}
@@ -753,7 +777,7 @@ export default function ClienteDetallePage({ params }) {
                  es el más antiguo y el que más tiempo de deuda tiene» (6 oct
                  2026). El API los manda al revés; se ordena SOLO aquí, para no
                  mover lo que lee el primero de la lista (la tarjeta de arriba). */
-              const enOrden = [...prestamosActivos].sort((a, b) => numeroDelPrestamo(a.id) - numeroDelPrestamo(b.id))
+              const enOrden = prestamosEnOrden
               const adaptados = adaptarPrestamos(enOrden, country)
               // El número sale con la MISMA regla que las plantillas de WhatsApp y el
               // comprobante (lib/prestamos/referencia.js): si tiene más de un crédito
@@ -978,11 +1002,24 @@ export default function ClienteDetallePage({ params }) {
         />
       )}
 
+      <ConfirmModal
+        open={confirmarFestivo}
+        title="¿Hoy es festivo para todo el negocio?"
+        message="Hoy deja de ser día de cobro para TODOS los clientes del negocio, no solo para este: nadie se atrasa por hoy. Lo puedes quitar con el mismo botón."
+        confirmLabel="Sí, hoy es festivo"
+        confirmColor="blue"
+        loading={guardandoFestivo}
+        onCancel={() => setConfirmarFestivo(false)}
+        onConfirm={async () => { await marcarFestivoHoy(); setConfirmarFestivo(false) }}
+      />
       {/* Festivo hoy (solo owner) */}
       {esOwner && (
         <button
           id="cf-festivo-hoy"
-          onClick={festivoHoy ? quitarFestivoHoy : marcarFestivoHoy}
+          /* ⚠ MARCA FESTIVO PARA TODO EL NEGOCIO, no para este cliente (el
+             modelo `Festivo` es por negocio y fecha). Con un toque, sin avisar,
+             cambiaba lo que se cobra a toda la cartera ese día. Ahora pregunta. */
+          onClick={festivoHoy ? quitarFestivoHoy : () => setConfirmarFestivo(true)}
           disabled={guardandoFestivo}
           className={[
             'flex items-center gap-1.5 h-8 rounded-[12px] border text-xs px-2.5 transition-all disabled:opacity-50',
@@ -1141,7 +1178,8 @@ export default function ClienteDetallePage({ params }) {
           onClose={() => { setShowDeleteModal(false); setDeleteData(null) }}
           onDeletePrestamo={handleDeletePrestamo}
           onTrasladar={handleTrasladar}
-          onRetryDelete={handleDelete}
+          motivo={motivoBloqueo}
+          onRetryDelete={motivoBloqueo === 'inactivar' ? handleToggleInactivo : handleDelete}
           loading={actionLoading}
           clienteId={id}
         />
@@ -1152,7 +1190,7 @@ export default function ClienteDetallePage({ params }) {
         open={modalWA}
         onClose={() => setModalWA(false)}
         cliente={cliente}
-        prestamo={prestamosActivos[0] || null}
+        prestamo={prestamoPrincipal}
         orgNombre={orgNombre}
         ocultarSaldo={ocultarSaldoWA}
         organizationId={organizationId}
@@ -1161,12 +1199,24 @@ export default function ClienteDetallePage({ params }) {
       {/* Modal reagendar visita */}
       <ReagendarVisitaModal
         open={modalReagendar}
-        onClose={() => setModalReagendar(false)}
+        onClose={() => { setModalReagendar(false); setNoPagoEnRuta(false) }}
         clienteId={cliente.id}
         clienteNombre={cliente.nombre}
-        prestamoId={prestamosActivos[0]?.id || null}
+        prestamoId={prestamoPrincipal?.id || null}
         rutaId={cliente.rutaId || null}
+        /* Se cerraba sin decir nada y no se sabía si había quedado. */
+        onSuccess={() => {
+          if (noPagoEnRuta) { setNoPagoEnRuta(false); navegarEnRuta(1); return }
+          setAvisoVisita('Visita anotada. Le volverás a cobrar en la fecha que elegiste.')
+          setTimeout(() => setAvisoVisita(''), 4000)
+        }}
       />
+      {avisoVisita && (
+        <div role="status" className="fixed left-1/2 -translate-x-1/2 z-[9999] px-4 py-3 rounded-[12px] text-sm font-semibold"
+          style={{ bottom: 'calc(var(--cf-hueco-pie, 0px) + 96px)', background: 'var(--cf-ink)', color: 'var(--cf-surface)', maxWidth: 'calc(100vw - 32px)' }}>
+          {avisoVisita}
+        </div>
+      )}
 
       <QrClienteModal
         open={modalQR}
@@ -1442,7 +1492,8 @@ function PortalClienteCard({ clienteId, organizationId, nombre }) {
 }
 
 // ─── Modal: eliminar cliente con préstamos ───────────────────────
-function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onTrasladar, onRetryDelete, loading, clienteId }) {
+function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onTrasladar, onRetryDelete, loading, clienteId, motivo = 'eliminar' }) {
+  const verbo = motivo === 'inactivar' ? 'inactivar' : 'eliminar'
   const [trasladarId, setTrasladarId] = useState(null) // prestamoId que se va a trasladar
   const [clientes, setClientes] = useState([])
   const [buscar, setBuscar] = useState('')
@@ -1463,7 +1514,7 @@ function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onT
       .finally(() => setLoadingClientes(false))
   }, [trasladarId, buscar, clienteId])
 
-  // Si ya no quedan préstamos, reintentar eliminar
+  // Si ya no quedan préstamos, repetir lo que se pidió: inactivar o eliminar.
   useEffect(() => {
     if (prestamos.length !== 0 || retryDeleteTriggeredRef.current) return
     retryDeleteTriggeredRef.current = true
@@ -1480,7 +1531,7 @@ function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onT
         {/* Header */}
         <div className="px-5 pt-5 pb-3 shrink-0">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="text-base font-semibold text-[var(--cf-ink)]">Eliminar cliente</h3>
+            <h3 className="text-base font-semibold text-[var(--cf-ink)]">{motivo === 'inactivar' ? 'Inactivar cliente' : 'Eliminar cliente'}</h3>
             <button onClick={onClose} className="text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] p-1">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1489,8 +1540,9 @@ function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onT
           </div>
           <p className="text-xs text-[var(--cf-red-dark)]">
             {cliente.nombre} tiene {prestamos.length} préstamo{prestamos.length > 1 ? 's' : ''}.
-            Debes eliminarlos o trasladarlos antes de eliminar el cliente.
+            Trasládalos a otro cliente o elimínalos antes de {verbo} al cliente.
           </p>
+          <p className="text-xs text-[var(--cf-ink-3)] mt-1">Eliminar un préstamo borra también sus pagos.</p>
         </div>
 
         {/* Contenido */}
