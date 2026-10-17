@@ -27,7 +27,7 @@ import { prisma } from '@/lib/prisma'
 import { getLocalDayRange } from '@/lib/i18n'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
 import { notificar } from '@/lib/notificar'
-import { relojLocal, textoDelResumen } from '@/lib/resumen-dia'
+import { relojLocal, textoDelResumen, destinoDelResumen } from '@/lib/resumen-dia'
 import { normalizarPrefs } from '@/lib/avisos-preferencias'
 
 const CRON_SECRET = process.env.CRON_SECRET
@@ -102,6 +102,8 @@ export async function POST(req) {
       ])
 
       const cobrado = Math.round(pagos._sum?.montoPagado || 0)
+      const prestado = Math.round(prestamos._sum?.montoPrestado || 0)
+      const gastado = Math.round(gastos._sum?.monto || 0)
       const cobros = pagos._count || 0
       const nPrestamos = prestamos._count || 0
       if (cobros === 0 && nPrestamos === 0) { res.sinMovimiento++; continue }
@@ -126,15 +128,17 @@ export async function POST(req) {
 
       const texto = textoDelResumen({
         cobrado, cobros,
-        prestado: Math.round(prestamos._sum?.montoPrestado || 0), prestamos: nPrestamos,
-        gastos: Math.round(gastos._sum?.monto || 0),
+        prestado, prestamos: nPrestamos,
+        gastos: gastado,
         atrasados: prestamosAtrasados.size, sinCerrar,
       })
 
       const { avisados } = await notificar({
         organizationId, para, tipo: 'resumen_dia', ...texto,
-        // `?resumen=1`: al tocar la notificación se abre la pantalla del resumen.
-        href: '/dashboard?resumen=1', datos: { fecha, cobrado, cobros },
+        // Lleva a SU día: abierta otro día enseña lo que se guarda aquí, no el
+        // Inicio de hoy (el dueño, 17 oct 2026).
+        href: destinoDelResumen(fecha),
+        datos: { fecha, cobrado, cobros, prestado, prestamos: nPrestamos, gastos: gastado, atrasados: prestamosAtrasados.size },
       })
       res.enviados += avisados
     } catch (e) {

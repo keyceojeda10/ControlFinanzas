@@ -526,3 +526,77 @@ export function AvisoResumen({ r, formatear, onVer, onLuego }) {
     document.body,
   )
 }
+
+/* ── EL RESUMEN DE OTRO DÍA (17 oct 2026) ──────────────────────────────────
+ * La notificación del 16 abierta el 17 enseñaba el 17: la pantalla completa se
+ * arma con el Inicio de HOY. Para un día pasado se enseña lo que la notificación
+ * guardó esa noche, con su fecha bien grande, y un botón al de hoy. `d` puede
+ * llegar sin `prestado`/`gastos`/`atrasados` (las de antes del 17 oct solo
+ * guardaban lo cobrado): cada renglón sale solo si su cifra llegó. */
+export function ResumenDeOtroDia({ fechaTexto, d, formatear, onHoy, onCerrar }) {
+  const [montado, setMontado] = useState(false)
+  useEffect(() => { setMontado(true) }, [])
+  if (!montado) return null
+  const n = (x) => (typeof x === 'number' && Number.isFinite(x) ? x : null)
+  const renglones = d ? [
+    n(d.prestado) !== null && d.prestado > 0 && { e: n(d.prestamos) === 1 ? 'Prestaste (1 préstamo)' : `Prestaste (${d.prestamos ?? 0} préstamos)`, v: formatear(d.prestado) },
+    n(d.gastos) !== null && d.gastos > 0 && { e: 'Gastos', v: formatear(d.gastos) },
+    n(d.atrasados) !== null && d.atrasados > 0 && { e: 'Se atrasaron', v: d.atrasados === 1 ? '1 cliente' : `${d.atrasados} clientes` },
+  ].filter(Boolean) : []
+  return createPortal(
+    <div className="cf-res" role="dialog" aria-modal="true" aria-label={`Resumen del ${fechaTexto}`} style={{
+      position: 'fixed', inset: 0, zIndex: 10004, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 20, background: 'rgba(10,11,14,.62)',
+    }}>
+      <style>{CSS}</style>
+      <div className="cf-res-sec" style={{
+        width: 'min(100%, 420px)', background: BLOQUE.fondo, border: BORDE_BLOQUE, borderRadius: 24,
+        padding: '26px 22px 20px', display: 'flex', flexDirection: 'column', gap: 18, color: BLOQUE.tinta,
+      }}>
+        <span style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '.04em', color: BLOQUE.oro }}>Resumen de otro día</span>
+          <span className="cf-fig" style={{ fontSize: 26, lineHeight: 1.12, letterSpacing: '-.03em', textWrap: 'balance' }}>
+            {fechaTexto.charAt(0).toUpperCase() + fechaTexto.slice(1)}
+          </span>
+        </span>
+        {d ? (<>
+          <span style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: BLOQUE.rotulo }}>Ese día entraron</span>
+            <span className="cf-fig" style={{ fontSize: 40, lineHeight: 1, letterSpacing: '-.04em', color: BLOQUE.oro, whiteSpace: 'nowrap' }}>
+              {formatear(d.cobrado)}
+            </span>
+            {n(d.cobros) !== null && (
+              <span style={{ fontSize: 14, color: BLOQUE.rotulo }}>{d.cobros === 1 ? '1 cobro' : `${d.cobros} cobros`}</span>
+            )}
+          </span>
+          {renglones.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {renglones.map((x) => (
+                <div key={x.e} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 15 }}>
+                  <span style={{ color: BLOQUE.rotulo }}>{x.e}</span>
+                  <span className="cf-fig" style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>{x.v}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <span style={{ fontSize: 13, color: BLOQUE.rotulo }}>Es lo que quedó guardado esa noche. El detalle completo es el de hoy.</span>
+        </>) : (
+          <span style={{ fontSize: 15, color: BLOQUE.rotulo }}>
+            Ese resumen ya no está guardado. Puedes ver el de hoy.
+          </span>
+        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <button type="button" onClick={onHoy} style={{
+            height: 54, borderRadius: 999, border: 0, cursor: 'pointer', font: 'inherit',
+            background: BLOQUE.oro, color: '#3A2900', fontSize: 16, fontWeight: 700,
+          }}>Ver el de hoy</button>
+          <button type="button" onClick={onCerrar} style={{
+            height: 48, borderRadius: 999, cursor: 'pointer', font: 'inherit',
+            background: 'none', border: 0, color: BLOQUE.rotulo, fontSize: 14, fontWeight: 700,
+          }}>Cerrar</button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  )
+}

@@ -5,6 +5,7 @@ import { useOffline } from '@/components/providers/OfflineProvider'
 import { InstallGuideModal } from '@/components/layout/InstallButton'
 import { useAuth } from '@/hooks/useAuth'
 import { pedirCompartido, olvidarCompartido } from '@/lib/pedir-compartido'
+import { destinoDeNotificacion } from '@/lib/notificacion-destino'
 
 function isStandalone() {
   if (typeof window === 'undefined') return false
@@ -472,12 +473,9 @@ export default function NotificationsCenter({ size = 'md' }) {
                       if (!n.leida) marcarLeida(n.id)
                       if (n.datos) {
                         try {
-                          const d = JSON.parse(n.datos)
-                          /* `href` primero: hay avisos que no son de un cliente
-                             —«y otros 40 se atrasaron»— y sin esto la fila se
-                             marcaba como leída y no llevaba a ninguna parte, que
-                             es el control muerto de siempre. */
-                          const destino = d.href || (d.clienteId ? `/clientes/${d.clienteId}` : null)
+                          /* `href` primero (hay avisos que no son de un cliente), y el
+                             resumen del día a SU día: `destinoDeNotificacion`. */
+                          const destino = destinoDeNotificacion(n)
                           if (destino) {
                             window.location.href = destino
                             setOpen(false)

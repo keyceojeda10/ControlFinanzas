@@ -18,8 +18,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useCountry } from '@/hooks/useCountry'
-import { ResumenDelDia, AvisoResumen } from '@/components/cf/ResumenDelDia'
-import { armarResumen, tocaOfrecerlo, fechaLocal, POSPONER_MS, CLAVE_VISTO, CLAVE_POSPUESTO } from '@/lib/resumen-del-dia'
+import { ResumenDelDia, AvisoResumen, ResumenDeOtroDia } from '@/components/cf/ResumenDelDia'
+import { armarResumen, tocaOfrecerlo, fechaLocal, POSPONER_MS, CLAVE_VISTO, CLAVE_POSPUESTO, queResumenAbrir, resumenGuardado, fechaLarga } from '@/lib/resumen-del-dia'
 import { HORAS_RESUMEN, normalizarPrefs } from '@/lib/avisos-preferencias'
 
 const PRIMERA_HORA = Math.min(...HORAS_RESUMEN)
@@ -32,6 +32,7 @@ export default function ResumenDelDiaAuto() {
   const router = useRouter()
   const [resumen, setResumen] = useState(null)
   const [fase, setFase] = useState(null)          // null | 'aviso' | 'pantalla'
+  const [otroDia, setOtroDia] = useState(null)    // { fecha, d } — el resumen de un día pasado
   const horaRef = useRef(undefined)               // undefined = aún no se ha leído
   const ocupado = useRef(false)
 
@@ -78,11 +79,32 @@ export default function ResumenDelDiaAuto() {
       if (r) { setResumen(r); setFase('pantalla') }
     }
     window.addEventListener('cf:ver-resumen-del-dia', abrir)
-    // La notificación del resumen lleva a `/dashboard?resumen=1`.
-    try { if (new URLSearchParams(window.location.search).get('resumen') === '1') abrir() } catch {}
+    /* La notificación lleva a `/dashboard?resumen=AAAA-MM-DD` (las viejas, a
+       `=1`). Si es otro día, se enseña lo que guardó su notificación: la
+       pantalla completa es la de HOY y enseñaría el 17 con fecha del 14. */
+    let param = null
+    try { param = new URLSearchParams(window.location.search).get('resumen') } catch {}
+    const cual = queResumenAbrir(param, fechaLocal())
+    if (cual?.tipo === 'hoy') abrir()
+    if (cual?.tipo === 'otro') {
+      fetch('/api/notificaciones', { cache: 'no-store' })
+        .then((r) => (r.ok ? r.json() : []))
+        .catch(() => [])
+        .then((lista) => setOtroDia({ fecha: cual.fecha, d: resumenGuardado(Array.isArray(lista) ? lista : [], cual.fecha) }))
+    }
     return () => window.removeEventListener('cf:ver-resumen-del-dia', abrir)
   }, [traer])
 
+  if (otroDia && !fase) {
+    return (
+      <ResumenDeOtroDia
+        fechaTexto={fechaLarga(otroDia.fecha)} d={otroDia.d}
+        formatear={(n) => formatMoney(Math.round(n || 0))}
+        onCerrar={() => setOtroDia(null)}
+        onHoy={async () => { setOtroDia(null); const r = await traer(); if (r) { setResumen(r); setFase('pantalla') } }}
+      />
+    )
+  }
   if (!resumen || !fase) return null
   const fecha = new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })
   const formatear = (n) => formatMoney(Math.round(n || 0))

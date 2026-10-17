@@ -23,6 +23,7 @@ import { ordenarAvisos } from '@/lib/adaptadores/avisos'
 import CosasPorResolver from '@/components/armazon/CosasPorResolver'
 import { useOffline } from '@/components/providers/offline-context'
 import { pedirCompartido, olvidarCompartido } from '@/lib/pedir-compartido'
+import { destinoDeNotificacion } from '@/lib/notificacion-destino'
 
 // El contenido de cada aviso EN LA HOJA. La franja de arriba es una línea; aquí
 // cada uno se explica y trae su acción.
@@ -322,8 +323,7 @@ export default function PilaAvisos({ children, onVerTodos }) {
         onBorrarLeidas={borrarLeidas}
         onAbrirGuardado={(n) => {
           try {
-            const d = JSON.parse(n.datos || '{}')
-            const destino = d.href || (d.clienteId ? `/clientes/${d.clienteId}` : null)
+            const destino = destinoDeNotificacion(n)
             if (destino) { window.location.href = destino; return }
           } catch {}
           setHoja(false)
