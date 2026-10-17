@@ -3,6 +3,8 @@
    entrar. El nombre NO se recorta: baja de renglón (es lo que identifica).
    Sin dorado: aquí no hay monto ni acción primaria (DESIGN.md, «La plata es lo
    único que brilla»). */
+import Link from 'next/link'
+
 const ROL = { owner: 'Dueño', cobrador: 'Cobrador', superadmin: 'Administrador' }
 
 export default function CuentasGuardadas({ cuentas, onEntrar, onQuitar, onOtra, cargandoId = null }) {
@@ -40,6 +42,15 @@ export default function CuentasGuardadas({ cuentas, onEntrar, onQuitar, onOtra, 
         style={{ background: 'none', border: 0, color: 'var(--cf-ink)', cursor: 'pointer' }}>
         Entrar con otra cuenta
       </button>
+      {/* ⚠ CON CUENTAS GUARDADAS NO HABÍA POR DÓNDE RECUPERAR LA CONTRASEÑA (17 oct
+          2026, el dueño): «La olvidé» vive en el formulario, y el formulario solo
+          aparece tras «Entrar con otra cuenta». Una cuenta guardada que dejó de
+          servir —cambió la clave en otro lado, se cerró la sesión— dejaba a la
+          persona sin salida a la vista. */}
+      <Link href="/forgot-password" className="flex items-center justify-center text-[13px] font-semibold"
+        style={{ minHeight: 44, color: 'var(--cf-ink-2)' }}>
+        Olvidé mi contraseña
+      </Link>
     </div>
   )
 }

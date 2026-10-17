@@ -19,6 +19,8 @@ export async function POST(request) {
     id, llave,
     userId: session.user.id, nombre: session.user.nombre, rol: session.user.rol,
     orgNombre: session.user.orgNombre ?? null, conPin: llevaPin(session.user.rol),
+    // Para «Olvidé mi PIN»: el formulario de entrar abre con su correo escrito.
+    email: session.user.email ?? null,
   }, { status: 201 })
 }
 

@@ -441,6 +441,14 @@ export default function LoginPage() {
             <div className="flex flex-col gap-4">
               <PinDeCuatro titulo={`PIN de ${cuentaPin.nombre}`} error={error} cargando={cargandoId === cuentaPin.id}
                 onCompleto={(pin) => entrarConCuenta(cuentaPin, pin)} />
+              {/* Sin esto, quien olvidó el PIN solo tenía «Volver». Entra con su
+                  correo y contraseña (y ahí está «La olvidé»); al entrar puede
+                  volver a guardar el teléfono con un PIN nuevo. */}
+              <button type="button" onClick={() => { setError(''); setEmail(cuentaPin.email || ''); setModo('formulario') }}
+                className="text-[14px] font-semibold"
+                style={{ background: 'none', border: 0, color: 'var(--cf-ink)', cursor: 'pointer' }}>
+                Olvidé mi PIN
+              </button>
               <button type="button" onClick={() => { setError(''); setModo('cuentas') }} className="text-[14px] font-semibold"
                 style={{ background: 'none', border: 0, color: 'var(--cf-ink-2)', cursor: 'pointer' }}>
                 Volver
@@ -594,6 +602,15 @@ export default function LoginPage() {
             >
               {loading ? 'Entrando…' : 'Entrar'}
             </button>
+            {/* Llegar aquí desde las cuentas guardadas («Entrar con otra cuenta»,
+                «Olvidé mi PIN») era un camino sin vuelta: no había cómo regresar
+                a las tarjetas sin recargar la página. */}
+            {cuentas.length > 0 && (
+              <button type="button" onClick={() => { setError(''); setModo('cuentas') }} className="text-[14px] font-semibold"
+                style={{ background: 'none', border: 0, color: 'var(--cf-ink-2)', cursor: 'pointer' }}>
+                Volver a mis cuentas
+              </button>
+            )}
           </form>
           )}
 
