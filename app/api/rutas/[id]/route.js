@@ -24,7 +24,7 @@ import {
   tieneTablaAmortizacion,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo, validarDiasSinCobro } from '@/lib/dias-sin-cobro'
-import { tocaCobrarEn, cuotaDelPeriodo, inicioDia } from '@/lib/dinero/esperado'
+import { tocaCobrarEn, cuotaDelPeriodo, inicioDia, faltaDeHoy } from '@/lib/dinero/esperado'
 import { getUtcOffset, getLocalDayRange } from '@/lib/i18n'
 import { distanciaMetros } from '@/lib/geo'
 // Suma los tramos consecutivos de una lista de clientes con coordenadas. Ya la
@@ -570,8 +570,12 @@ export async function GET(request, { params }) {
          que cerró su préstamo con $222.667 dejaba «Falta $0» con tres clientes
          sin cobrar: lo que pagó uno de más tapaba lo que deben los otros. Falta
          es lo que le queda a cada pendiente de su cuota de hoy. */
+      // Lo que le falta para ponerse al día, una vez: lo usa «Falta» (#67) y la
+      // tarjeta («Debe hoy»).
+      const montoAlDiaPrestamo = calcularMontoParaPonerseAlDia(p, diasExcluidosPrestamo, festivos)
       if (tocaHoyEste && pendienteEste) {
-        const leFalta = Math.max(0, cuota - montoPagadoHoy)
+        // Nunca más de lo que le falta para ponerse al día (#67): ver `faltaDeHoy`.
+        const leFalta = faltaDeHoy({ cuota, pagadoHoy: montoPagadoHoy, alDia: montoAlDiaPrestamo })
         faltaHoy += leFalta
         faltaHoyCliente += leFalta
       }
@@ -586,7 +590,6 @@ export async function GET(request, { params }) {
       const moraPrestamo = calcularDiasMora(p, diasExcluidosPrestamo, festivos)
       const cuotasMoraPrestamo = calcularCuotasEnMora(p, diasExcluidosPrestamo, festivos)
       const montoMoraPrestamo = calcularMontoEnMora(p, diasExcluidosPrestamo, festivos)
-      const montoAlDiaPrestamo = calcularMontoParaPonerseAlDia(p, diasExcluidosPrestamo, festivos)
       mora = Math.max(mora, moraPrestamo)
       cuotasEnMoraCliente += cuotasMoraPrestamo
       montoEnMoraCliente += montoMoraPrestamo

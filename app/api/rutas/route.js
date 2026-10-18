@@ -11,6 +11,7 @@ import { getUtcOffset } from '@/lib/i18n'
 import { tienePeriodoEsperadoHoy, tieneCobroPendienteHoy, calcularDiasMora, calcularProximoCobro, calcularMontoParaPonerseAlDia } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
+import { faltaDeHoy } from '@/lib/dinero/esperado'
 
 const hoy = (country = 'co') => {
   const now = new Date()
@@ -168,7 +169,14 @@ export async function GET(request) {
         if (pendienteEste) pendienteCliente = true
         if (vivo && (pendienteEste || cobradoDeEste > 0) && tienePeriodoEsperadoHoy(prestamo, sinCobroDelPrestamo, diasDelPrestamo, festivos)) {
           esperadoHoy += prestamo.cuotaDiaria
-          if (pendienteEste) faltaHoy += Math.max(0, prestamo.cuotaDiaria - cobradoDeEste)
+          // Nunca más de lo que le falta para ponerse al día (#67).
+          if (pendienteEste) {
+            faltaHoy += faltaDeHoy({
+              cuota: prestamo.cuotaDiaria,
+              pagadoHoy: cobradoDeEste,
+              alDia: calcularMontoParaPonerseAlDia(prestamo, diasDelPrestamo, festivos),
+            })
+          }
         }
 
         if (prestamo.estado === 'activo' && !prestamo.esClavo) {

@@ -24,6 +24,7 @@ import {
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
+import { faltaDeHoy } from '@/lib/dinero/esperado'
 import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
 
 function detectarCuotaExtra(prestamo, proximaCuota) {
@@ -347,10 +348,13 @@ export async function GET() {
            $297.500 que toca cobrar» cuando sus dos rutas sumaban $278.100. */
         const _diasSinCobroDelPrestamo = esHoySinCobro(diasExcluidosPrestamo) || esHoyFestivo(festivos)
         const pendienteEste = !_hoySinCobro && tieneCobroPendienteHoy(p, diasExcluidosPrestamo, festivos)
+        // Lo que le falta para ponerse al día, una vez: tope de «faltan» (#67) y
+        // el «Debe hoy» de la tarjeta.
+        const alDia = calcularMontoParaPonerseAlDia(p, diasExcluidosPrestamo, festivos)
         if ((pendienteEste || montoPagadoHoy > 0) && tienePeriodoEsperadoHoy(p, _diasSinCobroDelPrestamo, diasExcluidosPrestamo, festivos)) {
           esperadoHoyTotal += p.cuotaDiaria ?? 0
           if (pendienteEste) {
-            const leFalta = Math.max(0, (p.cuotaDiaria ?? 0) - montoPagadoHoy)
+            const leFalta = faltaDeHoy({ cuota: p.cuotaDiaria ?? 0, pagadoHoy: montoPagadoHoy, alDia })
             faltaHoyTotal += leFalta
             faltaHoyCliente += leFalta
           }
@@ -361,7 +365,6 @@ export async function GET() {
         // «debe $160.000» de la derecha en T02-02.
         saldoCliente += saldo
         const moraPrestamo = calcularDiasMora(p, diasExcluidosPrestamo, festivos)
-        const alDia = calcularMontoParaPonerseAlDia(p, diasExcluidosPrestamo, festivos)
         mora = Math.max(mora, moraPrestamo)
         montoParaAlDia += alDia
 

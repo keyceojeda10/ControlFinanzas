@@ -1,11 +1,11 @@
 'use client'
 // app/(dashboard)/rutas/[id]/page.jsx - Detalle de ruta
 
-import { formatMoney } from '@/lib/i18n'
+import { formatMoney, getLocalDateStr } from '@/lib/i18n'
 import { entraAlFajo } from '@/lib/dinero/cuentas'
 import { abreviaturaDocumento } from '@/lib/documento'
 import { LoPuestoAqui, LoDeHoy } from '@/components/pantallas/DetalleRuta'
-import { loPuestoAqui, loDeHoy, avanceDeHoy, aCobrarEnLaParada, kmDeLaRuta, partirRecorrido, adaptarParadaActual, cierreDelDia, resumenDeCierre, tramosDelRecorrido, moverParada, moverParadaEnRuta, propuestaPorCercania, paradasDeRuta, gruposDeRuta } from '@/lib/adaptadores/ruta'
+import { loPuestoAqui, loDeHoy, avanceDeHoy, aCobrarEnLaParada, cierreDeLaCaja, kmDeLaRuta, partirRecorrido, adaptarParadaActual, resumenDeCierre, tramosDelRecorrido, moverParada, moverParadaEnRuta, propuestaPorCercania, paradasDeRuta, gruposDeRuta } from '@/lib/adaptadores/ruta'
 import { DIAS_MORA } from '@/lib/adaptadores/clientes'
 // La tarjeta de parada es la MISMA que pinta /cobros-hoy. Ver la nota de
 // components/cf/ParadaDeCobro: aqui habia una segunda tarjeta para lo mismo.
@@ -352,7 +352,7 @@ function RotuloGrupo({ titulo, cuantos, color, cerrado, onPlegar }) {
 export default function RutaDetallePage({ params }) {
   const { id }    = use(params)
   const router    = useRouter()
-  const { esOwner, puedeGestionarRutas, puedeVerCapitalRuta, orgNombre, ocultarSaldoWA, organizationId, camposRecibo: camposReciboOrg } = useAuth()
+  const { session, country, timezone, esOwner, puedeGestionarRutas, puedeVerCapitalRuta, orgNombre, ocultarSaldoWA, organizationId, camposRecibo: camposReciboOrg } = useAuth()
 
     const { lastSyncedAt } = useOffline()
 
@@ -382,6 +382,8 @@ export default function RutaDetallePage({ params }) {
   const [posicionAgregar, setPosicionAgregar] = useState('final')
   const [quitando,      setQuitando]      = useState(null)
   const [modalCaja,     setModalCaja]     = useState(false)
+  // La caja del día de quien cobra esta ruta (`stats.dia` de /api/caja), #68.
+  const [cajaDelDia,    setCajaDelDia]    = useState(null)
   const [totalRecogido, setTotalRecogido] = useState('')
   const [guardandoCaja, setGuardandoCaja] = useState(false)
   const [errorCaja,     setErrorCaja]     = useState('')
@@ -2192,6 +2194,29 @@ export default function RutaDetallePage({ params }) {
     sinUbicacion > 0 ? `${sinUbicacion === 1 ? 'El cliente sin ubicación queda' : `Los ${sinUbicacion} clientes sin ubicación quedan`} al final.` : null,
   ].filter(Boolean).join(' ') || null
 
+  /* ⚠ EL CIERRE SALE DE LA CAJA DE QUIEN COBRA (DETALLES-RUTAS #68). Se pide a
+     /api/caja, la misma cuenta que la caja del cobrador y que guarda el cierre:
+     el cobrador, la suya; el dueño, la del cobrador de esta ruta, o la suya si
+     la ruta no tiene cobrador. No en cada cobro —en la calle cada petición
+     pesa—: al terminar el recorrido, al abrir «Registrar cierre» y en el PC,
+     donde el panel dice cuánto hay que entregar. */
+  const recorridoTerminado = Boolean(ruta) && !(ruta.clientes ?? []).some((c) => c.cobroPendienteHoy && !c.visitaCerradaHoy)
+  const enPC = typeof window !== 'undefined' && window.matchMedia?.('(min-width: 1024px)').matches
+  const necesitaCaja = Boolean(ruta) && ((enRecorrido && recorridoTerminado) || modalCaja
+    || (enPC && !ruta.cierre && (ruta.recaudadoHoy ?? 0) > 0))
+  const quienCierra = esOwner ? (ruta?.cobrador?.id ?? session?.user?.id ?? null) : null
+  useEffect(() => {
+    if (!necesitaCaja) return
+    let vivo = true
+    const qs = new URLSearchParams({ fecha: getLocalDateStr(country, timezone) })
+    if (quienCierra) qs.set('cobradorId', quienCierra)
+    fetch(`/api/caja?${qs}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (vivo && d?.stats?.dia) setCajaDelDia(d.stats.dia) })
+      .catch(() => {})
+    return () => { vivo = false }
+  }, [necesitaCaja, quienCierra, country, timezone, ruta?.recaudadoHoy, ruta?.cierre])
+
   /* ── LA CABECERA DEL SISTEMA, EN LUGAR DE LA HECHA A MANO ─────────────────
    * Aquí abajo había una copia divergente: 21px de título contra los 17 del
    * sistema, y 12 de subtítulo contra 11. Se retiró; esto la sustituye.
@@ -2333,11 +2358,8 @@ export default function RutaDetallePage({ params }) {
     return propuestaPorCercania({ actualMetros: actual, propuestaMetros: propuesta })
   })()
 
-  const cierreHoyRuta = cierreDelDia({
-    cobradoEfectivo: ruta?.recaudadoEfectivoHoy,
-    prestadoEfectivo: ruta?.desembolsadoEfectivoHoy,
-    gastos: ruta?.gastosEfectivoHoy,
-  }, (n) => formatMoney(n))
+  // `null` mientras llega la caja: mejor no enseñar una cifra que una falsa.
+  const cierreHoyRuta = cajaDelDia ? cierreDeLaCaja(cajaDelDia, (n) => formatMoney(n)) : null
 
   // ── LA HOJA DE COBRO, FUERA DEL JSX PRINCIPAL ──
   // Vive en una variable porque hace falta en LAS DOS pantallas: la lista y
@@ -2638,6 +2660,9 @@ export default function RutaDetallePage({ params }) {
               Lo que hay que cuadrar es EL FAJO: lo cobrado en efectivo, menos
               lo que entrego en prestamos, menos lo que gasto. `cierreDelDia` ya
               lo calcula, y es el mismo que usa la pantalla de cierre. */}
+          {!cierreHoyRuta ? (
+            <p className="text-sm" style={{ color: 'var(--cf-ink-3)' }}>Trayendo la cuenta de tu caja…</p>
+          ) : (
           <div className="rounded-[12px] overflow-hidden" style={{ border: '1px solid var(--cf-border)' }}>
             {cierreHoyRuta.lineas.map((l, i) => (
               <div key={l.id} className="flex justify-between items-center text-sm px-3.5 py-2.5"
@@ -2656,17 +2681,21 @@ export default function RutaDetallePage({ params }) {
               </span>
             </div>
           </div>
+          )}
 
+          {/* Si la caja le debe a él, lo que trae es $0: el placeholder era el
+              valor absoluto y le pedía «$423.233» a quien no tenía que traer
+              nada (#68). */}
           <MoneyInput
             label="Cuánto traes de verdad"
-            placeholder={cierreHoyRuta.total}
+            placeholder={cierreHoyRuta ? (cierreHoyRuta.aFavor ? formatMoney(0) : cierreHoyRuta.total) : ''}
             value={totalRecogido}
             onChange={(e) => setTotalRecogido(e.target.value)}
           />
 
           {/* La diferencia, contra el fajo que TOCA. */}
-          {totalRecogido && (() => {
-            const debe = Math.abs(cierreHoyRuta.numeros?.neto ?? 0)
+          {totalRecogido && cierreHoyRuta && (() => {
+            const debe = Math.max(0, cierreHoyRuta.numeros?.neto ?? 0)
             const trae = Math.round(Number(String(totalRecogido).replace(/\./g, '')) || 0)
             const dif = trae - debe
             if (dif === 0) {
@@ -2707,11 +2736,8 @@ export default function RutaDetallePage({ params }) {
           // que se entrego en prestamos y menos los gastos. Las tres salen de
           // `MovimientoCapital`, que es el libro unico — no se recalculan por
           // otro camino, que es como se acaban teniendo dos cifras distintas.
-          cierre={cierreDelDia({
-            cobradoEfectivo: ruta?.recaudadoEfectivoHoy,
-            prestadoEfectivo: ruta?.desembolsadoEfectivoHoy,
-            gastos: ruta?.gastosEfectivoHoy,
-          }, (n) => formatMoney(n))}
+          cierre={cierreHoyRuta}
+          cargandoCierre={!cierreHoyRuta && !ruta?.cierre}
           onCerrar={abrirCierre}
           cerrando={guardandoCaja}
         />
@@ -3004,7 +3030,9 @@ export default function RutaDetallePage({ params }) {
         cierreTexto={ruta.cierre
           ? 'El cierre de hoy ya está registrado.'
           : (ruta.recaudadoHoy ?? 0) > 0
-            ? `Tienes ${cierreHoyRuta.total} para entregar.`
+            ? (!cierreHoyRuta ? 'Ya se puede registrar el cierre de hoy.'
+              : cierreHoyRuta.aFavor ? `Hoy se le deben ${cierreHoyRuta.total} a quien cobra.`
+              : `Hay ${cierreHoyRuta.total} para entregar.`)
             : 'Se habilita al terminar el recorrido. Hoy no hay cobros registrados todavía.'}
         cierreListo={!ruta.cierre && (ruta.recaudadoHoy ?? 0) > 0}
         onCierre={abrirCierre}

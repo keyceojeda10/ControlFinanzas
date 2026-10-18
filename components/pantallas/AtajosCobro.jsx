@@ -131,7 +131,8 @@ export default function AtajosCobro({
 
   // Al cambiar de préstamo se vuelve a su primera pastilla (la cuota, salvo que
   // ya se haya cobrado hoy: ése no trae monto puesto y hay que elegirlo).
-  const primera = opciones[0]?.id === 'cuota' ? 'cuota' : null
+  // Puesta: lo que le falta hoy si traía pagado de antes (#67), si no la cuota.
+  const primera = ['hoy', 'cuota'].includes(opciones[0]?.id) ? opciones[0].id : null
   useEffect(() => { setOpcion(primera); setMonto(''); setMotivos(false) }, [p?.id, primera])
 
   const saldo = Math.round(Number(p?.saldoPendiente ?? 0))

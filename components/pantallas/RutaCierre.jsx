@@ -220,7 +220,7 @@ export function LoQuePasoHoy({ titulo = 'Lo de hoy', filas = [] }) {
 
 export default function RutaCerrada({
   titulo, terminado, onAtras, onMas,
-  resumen, cierre, onCerrar, cerrando,
+  resumen, cierre, cargandoCierre = false, onCerrar, cerrando,
   hoyTitulo, hoy = [],
 }) {
   return (
@@ -267,6 +267,12 @@ export default function RutaCerrada({
         {/* EL CIERRE VA PRIMERO, delante del historial. Es lo único que queda por
             hacer, y por la mañana esta tarjeta no existe. */}
         {cierre && <TarjetaCierre {...cierre} onCerrar={onCerrar} cerrando={cerrando} />}
+        {/* La cuenta sale de la caja del cobrador (#68) y tarda lo que tarda esa
+            petición: mejor decirlo que dejar el hueco, que se lee como «no hay
+            cierre». */}
+        {!cierre && cargandoCierre && (
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--cf-ink-3)' }}>Trayendo la cuenta de tu caja…</p>
+        )}
         <LoQuePasoHoy titulo={hoyTitulo} filas={hoy} />
       </div>
     </div>
