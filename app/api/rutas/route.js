@@ -8,7 +8,7 @@ import { logActividad } from '@/lib/activity-log'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { PLANES_CONFIG, cuposDe, selectCupos, admiteAdicionales } from '@/lib/planes'
 import { getUtcOffset } from '@/lib/i18n'
-import { tienePeriodoEsperadoHoy, calcularDiasMora, calcularProximoCobro, calcularMontoParaPonerseAlDia } from '@/lib/calculos'
+import { tienePeriodoEsperadoHoy, tieneCobroPendienteHoy, calcularDiasMora, calcularProximoCobro, calcularMontoParaPonerseAlDia } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
@@ -141,6 +141,8 @@ export async function GET(request) {
 
       let tocaHoy = false
       let pagoHoyCliente = false
+      // Debe algo HOY (cobertura real), la misma pregunta que la ruta por dentro.
+      let pendienteCliente = false
       let moraCliente = 0
 
       for (const prestamo of cliente.prestamos) {
@@ -150,14 +152,22 @@ export async function GET(request) {
         // el inicio y en Cobros de hoy.
         const diasDelPrestamo = prestamo.diasSinCobro != null ? obtenerDiasSinCobro(cliente, r, org, prestamo) : diasExcluidos
         const sinCobroDelPrestamo = prestamo.diasSinCobro != null ? (esHoySinCobro(diasDelPrestamo) || esHoyFestivo(festivos)) : hoySinCobro
-        if (prestamo.estado === 'activo' && !prestamo.esClavo && tienePeriodoEsperadoHoy(prestamo, sinCobroDelPrestamo, diasDelPrestamo, festivos)) {
-          esperadoHoy += prestamo.cuotaDiaria
-          tocaHoy = true
-        }
         // Recaudado hoy: incluye pagos de prestamos completados hoy (el pago final cierra)
         const cobradoDeEste = prestamo.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo)).reduce((a, p) => a + p.montoPagado, 0)
         recaudadoHoy += cobradoDeEste
         if (cobradoDeEste > 0) pagoHoyCliente = true
+
+        /* ⚠ LOS COBROS DE HOY, CON LA REGLA DE LA RUTA POR DENTRO (DETALLES-RUTAS
+           #58). Aquí contaba el calendario —«hoy es día de cuota»— y adentro la
+           cobertura: con un cliente que ya tenía pagado hasta el 22, la tarjeta
+           decía «4 de 8 cobros» y la ruta, «4 de 7». Cuenta quien hoy debe algo
+           o pagó hoy, y la meta suma la cuota de esos préstamos. */
+        const vivo = prestamo.estado === 'activo' && !prestamo.esClavo
+        const pendienteEste = vivo && !hoySinCobro && tieneCobroPendienteHoy(prestamo, diasDelPrestamo, festivos)
+        if (pendienteEste) pendienteCliente = true
+        if (vivo && (pendienteEste || cobradoDeEste > 0) && tienePeriodoEsperadoHoy(prestamo, sinCobroDelPrestamo, diasDelPrestamo, festivos)) {
+          esperadoHoy += prestamo.cuotaDiaria
+        }
 
         if (prestamo.estado === 'activo' && !prestamo.esClavo) {
           moraCliente = Math.max(moraCliente, calcularDiasMora(prestamo, diasExcluidos, festivos))
@@ -184,6 +194,7 @@ export async function GET(request) {
         }
       }
 
+      tocaHoy = !hoySinCobro && (pendienteCliente || pagoHoyCliente)
       if (tocaHoy) cobrosHoy += 1
       if (tocaHoy && pagoHoyCliente) cobradosHoy += 1
       // Dos umbrales, el mismo del resto del sistema: por encima de 7 dias ya es

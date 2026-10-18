@@ -3374,6 +3374,10 @@ export default function RutaDetallePage({ params }) {
               if (c.hoySinCobro) return 'sin_cobro'
               if (c.estado === 'completado') return 'completado'
               const tienePendiente = Boolean(c.cobroPendienteHoy)
+              /* Quien hoy no debe nada y no pagó —va al día o adelantado— no es
+                 «pendiente» (DETALLES-RUTAS #59): caía aquí por descarte y sumaba
+                 a ese chip mientras «Pendientes hoy» lo dejaba fuera. */
+              if (!tienePendiente && !c.pagoHoy) return 'sin_cobro'
               if (c.pagoHoy && !tienePendiente) return 'pagaron'
               if (c.pagoHoy && tienePendiente) return 'parcial'
               return 'pendientes'
@@ -4171,7 +4175,9 @@ export default function RutaDetallePage({ params }) {
               {[{ id: null, nombre: 'Sin cobrador', suelto: true },
                 ...cobradores.filter(c => c.activo !== false)].map((c) => {
                 const elegido = (nuevoCobradorId ?? null) === (c.id ?? null)
-                const otraRuta = c.ruta && c.ruta.id !== ruta.id ? c.ruta.nombre : null
+                /* Todas las rutas que ya cobra, menos esta (#61): con dos, nombraba una. */
+                const otras = (c.rutas ?? (c.ruta ? [c.ruta] : [])).filter((r) => r.id !== ruta.id).map((r) => r.nombre)
+                const otraRuta = otras.length ? otras.join(' y ') : null
                 return (
                   <button
                     key={c.id ?? 'ninguno'}

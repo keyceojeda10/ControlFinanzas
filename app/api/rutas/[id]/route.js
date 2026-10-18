@@ -550,7 +550,15 @@ export async function GET(request, { params }) {
       // por eso el modulo lo respeta tambien: aqui no se pierde nada.
       const cuota = cuotaDelPeriodo(p)
       cuotaCliente  += cuota
-      esperadoHoy   += tocaCobrarEn(p, hoyLocal, diasExcluidosPrestamo, festivos) ? cuota : 0
+      /* ⚠ LO QUE QUEDA POR COBRAR HOY, NO LO QUE DICE EL CALENDARIO (DETALLES-
+         RUTAS #56, #58, #59). `tocaCobrarEn` dice «hoy es día de cuota» aunque
+         el cliente ya la tenga cubierta: Óscar abonó $100.000 y tenía pagado
+         hasta el 22, pero su cuota seguía sumando a «esperado» y a «Falta»,
+         mientras «Pendientes hoy», las visitas y la hoja impresa ya lo dejaban
+         fuera. Cuenta la cuota de quien hoy debe algo o pagó hoy: la misma
+         regla de las visitas (`tieneCobroHoy`). */
+      const debeOPagoHoy = montoPagadoHoy > 0 || (!_hoySinCobro && tieneCobroPendienteHoy(p, diasExcluidosPrestamo, festivos))
+      esperadoHoy   += tocaCobrarEn(p, hoyLocal, diasExcluidosPrestamo, festivos) && debeOPagoHoy ? cuota : 0
       const saldoPendientePrestamo = calcularSaldoPendiente(p)
       carteraTotal    += saldoPendientePrestamo
       carteraCliente  += saldoPendientePrestamo

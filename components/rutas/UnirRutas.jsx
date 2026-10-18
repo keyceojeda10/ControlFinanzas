@@ -66,7 +66,10 @@ export default function UnirRutas({ abierta, onCerrar, onVolver, ruta, formatMon
   const cobradores = useMemo(() => {
     if (!vista) return []
     const lista = []
-    if (vista.destino.cobrador) lista.push({ id: vista.destino.cobrador.id, nombre: vista.destino.cobrador.nombre, nota: `Ya cobra ${vista.destino.nombre}` })
+    /* «Ya cobra EN …», como el lápiz (#61). Si ese cobrador lleva también la
+       ruta que se une, se dice: son sus dos rutas. */
+    const llevaLasDos = vista.origen.cobrador && vista.origen.cobrador.id === vista.destino.cobrador?.id
+    if (vista.destino.cobrador) lista.push({ id: vista.destino.cobrador.id, nombre: vista.destino.cobrador.nombre, nota: llevaLasDos ? `Ya cobra en ${vista.destino.nombre} y ${vista.origen.nombre}` : `Ya cobra en ${vista.destino.nombre}` })
     if (vista.origen.cobrador && vista.origen.cobrador.id !== vista.destino.cobrador?.id) {
       lista.push({ id: vista.origen.cobrador.id, nombre: vista.origen.cobrador.nombre, nota: `Cobraba ${vista.origen.nombre}` })
     }

@@ -148,6 +148,8 @@ export async function GET(request) {
         reabrirCajaSinAprobacion: c.puedeReabrirCajaSinAprobacion ?? false,
       },
       ruta:            c.rutas[0] ? { id: c.rutas[0].id, nombre: c.rutas[0].nombre } : null,
+      // TODAS sus rutas: «Ya cobra en …» nombraba solo la primera (DETALLES-RUTAS #61).
+      rutas:           c.rutas.map((r) => ({ id: r.id, nombre: r.nombre })),
       cantidadClientes: c.rutas[0]?.clientes?.length ?? 0,
       recaudadoHoy,
       recaudadoEfectivoHoy: Math.round(recaudadoEfectivoHoy),
