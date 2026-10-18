@@ -32,7 +32,7 @@ import { BotonFiltros } from './HojaFiltros'
    Blanca, no un bloque oscuro: en esta pantalla el titular es la lista, y un
    bloque negro arriba se la comería. La barra va A LA DERECHA del monto, no
    debajo, para que la tarjeta quepa en 90px. */
-function Avance({ recaudado, meta, cobrados = 0, deCuantos = 0, porcentaje = 0 }) {
+function Avance({ recaudado, meta, falta, cobrados = 0, deCuantos = 0, porcentaje = 0 }) {
   return (
     <div style={{
       background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
@@ -47,7 +47,10 @@ function Avance({ recaudado, meta, cobrados = 0, deCuantos = 0, porcentaje = 0 }
           {/* Las mismas palabras que el inicio —«que toca cobrar»— porque ahora es
               la misma cifra. Antes decía «de $3.442.901» a secas, que era la cuota
               de todos los préstamos del negocio, no lo de hoy. */}
-          {meta ? `de ${meta} que toca cobrar · ` : ''}{cobrados} de {deCuantos} cobrados
+          {meta ? `de ${meta} que toca cobrar · ` : ''}
+          {/* Lo que falta, con su nombre (#63): sin él, «$327.067 de $278.100»
+              al lado de un 37 % no se entiende. Es la cifra de «Te faltan». */}
+          {falta ? `faltan ${falta} · ` : ''}{cobrados} de {deCuantos} cobrados
         </span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 7, width: 120, flex: 'none' }}>

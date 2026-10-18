@@ -198,7 +198,12 @@ export async function GET(request) {
 
       tocaHoy = !hoySinCobro && (pendienteCliente || pagoHoyCliente)
       if (tocaHoy) cobrosHoy += 1
-      if (tocaHoy && pagoHoyCliente) cobradosHoy += 1
+      /* «N de M cobros»: cobrado es quien ya no debe nada HOY (#65). Yaneth abonó
+         $20.000 de $32.000 y la tarjeta decía «6 de 8 cobros» mientras por
+         dentro «Visitas de hoy 5 de 8», «Por cobrar hoy 3» y «Cobrar hoy»,
+         «5 cobrados». Abonar no es quedar cobrado: la misma regla que la
+         tarjeta del cliente (`cobrada`) y la ruta por dentro. */
+      if (tocaHoy && pagoHoyCliente && !pendienteCliente) cobradosHoy += 1
       // Dos umbrales, el mismo del resto del sistema: por encima de 7 dias ya es
       // mora, por debajo es atraso. La pastilla dice uno o el otro, no los dos.
       if (moraCliente > 7) enMora += 1

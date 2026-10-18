@@ -180,6 +180,9 @@ export async function GET() {
   let totalPagados = 0
   let esperadoHoyTotal = 0
   let recaudadoHoyTotal = 0
+  // Lo que les queda de la cuota de hoy a los que siguen debiendo (#63). La
+  // misma cuenta que «Falta» en Rutas: lo que pague otro de más no la tapa.
+  let faltaHoyTotal = 0
 
   /* La visita que el cobrador ya dio por cerrada hoy. Misma nota larga que en
      /api/rutas/[id]: NO toca `cobroPendienteHoy`, porque ese campo alimenta el
@@ -263,6 +266,7 @@ export async function GET() {
          único predecible. */
       let ultimoPagoHoyId = null
       let saldoCliente = 0
+      let faltaHoyCliente = 0
 
       for (const p of c.prestamos) {
         // p.pagos ya viene filtrado por hoy desde la query (where fechaPago gte/lt)
@@ -278,6 +282,15 @@ export async function GET() {
             ultimoCobroHoy = pg.fechaPago
             ultimoPagoHoyId = pg.id
           }
+        }
+
+        /* «Últ. pago» mira TODOS sus préstamos, no solo los activos (#63). Jhon
+           Fredy pagó su préstamo entero hoy, el préstamo se cerró y la tarjeta
+           decía «Cobrado 8:29 a. m. · $222.667» con «Últ. pago: nunca». Uno
+           anulado no cuenta: su pago ya no existe. */
+        if (p.ultimoPagoAt && p.estado !== 'cancelado') {
+          const t = new Date(p.ultimoPagoAt).getTime()
+          if (!ultimoPagoISO || t > new Date(ultimoPagoISO).getTime()) ultimoPagoISO = p.ultimoPagoAt
         }
 
         if (p.estado !== 'activo') continue
@@ -328,9 +341,19 @@ export async function GET() {
            `cuotaDiaria`). Lo atrasado no entra: son dos números y no se suman
            (`lib/dinero/esperado.js`). Los atrasados siguen en la lista, que es
            donde importan; lo que cambia es contra qué se mide el día. */
+        /* ⚠ Y CON LA REGLA DE RUTAS DESDE cf-v1163 (DETALLES-RUTAS #58, #63): la
+           cuota de quien hoy DEBE algo o PAGÓ hoy, no la de todo el que tiene
+           día de cuota. Por calendario sumaba al cliente adelantado: «de
+           $297.500 que toca cobrar» cuando sus dos rutas sumaban $278.100. */
         const _diasSinCobroDelPrestamo = esHoySinCobro(diasExcluidosPrestamo) || esHoyFestivo(festivos)
-        if (tienePeriodoEsperadoHoy(p, _diasSinCobroDelPrestamo, diasExcluidosPrestamo, festivos)) {
+        const pendienteEste = !_hoySinCobro && tieneCobroPendienteHoy(p, diasExcluidosPrestamo, festivos)
+        if ((pendienteEste || montoPagadoHoy > 0) && tienePeriodoEsperadoHoy(p, _diasSinCobroDelPrestamo, diasExcluidosPrestamo, festivos)) {
           esperadoHoyTotal += p.cuotaDiaria ?? 0
+          if (pendienteEste) {
+            const leFalta = Math.max(0, (p.cuotaDiaria ?? 0) - montoPagadoHoy)
+            faltaHoyTotal += leFalta
+            faltaHoyCliente += leFalta
+          }
         }
 
         const saldo = calcularSaldoPendiente(p)
@@ -362,11 +385,6 @@ export async function GET() {
         if (totalCuotas > 0 && moraPrestamo >= (cuotaDeMayorMora?.mora ?? -1)) {
           cuotaDeMayorMora = { mora: moraPrestamo, texto: `${Math.min(totalCuotas, pagadasP + 1)}/${totalCuotas}` }
         }
-        if (p.ultimoPagoAt) {
-          const t = new Date(p.ultimoPagoAt).getTime()
-          if (!ultimoPagoISO || t > new Date(ultimoPagoISO).getTime()) ultimoPagoISO = p.ultimoPagoAt
-        }
-
         const proximaCuota = tieneTablaAmortizacion(p) ? obtenerProximaCuotaTabla(p) : null
         const extraInfo = detectarCuotaExtra(p, proximaCuota)
         prestamosActivos.push({
@@ -392,13 +410,14 @@ export async function GET() {
           ...extraInfo,
         })
 
-        if (!_hoySinCobro && tieneCobroPendienteHoy(p, diasExcluidosPrestamo, festivos)) {
-          cobroPendienteHoy = true
-        }
+        if (pendienteEste) cobroPendienteHoy = true
       }
 
       const yaPageHoy = pagadoHoy > 0
       const pendienteHoyCliente = !_hoySinCobro && cobroPendienteHoy
+      // El cobro de hoy también es un pago, aunque la fecha del préstamo no
+      // se haya movido todavía.
+      if (ultimoCobroHoy && (!ultimoPagoISO || ultimoCobroHoy.getTime() > new Date(ultimoPagoISO).getTime())) ultimoPagoISO = ultimoCobroHoy
 
       if (pendienteHoyCliente) totalPendientes++
       if (yaPageHoy && !pendienteHoyCliente) totalPagados++
@@ -423,6 +442,7 @@ export async function GET() {
         rutaId: ruta?.id ?? null,
         rutaNombre: ruta?.nombre ?? 'Sin ruta',
         cuota: cuotaCliente,
+        faltaHoy: Math.round(faltaHoyCliente),
         frecuencia: frecuencia ?? 'diario',
         // Un préstamo dado por perdido. Lo tenía la ruta y aquí no, así que el
         // mismo cliente salía avisado en una pantalla y mudo en la otra —y la
@@ -481,6 +501,7 @@ export async function GET() {
       pendientes: totalPendientes,
       pagados: totalPagados,
       esperadoHoy: Math.round(esperadoHoyTotal),
+      faltaHoy: Math.round(faltaHoyTotal),
       recaudadoHoy: Math.round(recaudadoHoyTotal),
     },
   })

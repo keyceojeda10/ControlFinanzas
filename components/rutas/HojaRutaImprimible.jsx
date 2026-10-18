@@ -15,8 +15,12 @@ import { createPortal } from 'react-dom'
 import { formatMoney } from '@/lib/i18n'
 import { DIAS_MORA } from '@/lib/adaptadores/clientes'
 
-const fmtFechaLarga = () =>
-  new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+/* «Domingo, 18 de octubre de 2026»: mayúscula solo al principio (DETALLES-RUTAS
+   #55). Con `text-transform: capitalize` salía «18 De Octubre De 2026». */
+const fmtFechaLarga = () => {
+  const t = new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  return t.charAt(0).toUpperCase() + t.slice(1)
+}
 
 export default function HojaRutaImprimible({ ruta, clientes }) {
   // La hoja se monta como hijo DIRECTO de <body> mediante un portal.
@@ -180,7 +184,7 @@ export default function HojaRutaImprimible({ ruta, clientes }) {
           .hr-title { font-size: 18px; font-weight: 800; margin: 0; }
           .hr-sub { font-size: 12px; margin: 4px 0 0; color: #333; }
           .hr-meta { text-align: right; }
-          .hr-fecha { font-size: 12px; margin: 0; text-transform: capitalize; }
+          .hr-fecha { font-size: 12px; margin: 0; }
           .hr-count { font-size: 11px; margin: 3px 0 0; color: #333; }
 
           /* Resumen: stat grid con cajas bordeadas */

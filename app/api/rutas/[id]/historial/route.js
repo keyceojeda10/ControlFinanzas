@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { getUtcOffset } from '@/lib/i18n'
+import { tocaCobrarEn, SELECT_PRESTAMO } from '@/lib/dinero/esperado'
+import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
+import { esAbonoPrevio } from '@/lib/dinero/abono-previo'
 
 export async function GET(request, { params }) {
   const session = await getServerSession(authOptions)
@@ -20,33 +23,45 @@ export async function GET(request, { params }) {
 
   const ruta = await prisma.ruta.findFirst({
     where: { id, organizationId },
-    select: { id: true, cobradorId: true },
+    select: { id: true, cobradorId: true, diasSinCobro: true },
   })
   if (!ruta) return Response.json({ error: 'Ruta no encontrada' }, { status: 404 })
 
-  // Clientes en esta ruta con sus cuotas
+  const [org, festivos] = await Promise.all([
+    prisma.organization.findUnique({ where: { id: organizationId }, select: { diasSinCobro: true } }),
+    prisma.festivo.findMany({ where: { organizationId }, select: { fecha: true } }),
+  ])
+
+  /* ⚠ TODOS SUS PRÉSTAMOS, NO SOLO LOS ACTIVOS (DETALLES-RUTAS #64). Con solo
+     los activos, el pago con que Jhon Fredy cerró su préstamo sumaba al total
+     del día pero él no salía ni en «pagaron» ni en «sin pagar»: el préstamo ya
+     no estaba en el mapa. Los anulados y las solicitudes sin aprobar no:
+     ahí no hubo cobro. */
   const clientes = await prisma.cliente.findMany({
     where: { rutaId: id, organizationId },
     select: {
       id: true,
       nombre: true,
+      diasSinCobro: true,
       prestamos: {
-        where: { estado: 'activo' },
-        select: { id: true, cuotaDiaria: true },
+        where: { estado: { notIn: ['cancelado', 'pendiente_aprobacion'] } },
+        select: { ...SELECT_PRESTAMO, estado: true, esClavo: true },
       },
     },
   })
   const clienteIds = clientes.map(c => c.id)
-  const clienteMap = Object.fromEntries(clientes.map(c => [c.id, {
-    nombre: c.nombre,
-    cuota: c.prestamos.reduce((a, p) => a + p.cuotaDiaria, 0),
-  }]))
+  const clienteMap = Object.fromEntries(clientes.map(c => [c.id, { nombre: c.nombre }]))
   const prestamoClienteMap = {}
   for (const c of clientes) {
     for (const p of c.prestamos) {
       prestamoClienteMap[p.id] = c.id
     }
   }
+  // Los préstamos vivos de cada cliente, para saber a quién le tocaba cobro.
+  const vivos = clientes.map((c) => ({
+    c,
+    prestamos: c.prestamos.filter((p) => p.estado === 'activo' && !p.esClavo),
+  })).filter((x) => x.prestamos.length > 0)
 
   if (clienteIds.length === 0) {
     return Response.json({ dias: [] })
@@ -81,16 +96,21 @@ export async function GET(request, { params }) {
       fechaPago: true,
       tipo: true,
       prestamoId: true,
+      nota: true,
     },
     orderBy: { fechaPago: 'desc' },
   })
 
   // Agrupar por día Colombia
+  const country = session.user.country ?? 'co'
+  const diaDe = (fecha) => new Date(fecha.getTime() - Math.abs(getUtcOffset(country)) * 60 * 60 * 1000).toISOString().slice(0, 10)
   const porDia = {}
   for (const p of pagos) {
-    const country = session.user.country ?? 'co'
-    const col = new Date(p.fechaPago.getTime() - Math.abs(getUtcOffset(country)) * 60 * 60 * 1000)
-    const key = col.toISOString().slice(0, 10)
+    /* El abono previo de un préstamo migrado no se cobró en la ruta (#64): se
+       fecha en el inicio del préstamo y salía «Jue, 10 de sept · $228.000 ·
+       0 pagaron · 11 sin pagar», un día de cobros que nunca existió. */
+    if (esAbonoPrevio(p)) continue
+    const key = diaDe(p.fechaPago)
     if (!porDia[key]) porDia[key] = { cobrado: 0, clientes: {} }
     porDia[key].cobrado += p.montoPagado
 
@@ -115,19 +135,25 @@ export async function GET(request, { params }) {
         tipo: info.tipo,
       })).sort((a, b) => b.monto - a.monto)
 
-      // Lista de quién NO pagó (clientes con cuota > 0 que no aparecen)
-      const noPagaron = clientes
-        .filter(c => c.prestamos.length > 0 && !dia.clientes[c.id])
-        .map(c => clienteMap[c.id].nombre)
+      /* «Sin pagar» = a quien le TOCABA cuota ese día y no pagó nada (#64).
+         Antes era todo cliente con préstamo activo, le tocara o no: «5 pagaron ·
+         6 sin pagar» con la ruta diciendo «5 de 8». Para los días pasados se
+         mira el calendario de sus préstamos de hoy (cuánto llevaba cubierto ese
+         día no se guarda); la fila de HOY la corrige la pantalla con lo que dice
+         la ruta arriba (`hoy`), que sí sabe quién debe hoy. */
+      const noPagaron = vivos
+        .filter(({ c, prestamos }) => !dia.clientes[c.id] && prestamos.some((p) =>
+          tocaCobrarEn(p, fecha, obtenerDiasSinCobro(c, ruta, org, p), festivos)))
+        .map(({ c }) => clienteMap[c.id].nombre)
 
       return {
         fecha,
         cobrado: Math.round(dia.cobrado),
         pagaron,
         noPagaron,
-        totalClientes: clientes.filter(c => c.prestamos.length > 0).length,
+        totalClientes: vivos.length,
       }
     })
 
-  return Response.json({ dias })
+  return Response.json({ dias, hoy: diaDe(new Date()) })
 }

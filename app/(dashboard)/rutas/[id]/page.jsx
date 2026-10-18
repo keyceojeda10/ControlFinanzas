@@ -5,7 +5,7 @@ import { formatMoney } from '@/lib/i18n'
 import { entraAlFajo } from '@/lib/dinero/cuentas'
 import { abreviaturaDocumento } from '@/lib/documento'
 import { LoPuestoAqui, LoDeHoy } from '@/components/pantallas/DetalleRuta'
-import { loPuestoAqui, loDeHoy, avanceDeHoy, kmDeLaRuta, partirRecorrido, adaptarParadaActual, cierreDelDia, resumenDeCierre, tramosDelRecorrido, moverParada, moverParadaEnRuta, propuestaPorCercania, paradasDeRuta, gruposDeRuta } from '@/lib/adaptadores/ruta'
+import { loPuestoAqui, loDeHoy, avanceDeHoy, aCobrarEnLaParada, kmDeLaRuta, partirRecorrido, adaptarParadaActual, cierreDelDia, resumenDeCierre, tramosDelRecorrido, moverParada, moverParadaEnRuta, propuestaPorCercania, paradasDeRuta, gruposDeRuta } from '@/lib/adaptadores/ruta'
 import { DIAS_MORA } from '@/lib/adaptadores/clientes'
 // La tarjeta de parada es la MISMA que pinta /cobros-hoy. Ver la nota de
 // components/cf/ParadaDeCobro: aqui habia una segunda tarjeta para lo mismo.
@@ -92,9 +92,10 @@ function CapaRecorrido({ children }) {
   )
 }
 
-function HistorialCobros({ rutaId }) {
+function HistorialCobros({ rutaId, sinPagarHoy }) {
   const [open, setOpen] = useState(false)
   const [dias, setDias] = useState(null)
+  const [hoyDelServidor, setHoyDelServidor] = useState(null)
   const [loading, setLoading] = useState(false)
   const [expandido, setExpandido] = useState(null)
   const [tab, setTab] = useState('pagaron') // 'pagaron' | 'noPagaron'
@@ -113,6 +114,7 @@ function HistorialCobros({ rutaId }) {
       if (res.ok) {
         const data = await res.json()
         setDias(data.dias)
+        setHoyDelServidor(data.hoy ?? null)
       }
     } catch {} finally { setLoading(false) }
   }
@@ -125,9 +127,12 @@ function HistorialCobros({ rutaId }) {
   const aplicarFiltro = () => cargar(desde, hasta)
   const limpiarFiltro = () => { setDesde(''); setHasta(''); cargar('', '') }
 
+  /* «Dom, 18 de oct»: mayúscula solo al principio (#64). Con la clase
+     `capitalize` salía «Dom, 18 De Oct», una mayúscula por palabra. */
   const formatFecha = (str) => {
     const d = new Date(str + 'T12:00:00')
-    return d.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })
+    const t = d.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })
+    return t.charAt(0).toUpperCase() + t.slice(1)
   }
 
   return (
@@ -213,8 +218,13 @@ function HistorialCobros({ rutaId }) {
             <div className="space-y-1.5">
               {dias.map((dia) => {
                 const isOpen = expandido === dia.fecha
+                /* La fila de HOY dice «sin pagar» con lo que la ruta cuenta arriba:
+                   quien debe hoy y no ha dado nada (#64). La API solo sabe el
+                   calendario de cada día, y por calendario el cliente adelantado
+                   salía «sin pagar» sin deber nada. */
+                const noPagaron = dia.fecha === hoyDelServidor && Array.isArray(sinPagarHoy) ? sinPagarHoy : dia.noPagaron
                 const cantPagaron = dia.pagaron.length
-                const cantNoPagaron = dia.noPagaron.length
+                const cantNoPagaron = noPagaron.length
                 return (
                   <div key={dia.fecha} className="rounded-xl border border-[rgba(255,255,255,0.05)] overflow-hidden">
                     {/* Fila principal del día */}
@@ -223,9 +233,9 @@ function HistorialCobros({ rutaId }) {
                       className="w-full flex items-center gap-3 px-3 py-3 hover:bg-[rgba(255,255,255,0.02)] transition-colors"
                     >
                       <div className="flex-1 text-left min-w-0">
-                        <p className="text-[13px] text-[var(--cf-ink)] font-medium capitalize">{formatFecha(dia.fecha)}</p>
+                        <p className="text-[13px] text-[var(--cf-ink)] font-medium">{formatFecha(dia.fecha)}</p>
                         <p className="text-[10px] text-[var(--cf-ink-2)] mt-0.5">
-                          <span className="text-[var(--cf-green-dark)]">{cantPagaron} pagaron</span>
+                          <span className="text-[var(--cf-green-dark)]">{cantPagaron} {cantPagaron === 1 ? 'pagó' : 'pagaron'}</span>
                           {cantNoPagaron > 0 && <span className="text-[var(--cf-red-dark)]"> · {cantNoPagaron} sin pagar</span>}
                         </p>
                       </div>
@@ -267,7 +277,7 @@ function HistorialCobros({ rutaId }) {
                                   <div key={i} className="flex items-center justify-between py-1.5">
                                     <div className="flex items-center gap-2 min-w-0">
                                       <span className="w-1.5 h-1.5 rounded-full bg-[var(--cf-green-dark)] shrink-0" />
-                                      <span className="text-[12px] text-[#ccc] truncate">{c.nombre}</span>
+                                      <span className="text-[12px] text-[var(--cf-ink-2)] break-words">{c.nombre}</span>
                                     </div>
                                     <span className="text-[12px] font-bold font-mono-display text-[var(--cf-ink)] shrink-0 ml-2">{formatMoney(c.monto)}</span>
                                   </div>
@@ -279,7 +289,7 @@ function HistorialCobros({ rutaId }) {
                               <p className="text-[11px] text-[var(--cf-green-dark)] text-center py-2">Todos pagaron</p>
                             ) : (
                               <div className="space-y-1">
-                                {dia.noPagaron.map((nombre, i) => (
+                                {noPagaron.map((nombre, i) => (
                                   <div key={i} className="flex items-center gap-2 py-1.5">
                                     <span className="w-1.5 h-1.5 rounded-full bg-[var(--cf-red-dark)] shrink-0" />
                                     <span className="text-[12px] text-[var(--cf-ink-2)]">{nombre}</span>
@@ -2272,7 +2282,8 @@ export default function RutaDetallePage({ params }) {
   // hacia quien no toca.
   const paradasDeHoy = (ruta?.clientes ?? [])
     .filter((c) => c.cobroPendienteHoy || c.pagoHoy)
-    .map((c, i) => ({
+    .map((c, i) => ({ c, i, pide: aCobrarEnLaParada(c) }))
+    .map(({ c, i, pide }) => ({
       id: c.id,
       orden: posicionEnRuta.get(c.id) ?? i + 1,
       nombre: c.nombre,
@@ -2293,7 +2304,10 @@ export default function RutaDetallePage({ params }) {
       cobradoHoy: !c.cobroPendienteHoy || Boolean(c.visitaCerradaHoy),
       visitaCerrada: Boolean(c.visitaCerradaHoy),
       motivoCierre: c.motivoCierre ?? null,
-      montoACobrar: c.cuota,
+      // Si ya abonó hoy, lo que le falta y no la cuota entera (#66).
+      montoACobrar: pide.monto,
+      cobrarEtiqueta: pide.etiqueta,
+      abonoHoy: pide.abono,
       montoCobrado: c.montoPagadoHoy,
       debe: c.saldoPendiente,
       metros: c.distanciaMetros,
@@ -3906,7 +3920,14 @@ export default function RutaDetallePage({ params }) {
       </Card>
 
       {/* Historial de cobros */}
-      <HistorialCobros rutaId={id} />
+      <HistorialCobros
+        rutaId={id}
+        // Quien debe hoy y no ha dado nada: lo mismo que «Por cobrar hoy» sin
+        // los que ya abonaron (esos salen en «pagaron»).
+        sinPagarHoy={(ruta?.clientes ?? [])
+          .filter((c) => !c.hoySinCobro && c.cobroPendienteHoy && !((c.montoPagadoHoy ?? 0) > 0))
+          .map((c) => c.nombre)}
+      />
 
       {/* Hoja de cobro imprimible (oculta en pantalla, solo @media print) */}
       <HojaRutaImprimible ruta={ruta} clientes={ruta.clientes} />

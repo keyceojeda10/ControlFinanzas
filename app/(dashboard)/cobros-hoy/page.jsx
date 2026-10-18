@@ -190,8 +190,11 @@ export default function CobrosHoyPage() {
   // Detectar meta cumplida
   useEffect(() => {
     if (!data?.resumen) return
-    const { recaudadoHoy, esperadoHoy } = data.resumen
-    if (esperadoHoy > 0 && recaudadoHoy >= esperadoHoy && !metaCumplida) {
+    const { recaudadoHoy, esperadoHoy, faltaHoy } = data.resumen
+    // Cumplida cuando no le falta nada a nadie (#63), no cuando lo cobrado pasa
+    // la meta: el pago grande de uno la daba por cumplida con 8 sin cobrar.
+    const cumplida = faltaHoy != null ? faltaHoy <= 0 : recaudadoHoy >= esperadoHoy
+    if (esperadoHoy > 0 && cumplida && !metaCumplida) {
       setMetaCumplida(true)
     }
   }, [data, metaCumplida])
@@ -209,7 +212,7 @@ export default function CobrosHoyPage() {
     if (!cuota || cuota <= 0) return
     setModoParcial(false)
     setMontoParcial('')
-    setModalPago({ id: cliente.id, nombre: cliente.nombre, cuota, prestamoActivo: p.id, prestamosActivos: activos, abonoConPendiente: cliente.pagoHoy && cliente.cobroPendienteHoy, esBalloon: p.esBalloon || false, cuotaNumero: p.cuotaNumero ?? null, modoInteres: p.modoInteres, cuotaExtraHoy: p.cuotaExtraHoy || false, montoCuotaExtra: p.montoCuotaExtra || 0 })
+    setModalPago({ id: cliente.id, nombre: cliente.nombre, cuota, prestamoActivo: p.id, prestamosActivos: activos, abonoConPendiente: cliente.pagoHoy && cliente.cobroPendienteHoy, faltaHoy: cliente.faltaHoy, esBalloon: p.esBalloon || false, cuotaNumero: p.cuotaNumero ?? null, modoInteres: p.modoInteres, cuotaExtraHoy: p.cuotaExtraHoy || false, montoCuotaExtra: p.montoCuotaExtra || 0 })
   }
 
   /* `?empezar=1`: llega del aviso «Hoy le toca cobrar» (components/cf/AvisoCobrarHoy.jsx)
@@ -262,6 +265,11 @@ export default function CobrosHoyPage() {
         pendientes: tipoPago === 'completo' ? Math.max(0, prev.resumen.pendientes - 1) : prev.resumen.pendientes,
         pagados: tipoPago === 'completo' ? prev.resumen.pagados + 1 : prev.resumen.pagados,
         recaudadoHoy: prev.resumen.recaudadoHoy + montoFinal,
+        // Lo que este cliente cubre de lo que falta; la cifra exacta llega con
+        // la recarga de después del cobro.
+        ...(prev.resumen.faltaHoy != null ? {
+          faltaHoy: Math.max(0, prev.resumen.faltaHoy - Math.min(montoFinal, objetivo.faltaHoy ?? montoFinal)),
+        } : {}),
       }
     } : prev)
 
@@ -410,9 +418,6 @@ export default function CobrosHoyPage() {
     })
     return Object.entries(map).sort((a, b) => a[0].localeCompare(b[0]))
   })()
-  const pct = resumen.esperadoHoy > 0
-    ? Math.min(100, Math.round((resumen.recaudadoHoy / resumen.esperadoHoy) * 100))
-    : 0
 
   // Lo que la hoja necesita saber, todo derivado — nada de estado paralelo.
   const conteos = conteosAtraso(data?.clientes, filtros)

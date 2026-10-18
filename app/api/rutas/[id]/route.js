@@ -360,6 +360,9 @@ export async function GET(request, { params }) {
     let frecuencia   = null   // null = todavia no se ha visto ningun prestamo
     let proximoCobro = null
     let cobroPendienteHoy = false
+    // Lo que le queda de la cuota de hoy (#66). Se suma junto al «Falta» de la
+    // ruta, así las paradas suman lo mismo que dice arriba.
+    let faltaHoyCliente = 0
     // Pago de hoy con coords mas reciente — alimenta el badge en la card del cliente.
     let pagoHoyGeoCliente = null
     // Detalle de pagos de hoy (vista de auditoria): monto, metodo y hora de cada cobro real.
@@ -567,7 +570,11 @@ export async function GET(request, { params }) {
          que cerró su préstamo con $222.667 dejaba «Falta $0» con tres clientes
          sin cobrar: lo que pagó uno de más tapaba lo que deben los otros. Falta
          es lo que le queda a cada pendiente de su cuota de hoy. */
-      if (tocaHoyEste && pendienteEste) faltaHoy += Math.max(0, cuota - montoPagadoHoy)
+      if (tocaHoyEste && pendienteEste) {
+        const leFalta = Math.max(0, cuota - montoPagadoHoy)
+        faltaHoy += leFalta
+        faltaHoyCliente += leFalta
+      }
       const saldoPendientePrestamo = calcularSaldoPendiente(p)
       carteraTotal    += saldoPendientePrestamo
       carteraCliente  += saldoPendientePrestamo
@@ -724,6 +731,7 @@ export async function GET(request, { params }) {
       puedePrestarHasta: Math.round(puedePrestarHasta),
       prestamosCompletados,
       cuota:     cuotaCliente,
+      faltaHoy:  Math.round(faltaHoyCliente),
       hoySinCobro: _hoySinCobro,
       cobroPendienteHoy: pendienteHoyCliente,
       // Presentación, no dinero: ver la nota larga de arriba. El cliente sigue

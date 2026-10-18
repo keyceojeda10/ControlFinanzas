@@ -116,7 +116,7 @@ export function ConmutadorVista({ vista = 'lista', onVista }) {
 
 export function ParadaActual({
   orden, nombre, estado, donde,
-  cobrarEtiqueta = 'Cobrarle hoy', cobrar, debe,
+  cobrarEtiqueta = 'Cobrarle hoy', cobrar, debe, abonoHoy,
   onAvisar, onLlegar,
 }) {
   const tono = TONO[estado?.tono] ?? TONO.oro
@@ -175,6 +175,27 @@ export function ParadaActual({
           </span>
         )}
       </div>
+
+      {/* ── YA ABONÓ HOY (DETALLES-RUTAS #66) ──
+          La misma frase y el mismo verde de la tarjeta de la lista: entró plata
+          suya hoy y todavía le falta. Sin esto la parada pedía la cuota entera
+          y el cobrador le volvía a cobrar lo que ya le habían dado. */}
+      {abonoHoy && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '8px 12px', borderRadius: 10,
+          background: 'var(--cf-green-pill-bg)',
+          border: '1px solid var(--cf-green-pill-border)',
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cf-green-dark)"
+            strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+          <span style={{ flex: 1, fontSize: 12, lineHeight: 1.35, color: 'var(--cf-green-dark)', minWidth: 0 }}>
+            Ya abonó <b>{abonoHoy}</b> hoy · sigue pendiente
+          </span>
+        </div>
+      )}
 
       {/* Las dos cosas que se hacen ANTES de cobrar: avisar que vas, o que te
           lleve. Ninguna es dorada — el dorado es cobrar, en el pie. */}
