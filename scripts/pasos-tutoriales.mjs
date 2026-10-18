@@ -245,7 +245,7 @@ export const PASOS = [
        fallaba buscando «Nueva ruta», que solo existe cuando ya tienes rutas. */
     { pie: 'Entra a «Rutas» y toca el botón de ruta nueva', en: '/rutas', vitrina: 'vacia',
       senal: { rotulo: 'Crear primera ruta', texto: 'Una ruta es un cobrador y su recorrido' } },
-    { pie: 'Ponle nombre, elige quién la cobra y qué clientes lleva',
+    { pie: 'Ponle nombre y elige quién la recorre',
       en: '/rutas', vitrina: 'vacia', toques: ['Crear primera ruta'] },
   ] },
 
@@ -261,7 +261,7 @@ export const PASOS = [
   { id: 'reordenar-ruta', pasos: [
     { pie: 'Dentro de la ruta, toca «Ordenar»', en: 'ruta',
       senal: { rotulo: 'Ordenar', texto: 'El orden del recorrido' } },
-    { pie: 'Arrastra las paradas. Así es como te salen los cobros cada día',
+    { pie: 'Arrastra las paradas o escribe el número de su puesto. El orden se guarda solo',
       en: 'ruta', toques: ['Ordenar'] },
   ] },
 

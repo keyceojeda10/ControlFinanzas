@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 let L = null
 if (typeof window !== 'undefined') {
@@ -68,6 +68,10 @@ function createCobradorIcon(nombre, estaActivo, esReciente) {
   })
 }
 
+// El teléfono manda su posición cada 10 min cuando el cobrador está quieto
+// (UbicacionProvider, LATIDO_MS): «Desconectado» sólo después de 15 min.
+const MIN_DESCONECTADO = 15
+
 function tiempoDesde(fecha) {
   if (!fecha) return null
   const mins = Math.round((Date.now() - new Date(fecha).getTime()) / 60000)
@@ -84,7 +88,20 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador, trail 
   const trailLayerRef = useRef(null)
 
   const conCoords = (clientes ?? []).filter((c) => c.latitud != null && c.longitud != null)
+  // El número del pin es el PUESTO EN LA RUTA, el mismo de la lista (#17): se
+  // contaba solo entre los que tienen ubicación y el 7 del mapa era el 9 de la ruta.
+  const puestoEnRuta = new Map((clientes ?? []).map((c, i) => [c.id, i + 1]))
   const cobradorConCoords = cobrador?.latitud != null && cobrador?.longitud != null
+  // Misma lectura que el marcador y su popup, para que la leyenda no contradiga.
+  const [ahora, setAhora] = useState(() => Date.now())
+  useEffect(() => {
+    const t = setInterval(() => setAhora(Date.now()), 30000)
+    return () => clearInterval(t)
+  }, [])
+  const minsCobrador = cobrador?.ubicacionUpdatedAt
+    ? (ahora - new Date(cobrador.ubicacionUpdatedAt).getTime()) / 60000
+    : Infinity
+  const estadoCobradorLabel = minsCobrador < 5 ? 'En línea' : minsCobrador < MIN_DESCONECTADO ? 'Reciente' : 'Desconectado'
 
   useEffect(() => {
     if (!L || !mapRef.current) return
@@ -111,8 +128,9 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador, trail 
     const bounds = []
 
     conCoords.forEach((c, i) => {
-      const marker = L.marker([c.latitud, c.longitud], { icon: createNumberedIcon(i + 1) })
-      marker.bindPopup(`<b style="color:var(--cf-ink)">${i + 1}. ${c.nombre}</b>${c.direccion ? `<br><span style="color:var(--cf-ink-2);font-size:11px">${c.direccion}</span>` : ''}`)
+      const puesto = puestoEnRuta.get(c.id) ?? i + 1
+      const marker = L.marker([c.latitud, c.longitud], { icon: createNumberedIcon(puesto) })
+      marker.bindPopup(`<b style="color:var(--cf-ink)">${puesto}. ${c.nombre}</b>${c.direccion ? `<br><span style="color:var(--cf-ink-2);font-size:11px">${c.direccion}</span>` : ''}`)
       marker.addTo(map)
       bounds.push([c.latitud, c.longitud])
     })
@@ -130,7 +148,7 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador, trail 
       })
         .bindPopup(
           d == null
-            ? `<span style="color:var(--cf-ink)">Cobro registrado (cliente sin ubicacion)</span>`
+            ? `<span style="color:var(--cf-ink)">Cobro registrado (cliente sin ubicación)</span>`
             : `<span style="color:var(--cf-ink)">Cobrado a <b>${d < 1000 ? d + 'm' : (d / 1000).toFixed(1) + 'km'}</b> del cliente</span>`,
         )
         .addTo(map)
@@ -142,14 +160,14 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador, trail 
         ? (Date.now() - new Date(cobrador.ubicacionUpdatedAt).getTime()) / 60000
         : Infinity
       const activo = minsDesde < 5
-      const reciente = minsDesde >= 5 && minsDesde < 10
+      const reciente = minsDesde >= 5 && minsDesde < MIN_DESCONECTADO
 
       const marker = L.marker([cobrador.latitud, cobrador.longitud], {
         icon: createCobradorIcon(cobrador.nombre, activo, reciente),
         zIndexOffset: 1000,
       })
 
-      const estadoLabel = activo ? 'En linea' : reciente ? 'Reciente' : 'Desconectado'
+      const estadoLabel = activo ? 'En línea' : reciente ? 'Reciente' : 'Desconectado'
       const estadoColor = activo ? 'var(--cf-green-dark)' : reciente ? 'var(--cf-gold)' : 'var(--cf-ink-3)'
       marker.bindPopup(`
         <div style="min-width:120px">
@@ -225,10 +243,10 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador, trail 
       ? (Date.now() - new Date(cobrador.ubicacionUpdatedAt).getTime()) / 60000
       : Infinity
     const activo = minsDesde < 5
-    const reciente = minsDesde >= 5 && minsDesde < 10
+    const reciente = minsDesde >= 5 && minsDesde < MIN_DESCONECTADO
     cobradorMarkerRef.current.setIcon(createCobradorIcon(cobrador.nombre, activo, reciente))
 
-    const estadoLabel = activo ? 'En linea' : reciente ? 'Reciente' : 'Desconectado'
+    const estadoLabel = activo ? 'En línea' : reciente ? 'Reciente' : 'Desconectado'
     const estadoColor = activo ? 'var(--cf-green-dark)' : reciente ? 'var(--cf-gold)' : 'var(--cf-ink-3)'
     cobradorMarkerRef.current.setPopupContent(`
       <div style="min-width:120px">
@@ -242,7 +260,7 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador, trail 
   if (conCoords.length === 0 && (cobrosGeoHoy?.length ?? 0) === 0 && !cobradorConCoords) {
     return (
       <div className="h-[200px] rounded-xl border border-[var(--cf-border)] bg-[var(--cf-card)] flex items-center justify-center">
-        <p className="text-xs text-[var(--cf-ink-3)]">Sin clientes con ubicacion para mostrar</p>
+        <p className="text-xs text-[var(--cf-ink-3)]">Sin clientes con ubicación para mostrar</p>
       </div>
     )
   }
@@ -255,15 +273,15 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador, trail 
         style={{ background: 'var(--cf-ink)' }}
       />
       <p className="text-[10px] text-[var(--cf-ink-3)] mt-1">
-        {conCoords.length} clientes con ubicacion
+        {conCoords.length} clientes con ubicación
         {cobrosGeoHoy?.length > 0 && (
           <> · <span style={{ color: 'var(--cf-green-dark)' }}>●</span> {cobrosGeoHoy.length} cobro{cobrosGeoHoy.length === 1 ? '' : 's'} de hoy</>
         )}
         {cobradorConCoords && (
-          <> · <span style={{ color: 'var(--cf-gold)' }}>●</span> Cobrador en vivo</>
+          <> · <span style={{ color: 'var(--cf-gold)' }}>●</span> Cobrador · {estadoCobradorLabel}</>
         )}
         {trail.length >= 2 && (
-          <> · <span style={{ color: 'var(--cf-gold)' }}>―</span> Recorrido del dia</>
+          <> · <span style={{ color: 'var(--cf-gold)' }}>―</span> Recorrido del día</>
         )}
       </p>
 

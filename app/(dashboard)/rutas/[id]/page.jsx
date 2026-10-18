@@ -6,6 +6,7 @@ import { entraAlFajo } from '@/lib/dinero/cuentas'
 import { abreviaturaDocumento } from '@/lib/documento'
 import { LoPuestoAqui, LoDeHoy } from '@/components/pantallas/DetalleRuta'
 import { loPuestoAqui, loDeHoy, kmDeLaRuta, partirRecorrido, adaptarParadaActual, cierreDelDia, resumenDeCierre, tramosDelRecorrido, moverParada, moverParadaEnRuta, propuestaPorCercania, paradasDeRuta, gruposDeRuta } from '@/lib/adaptadores/ruta'
+import { DIAS_MORA } from '@/lib/adaptadores/clientes'
 // La tarjeta de parada es la MISMA que pinta /cobros-hoy. Ver la nota de
 // components/cf/ParadaDeCobro: aqui habia una segunda tarjeta para lo mismo.
 import { Carril, FilaCobro } from '@/components/cf/ParadaDeCobro'
@@ -140,6 +141,13 @@ function HistorialCobros({ rutaId }) {
 
       {open && (
         <div className="mt-4">
+          {/* DE QUIÉN ES ESTE HISTORIAL (DETALLES-RUTAS #32). Se arma con los
+              clientes que la ruta tiene HOY: si se unió con otra o le llegaron
+              clientes, salen también sus pagos de antes. Rehacerlo día por día
+              cambiaría cifras de fechas pasadas; por ahora se dice. */}
+          <p className="text-[11px] mb-3" style={{ color: 'var(--cf-ink-3)' }}>
+            Los cobros de los clientes que hoy están en esta ruta, aunque los hayan pagado estando en otra.
+          </p>
           {/* Filtro por rango de fechas (calendario nativo del dispositivo) */}
           <div className="flex flex-wrap items-end gap-2 mb-3">
             <div className="flex-1 min-w-[130px]">
@@ -500,7 +508,6 @@ export default function RutaDetallePage({ params }) {
   })
   // Vista Auditoria (admin): filtro por estado de cobro hoy, busqueda y fila expandida.
   const [auditoriaFiltro, setAuditoriaFiltro] = useState('todos') // 'todos' | 'pagaron' | 'pendientes' | 'parciales'
-  const [auditoriaBusqueda, setAuditoriaBusqueda] = useState('')
   const [auditoriaExpandido, setAuditoriaExpandido] = useState(null)
 
   // Helper: fecha Colombia como string YYYY-MM-DD
@@ -914,6 +921,19 @@ export default function RutaDetallePage({ params }) {
     setEditandoNombre(true)
   }
   const cerrarEditarRuta = () => { setEditandoNombre(false); setErrorRuta('') }
+
+  /* «Asignar» desde la lista llega con `?asignar=1` y abre el lápiz, que es
+     donde se escoge el cobrador (DETALLES-RUTAS #44). Antes solo abría la ruta
+     y había que encontrar el lápiz. Una vez, cuando la ruta ya está. */
+  const asignarPedido = useRef(false)
+  useEffect(() => {
+    if (!ruta || !esOwner || asignarPedido.current) return
+    try {
+      if (new URLSearchParams(window.location.search).get('asignar') !== '1') return
+    } catch { return }
+    asignarPedido.current = true
+    abrirEditarRuta()
+  }, [ruta, esOwner]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ⚠ EL MODAL SE CIERRA CON EL GUARDADO, NO CON LA RECARGA. Esperar también a
      `fetchRuta()` con 205 clientes dejaba el modal abierto y sin señal 2,5 s
@@ -1830,6 +1850,12 @@ export default function RutaDetallePage({ params }) {
     return list
   })()
 
+  /* EL PUESTO DE CADA CLIENTE EN LA RUTA ENTERA (DETALLES-RUTAS #17). La lista,
+     el recorrido, «Ordenar», la tabla del PC, el mapa y la hoja impresa contaban
+     cada uno sobre su propia lista recortada: el mismo cliente salía con cinco
+     números. El número es uno: el de la ruta, el mismo de «Auditoría». */
+  const posicionEnRuta = new Map((ruta?.clientes ?? []).map((c, i) => [c.id, i + 1]))
+
   /* ⚠ ESTOS DOS VAN DESPUES DE `clientesFiltrados`, Y NO ES UN DETALLE.
      Los puse ARRIBA, junto a `guardarOrden`, y usan `clientesFiltrados` —que se
      declara aqui abajo—: un `const` leido antes de existir revienta al
@@ -1868,30 +1894,13 @@ export default function RutaDetallePage({ params }) {
   /* Quitar de la ruta. NO borra al cliente ni su préstamo: le deja `rutaId` en
      null, que es lo que hace el endpoint. Con confirmación porque quitar por
      error a alguien le rompe el día al cobrador. */
-  const quitarDeLaRuta = useCallback(async (parada) => {
+  /* UNA SOLA CONFIRMACIÓN PARA QUITAR (DETALLES-RUTAS #24). «Ordenar» usaba
+     la ventana del navegador y «Sacar de la ruta», la propia: dos maneras de
+     preguntar lo mismo. Ahora las dos abren la de la pantalla. */
+  const quitarDeLaRuta = useCallback((parada) => {
     if (!parada?.id) return
-    const nombre = parada.nombre ?? 'este cliente'
-    if (!confirm(`¿Quitar a ${nombre} de la ruta?
-
-Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este recorrido.`)) return
-    try {
-      const res = await fetch(`/api/rutas/${id}/clientes`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clienteId: parada.id }),
-      })
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}))
-        setOrdenError(d.error || 'No se pudo quitar de la ruta')
-        return
-      }
-      setRuta((prev) => (prev
-        ? { ...prev, clientes: (prev.clientes ?? []).filter((c) => c.id !== parada.id) }
-        : prev))
-    } catch {
-      setOrdenError('Sin conexión: no se pudo quitar de la ruta')
-    }
-  }, [id])
+    setConfirmQuitar({ id: parada.id, nombre: parada.nombre ?? 'Este cliente' })
+  }, [])
 
   /* ══ LA PARADA, UNA SOLA VEZ PARA LAS DOS PANTALLAS ═══════════════════════
    *
@@ -2079,6 +2088,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
      dos cuentas del mismo número es como acaban diciendo cosas distintas. */
   const conMoratorio = clientesFiltrados.map((c) => ({
     ...c,
+    posicionRuta: posicionEnRuta.get(c.id),
     // El moratorio depende de la CONFIGURACIÓN DE LA RUTA (tasa y días
     // de gracia), no del cliente, así que no puede salir del adaptador
     // compartido: se resuelve aquí y viaja ya resuelto.
@@ -2111,6 +2121,15 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
 
 
   const clientesConCoords = ruta?.clientes?.filter((c) => c.latitud != null && c.longitud != null).length ?? 0
+  /* LO QUE «OPTIMIZAR» NO DECÍA (DETALLES-RUTAS #27): arranca desde el primer
+     cliente con ubicación —el orden se arma de ahí en adelante— y los que no
+     tienen ubicación se van al final. */
+  const sinUbicacion = (ruta?.clientes?.length ?? 0) - clientesConCoords
+  const primeroConUbicacion = ruta?.clientes?.find((c) => c.latitud != null && c.longitud != null)?.nombre
+  const notaOptimizar = [
+    primeroConUbicacion ? `Arranca desde ${primeroConUbicacion}, el primero de la ruta con ubicación.` : null,
+    sinUbicacion > 0 ? `${sinUbicacion === 1 ? 'El cliente sin ubicación queda' : `Los ${sinUbicacion} clientes sin ubicación quedan`} al final.` : null,
+  ].filter(Boolean).join(' ') || null
 
   /* ── LA CABECERA DEL SISTEMA, EN LUGAR DE LA HECHA A MANO ─────────────────
    * Aquí abajo había una copia divergente: 21px de título contra los 17 del
@@ -2204,7 +2223,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
     .filter((c) => c.cobroPendienteHoy || c.pagoHoy)
     .map((c, i) => ({
       id: c.id,
-      orden: i + 1,
+      orden: posicionEnRuta.get(c.id) ?? i + 1,
       nombre: c.nombre,
       direccion: c.direccion,
       telefono: c.telefono,
@@ -2574,7 +2593,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
           </div>
 
           <MoneyInput
-            label="Cuanto traes de verdad"
+            label="Cuánto traes de verdad"
             placeholder={cierreHoyRuta.total}
             value={totalRecogido}
             onChange={(e) => setTotalRecogido(e.target.value)}
@@ -2590,7 +2609,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
             }
             return (
               <p className="text-sm">
-                <span style={{ color: 'var(--cf-ink-3)' }}>{dif > 0 ? 'Traes de mas: ' : 'Falta: '}</span>
+                <span style={{ color: 'var(--cf-ink-3)' }}>{dif > 0 ? 'Traes de más: ' : 'Falta: '}</span>
                 <span className="font-mono-display" style={{ fontWeight: 700, color: dif > 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)' }}>
                   {formatMoney(Math.abs(dif))}
                 </span>
@@ -2753,7 +2772,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                `RutaEditar` además usa `key={p.id}`: React estaba pintando la
                lista entera con claves vacías. */
             id: c.id,
-            orden: i + 1,
+            orden: posicionEnRuta.get(c.id) ?? i + 1,
             nombre: c.nombre,
             direccion: c.direccion,
             diasMora: c.diasMora,
@@ -2858,7 +2877,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
           : (ruta.clientes ?? []).filter((c) => c.cobroPendienteHoy || c.pagoHoy)
         ).filter(enProcedencia).map((c, i) => ({
           id: c.id,
-          orden: i + 1,
+          orden: posicionEnRuta.get(c.id) ?? i + 1,
           iniciales: inicialesDe(c.nombre),
           nombre: c.nombre,
           donde: [c.direccion, (c.prestamosActivos?.length ?? 0) > 1
@@ -3074,7 +3093,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
       {optimResult && (
         <div className="px-3 py-2 rounded-[12px] bg-[rgba(34,197,94,0.06)] border border-[rgba(34,197,94,0.12)]">
           <p className="text-xs text-[var(--cf-green-dark)] font-medium">
-            Ruta optimizada {optimResult.ahorro > 0 && `· ${optimResult.ahorro}% mas corta`}
+            Ruta optimizada {optimResult.ahorro > 0 && `· ${optimResult.ahorro}% más corta`}
           </p>
         </div>
       )}
@@ -3084,6 +3103,14 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
         <div className="rounded-[12px] overflow-hidden border border-[#222]">
           <RouteMap clientes={ruta.clientes} cobrosGeoHoy={ruta.cobrosGeoHoy ?? []} cobrador={cobradorUbi} trail={cobradorTrail} />
         </div>
+      )}
+
+      {/* La ruta pasada del límite del plan lo dice aquí, no solo en la lista
+          de rutas (DETALLES-RUTAS #22). */}
+      {ruta.soloLectura && (
+        <p className="text-[12px] leading-snug rounded-[12px] px-3.5 py-2.5" style={{ color: 'var(--cf-ink-2)', background: 'var(--cf-fill)' }}>
+          Esta ruta está en «Solo lectura» por el límite de tu plan: no admite clientes ni préstamos nuevos.
+        </p>
       )}
 
       {/* ── DE DÓNDE VIENEN SUS CLIENTES (3 oct 2026) ──
@@ -3113,7 +3140,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
           <span className="text-[10px] text-[#777]">
             {guardandoOrden && <span className="text-[var(--cf-ink-3)] flex items-center gap-1 inline-flex"><svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Guardando</span>}
             {ordenGuardado && <span className="text-[var(--cf-green-dark)]">Guardado</span>}
-            {ordenOffline && <span className="text-[var(--cf-gold)]">Guardado offline</span>}
+            {ordenOffline && <span className="text-[var(--cf-gold)]">Guardado en el teléfono</span>}
             {ordenError && <span className="text-[var(--cf-red-dark)]">{ordenError}</span>}
           </span>
         </div>
@@ -3278,7 +3305,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                   // API responde que no encuentra al cliente. Ver la nota del
                   // otro montaje, en la rama de escritorio.
                   id: c.id,
-                  orden: i + 1,
+                  orden: posicionEnRuta.get(c.id) ?? i + 1,
                   nombre: c.nombre,
                   direccion: c.direccion,
                   diasMora: c.diasMora,
@@ -3334,11 +3361,6 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
             if (auditoriaFiltro === 'pagaron') lista = lista.filter(c => c._clase === 'pagaron')
             else if (auditoriaFiltro === 'pendientes') lista = lista.filter(c => c._clase === 'pendientes')
             else if (auditoriaFiltro === 'parciales') lista = lista.filter(c => c._clase === 'parcial')
-
-            if (auditoriaBusqueda.trim()) {
-              const q = auditoriaBusqueda.trim().toLowerCase()
-              lista = lista.filter(c => c.nombre?.toLowerCase().includes(q))
-            }
 
             const filtros = [
               { key: 'todos', label: 'Todos', count: counts.todos },
@@ -3437,20 +3459,9 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                   )}
                 </div>
 
-                {/* Buscador */}
-                <div className="relative">
-                  <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="var(--cf-ink-3)" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
-                  </svg>
-                  <input
-                    type="text"
-                    value={auditoriaBusqueda}
-                    onChange={(e) => setAuditoriaBusqueda(e.target.value)}
-                    placeholder="Buscar cliente..."
-                    className="w-full pl-9 pr-3 py-2 text-sm rounded-[12px] outline-none"
-                    style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }}
-                  />
-                </div>
+                {/* Sin buscador propio (DETALLES-RUTAS #25): el de arriba ya filtra
+                    esta lista, por nombre y por cédula. Eran dos a la vez y los
+                    filtros se sumaban sin que se viera. */}
 
                 {/* Filtros rapidos con contador */}
                 <div className="flex gap-1.5 overflow-x-auto pb-0.5 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
@@ -3629,7 +3640,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                                 <div className="flex items-center justify-between text-[12px] px-2 py-1.5 rounded-[8px]"
                                   style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 8%, transparent)', color: 'var(--cf-red-dark)' }}
                                 >
-                                  <span>{c.diasMora}d en mora{c.cuotasEnMora ? ` · ${c.cuotasEnMora} cuota${c.cuotasEnMora === 1 ? '' : 's'}` : ''}</span>
+                                  <span>{c.diasMora}d {c.diasMora > DIAS_MORA ? 'en mora' : 'vencido'}{c.cuotasEnMora ? ` · ${c.cuotasEnMora} cuota${c.cuotasEnMora === 1 ? '' : 's'}` : ''}</span>
                                   <span className="font-mono-display font-semibold">{formatMoney(c.montoEnMora)}</span>
                                 </div>
                               )}
@@ -3690,7 +3701,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                               ) : (
                                 (c._clase !== 'completado' || c.tieneClavo) && c._clase !== 'sin_cobro' && (
                                   <p className="text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>
-                                    Aun no se ha registrado un cobro hoy.
+                                    Aún no se ha registrado un cobro hoy.
                                   </p>
                                 )
                               )}
@@ -4223,12 +4234,16 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
             <p className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>
               Cambia el orden que hayas puesto a mano. Se puede volver a ordenar cuando quieras.
             </p>
+            {notaOptimizar && <p className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>{notaOptimizar}</p>}
           </div>
         ) : (
-          <p className="text-sm text-[var(--cf-ink-3)]">
-            Se reordenarán los clientes según su ubicación para crear la ruta más corta.
-            Cambia el orden que hayas puesto a mano.
-          </p>
+          <div className="flex flex-col gap-2">
+            <p className="text-sm text-[var(--cf-ink-3)]">
+              Se reordenarán los clientes según su ubicación para crear la ruta más corta.
+              Cambia el orden que hayas puesto a mano.
+            </p>
+            {notaOptimizar && <p className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>{notaOptimizar}</p>}
+          </div>
         )}
       </Modal>
 
@@ -4256,7 +4271,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
         }
       >
         <p className="text-sm text-[var(--cf-ink-3)]">
-          <span className="text-[var(--cf-ink)] font-medium">{confirmQuitar?.nombre}</span> será removido de esta ruta. Podrás reasignarlo después.
+          <span className="text-[var(--cf-ink)] font-medium">{confirmQuitar?.nombre}</span> sale de esta ruta. Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este recorrido. Podrás reasignarlo después.
         </p>
       </Modal>
 
@@ -4347,6 +4362,8 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
             crecio={formatMoney(Math.abs((ruta?.entroMes ?? 0) - (ruta?.salioAPrestarMes ?? 0)))}
             crecioFavor={(ruta?.entroMes ?? 0) >= (ruta?.salioAPrestarMes ?? 0)}
             nombreRuta={ruta?.nombre}
+            // La bolsa de la ruta, solo si tiene capital propio y se puede ver (#28).
+            capitalPropio={ruta?.capitalHabilitado && ruta?.saldoCapital != null ? formatMoney(Math.round(ruta.saldoCapital)) : null}
             totalPrestamos={(ruta?.clientes ?? []).reduce((n, c) => n + (c.prestamosActivos?.length ?? 0), 0)}
             onVerPrestamos={() => router.push(`/prestamos?rutaId=${id}`)}
           />

@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react'
 import { abreviaturaDocumento } from '@/lib/documento'
 import { createPortal } from 'react-dom'
 import { formatMoney } from '@/lib/i18n'
+import { DIAS_MORA } from '@/lib/adaptadores/clientes'
 
 const fmtFechaLarga = () =>
   new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -29,11 +30,14 @@ export default function HojaRutaImprimible({ ruta, clientes }) {
   const [montado, setMontado] = useState(false)
   useEffect(() => { setMontado(true) }, [])
   // Solo clientes con cobro hoy o con saldo (los que el cobrador debe visitar).
+  // El «#» del papel es el puesto en la ruta, el mismo de la pantalla (#17).
+  const puestoEnRuta = new Map((clientes || []).map((c, i) => [c.id, i + 1]))
   const lista = (clientes || []).filter(
     (c) => c.estado !== 'completado' && (c.cobroPendienteHoy || c.cuota > 0 || (c.diasMora || 0) > 0)
   )
 
   const totalEsperado = lista.reduce((a, c) => a + (c.cobroPendienteHoy ? Math.round(c.cuota || 0) : 0), 0)
+  // Desde 1 día: «con atraso». «En mora» es más de DIAS_MORA (#29).
   const enMora = lista.filter((c) => (c.diasMora || 0) > 0).length
 
   if (!montado) return null
@@ -50,7 +54,7 @@ export default function HojaRutaImprimible({ ruta, clientes }) {
         </div>
         <div className="hr-meta">
           <p className="hr-fecha">{fmtFechaLarga()}</p>
-          <p className="hr-count">{lista.length} clientes &middot; {enMora} en mora</p>
+          <p className="hr-count">{lista.length} clientes &middot; {enMora} con atraso</p>
         </div>
       </div>
 
@@ -65,7 +69,7 @@ export default function HojaRutaImprimible({ ruta, clientes }) {
           <p className="hr-stat-value">{lista.length}</p>
         </div>
         <div className="hr-stat">
-          <p className="hr-stat-label">En mora</p>
+          <p className="hr-stat-label">Con atraso</p>
           <p className="hr-stat-value">{enMora}</p>
         </div>
       </div>
@@ -86,7 +90,7 @@ export default function HojaRutaImprimible({ ruta, clientes }) {
         <tbody>
           {lista.map((c, i) => (
             <tr key={c.id} className={i % 2 === 1 ? 'hr-row-alt' : ''}>
-              <td className="hr-c-num">{i + 1}</td>
+              <td className="hr-c-num">{puestoEnRuta.get(c.id) ?? i + 1}</td>
               <td className="hr-c-cli">
                 <span className="hr-nombre">{c.nombre}</span>
                 {c.cedula && !c.cedula.startsWith('SIN-') ? <span className="hr-ced">{abreviaturaDocumento()} {c.cedula}</span> : null}
@@ -97,7 +101,7 @@ export default function HojaRutaImprimible({ ruta, clientes }) {
               </td>
               <td className="hr-c-est">
                 {(c.diasMora || 0) > 0 ? (
-                  <span className="hr-mora">{c.diasMora}d mora</span>
+                  <span className="hr-mora">{c.diasMora}d {c.diasMora > DIAS_MORA ? 'en mora' : 'vencido'}</span>
                 ) : (
                   <span className="hr-aldia">Al día</span>
                 )}

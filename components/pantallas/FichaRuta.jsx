@@ -36,6 +36,8 @@ export default function FichaRuta({
   puesto, prestado, porGanar, rinde,
   entro, salioAPrestar, crecio, crecioFavor = true,
   comparacion = [], nombreRuta,
+  // La bolsa propia de la ruta, si tiene capital propio. Sin él, no sale (#28).
+  capitalPropio = null,
   lectura, totalPrestamos, onVerPrestamos,
   // «El relleno lateral lo pone el armazón, el componente NO». Dentro de una
   // HojaInferior, que ya trae el suyo, esto sumaba 40px por lado. Es el sexto
@@ -55,11 +57,23 @@ export default function FichaRuta({
         <BloqueOscuro etiqueta="Tienes puesto en esta ruta" cifra={puesto}>
           <span style={{ height: 1, background: 'rgba(255,255,255,.09)' }} />
           <TiraCifras sobreOscuro columnas={[
-            { etiqueta: 'Prestado',  valor: prestado },
+            /* «en total»: es lo que se prestó en los préstamos vivos, y la
+               cifra grande de arriba es lo que falta por volver. Las dos se
+               llamaban «Prestado» en otras pantallas (DETALLES-RUTAS #28). */
+            { etiqueta: 'Prestado en total', valor: prestado },
             { etiqueta: 'Por ganar', valor: porGanar },
             { etiqueta: 'Rinde',     valor: rinde, tono: 'favor' },
           ]} />
         </BloqueOscuro>
+
+        {capitalPropio && (
+          <Tarjeta>
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
+              Capital propio de la ruta
+            </span>
+            <span className="cf-num" style={{ fontSize: 22, fontWeight: 700, color: 'var(--cf-ink)' }}>{capitalPropio}</span>
+          </Tarjeta>
+        )}
 
         <Tarjeta>
           <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
@@ -84,8 +98,10 @@ export default function FichaRuta({
         </Tarjeta>
 
         {/* La comparación es lo que informa la decisión: dónde poner la plata
-            quieta. Por eso van las otras rutas y no solo esta. */}
-        <Tarjeta>
+            quieta. Por eso van las otras rutas y no solo esta.
+            ⚠ Sin datos no se pinta: salía el título y el pie sobre una tarjeta
+            vacía (DETALLES-RUTAS #28). */}
+        {comparacion.length > 0 && <Tarjeta>
           <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
             Cómo va comparada
           </span>
@@ -114,7 +130,7 @@ export default function FichaRuta({
           <span style={{ fontSize: 11.5, color: 'var(--cf-ink-3)' }}>
             Cumplimiento de las cuotas del mes.
           </span>
-        </Tarjeta>
+        </Tarjeta>}
 
         {/* La conclusión escrita, como en "Cómo paga": los números solos no
             dicen qué hacer con ellos. */}

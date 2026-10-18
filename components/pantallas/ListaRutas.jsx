@@ -184,7 +184,7 @@ function RutaSinCobrador({ nombre, clientes = 0, onAsignar, onAbrir }) {
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
         }}>{nombre}</span>
         <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>
-          {clientes} cliente{clientes === 1 ? '' : 's'} · sin cobrador
+          {clientes} cliente{clientes === 1 ? '' : 's'} · Sin cobrador
         </span>
       </div>
       <button type="button" onClick={(e) => { e.stopPropagation(); onAsignar?.() }} style={{
@@ -369,7 +369,7 @@ export default function ListaRutas({
       {/* Lo que la pantalla NO muestra, dicho. Sin esta línea, un dueño que
           busca «cuánto tengo puesto en la Ruta 2» la recorre entera y concluye
           que la app no lo dice. */}
-      <Aviso tono="neutro">La cartera y el capital de cada ruta están adentro, en su detalle.</Aviso>
+      <Aviso tono="neutro">El capital de cada ruta está adentro, en su detalle.</Aviso>
 
       {/* «Salir a cobrar» va AL FINAL DEL CONTENIDO, no anclada abajo.
           

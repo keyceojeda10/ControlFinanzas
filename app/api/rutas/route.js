@@ -267,6 +267,8 @@ export async function POST(request) {
       where: { id: cobradorId, organizationId, rol: 'cobrador' },
     })
     if (!cobrador) return Response.json({ error: 'Cobrador no válido' }, { status: 400 })
+    // Un cobrador desactivado no entra a la app: darle una ruta la deja sin quien la cobre (#35).
+    if (cobrador.activo === false) return Response.json({ error: 'Ese cobrador está desactivado. Actívalo antes de darle una ruta.' }, { status: 400 })
   }
 
   // Si se mueve del capital existente, validar que la org tenga saldo suficiente.

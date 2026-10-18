@@ -40,6 +40,7 @@ import { eventoDelPago, textoDelEvento } from '@/lib/avisos-cartera'
 import { trackEvent } from '@/lib/analytics'
 import { getUtcOffset, getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
 import { marcadorOffline, resolverFechaDelPago, claveCobroValida } from '@/lib/pagos-sin-senal'
+import { rutaIdsDe } from '@/lib/caja/stats-dia'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { sanitizarCoords } from '@/lib/geo'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
@@ -79,7 +80,7 @@ export async function POST(request, { params }) {
   const bloqueoSub = await bloquearSiSuscripcionVencida(session)
   if (bloqueoSub) return bloqueoSub
 
-  const { rol, rutaIds = [], organizationId, id: userId } = session.user
+  const { rol, organizationId, id: userId } = session.user
   const { id: prestamoId } = await params
 
   const body = await request.json()
@@ -138,8 +139,12 @@ export async function POST(request, { params }) {
     return Response.json({ error: 'No se pueden registrar pagos en préstamos inactivos' }, { status: 400 })
   }
 
-  // Cobrador: verificar que el cliente es de su ruta
-  if (rol === 'cobrador' && !rutaIds.includes(prestamo.cliente.rutaId)) {
+  /* Cobrador: el cliente tiene que ser de su ruta, y eso lo dice la BASE, no
+     la sesión (DETALLES-RUTAS #38). Las rutas de la sesión se refrescan cada
+     rato: al cobrador al que le acababan de dar una ruta, el cobro le daba 403
+     hasta un cuarto de hora, y al que se la quitaban le seguía dejando cobrar.
+     Es la misma consulta con la que la sesión arma sus rutas. */
+  if (rol === 'cobrador' && !(await rutaIdsDe(organizationId, userId)).includes(prestamo.cliente.rutaId)) {
     return Response.json({ error: 'No tienes acceso a este préstamo' }, { status: 403 })
   }
 

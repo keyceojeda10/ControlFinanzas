@@ -7,6 +7,7 @@ import { registrarMovimientoCapital } from '@/lib/capital'
 import { calcularSaldoPendiente } from '@/lib/calculos'
 import { notificar } from '@/lib/notificar'
 import { anotarLlegadas } from '@/lib/rutas/procedencia'
+import { rutaPermitida } from '@/lib/limites-plan'
 
 /* Solo rutas activas: meter clientes en una ruta archivada (unida con otra)
    los escondería en una ruta que ninguna lista enseña. */
@@ -36,6 +37,12 @@ export async function POST(request, { params }) {
 
   const ruta = await verificarRuta(id, organizationId)
   if (!ruta) return Response.json({ error: 'Ruta no encontrada' }, { status: 404 })
+  /* La misma barrera del plan que crear un cliente (DETALLES-RUTAS #22): una
+     ruta pasada del límite está en «Solo lectura» y no admite clientes nuevos.
+     Desde la ruta se le podían meter igual. */
+  if (!await rutaPermitida(organizationId, id)) {
+    return Response.json({ error: 'Esta ruta está en «Solo lectura»: pasa del límite de tu plan. Mejora tu plan o reordena las rutas para elegir cuáles siguen activas.' }, { status: 403 })
+  }
 
   // descontarCapitalRuta: si true, el saldo pendiente de los préstamos activos de los
   // clientes asignados se reserva del capital de ESTA ruta (reasignación: no cambia el

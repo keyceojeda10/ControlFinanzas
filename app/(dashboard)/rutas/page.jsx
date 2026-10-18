@@ -78,7 +78,8 @@ export default function RutasPage() {
     if (!showForm || cobradoresLista.length) return
     fetch('/api/cobradores')
       .then((r) => (r.ok ? r.json() : []))
-      .then((d) => setCobradoresLista(Array.isArray(d) ? d : (d?.cobradores ?? [])))
+      // Solo los activos: uno desactivado no entra a la app y el servidor ya no lo deja (#35).
+      .then((d) => setCobradoresLista((Array.isArray(d) ? d : (d?.cobradores ?? [])).filter((c) => c.activo !== false)))
       .catch(() => {})
   }, [showForm, cobradoresLista.length])
   const [saving,   setSaving]   = useState(false)
@@ -573,8 +574,10 @@ export default function RutasPage() {
           línea, sin caja. */}
       {rutasPermitidas && rutas.length > 0 && rutas.some(r => !rutasPermitidas.has(r.id)) && (
         <p className="text-[12px] leading-snug mb-3" style={{ color: 'var(--cf-ink-3)' }}>
-          Las rutas en «Solo lectura» no admiten clientes ni préstamos nuevos.
-          Reordénalas para elegir cuáles siguen activas.
+          {/* Con su nombre (#22): la nota hablaba de una etiqueta que ninguna
+              tarjeta enseña, y no se sabía cuáles eran. */}
+          En «Solo lectura» por el límite de tu plan: {rutas.filter(r => !rutasPermitidas.has(r.id)).map(r => r.nombre).join(', ')}.
+          No admiten clientes ni préstamos nuevos. Reordénalas para elegir cuáles siguen activas.
         </p>
       )}
 
@@ -636,16 +639,28 @@ export default function RutasPage() {
         </div>
       )}
 
-      {!loading && rutas.length === 0 && !error && (
+      {/* El vacío del cobrador no es el del dueño (DETALLES-RUTAS #33): le
+          ofrecía «Crear primera ruta» y al tocarlo le decía que solo el
+          administrador puede. Se espera a saber quién es para no parpadear. */}
+      {!loading && !authLoading && rutas.length === 0 && !error && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="mb-4">
             <MonedaCF pose="vacia" size={100} />
           </div>
-          <p className="text-sm font-medium text-[var(--cf-ink)]">Sin rutas aun</p>
-          <p className="text-xs text-[var(--cf-ink-3)] mt-1">Crea una ruta y asignale un cobrador</p>
-          <button onClick={() => setShowForm(true)} className="mt-4 text-sm text-[var(--cf-gold)] hover:underline">
-            Crear primera ruta
-          </button>
+          {esOwner ? (
+            <>
+              <p className="text-sm font-medium text-[var(--cf-ink)]">Sin rutas aún</p>
+              <p className="text-xs text-[var(--cf-ink-3)] mt-1">Crea una ruta y asígnale un cobrador</p>
+              <button onClick={() => setShowForm(true)} className="mt-4 text-sm text-[var(--cf-gold)] hover:underline">
+                Crear primera ruta
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-medium text-[var(--cf-ink)]">Todavía no tienes una ruta</p>
+              <p className="text-xs text-[var(--cf-ink-3)] mt-1">Pídele al administrador que te asigne una.</p>
+            </>
+          )}
         </div>
       )}
 
@@ -725,7 +740,7 @@ export default function RutasPage() {
             resumen={resumenDelDia(rutas, country)}
             acciones={accionesRutas}
             onAbrir={(r) => { window.location.href = `/rutas/${r.id}` }}
-            onAsignar={(r) => { window.location.href = r?.id ? `/rutas/${r.id}` : '/clientes?sinRuta=1' }}
+            onAsignar={(r) => { window.location.href = r?.id ? `/rutas/${r.id}?asignar=1` : '/clientes?sinRuta=1' }}
             onVerSinRuta={() => { window.location.href = '/clientes?sinRuta=1' }}
           />
         </div>
@@ -767,7 +782,7 @@ export default function RutasPage() {
               // Dos agujeros distintos: la ruta SIN COBRADOR se resuelve
               // asignandole uno en su detalle; el cliente SIN RUTA, filtrando la
               // lista de clientes. Antes los dos iban al mismo sitio.
-              window.location.href = r?.id ? `/rutas/${r.id}` : '/clientes?sinRuta=1'
+              window.location.href = r?.id ? `/rutas/${r.id}?asignar=1` : '/clientes?sinRuta=1'
             }}
             onSalirACobrar={() => { window.location.href = '/cobros-hoy' }}
           />

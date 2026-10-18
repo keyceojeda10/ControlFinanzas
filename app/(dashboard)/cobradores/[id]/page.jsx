@@ -71,6 +71,24 @@ function CobradorDetalleInner({ params }) {
 
   useEffect(() => { fetchRutas() }, [fetchRutas])
 
+  /* ANTES DE MOVER UNA RUTA, SE PREGUNTA (DETALLES-RUTAS #36). «Quitar» y
+     «Darle otra ruta» actuaban al primer toque, y la segunda le puede quitar la
+     ruta a OTRO cobrador («— la lleva X»): un toque equivocado movía una ruta con
+     los cobros del día. La pregunta dice qué pasa y a quién. */
+  const [porConfirmar, setPorConfirmar] = useState(null) // { rutaId, quien, titulo, mensaje }
+  const pedirAsignar = (rutaId, quien) => {
+    const r = (rutasOrg ?? []).find((x) => x.id === rutaId)
+    const nombreRuta = r?.nombre ?? 'esta ruta'
+    const nombreCobrador = data?.nombre ?? 'este cobrador'
+    if (quien === null) {
+      setPorConfirmar({ rutaId, quien, titulo: `¿Quitarle ${nombreRuta}?`,
+        mensaje: `${nombreRuta} queda sin cobrador y ${nombreCobrador} deja de verla.` })
+      return
+    }
+    setPorConfirmar({ rutaId, quien, titulo: `¿Darle ${nombreRuta} a ${nombreCobrador}?`,
+      mensaje: r?.cobrador ? `Hoy la lleva ${r.cobrador.nombre}: se la quitas a él y pasa a ${nombreCobrador}.` : `${nombreRuta} no tiene cobrador: pasa a ${nombreCobrador}.` })
+  }
+
   /** Pone (o quita) este cobrador en una ruta. `null` la deja sin cobrador. */
   const asignarRuta = async (rutaId, quien, forzar = false) => {
     setAsignando(true)
@@ -448,7 +466,7 @@ function CobradorDetalleInner({ params }) {
                 </Link>
                 {esOwner && (
                   <button type="button" disabled={asignando}
-                    onClick={() => asignarRuta(r.id, null)}
+                    onClick={() => pedirAsignar(r.id, null)}
                     className="text-[11px] font-semibold shrink-0 px-2 py-1 rounded-[8px]"
                     style={{ color: 'var(--cf-ink-3)', background: 'var(--cf-fill)' }}>
                     Quitar
@@ -465,7 +483,13 @@ function CobradorDetalleInner({ params }) {
 
         {/* El asignador. Solo el dueño, y solo si el negocio tiene alguna ruta
             que este cobrador no lleve ya. */}
-        {esOwner && rutasLibres.length > 0 && (
+        {/* Desactivado no entra a la app: no se le ofrecen rutas (#35). */}
+        {esOwner && data.activo === false && rutasLibres.length > 0 && (
+          <p className="text-[12px] mt-3" style={{ color: 'var(--cf-ink-3)' }}>
+            Está desactivado: actívalo para darle una ruta.
+          </p>
+        )}
+        {esOwner && rutasLibres.length > 0 && data.activo !== false && (
           <div className="flex flex-col gap-1.5 mt-3">
             <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>
               {susRutas.length > 0 ? 'Darle otra ruta' : 'Darle una ruta'}
@@ -473,7 +497,7 @@ function CobradorDetalleInner({ params }) {
             <select
               value=""
               disabled={asignando}
-              onChange={(e) => { if (e.target.value) asignarRuta(e.target.value, id) }}
+              onChange={(e) => { if (e.target.value) pedirAsignar(e.target.value, id) }}
               className="w-full"
               style={{
                 height: 46, padding: '0 12px', borderRadius: 'var(--cf-r-control)',
@@ -509,6 +533,17 @@ function CobradorDetalleInner({ params }) {
           `confirmColor`. Escribí `onClose`, `confirmText` y `danger` de memoria,
           y sin TypeScript eso no revienta: sale un modal que no se puede
           cerrar. */}
+      <ConfirmModal
+        open={!!porConfirmar}
+        onCancel={() => setPorConfirmar(null)}
+        onConfirm={() => { const p = porConfirmar; setPorConfirmar(null); asignarRuta(p.rutaId, p.quien) }}
+        title={porConfirmar?.titulo}
+        message={porConfirmar?.mensaje}
+        confirmLabel={porConfirmar?.quien === null ? 'Quitársela' : 'Dársela'}
+        confirmColor={porConfirmar?.quien === null ? 'red' : undefined}
+        loading={asignando}
+      />
+
       <ConfirmModal
         open={!!forzarRuta}
         onCancel={() => setForzarRuta(null)}

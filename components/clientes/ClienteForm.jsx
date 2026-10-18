@@ -778,7 +778,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                     <option value="final">Al final de la ruta</option>
                     <option value="inicio">Al inicio de la ruta</option>
                     {clientesRuta.map((c, i) => (
-                      <option key={c.id} value={c.id}>Despues de {i + 1}. {c.nombre}</option>
+                      <option key={c.id} value={c.id}>Después de {i + 1}. {c.nombre}</option>
                     ))}
                   </Select>
                 )}

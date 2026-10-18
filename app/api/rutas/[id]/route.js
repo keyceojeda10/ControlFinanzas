@@ -3,6 +3,8 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { logActividad }     from '@/lib/activity-log'
+import { rutaPermitida }    from '@/lib/limites-plan'
 import { calificacionDe } from '@/lib/calificacion'
 import { historialPorCliente } from '@/lib/historial-cliente'
 import { esId }             from '@/lib/ids'
@@ -801,6 +803,8 @@ export async function GET(request, { params }) {
       capitalPendiente: Math.round(capitalPendiente),
     } : {}),
     cobrador:    ruta.cobrador,
+    // Pasada del límite del plan: no admite clientes ni préstamos nuevos (#22).
+    soloLectura: !(await rutaPermitida(organizationId, id)),
     clientes:    clientesEnriquecidos,
     esperadoHoy: Math.round(esperadoHoy),
     recaudadoHoy: Math.round(recaudadoHoy),
@@ -889,10 +893,15 @@ export async function PATCH(request, { params }) {
     }
     const cobrador = await prisma.user.findFirst({
       where: { id: cobradorId, organizationId: session.user.organizationId, rol: 'cobrador' },
-      select: { id: true },
+      select: { id: true, activo: true },
     })
     if (!cobrador) {
       return Response.json({ error: 'Cobrador no válido' }, { status: 400 })
+    }
+    /* Un cobrador desactivado no entra a la app (#35). Solo si CAMBIA: si es el
+       que ya tenía, renombrar la ruta no puede fallar por eso. */
+    if (cobrador.activo === false && cobradorId !== ruta.cobradorId) {
+      return Response.json({ error: 'Ese cobrador está desactivado. Actívalo antes de darle una ruta.' }, { status: 400 })
     }
   }
 
@@ -930,8 +939,8 @@ export async function PATCH(request, { params }) {
     if (cierreHoy || pagosHoy > 0) {
       return Response.json({
         error: cierreHoy
-          ? 'El cobrador anterior ya tiene cierre de caja hoy. Cambiar el cobrador fragmentaria el cierre.'
-          : `El cobrador anterior tiene ${pagosHoy} pago(s) de hoy en esta ruta. Espera al cierre o forza el cambio.`,
+          ? 'El cobrador anterior ya tiene cierre de caja hoy. Cambiar el cobrador fragmentaría el cierre.'
+          : `El cobrador anterior tiene ${pagosHoy} pago(s) de hoy en esta ruta. Espera al cierre, o cámbialo desde la ficha del cobrador.`,
         cambioBloqueado: true,
         motivo: cierreHoy ? 'cierre_existente' : 'pagos_del_dia',
       }, { status: 409 })
@@ -948,6 +957,18 @@ export async function PATCH(request, { params }) {
     },
     include: { cobrador: { select: { id: true, nombre: true } } },
   })
+
+  /* QUEDA ANOTADO (DETALLES-RUTAS #37): quién le cambió el cobrador o el nombre
+     a una ruta. Unir y agregar clientes ya lo dejaban; esto no. */
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+  if (cambiaCobrador) {
+    logActividad({ session, accion: 'asignar_cobrador_ruta', entidadTipo: 'ruta', entidadId: id, ip,
+      detalle: `Ruta "${actualizada.nombre}": ${actualizada.cobrador?.nombre ? `ahora la cobra ${actualizada.cobrador.nombre}` : 'quedó sin cobrador'}` })
+  }
+  if (nombre !== undefined && nombre.trim() !== ruta.nombre) {
+    logActividad({ session, accion: 'renombrar_ruta', entidadTipo: 'ruta', entidadId: id, ip,
+      detalle: `Ruta "${ruta.nombre}" ahora se llama "${actualizada.nombre}"` })
+  }
 
   return Response.json(actualizada)
 }
@@ -979,6 +1000,9 @@ export async function DELETE(request, { params }) {
     }),
     prisma.ruta.delete({ where: { id } }),
   ])
+
+  logActividad({ session, accion: 'eliminar_ruta', entidadTipo: 'ruta', entidadId: id, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+    detalle: `Ruta "${ruta.nombre}" eliminada; ${ruta._count.clientes} cliente(s) quedaron sin ruta` })
 
   return Response.json({ eliminada: true, clientesDesasignados: ruta._count.clientes })
 }

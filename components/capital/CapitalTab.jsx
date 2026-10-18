@@ -773,6 +773,9 @@ export default function CapitalTab() {
                   <span>Prestado: <span className="font-semibold" style={{ color: 'var(--cf-gold-dark)' }}>{formatMoney(r.prestado)}</span></span>
                   <span>Cobrado: <span className="font-semibold" style={{ color: 'var(--cf-ink-2)' }}>{formatMoney(r.recaudado)}</span></span>
                 </div>
+                <p className="text-[10px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>
+                  No suman el saldo: faltan los retiros, los gastos y las reservas.
+                </p>
                 <div className="flex gap-2 mt-2.5">
                   <button type="button" onClick={() => abrirMovimientoRuta(r.rutaId, 'inyeccion')}
                     className="flex-1 py-1.5 rounded-[8px] text-xs font-semibold transition-colors"
@@ -1027,7 +1030,7 @@ export default function CapitalTab() {
                     <label className="flex items-start gap-2 cursor-pointer">
                       <input type="checkbox" checked={modalAbsorber} onChange={(e) => setModalAbsorber(e.target.checked)} className="mt-0.5 accent-[#6366f1]" />
                       <span className="text-xs text-[var(--cf-ink-2)]">
-                        Si esta ruta ya tiene préstamos activos de antes, descontar lo que falta por cobrar de esta inyección. El sistema calcula el monto exacto.
+                        Si esta ruta ya tiene préstamos activos de antes, descontar lo que falta por cobrar (con intereses) de esta inyección. El sistema calcula el monto exacto.
                       </span>
                     </label>
                   </div>

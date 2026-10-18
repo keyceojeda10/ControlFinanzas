@@ -218,9 +218,9 @@ export function Cobradores({
               <span style={{ width: 1, flex: 'none', background: 'var(--cf-hairline)' }} />
               <Cifra rotulo="Efectividad" valor={c.efectividad} tono={c.tonoEfectividad} />
               <span style={{ width: 1, flex: 'none', background: 'var(--cf-hairline)' }} />
-              {/* «Debe entregar» es EFECTIVO, no lo recogido: lo que entró por
+              {/* «Cobrado en efectivo» es EFECTIVO, no lo recogido: lo que entró por
                   transferencia ya está en la cuenta. Ver `entregaEnEfectivo`. */}
-              <Cifra rotulo="Debe entregar" valor={c.entrega} tono={c.debeAlgo ? 'entrega' : undefined} />
+              <Cifra rotulo="Cobrado en efectivo" valor={c.entrega} tono={c.debeAlgo ? 'entrega' : undefined} />
             </div>
           </button>
         ))}

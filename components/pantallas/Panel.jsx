@@ -45,6 +45,7 @@
 // contra la lámina sin depender de la base de datos.
 
 import { Fragment, useState } from 'react'
+import Link from 'next/link'
 import { Tarjeta } from '@/components/cf/primitivos'
 import { BLOQUE, BORDE_BLOQUE } from '@/components/cf/bloqueOscuro'
 import SemanaDeCobros from '@/components/cf/SemanaDeCobros'
@@ -479,10 +480,13 @@ const COLOR_RUTA = {
   nada: { texto: 'var(--cf-ink-3)',      barra: 'var(--cf-ink-4)' },
 }
 
-function FilaRuta({ nombre, porcentaje = 0, tono = 'oro' }) {
+function FilaRuta({ id, nombre, porcentaje = 0, tono = 'oro' }) {
   const c = COLOR_RUTA[tono] || COLOR_RUTA.oro
+  /* La fila lleva a su ruta (#41): ver que una va al 12% y no poder abrirla
+     obligaba a buscarla a mano. Sin id (la pantalla de estilo), sin enlace. */
+  const Contenedor = id ? Link : 'div'
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 'none' }}>
+    <Contenedor {...(id ? { href: `/rutas/${id}` } : {})} style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 'none', textDecoration: 'none', color: 'inherit' }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
         <span style={{
           fontSize: 13, fontWeight: 600, color: 'var(--cf-ink)',
@@ -499,7 +503,7 @@ function FilaRuta({ nombre, porcentaje = 0, tono = 'oro' }) {
           background: c.barra,
         }} />
       </div>
-    </div>
+    </Contenedor>
   )
 }
 

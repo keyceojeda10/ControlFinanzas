@@ -415,7 +415,15 @@ export async function PATCH(request, { params }) {
     ? await prisma.ruta.findUnique({ where: { id: clienteBase.rutaId }, select: { nombre: true } })
     : null
 
+  /* EL PUESTO EN LA RUTA NUEVA (DETALLES-RUTAS #21). Al cambiarle la ruta se
+     quedaba con su número de la vieja: caía arriba o en cualquier sitio de la
+     nueva. Entra al final, como al agregarlo desde la ruta. Sin ruta, sin puesto. */
+  const entraARuta = rutaId !== undefined && !!rutaId && rutaId !== clienteBase.rutaId
+
   const actualizado = await prisma.$transaction(async (tx) => {
+    const ultimoPuesto = entraARuta
+      ? (await tx.cliente.aggregate({ where: { organizationId: session.user.organizationId, rutaId, id: { not: id } }, _max: { ordenRuta: true } }))._max.ordenRuta ?? 0
+      : null
     const fila = await tx.cliente.update({
       where: { id },
       data: {
@@ -427,6 +435,8 @@ export async function PATCH(request, { params }) {
         ...(notas      !== undefined && { notas:      notas?.trim()      || null }),
         ...(fotoUrl    !== undefined && { fotoUrl:    fotoUrl?.trim() && /^https?:\/\/.+/i.test(fotoUrl.trim()) ? fotoUrl.trim() : null }),
         ...(rutaId        !== undefined && { rutaId:        rutaId        || null }),
+        ...(entraARuta && { ordenRuta: ultimoPuesto + 1 }),
+        ...(rutaId !== undefined && !rutaId && { ordenRuta: null }),
         ...(lat          !== undefined && { latitud:    lat }),
         ...(lng          !== undefined && { longitud:   lng }),
         ...(diasSinCobroVal !== undefined && { diasSinCobro: diasSinCobroVal }),
