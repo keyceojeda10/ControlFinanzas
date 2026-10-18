@@ -5,7 +5,7 @@ import { formatMoney } from '@/lib/i18n'
 import { entraAlFajo } from '@/lib/dinero/cuentas'
 import { abreviaturaDocumento } from '@/lib/documento'
 import { LoPuestoAqui, LoDeHoy } from '@/components/pantallas/DetalleRuta'
-import { loPuestoAqui, loDeHoy, kmDeLaRuta, partirRecorrido, adaptarParadaActual, cierreDelDia, resumenDeCierre, tramosDelRecorrido, moverParada, moverParadaEnRuta, propuestaPorCercania, paradasDeRuta, gruposDeRuta } from '@/lib/adaptadores/ruta'
+import { loPuestoAqui, loDeHoy, avanceDeHoy, kmDeLaRuta, partirRecorrido, adaptarParadaActual, cierreDelDia, resumenDeCierre, tramosDelRecorrido, moverParada, moverParadaEnRuta, propuestaPorCercania, paradasDeRuta, gruposDeRuta } from '@/lib/adaptadores/ruta'
 import { DIAS_MORA } from '@/lib/adaptadores/clientes'
 // La tarjeta de parada es la MISMA que pinta /cobros-hoy. Ver la nota de
 // components/cf/ParadaDeCobro: aqui habia una segunda tarjeta para lo mismo.
@@ -2720,6 +2720,7 @@ export default function RutaDetallePage({ params }) {
         hoy={loDeHoy({
           esperadoHoy: ruta?.esperadoHoy,
           recaudadoHoy: ruta?.recaudadoHoy,
+          faltaHoy: ruta?.faltaHoy,
           clientesConCobroHoy: ruta?.clientesConCobroHoy,
           clientesPagaronHoy: ruta?.clientesPagaronHoy,
           clientesVisitadosHoy: visitadasHoy,
@@ -2765,8 +2766,7 @@ export default function RutaDetallePage({ params }) {
     )
   }
 
-  const progreso = ruta.esperadoHoy > 0
-    ? Math.min(100, Math.round((ruta.recaudadoHoy / ruta.esperadoHoy) * 100)) : 0
+  const progreso = avanceDeHoy(ruta)
 
   return (
     <>
@@ -2975,7 +2975,7 @@ export default function RutaDetallePage({ params }) {
         // Lo que les queda a los pendientes, no esperado − recaudado (#62).
         porCobrarHoy={formatMoney(ruta.faltaHoy != null ? Math.max(0, ruta.faltaHoy) : Math.max(0, (ruta.esperadoHoy ?? 0) - (ruta.recaudadoHoy ?? 0)))}
         recaudadoHoy={formatMoney(ruta.recaudadoHoy ?? 0)}
-        progreso={ruta.esperadoHoy > 0 ? Math.min(100, Math.round((ruta.recaudadoHoy / ruta.esperadoHoy) * 100)) : 0}
+        progreso={avanceDeHoy(ruta)}
         conteoCobros={`${visitadasHoy} de ${ruta.clientesConCobroHoy ?? 0} visitados`}
         procedencia={ruta.procedencias?.length > 0 ? (
           <ProcedenciaRuta grupos={ruta.procedencias} nombreRuta={ruta.nombre} compacto
@@ -3055,6 +3055,9 @@ export default function RutaDetallePage({ params }) {
       <LoDeHoy {...loDeHoy({
         esperadoHoy: ruta.esperadoHoy,
         recaudadoHoy: ruta.recaudadoHoy,
+        // #62: lo que de verdad falta, sumado cliente por cliente en el
+        // servidor. Sin esto `loDeHoy` resta y un pago grande tapa al resto.
+        faltaHoy: ruta.faltaHoy,
         clientesConCobroHoy: ruta.clientesConCobroHoy,
         clientesPagaronHoy: ruta.clientesPagaronHoy,
         clientesVisitadosHoy: visitadasHoy,
@@ -3425,7 +3428,7 @@ export default function RutaDetallePage({ params }) {
               { key: 'parciales', label: 'Abonos parciales', count: counts.parciales },
             ]
 
-            const pctCobradoHoy = ruta.esperadoHoy > 0 ? Math.min(100, Math.round((ruta.recaudadoHoy / ruta.esperadoHoy) * 100)) : (ruta.recaudadoHoy > 0 ? 100 : 0)
+            const pctCobradoHoy = ruta.esperadoHoy > 0 ? avanceDeHoy(ruta) : (ruta.recaudadoHoy > 0 ? 100 : 0)
 
             return (
               <div className="space-y-3">
