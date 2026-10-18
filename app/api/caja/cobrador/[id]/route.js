@@ -498,6 +498,14 @@ export async function GET(request, { params }) {
   const asientosDeMigracion = primerMovPorRuta.filter((m) => m.rutaId && !noMovioNada(m)
     && (esAsientoDeMigracion(m, migradosDelLibro)
       || (refsMigradasHoy.has(m.referenciaId) && (esDesembolsoActualizado(m) || esReversoDeEdicion(m)))))
+  /* El reverso de un abono previo (anular o borrar ese pago) va con su abono:
+     apunta al préstamo con `referenciaTipo: 'pago'` y se casa por importe.
+     Misma regla que `resumirLibro`. */
+  for (const abono of asientosDeMigracion.filter((m) => m.tipo === 'recaudo')) {
+    const par = primerMovPorRuta.find((m) => m.tipo === 'ajuste' && m.referenciaTipo === 'pago' && m.referenciaId === abono.referenciaId
+      && m.saldoNuevo < m.saldoAnterior && Math.round(m.monto) === Math.round(abono.monto) && !asientosDeMigracion.includes(m))
+    if (par) asientosDeMigracion.push(par)
+  }
   const conSigno = (m) => (m.tipo === 'desembolso' ? -1 : m.tipo === 'recaudo' ? 1 : (m.saldoNuevo >= m.saldoAnterior ? 1 : -1)) * m.monto
   const migracionesDia = Math.round(asientosDeMigracion.reduce((a, m) => a + conSigno(m), 0))
   const idsMigracion = new Set(asientosDeMigracion.map((m) => m.id))
