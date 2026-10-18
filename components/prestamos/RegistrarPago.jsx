@@ -44,6 +44,7 @@ import {
 import { elInteresSubeLaDeuda }                            from '@/lib/dinero/modos'
 import { interesQueCompraUnPeriodo }                      from '@/lib/dinero/interes-periodo'
 import { guardarPagoPendiente, actualizarPrestamoOffline }  from '@/lib/offline'
+import { nuevaClaveCobro } from '@/lib/pagos-sin-senal'
 import { obtenerCoordsRapido, calentarCoords, completarUbicacionDelPago } from '@/lib/geo'
 import AvisoUbicacion from '@/components/cf/AvisoUbicacion'
 import { conPantalla } from '@/components/cf/Procesando'
@@ -440,12 +441,17 @@ export default function RegistrarPago({
     // al abrir la hoja, y como mucho 1,2 s si no (ver lib/geo.js). Va DENTRO de
     // la pantalla de «estoy en eso» para que ni ese rato se quede sin nada.
     let coords = null
+    /* UN DESLIZAR = UN PAGO (DETALLES-PRESTAMOS #60). La misma clave va en el
+       envío en línea y en la copia de la cola: si el servidor guardó el primero
+       pero contestó tarde, la cola no lo crea otra vez. */
+    const claveCobro = nuevaClaveCobro()
 
     // Fix #6: helper para encolar offline — usado tanto en catch de red como en 503 del SW
     const encolarOffline = async () => {
       try {
         await guardarPagoPendiente({
           prestamoId,
+          claveCobro,
           montoPagado: m,
           tipo,
           nota,
@@ -519,7 +525,7 @@ export default function RegistrarPago({
         return fetch(`/api/prestamos/${prestamoId}/pagos${qs}`, {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ montoPagado: m, tipo, nota, diasAbonados, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), plataforma, ...(coords ?? {}), ...(puedeAplazar && aplazar ? { aplazarUnPeriodo: true } : {}) }),
+          body:    JSON.stringify({ claveCobro, montoPagado: m, tipo, nota, diasAbonados, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), plataforma, ...(coords ?? {}), ...(puedeAplazar && aplazar ? { aplazarUnPeriodo: true } : {}) }),
         })
       })
       // Fix #6: el Service Worker puede responder 503 cuando no hay red en vez

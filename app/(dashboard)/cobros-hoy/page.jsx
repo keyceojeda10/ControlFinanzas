@@ -12,6 +12,7 @@ import { StaggeredList } from '@/components/ui/StaggeredList'
 import MonedaCF from '@/components/ui/MonedaCF'
 import MetodoPagoSelector from '@/components/pagos/MetodoPagoSelector'
 import { obtenerRutasOffline, guardarEnCache, leerDeCache, guardarPagoPendiente, obtenerPagosPendientes } from '@/lib/offline'
+import { nuevaClaveCobro } from '@/lib/pagos-sin-senal'
 import CobrarHoy from '@/components/pantallas/CobrarHoy'
 import HojaWhatsApp from '@/components/whatsapp/HojaWhatsApp'
 import {
@@ -246,6 +247,8 @@ export default function CobrosHoyPage() {
     // El cobro ya no espera al GPS aquí fuera: la lectura va DENTRO de la
     // pantalla de «estoy en eso», que sale en el acto tras el gesto.
     let coords = null
+    // La misma clave en línea y en la cola: un deslizar = un pago (#60).
+    const claveCobro = nuevaClaveCobro()
     const enFajo = entraAlFajo(metodoPago, metodoPagoId,
       new Set(metodosPago.filter((x) => x.esDelCobrador).map((x) => x.id)))
 
@@ -269,7 +272,7 @@ export default function CobrosHoyPage() {
         return fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ montoPagado: montoFinal, tipo: tipoPago, diasAbonados: tipoPago === 'completo' ? 1 : 0, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), ...(coords ?? {}) }),
+          body: JSON.stringify({ claveCobro, montoPagado: montoFinal, tipo: tipoPago, diasAbonados: tipoPago === 'completo' ? 1 : 0, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), ...(coords ?? {}) }),
         })
       })
 
@@ -307,6 +310,7 @@ export default function CobrosHoyPage() {
       try {
         await guardarPagoPendiente({
           prestamoId: prestamoActivo,
+          claveCobro,
           montoPagado: montoFinal,
           tipo: tipoPago,
           diasAbonados: tipoPago === 'completo' ? 1 : 0,

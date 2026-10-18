@@ -39,7 +39,7 @@ import { notificar, plata } from '@/lib/notificar'
 import { eventoDelPago, textoDelEvento } from '@/lib/avisos-cartera'
 import { trackEvent } from '@/lib/analytics'
 import { getUtcOffset, getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
-import { marcadorOffline, resolverFechaDelPago } from '@/lib/pagos-sin-senal'
+import { marcadorOffline, resolverFechaDelPago, claveCobroValida } from '@/lib/pagos-sin-senal'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { sanitizarCoords } from '@/lib/geo'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
@@ -81,6 +81,28 @@ export async function POST(request, { params }) {
 
   const { rol, rutaIds = [], organizationId, id: userId } = session.user
   const { id: prestamoId } = await params
+
+  const body = await request.json()
+  const claveCobro = claveCobroValida(body.claveCobro)
+  /* Idempotencia por la CLAVE DEL COBRO (DETALLES-PRESTAMOS #60). La misma
+     clave llega en el envío en línea y en la copia de la cola sin señal: si ya
+     hay un pago con ella, es el mismo cobro y se contesta con ese. Va ANTES del
+     aviso de «duplicado» de 60 s, que la copia de la cola se salta. */
+  const yaRegistrado = (pago) => Response.json({
+    ok: true,
+    idempotente: true,
+    pagoId: pago.id,
+    fechaPago: pago.fechaPago,
+    montoPagado: pago.montoPagado,
+  })
+  if (claveCobro) {
+    const mismo = await prisma.pago.findFirst({
+      where: { claveCobro, organizationId },
+      select: { id: true, fechaPago: true, montoPagado: true },
+    })
+    if (mismo) return yaRegistrado(mismo)
+  }
+
 
   // Obtener préstamo con cliente y pagos
   const prestamo = await prisma.prestamo.findFirst({
@@ -158,7 +180,6 @@ export async function POST(request, { params }) {
     console.error('[pagos] cuota de referencia:', e?.message)
   }
 
-  const body = await request.json()
   const { montoPagado, tipo, nota, diasAbonados, metodoPago, plataforma, metodoPagoId, latitud, longitud, aplazarUnPeriodo, fechaPago: fechaPagoCuerpo, offlineId } = body
   // Sanitizar coords del pago: si vienen fuera de rango, se guardan como null
   // (no rechazar el pago, MVP de geo es no-bloqueante).
@@ -429,6 +450,13 @@ export async function POST(request, { params }) {
     await tx.$queryRaw`
       SELECT id FROM Prestamo WHERE id = ${prestamoId} FOR UPDATE
     `
+    /* La copia del mismo cobro pudo entrar mientras esta esperaba el candado
+       (el envío en línea lento y la cola llegan casi juntos): se mira otra vez
+       aquí, ya con el préstamo bloqueado. */
+    if (claveCobro) {
+      const mismo = await tx.pago.findFirst({ where: { claveCobro }, select: { id: true } })
+      if (mismo) throw new Error(`COBRO_YA_REGISTRADO:${mismo.id}`)
+    }
     const incluirParaLock = {
       pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
       cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
@@ -580,6 +608,7 @@ export async function POST(request, { params }) {
           fechaPago: fechaDelPago,
           latitud: coordsPago.latitud,
           longitud: coordsPago.longitud,
+          claveCobro,
         },
       })
       saldoAntesDelPagoId = filaPago.id
@@ -1107,6 +1136,15 @@ export async function POST(request, { params }) {
     timeout: Number(process.env.PRISMA_TX_TIMEOUT_MS) || 5000,
   })
   } catch (err) {
+    // El mismo cobro ya entró por la otra vía: se contesta con ese pago.
+    const choqueDeClave = claveCobro && (err?.message?.startsWith('COBRO_YA_REGISTRADO:') || err?.code === 'P2002')
+    if (choqueDeClave) {
+      const mismo = await prisma.pago.findFirst({
+        where: { claveCobro, organizationId },
+        select: { id: true, fechaPago: true, montoPagado: true },
+      })
+      if (mismo) return yaRegistrado(mismo)
+    }
     if (err?.message === 'PRESTAMO_NO_ACTIVO') {
       return Response.json({ error: 'El préstamo ya no está activo' }, { status: 400 })
     }

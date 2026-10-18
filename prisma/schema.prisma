@@ -649,6 +649,11 @@ model Pago {
   latitud        Float?
   longitud       Float?
   fotoUrl        String?
+  /// La clave que el teléfono le pone a UN cobro al deslizar, la misma en el
+  /// envío en línea y en la cola sin señal (lib/pagos-sin-senal.js). Con ella
+  /// el servidor no crea el mismo cobro dos veces: 97 cobros duplicados en
+  /// producción hasta el 17 oct 2026, cuando el envío pasaba de 8 s.
+  claveCobro     String?  @unique
   createdAt      DateTime @default(now())
 
   prestamo       Prestamo      @relation(fields: [prestamoId], references: [id])

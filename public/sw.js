@@ -1,5 +1,5 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v1157'
+const CACHE_NAME   = 'cf-v1158'
 // API_CACHE solo sube cuando cambian las CIFRAS que devuelve el servidor.
 //
 // Este release SÍ las cambia, en `/api/cobros-hoy` (Adenda 5):
@@ -731,6 +731,12 @@ async function syncPagosFromSW() {
           fechaPago:    p.createdAt,
           metodoPagoId: p.metodoPagoId ?? null,
           offlineId:    p.createdAt,
+          // Lo que lib/offline.js ya mandaba y aquí faltaba: la clave del cobro
+          // (un deslizar = un pago, #60), el aplazo (#39) y dónde se cobró.
+          ...(p.claveCobro ? { claveCobro: p.claveCobro } : {}),
+          ...(p.aplazarUnPeriodo ? { aplazarUnPeriodo: true } : {}),
+          latitud:      p.latitud ?? null,
+          longitud:     p.longitud ?? null,
         }),
       })
       if (res.ok) {

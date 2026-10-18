@@ -23,6 +23,7 @@ import dynamic                       from 'next/dynamic'
 import { useAuth }                   from '@/hooks/useAuth'
 import { useOffline }                from '@/components/providers/OfflineProvider'
 import { obtenerRutaOffline, guardarOrdenPendiente, guardarPagoPendiente, guardarEnCache, leerDeCache } from '@/lib/offline'
+import { nuevaClaveCobro } from '@/lib/pagos-sin-senal'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { obtenerCoordsRapido, calentarCoords, completarUbicacionDelPago } from '@/lib/geo'
 import { useProcesando } from '@/components/cf/Procesando'
@@ -1059,14 +1060,16 @@ export default function RutaDetallePage({ params }) {
     // viaje al servidor. Antes aquí no se veía nada hasta que volvía la respuesta.
     const enFajo = entraAlFajo(metodoPago, metodoPagoId,
       new Set(metodosPago.filter((x) => x.esDelCobrador).map((x) => x.id)))
+    // La misma clave en línea y en la cola: un deslizar = un pago (#60).
+    const claveCobro = nuevaClaveCobro()
     let coords = null
     try {
       const url = `/api/prestamos/${prestamoActivo}/pagos${confirmarDuplicado ? '?confirmarDuplicado=1' : ''}`
       const res = await conPantalla(enFajo ? 'cobro' : 'cobroEnCuenta', async () => {
         coords = await obtenerCoordsRapido().catch(() => null)
         const payload = esCuotaExacta
-          ? { montoPagado: cuota, tipo: 'completo', diasAbonados: 1, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), ...(coords ?? {}) }
-          : { montoPagado: cuota, tipo: 'parcial', metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), ...(coords ?? {}) }
+          ? { claveCobro, montoPagado: cuota, tipo: 'completo', diasAbonados: 1, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), ...(coords ?? {}) }
+          : { claveCobro, montoPagado: cuota, tipo: 'parcial', metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), ...(coords ?? {}) }
         return fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1181,6 +1184,7 @@ export default function RutaDetallePage({ params }) {
       try {
         await guardarPagoPendiente({
           prestamoId: prestamoActivo,
+          claveCobro,
           clienteId,
           montoPagado: cuota,
           tipo: esCuotaExacta ? 'completo' : 'parcial',
