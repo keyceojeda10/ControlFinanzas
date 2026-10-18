@@ -1533,7 +1533,7 @@ export default function RutaDetallePage({ params }) {
       ejecutar: () => window.print() },
     { id: 'ruta-caja', label: 'Cerrar la caja del día', pista: 'De esta ruta',
       sinonimos: ['cerrar caja', 'cuadrar', 'entregar la plata', 'cierre del dia'],
-      ejecutar: () => setModalCaja(true) },
+      ejecutar: () => abrirCierre() },
     { id: 'ruta-capital', label: 'Ver el capital de la ruta', pista: 'Lo que tienes puesto aquí',
       sinonimos: ['capital de la ruta', 'cuanto tengo aqui', 'plata de la ruta'],
       disponible: esOwner || puedeVerCapitalRuta,
@@ -1578,6 +1578,21 @@ export default function RutaDetallePage({ params }) {
     } finally {
       setQuitando(null)
     }
+  }
+
+  /* «REGISTRAR CIERRE» DEL DUEÑO EN UNA RUTA CON COBRADOR (DETALLES-RUTAS #1,
+     decisión de Carlos del 18 oct). Cerraba la caja del DUEÑO: el cierre salía
+     a su nombre y la ruta seguía diciendo «no se ha registrado el cierre». La
+     caja de un cobrador se cierra en un solo sitio, Caja → Cuadre, con la cifra
+     de toda su caja (todas sus rutas) y el aviso de que le bloquea los cobros.
+     Si la ruta no tiene cobrador la cobra el dueño: ahí sí cierra la suya. */
+  const abrirCierre = () => {
+    if (esOwner && ruta?.cobrador?.id) {
+      router.push(`/caja?tab=cuadre&cobrador=${ruta.cobrador.id}`)
+      return
+    }
+    setTotalRecogido('')
+    setModalCaja(true)
   }
 
   const registrarCierre = async (e) => {
@@ -2647,7 +2662,7 @@ export default function RutaDetallePage({ params }) {
             prestadoEfectivo: ruta?.desembolsadoEfectivoHoy,
             gastos: ruta?.gastosEfectivoHoy,
           }, (n) => formatMoney(n))}
-          onCerrar={() => setModalCaja(true)}
+          onCerrar={abrirCierre}
           cerrando={guardandoCaja}
         />
         {hojaCobro}
@@ -2941,7 +2956,7 @@ export default function RutaDetallePage({ params }) {
             ? `Tienes ${cierreHoyRuta.total} para entregar.`
             : 'Se habilita al terminar el recorrido. Hoy no hay cobros registrados todavía.'}
         cierreListo={!ruta.cierre && (ruta.recaudadoHoy ?? 0) > 0}
-        onCierre={() => { setTotalRecogido(''); setModalCaja(true) }}
+        onCierre={abrirCierre}
       />
     </div>
 
@@ -3839,7 +3854,7 @@ export default function RutaDetallePage({ params }) {
         ) : (
           <div className="text-center py-2">
             <p className="text-sm text-[var(--cf-ink-3)] mb-3">No se ha registrado el cierre de hoy</p>
-            <Button onClick={() => { setTotalRecogido(''); setModalCaja(true) }}>
+            <Button onClick={abrirCierre}>
               Registrar cierre de caja
             </Button>
           </div>

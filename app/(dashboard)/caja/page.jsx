@@ -154,7 +154,8 @@ const MOVIMIENTOS_MANUALES = [
   const [cifraExplicada, setCifraExplicada] = useState(null)
   const [exitoAjuste, setExitoAjuste] = useState(false)
   const [gastosPendientes, setGastosPendientes] = useState(0)
-  const [cajaTab, setCajaTab] = useState(tabParam === 'gastos' ? 'gastos' : 'cobros')
+  // `?tab=cuadre&cobrador=…` llega desde «Registrar cierre» de una ruta (#1).
+  const [cajaTab, setCajaTab] = useState(tabParam === 'gastos' ? 'gastos' : tabParam === 'cuadre' ? 'cuadre' : 'cobros')
   const [fechaSeleccionada, setFechaSeleccionada] = useState(
     typeof fechaParam === 'string' && FECHA_REGEX.test(fechaParam)
       ? fechaParam
@@ -1853,7 +1854,7 @@ const MOVIMIENTOS_MANUALES = [
 
       {/* Cuadre del día: verificación del efectivo de cada cobrador (solo owner) */}
       {cajaTab === 'cuadre' && (
-        <CuadreDia fecha={periodo.modo === 'hoy' ? (periodo.fecha || fechaSeleccionada) : (periodo.hasta || fechaSeleccionada)} />
+        <CuadreDia fecha={periodo.modo === 'hoy' ? (periodo.fecha || fechaSeleccionada) : (periodo.hasta || fechaSeleccionada)} abrirCobradorId={searchParams.get('cobrador')} />
       )}
 
       {/* Histórico acumulado del rango (7d / 30d / personalizado) — MISMA hero card */}

@@ -41,6 +41,7 @@ import { trackEvent } from '@/lib/analytics'
 import { getUtcOffset, getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
 import { marcadorOffline, resolverFechaDelPago, claveCobroValida } from '@/lib/pagos-sin-senal'
 import { rutaIdsDe } from '@/lib/caja/stats-dia'
+import { referenciaDelPago } from '@/lib/dinero/cuota-de-referencia'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { sanitizarCoords } from '@/lib/geo'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
@@ -179,8 +180,12 @@ export async function POST(request, { params }) {
      sin tocar `tipo`: ver lib/dinero/cuota-de-referencia.js. Es la misma que
      propone la hoja al abrir; si falla el cálculo, el pago entra igual. */
   let cuotaEsperada = null
+  // Lo que debía para quedar al día ANTES del pago: pagar eso no es «de más» (#61).
+  let alDiaAntes = 0
   try {
-    cuotaEsperada = calcularCuotaQueToca(prestamo, obtenerDiasSinCobro(prestamo.cliente, prestamo.cliente?.ruta, org, prestamo), festivos)
+    const excluidos = obtenerDiasSinCobro(prestamo.cliente, prestamo.cliente?.ruta, org, prestamo)
+    cuotaEsperada = calcularCuotaQueToca(prestamo, excluidos, festivos)
+    alDiaAntes = calcularMontoParaPonerseAlDia(prestamo, excluidos, festivos)
   } catch (e) {
     console.error('[pagos] cuota de referencia:', e?.message)
   }
@@ -439,6 +444,12 @@ export async function POST(request, { params }) {
    * abono a capital y una liquidacion bajan el saldo MAS de lo pagado, y un
    * recargo lo sube. Ver [[dos_cajas_mismo_numero]]: la cifra la da quien la sabe.
    */
+  /* La referencia que se guarda: pagar lo atrasado sale completo, no «de más»
+     (#61). Se calcula al usarla: `montoFinal` puede recortarse todavía dentro
+     de la transacción, contra el saldo bloqueado. */
+  const cuotaEsperadaGuardada = () => (['completo', 'parcial'].includes(tipo)
+    ? referenciaDelPago({ cuotaQueToca: cuotaEsperada, alDia: alDiaAntes, monto: montoFinal })
+    : null)
   let saldoAntesDelPago = null
   /* ⚠ Y DE QUÉ PAGO ES. Sin esto la cifra se pega al PRÉSTAMO, y el préstamo se
    * queda en el estado de la ficha: al desplegar un cobro viejo de la lista y
@@ -609,7 +620,7 @@ export async function POST(request, { params }) {
           metodoPagoId: metodoValido === 'transferencia' && metodoPagoId ? metodoPagoId : null,
           nota: notaFinal?.trim() || null,
           cuotaNumero,
-          cuotaEsperada: ['completo', 'parcial'].includes(tipo) ? cuotaEsperada : null,
+          cuotaEsperada: cuotaEsperadaGuardada(),
           fechaPago: fechaDelPago,
           latitud: coordsPago.latitud,
           longitud: coordsPago.longitud,
@@ -1325,7 +1336,7 @@ export async function POST(request, { params }) {
     saldoAntesDelPagoId,
     // La cuota que tocaba (lib/dinero/cuota-de-referencia.js): el recibo dice
     // con ella si el pago se quedó corto o pagó de más.
-    cuotaEsperadaDelPago: ['completo', 'parcial'].includes(tipo) ? cuotaEsperada : null,
+    cuotaEsperadaDelPago: cuotaEsperadaGuardada(),
     repartoDelPago,
     repartoDelPagoId: repartoDelPago ? saldoAntesDelPagoId : null,
     capitalRestante:  calcularCapitalRestante(prestamoFinal),

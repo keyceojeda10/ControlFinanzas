@@ -1104,6 +1104,24 @@ export default function RegistrarPago({
       const ahorro = interesQueAhorraUnAbono({
         monto, tasaInteres: prestamo?.tasaInteres, diasPlazo: prestamo?.diasPlazo, fechaInicio: prestamo?.fechaInicio,
       })
+      /* ⚠ EN CLÁSICO EL ABONO CUENTA COMO CUOTAS ADELANTADAS (DETALLES-PRESTAMOS
+         #63, decisión de Carlos del 18 oct: la regla se queda). La hoja decía
+         «el préstamo termina antes» y lo que pasa es otra cosa: descuenta el
+         interés y el cliente no paga las próximas cuotas que cubre ese monto.
+         El recibo enseña el próximo cobro: aquí no se calcula otra fecha. */
+      if (prestamo?.modoInteres === 'fijo') {
+        const cuota = Math.round(cuotaDiaria ?? 0)
+        const pagado = Math.round(prestamo?.totalPagado ?? 0)
+        const m = Math.round(Number(monto) || 0)
+        const cubre = cuota > 0 ? Math.floor((pagado + m) / cuota) - Math.floor(pagado / cuota) : 0
+        return {
+          titulo: 'Abono a capital',
+          texto: cubre > 0
+            ? `Descuenta el interés que ahorra y cubre ${cubre === 1 ? 'la próxima cuota' : `las próximas ${cubre} cuotas`}: hasta entonces no le toca cobro.`
+            : 'Descuenta el interés que ahorra. No alcanza a cubrir una cuota: el próximo cobro sigue igual.',
+          cifra: ahorro > 0 ? { etiqueta: 'Ahorro en intereses', valor: formatMoney(ahorro) } : null,
+        }
+      }
       return {
         titulo: 'Abono a capital',
         texto: 'Reduce el capital y los intereses sobre ese monto. El préstamo termina antes.',
@@ -1916,9 +1934,10 @@ export default function RegistrarPago({
             <div className="bg-[rgba(168,85,247,0.08)] border border-[rgba(168,85,247,0.2)] rounded-[10px] px-3 py-2.5 text-xs">
               <p className="font-medium text-[var(--cf-ink-2)] mb-1">Abono a capital</p>
               <p className="text-[var(--cf-ink-3)]">
-                {conTablaAbono
+                {/* El mismo texto que la hoja (#63): un solo sitio dice qué hace el abono. */}
+                {explicacionAplicacion?.texto ?? (conTablaAbono
                   ? 'Baja el capital y con él las próximas cuotas. El préstamo termina en la misma fecha.'
-                  : 'Reduce el capital y los intereses sobre ese monto. El préstamo termina antes.'}
+                  : 'Reduce el capital y los intereses sobre ese monto. El préstamo termina antes.')}
                 {!conTablaAbono && monto && Number(monto) > 0 && prestamo?.tasaInteres > 0 && (() => {
                   const ahorro = interesQueAhorraUnAbono({ monto, tasaInteres: prestamo.tasaInteres, diasPlazo: prestamo.diasPlazo, fechaInicio: prestamo.fechaInicio })
                   return (

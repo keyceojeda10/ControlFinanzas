@@ -7,7 +7,7 @@ import { diferenciaDeCuadre, causasDeDescuadre } from '@/lib/adaptadores/cuadre'
 // cada cobrador. Banner global + lista por cobrador (semáforos, problemas primero) +
 // confirmar recibo (individual o en lote). Diseñado mobile-first.
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { formatMoney } from '@/lib/i18n'
 import { Card } from '@/components/ui/Card'
 import { Modal } from '@/components/ui/Modal'
@@ -32,7 +32,7 @@ function hoyLocal() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-export default function CuadreDia({ fecha }) {
+export default function CuadreDia({ fecha, abrirCobradorId = null }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [filtro, setFiltro] = useState('todos') // 'todos' | 'pendientes' | 'diferencia'
@@ -79,6 +79,7 @@ export default function CuadreDia({ fecha }) {
 
   const g = data?.resumenGlobal
 
+
   const abrirConfirmar = (fila) => {
     setErrorGuardar('')
     setModal(fila)
@@ -91,6 +92,17 @@ export default function CuadreDia({ fecha }) {
     setMontoRecibido(String(fila.efectivoRecibido != null ? fila.efectivoRecibido : (fila.recaudadoSistema || 0)))
     setNota(fila.notaCuadre || '')
   }
+
+  /* Llegando desde «Registrar cierre» de una ruta (DETALLES-RUTAS #1) se abre
+     directo el «Cerrar y cuadrar» de ese cobrador. Una sola vez. */
+  const yaAbierto = useRef(false)
+  useEffect(() => {
+    if (!abrirCobradorId || yaAbierto.current || !data?.filas) return
+    const fila = data.filas.find((f) => f.cobradorId === abrirCobradorId)
+    if (!fila) return
+    yaAbierto.current = true
+    abrirConfirmar(fila)
+  }, [abrirCobradorId, data]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const confirmar = async () => {
     if (!modal) return
