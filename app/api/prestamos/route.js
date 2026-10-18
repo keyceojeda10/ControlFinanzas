@@ -573,11 +573,6 @@ export async function POST(request) {
   const cuentaDesembolso = metodoPagoDesembolso || 'efectivo'
   const cuentaDesembolsoId = metodoPagoDesembolso === 'transferencia' ? (metodoPagoIdDesembolso || null) : null
 
-  // El seguro se descuenta de lo que se entrega (#51): no puede comerse el préstamo.
-  const seguroDescontado = seguro && Number(montoSeguro) > 0 ? Math.round(Number(montoSeguro)) : 0
-  if (seguroDescontado > 0 && seguroDescontado >= Number(montoPrestado)) {
-    return Response.json({ error: 'El seguro no puede ser igual o mayor que lo que prestas: se descuenta de lo que le entregas.' }, { status: 400 })
-  }
 
   const freq = frecuencia || 'diario'
   const frecuenciasValidas = ['diario', 'semanal', 'quincenal', 'mensual']
@@ -995,20 +990,17 @@ export async function POST(request) {
         data:  { estado: 'activo' },
       })
 
-      /* ⚠ EL SEGURO SE DESCUENTA AL PRESTAR (decisión del dueño, 17 oct 2026).
-         Se guardaba aparte y no entraba a ningún lado: ni a la deuda ni a la caja,
-         mientras la pantalla lo sumaba al total y la caja decía que ya había
-         entrado (DETALLES-PRESTAMOS #51). Ahora la cartulina es por el monto
-         completo y de la caja sale el monto MENOS el seguro, como en una
-         renovación sale la diferencia: las dos cajas toman el efectivo entregado
-         de este asiento. */
+      /* ⚠ EL SEGURO NO TOCA LA PLATA (decisión del dueño, 17 oct 2026, noche).
+         Del 17 oct a las 3:41 p. m. a las 8 p. m. se descontó de lo entregado
+         (#51) y PRESTA MIL —que lo usa en más de la mitad de sus préstamos y lo
+         separa como ganancia aparte— dejó de cuadrar la caja: «renovamos por
+         400 mil y acá dice 104». Volvió la regla de siempre: sale el monto
+         completo, el seguro se guarda en su campo y la caja solo lo informa. */
       await registrarMovimientoCapital(tx, {
         organizationId,
         tipo: 'desembolso',
-        monto: Number(montoPrestado) - seguroDescontado,
-        descripcion: seguroDescontado > 0
-          ? `Desembolso préstamo a ${cliente.nombre} (descontado seguro $${seguroDescontado.toLocaleString('es-CO')})`
-          : `Desembolso préstamo a ${cliente.nombre}`,
+        monto: Number(montoPrestado),
+        descripcion: `Desembolso préstamo a ${cliente.nombre}`,
         referenciaId: nuevo.id,
         referenciaTipo: 'prestamo',
         rutaId: rutaIdCapital,

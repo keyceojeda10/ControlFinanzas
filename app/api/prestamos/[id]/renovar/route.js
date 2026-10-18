@@ -312,21 +312,12 @@ export async function POST(request, { params }) {
    * cualquier otro desembolso.
    */
   // La misma cuenta que la pantalla (ver `efectivoDeLaRenovacion`).
-  const efectivo = efectivoDeLaRenovacion({ monto: montoFinal, deuda: minimoRenovacion, seguro: montoSeguroNum })
+  /* El seguro no toca la plata (decisión del dueño, 17 oct 2026, noche): se
+     entrega la diferencia completa y el seguro se guarda en su campo. */
+  const efectivo = efectivoDeLaRenovacion({ monto: montoFinal, deuda: minimoRenovacion })
   const diferenciaExacta = efectivo.exacta
   const diferenciaBruta = efectivo.bruto
-  /* ⚠ EL SEGURO SE DESCUENTA DE LO QUE SE ENTREGA (decisión del dueño, 17 oct
-     2026). La pantalla lo sumaba al total, el servidor lo guardaba aparte y no
-     entraba a ningún lado (DETALLES-PRESTAMOS #18 y #51). Ahora sale de los
-     billetes: `diferencia` es lo que de verdad se entrega. Sin billetes que
-     entregar no hay de dónde descontarlo. */
-  const seguroRenovacion = efectivo.seguro
-  if (efectivo.seguroExcede) {
-    return Response.json({
-      error: `El seguro (${Math.round(seguroRenovacion).toLocaleString('es-CO')}) se descuenta de lo que le entregas, y le entregas ${Math.max(0, diferenciaBruta).toLocaleString('es-CO')}. Bájalo o súbele el monto.`,
-    }, { status: 400 })
-  }
-  const diferencia = diferenciaBruta > 0 ? efectivo.entrega : diferenciaBruta
+  const diferencia = diferenciaBruta
   /* ⚠ CAMBIAR EL MODO NO ENTREGA PLATA (DETALLES-PRESTAMOS #19). La hoja dice
      «No sale ni entra dinero», y con el total editable salían billetes con un
      botón simple, sin deslizar y sin pantalla de éxito. Para prestar más está
@@ -491,7 +482,7 @@ export async function POST(request, { params }) {
       tipo: 'desembolso',
       monto: diferencia,
       descripcion: diferencia > 0
-        ? `Desembolso por renovación - ${original.cliente.nombre}${seguroRenovacion > 0 ? ` (descontado seguro $${seguroRenovacion.toLocaleString('es-CO')})` : ''}`
+        ? `Desembolso por renovación - ${original.cliente.nombre}`
         : financiar
           ? `Financiación del saldo, sin efectivo entregado - ${original.cliente.nombre}`
           : `Renovación sin efectivo entregado - ${original.cliente.nombre}`,
@@ -556,8 +547,6 @@ export async function POST(request, { params }) {
     // ser exacta y la pantalla lo dice en vez de esconderlo.
     deudaLiquidada: minimoRenovacion,
     efectivoRedondeado: diferenciaBruta !== diferenciaExacta,
-    // Lo que se descontó de los billetes por el seguro (#51).
-    seguroDescontado: seguroRenovacion,
     renovacionNumero,
     ...(financiar ? { financiado: { deuda: minimoRenovacion, interes: interesFinanciado, total: totalAPagar, cuota: cuotaDiaria, cuotas: calc.numPeriodos, fechaFin } } : {}),
   }, { status: 201 })

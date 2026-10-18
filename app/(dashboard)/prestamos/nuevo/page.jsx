@@ -283,8 +283,10 @@ function NuevoPrestamo() {
   // Cobro de seguro (opcional)
   const [seguro, setSeguro] = useState(false)
   const [montoSeguro, setMontoSeguro] = useState('')
-  // Lo que se descuenta de los billetes al entregar (#51).
-  const seguroAlEntregar = seguro && Number(montoSeguro) > 0 ? Math.round(Number(montoSeguro)) : 0
+  /* El seguro se guarda aparte: no entra a la deuda NI se descuenta de lo que se
+     entrega (decisión del dueño, 17 oct 2026, noche: se revirtió el descuento
+     del #51 porque PRESTA MIL lo separa como ganancia y dejó de cuadrar). */
+  const seguroAparte = seguro && Number(montoSeguro) > 0 ? Math.round(Number(montoSeguro)) : 0
   const [socioId, setSocioId] = useState('')
   const [listaSocios, setListaSocios] = useState([])
   // Cuenta de la que sale el desembolso (efectivo por defecto). Alimenta el
@@ -2126,11 +2128,9 @@ function NuevoPrestamo() {
                 <div>
                   <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Monto del seguro</label>
                   <div className="mt-1.5"><MoneyInput value={montoSeguro} onChange={(e) => setMontoSeguro(e.target.value)} placeholder="0" /></div>
-                  {seguroAlEntregar > 0 && Number(monto) > 0 && (
-                    <p className="text-[11px] mt-1.5" style={{ color: seguroAlEntregar >= Number(monto) ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)' }}>
-                      {seguroAlEntregar >= Number(monto)
-                        ? 'El seguro no puede ser igual o mayor que lo que prestas.'
-                        : `Le entregas ${formatMoney(Number(monto) - seguroAlEntregar)} y te debe ${formatMoney(Number(monto))} más el interés.`}
+                  {seguroAparte > 0 && (
+                    <p className="text-[11px] mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>
+                      Va aparte: no se suma a lo que debe ni se resta de lo que le entregas.
                     </p>
                   )}
                 </div>
@@ -2403,8 +2403,8 @@ function NuevoPrestamo() {
                         )}
                         {seguro && Number(montoSeguro) > 0 && (
                           <div className="flex items-center justify-between py-1.5">
-                            <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Seguro (se descuenta al entregar)</span>
-                            <span className="text-xs font-semibold font-mono-display" style={{ color: 'var(--cf-ink-2)' }}>−{formatMoney(Number(montoSeguro))}</span>
+                            <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Seguro (aparte)</span>
+                            <span className="text-xs font-semibold font-mono-display" style={{ color: 'var(--cf-ink-2)' }}>{formatMoney(Number(montoSeguro))}</span>
                           </div>
                         )}
                         {esEnCurso && Number(yaAbonado) > 0 && (
@@ -2558,9 +2558,9 @@ function NuevoPrestamo() {
                     <CifraResumen rotulo={`Cuota ${frecuencia === 'diario' ? 'diaria' : labelFrecuencia.toLowerCase()}`} valor={formatMoney(calculo.cuotaDiaria)} tam={26} />
                     <CifraResumen rotulo="Total a pagar" valor={formatMoney(calculo.totalAPagar)} tam={26} />
                   </div>
-                  {seguroAlEntregar > 0 && (
-                    <CifraResumen rotulo="Le entregas" valor={formatMoney(Number(monto) - seguroAlEntregar)}
-                      pie={`${formatMoney(Number(monto))} menos el seguro de ${formatMoney(seguroAlEntregar)}`} />
+                  {seguroAparte > 0 && (
+                    <CifraResumen rotulo="Seguro" valor={formatMoney(seguroAparte)}
+                      pie="Aparte: no está en el total ni se resta de lo que le entregas" />
                   )}
                   {calculo.totalInteres > 0 && (
                     <CifraResumen rotulo="Tu ganancia" valor={formatMoney(calculo.totalInteres)} color="var(--cf-green-dark)"
@@ -2866,8 +2866,8 @@ function NuevoPrestamo() {
             <div className="flex-1 flex flex-col gap-2">
               <DeslizarParaConfirmar
                 texto="Desliza para entregar"
-                // Lo que sale de la mano: el monto menos el seguro (#51).
-                cifra={Number(monto) > 0 ? formatMoney(Number(monto) - seguroAlEntregar) : null}
+                // Lo que sale de la mano: el monto completo (el seguro va aparte).
+                cifra={Number(monto) > 0 ? formatMoney(Number(monto)) : null}
                 confirmando={loading}
                 deshabilitado={!puedeAvanzarPaso()}
                 onConfirmar={() => handleSubmit({ preventDefault() {} })}

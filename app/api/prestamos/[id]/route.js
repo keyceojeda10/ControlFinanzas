@@ -1161,14 +1161,9 @@ export async function PATCH(request, { params }) {
        `lib/dinero/editar-monto.js`. Lo que salió es el último desembolso del
        libro (el original o el de la edición anterior); la reserva de ruta no
        es plata entregada y no cuenta. */
-    // El seguro descontado al prestar cambia lo que sale en billetes (#51).
-    const seguroAnteriorNum = p.seguro ? Math.round(Number(p.montoSeguro) || 0) : 0
-    const seguroQueda = seguro !== undefined ? Boolean(seguro) : p.seguro
-    const seguroNuevoNum = seguroQueda ? Math.round(Number(montoSeguro != null ? montoSeguro : p.montoSeguro) || 0) : 0
-    const seguroCambia = seguroNuevoNum !== seguroAnteriorNum
     // Lo que salió de verdad es el último desembolso del libro, también fuera
-    // de las renovaciones: con seguro ya no es el monto (#51).
-    const ultimoDesembolso = montoCambia || seguroCambia
+    // de las renovaciones. El seguro no toca la plata.
+    const ultimoDesembolso = montoCambia
       ? await prisma.movimientoCapital.findFirst({
           where: { organizationId: orgId, referenciaId: id, referenciaTipo: 'prestamo', tipo: 'desembolso', ajusteArranqueRuta: false },
           orderBy: { createdAt: 'desc' },
@@ -1187,10 +1182,9 @@ export async function PATCH(request, { params }) {
       efectivoAnterior: ultimoDesembolso?.monto ?? null,
       esRenovacion: Boolean(p.renovadoDeId),
       absorbidoDelViejo: viejo?.totalAPagarPrevio != null ? viejo.totalAPagarPrevio - viejo.totalAPagar : null,
-      seguroNuevo: seguroNuevoNum,
     })
     // Si los billetes no cambian (bajar una renovación sin efectivo), no hay asiento.
-    const parejaMueve = (montoCambia || seguroCambia) && Math.round(pareja.devuelve) !== Math.round(pareja.sale)
+    const parejaMueve = montoCambia && Math.round(pareja.devuelve) !== Math.round(pareja.sale)
 
     const actualizado = await prisma.$transaction(async (tx) => {
       if (parejaMueve) {

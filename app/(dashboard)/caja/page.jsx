@@ -1150,14 +1150,14 @@ const MOVIMIENTOS_MANUALES = [
                   ? [{ id: 'digital', label: 'De eso, por transferencia', valor: cobradoDigitalHoy, signo: 0 }]
                   : []),
                 { id: 'desembolsos', label: 'Lo que prestaste', valor: prestadoHoy, signo: -1 },
-                /* El seguro se descuenta AL PRESTAR (decisión del dueño, 17 oct
-                   2026): no entra con los cobros, se queda en la mano porque sale
-                   menos plata. «Lo que prestaste» ya va sin él; esta línea, en
-                   gris y sin signo, dice cuánto (DETALLES-PRESTAMOS #51). */
-                ...(segurosDia.monto > 0
-                  ? [{ id: 'seguros', label: `De eso, seguros descontados${segurosDia.cantidad ? ` · ${segurosDia.cantidad}` : ''}`, valor: segurosDia.monto, signo: 0 }]
-                  : []),
                 { id: 'gastos', label: 'Gastos', valor: gastosHoy, signo: -1 },
+                /* El seguro va APARTE (decisión del dueño, 17 oct 2026, noche): no
+                   entra a la deuda ni se resta de lo que se entrega, así que no
+                   está en esta cuenta. En gris y sin signo, para saber cuánto
+                   fue: PRESTA MIL lo separa como ganancia. */
+                ...(segurosDia.monto > 0
+                  ? [{ id: 'seguros', label: `Seguros de hoy, aparte${segurosDia.cantidad ? ` · ${segurosDia.cantidad}` : ''}`, valor: segurosDia.monto, signo: 0 }]
+                  : []),
                 /* Con su nombre y su signo: una cifra que cambia el total sin
                    aparecer en la lista es de donde salen las preguntas. */
                 ...(movidoPorElDueno !== 0
@@ -1899,16 +1899,16 @@ const MOVIMIENTOS_MANUALES = [
               />
 
               {/* Los seguros van APARTE, no como una línea más de la cuenta: no
-                  son plata que entre ni salga de la caja del período —el cobro
-                  del seguro ya está dentro de «lo que entró»—. Como cuarto
-                  mosaico daban a entender que sumaban o restaban aparte. */}
+                  entran a la deuda ni se restan de lo que se entrega, así que no
+                  son plata de la caja del período (17 oct 2026). Como cuarto
+                  mosaico daban a entender que sumaban o restaban. */}
               {rangoData.seguros?.monto > 0 && (
                 <Card>
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Seguros</p>
                       <p className="text-[12px] text-[var(--cf-ink-3)] mt-0.5">
-                        {rangoData.seguros.cantidad} {rangoData.seguros.cantidad === 1 ? 'préstamo' : 'préstamos'} · descontados de lo que se entregó
+                        {rangoData.seguros.cantidad} {rangoData.seguros.cantidad === 1 ? 'préstamo' : 'préstamos'} · aparte, no entran en la caja
                       </p>
                     </div>
                     <span className="cf-fig text-[17px] shrink-0" style={{ color: 'var(--cf-ink-2)' }}>

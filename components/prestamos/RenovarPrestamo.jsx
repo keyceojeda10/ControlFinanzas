@@ -137,10 +137,10 @@ export default function RenovarPrestamo({
   const montoNum = Number(monto) || 0
   const montoSeguroNum = seguro ? (Number(montoSeguro) || 0) : 0
   /* Lo que se entrega en billetes, con la MISMA cuenta que el servidor: al
-     centenar hacia arriba y menos el seguro, que se descuenta al prestar
-     (DETALLES-PRESTAMOS #18 y #51). La resta exacta decía «$119.355» y la caja
-     registraba $119.400. */
-  const efectivoRen = efectivoDeLaRenovacion({ monto: montoNum, deuda: saldo, seguro: montoSeguroNum })
+     centenar hacia arriba (DETALLES-PRESTAMOS #18). La resta exacta decía
+     «$119.355» y la caja registraba $119.400. El seguro va aparte: no se resta
+     (decisión del dueño, 17 oct 2026, noche). */
+  const efectivoRen = efectivoDeLaRenovacion({ monto: montoNum, deuda: saldo })
   const enMano = efectivoRen.entrega
   const diasPlazo = (Number(plazoUnidades) || 0) * (DIAS_POR_PERIODO[frecuencia] || 1)
 
@@ -674,11 +674,11 @@ export default function RenovarPrestamo({
             )}
             {montoSeguroNum > 0 && (
               <div className="flex items-center justify-between">
-                <span className="text-xs" style={{ color: efectivoRen.seguroExcede ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)' }}>
-                  {efectivoRen.seguroExcede ? 'El seguro es más de lo que le entregas' : 'Seguro (se descuenta al entregar)'}
+                <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>
+                  Seguro (aparte, no está en el total)
                 </span>
                 <span className="text-sm font-semibold font-mono-display" style={{ color: 'var(--cf-ink-2)' }}>
-                  −{formatMoney(montoSeguroNum)}
+                  {formatMoney(montoSeguroNum)}
                 </span>
               </div>
             )}
