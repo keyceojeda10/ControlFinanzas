@@ -115,6 +115,7 @@ export async function GET(request) {
 
   const resultado = rutas.map((r) => {
     let esperadoHoy    = 0
+    let faltaHoy       = 0  // lo que les queda de su cuota de hoy a los pendientes (#62)
     let recaudadoHoy   = 0
     let capitalTotal   = 0  // prestado SIN intereses
     let totalAPagarRuta = 0 // prestado CON intereses
@@ -167,6 +168,7 @@ export async function GET(request) {
         if (pendienteEste) pendienteCliente = true
         if (vivo && (pendienteEste || cobradoDeEste > 0) && tienePeriodoEsperadoHoy(prestamo, sinCobroDelPrestamo, diasDelPrestamo, festivos)) {
           esperadoHoy += prestamo.cuotaDiaria
+          if (pendienteEste) faltaHoy += Math.max(0, prestamo.cuotaDiaria - cobradoDeEste)
         }
 
         if (prestamo.estado === 'activo' && !prestamo.esClavo) {
@@ -209,6 +211,7 @@ export async function GET(request) {
       cobrador:        r.cobrador,
       cantidadClientes: r.clientes.length,
       esperadoHoy:     Math.round(esperadoHoy),
+      faltaHoy:        Math.round(faltaHoy),
       recaudadoHoy:    Math.round(recaudadoHoy),
       cobrosHoy,
       cobradosHoy,

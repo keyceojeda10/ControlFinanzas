@@ -53,9 +53,12 @@ export async function POST(request, { params }) {
     `
     const tieneCapital = Array.isArray(capRow) && capRow.length > 0
 
+    /* Si el abono previo ya cubre el total, se aprueba COMPLETADO, igual que al
+       crearlo sin aprobación (DETALLES-PRESTAMOS #70). */
+    const saldoAlAprobar = Math.round((Number(prestamo.totalAPagar) || 0) - (Number(prestamo.totalPagado) || 0))
     await tx.prestamo.update({
       where: { id: prestamoId },
-      data: { estado: 'activo' },
+      data: { estado: abonoPrevio && saldoAlAprobar <= 0 ? 'completado' : 'activo' },
     })
 
     await tx.cliente.update({

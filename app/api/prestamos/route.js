@@ -1074,7 +1074,26 @@ export async function POST(request) {
       await refrescarTotalesPrestamo(tx, nuevo.id)
     }
 
+    /* ⚠ EL ABONO PREVIO POR EL TOTAL CIERRA EL PRÉSTAMO (DETALLES-PRESTAMOS #70).
+       Migrar un préstamo que ya terminó de pagar dejaba uno «activo» con saldo
+       $0: el cliente no pasaba a «Listos para prestarles» y la ruta lo contaba
+       como préstamo vivo. Igual que el último pago de un cobro: saldo cero,
+       completado. (La solicitud pendiente no: se decide al aprobarla.) */
+    if (!esPendiente && abono > 0) {
+      const fresco = await tx.prestamo.findUnique({ where: { id: nuevo.id }, select: { totalAPagar: true, totalPagado: true } })
+      if (fresco && Math.round((fresco.totalAPagar || 0) - (fresco.totalPagado || 0)) <= 0) {
+        await tx.prestamo.update({ where: { id: nuevo.id }, data: { estado: 'completado' } })
+        nuevo.estado = 'completado'
+      }
+    }
+
     return nuevo
+  }, {
+    /* El límite de la transacción, como el cobro (ver prestamos/[id]/pagos). En
+       producción no se define y se queda en los 5 s de Prisma; en el espejo, con
+       la base al otro lado de un túnel, crear con abono previo pasaba de 5 s y
+       daba «Error interno» (DETALLES-PRESTAMOS #70). */
+    timeout: Number(process.env.PRISMA_TX_TIMEOUT_MS) || 5000,
   })
 
   /* ── EL ABIERTO CON FECHA HACIA ATRÁS DEVENGA YA, NO AL AMANECER ──────────

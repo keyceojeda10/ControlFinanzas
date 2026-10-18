@@ -713,8 +713,19 @@ export default function RutaDetallePage({ params }) {
         if (cached) { setRuta(cached); setLoading(false); return }
       } catch {}
     }
+    /* ⚠ AL REFRESCAR, SE ESPERA Y NO SE RETROCEDE (DETALLES-RUTAS #51).
+       Con la ruta ya en pantalla —después de agregar clientes, de un cobro, de
+       quitar a alguien— la consulta llevaba el corte de 8 s de toda la app, y si
+       tardaba más se pintaba la copia del teléfono: la de ANTES del cambio. Se
+       veía «0 clientes» con el servidor diciendo que sí los había agregado. Al
+       refrescar se espera hasta 30 s (con su propio `signal` el corte global no
+       aplica) y, si aun así falla, se queda lo que hay: nunca es más viejo que
+       la copia. La primera carga sigue igual: corta rápido y enseña la copia. */
+    const refresco = yaPintadaRef.current
+    const ctrl = refresco ? new AbortController() : null
+    const corte = ctrl ? setTimeout(() => ctrl.abort(), 30000) : null
     try {
-      const res  = await fetch(`/api/rutas/${id}`)
+      const res  = await fetch(`/api/rutas/${id}`, ctrl ? { signal: ctrl.signal } : undefined)
       if (!res.ok) throw new Error()
       const data = await res.json()
       if (data.offline) throw new Error('offline')
@@ -726,6 +737,7 @@ export default function RutaDetallePage({ params }) {
       guardarEnCache(`ruta:${id}`, data).catch(() => {})
       return data
     } catch {
+      if (refresco) return null
       try {
         const cached = await obtenerRutaOffline(id)
         if (cached) { setRuta(cached); setLoading(false); return cached }
@@ -733,6 +745,7 @@ export default function RutaDetallePage({ params }) {
       if (!soft) setError('No se pudo cargar la ruta.')
       return null
     } finally {
+      if (corte) clearTimeout(corte)
       setLoading(false)
     }
   }, [id, router])
@@ -1402,6 +1415,14 @@ export default function RutaDetallePage({ params }) {
      la pregunta tiene sus tres respuestas, y «Cancelar» no agrega a nadie.
      Lo que escribe cada una es lo de siempre: el servidor no cambia. */
   const [preguntaReserva, setPreguntaReserva] = useState(null)
+  /* Y la de antes, «se mueven de su ruta», también en la app (#52): era una
+     ventana del navegador justo antes de la de reservar, que ya era de la app. */
+  const [preguntaMover, setPreguntaMover] = useState(null)
+  const preguntarMover = (datos) => new Promise((resolver) => setPreguntaMover({ ...datos, resolver }))
+  const responderMover = (si) => {
+    preguntaMover?.resolver(si)
+    setPreguntaMover(null)
+  }
   const preguntarReserva = (datos) => new Promise((resolver) => setPreguntaReserva({ ...datos, resolver }))
   const responderReserva = (respuesta) => {
     preguntaReserva?.resolver(respuesta)
@@ -1415,7 +1436,7 @@ export default function RutaDetallePage({ params }) {
     const deOtraRuta = seleccionados.filter((cid) => clientesEnOtraRuta.some((c) => c.id === cid))
     if (deOtraRuta.length > 0) {
       const nombres = clientesEnOtraRuta.filter((c) => deOtraRuta.includes(c.id)).map((c) => `${c.nombre} (${c.rutaNombre})`).join(', ')
-      if (!confirm(`Los siguientes clientes serán MOVIDOS desde su ruta actual:\n\n${nombres}\n\n¿Continuar?`)) return
+      if (!(await preguntarMover({ cuantos: deOtraRuta.length, nombres }))) return
     }
 
     // Si algún cliente que entra ya trae un préstamo activo, preguntar si su saldo se
@@ -2951,7 +2972,8 @@ export default function RutaDetallePage({ params }) {
           const c = ruta.clientes?.find((x) => x.id === f.id)
           if (c) abrirClienteDesdeRuta(c, 0)
         }}
-        porCobrarHoy={formatMoney(Math.max(0, (ruta.esperadoHoy ?? 0) - (ruta.recaudadoHoy ?? 0)))}
+        // Lo que les queda a los pendientes, no esperado − recaudado (#62).
+        porCobrarHoy={formatMoney(ruta.faltaHoy != null ? Math.max(0, ruta.faltaHoy) : Math.max(0, (ruta.esperadoHoy ?? 0) - (ruta.recaudadoHoy ?? 0)))}
         recaudadoHoy={formatMoney(ruta.recaudadoHoy ?? 0)}
         progreso={ruta.esperadoHoy > 0 ? Math.min(100, Math.round((ruta.recaudadoHoy / ruta.esperadoHoy) * 100)) : 0}
         conteoCobros={`${visitadasHoy} de ${ruta.clientesConCobroHoy ?? 0} visitados`}
@@ -4471,6 +4493,16 @@ export default function RutaDetallePage({ params }) {
           se subieron FUERA del `lg:hidden`, al final del componente. Estaban
           dentro, o sea dentro de un `display:none` en escritorio, asi que
           «Cobrar» en la tabla de PC no abria NADA. Ver el comentario de alla. */}
+
+      <ConfirmModal
+        open={!!preguntaMover}
+        title={preguntaMover?.cuantos === 1 ? '¿Mover este cliente a esta ruta?' : '¿Mover estos clientes a esta ruta?'}
+        message={preguntaMover ? `Salen de la ruta en que están: ${preguntaMover.nombres}. Su cobrador de ahora deja de verlos en su recorrido.` : ''}
+        confirmLabel={preguntaMover?.cuantos === 1 ? 'Moverlo' : 'Moverlos'}
+        confirmColor="blue"
+        onConfirm={() => responderMover(true)}
+        onCancel={() => responderMover(false)}
+      />
 
       <Modal
         open={!!preguntaReserva}

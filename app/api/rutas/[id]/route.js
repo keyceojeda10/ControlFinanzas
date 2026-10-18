@@ -220,6 +220,8 @@ export async function GET(request, { params }) {
 
   // Calcular métricas del día + cartera
   let esperadoHoy  = 0
+  // Lo que les queda por pagar HOY a los que siguen pendientes (#62).
+  let faltaHoy     = 0
   let recaudadoHoy = 0
   let recaudadoEfectivoHoy = 0   // ver el desglose por medio, más abajo
   let recaudadoDigitalHoy = 0
@@ -557,8 +559,15 @@ export async function GET(request, { params }) {
          mientras «Pendientes hoy», las visitas y la hoja impresa ya lo dejaban
          fuera. Cuenta la cuota de quien hoy debe algo o pagó hoy: la misma
          regla de las visitas (`tieneCobroHoy`). */
-      const debeOPagoHoy = montoPagadoHoy > 0 || (!_hoySinCobro && tieneCobroPendienteHoy(p, diasExcluidosPrestamo, festivos))
-      esperadoHoy   += tocaCobrarEn(p, hoyLocal, diasExcluidosPrestamo, festivos) && debeOPagoHoy ? cuota : 0
+      const pendienteEste = !_hoySinCobro && tieneCobroPendienteHoy(p, diasExcluidosPrestamo, festivos)
+      const debeOPagoHoy = montoPagadoHoy > 0 || pendienteEste
+      const tocaHoyEste = tocaCobrarEn(p, hoyLocal, diasExcluidosPrestamo, festivos)
+      esperadoHoy   += tocaHoyEste && debeOPagoHoy ? cuota : 0
+      /* «FALTA» NO ES ESPERADO MENOS RECAUDADO (DETALLES-RUTAS #62). Un cliente
+         que cerró su préstamo con $222.667 dejaba «Falta $0» con tres clientes
+         sin cobrar: lo que pagó uno de más tapaba lo que deben los otros. Falta
+         es lo que le queda a cada pendiente de su cuota de hoy. */
+      if (tocaHoyEste && pendienteEste) faltaHoy += Math.max(0, cuota - montoPagadoHoy)
       const saldoPendientePrestamo = calcularSaldoPendiente(p)
       carteraTotal    += saldoPendientePrestamo
       carteraCliente  += saldoPendientePrestamo
@@ -815,6 +824,7 @@ export async function GET(request, { params }) {
     soloLectura: !(await rutaPermitida(organizationId, id)),
     clientes:    clientesEnriquecidos,
     esperadoHoy: Math.round(esperadoHoy),
+    faltaHoy: Math.round(faltaHoy),
     recaudadoHoy: Math.round(recaudadoHoy),
     recaudadoEfectivoHoy: Math.round(recaudadoEfectivoHoy),
     recaudadoDigitalHoy: Math.round(recaudadoDigitalHoy),
