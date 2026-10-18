@@ -155,6 +155,8 @@ export default function CuadreDia({ fecha }) {
   if (!data || data.filas.length === 0) return null
 
   const difModal = modal ? Math.round(Number(montoRecibido || 0) - modal.recaudadoSistema) : 0
+  // El cobrador no ha entregado: cuadrar es también cerrarle la caja del día.
+  const modalCierra = !!modal && modal.estado === 'pendiente' && modal.entregadoReportado == null
 
   return (
     <div className="space-y-3">
@@ -218,7 +220,9 @@ export default function CuadreDia({ fecha }) {
         {filas.map((f) => {
           const est = ESTADO[f.estado] || ESTADO.pendiente
           const confirmado = f.estado !== 'pendiente'
-          // Sin cierre del cobrador no hay nada que cuadrar todavía (#16).
+          /* Sin cierre del cobrador, el dueño se la CIERRA al cuadrar: así trabaja
+             PRESTA MIL, y quitarle el botón lo dejó esperando a los cobradores
+             (devuelto el 17 oct 2026). El botón dice lo que hace. */
           const sinEntregar = !confirmado && f.entregadoReportado == null
           return (
             /* ── EN PC, UNA SOLA FILA ──
@@ -243,7 +247,10 @@ export default function CuadreDia({ fecha }) {
                     quedaría pegado al nombre, con las cifras a su derecha. */}
                 <span className="lg:hidden">
                   {sinEntregar ? (
-                    <span className="shrink-0 text-[11px] font-semibold text-[var(--cf-ink-3)] px-2 py-1">Aún no entrega</span>
+                    <button type="button" onClick={() => abrirConfirmar(f)}
+                      className="shrink-0 text-[11px] font-semibold text-[var(--cf-ink)] bg-[var(--cf-gold)] hover:bg-[var(--cf-gold-dark)] rounded-[8px] px-3 py-1.5 transition-colors">
+                      Cerrar y cuadrar
+                    </button>
                   ) : !confirmado ? (
                     <button type="button" onClick={() => abrirConfirmar(f)}
                       className="shrink-0 text-[11px] font-semibold text-[var(--cf-ink)] bg-[var(--cf-gold)] hover:bg-[var(--cf-gold-dark)] rounded-[8px] px-3 py-1.5 transition-colors">
@@ -277,7 +284,10 @@ export default function CuadreDia({ fecha }) {
                   que el de móvil: una sola acción, dos sitios según el ancho. */}
               <span className="hidden lg:flex lg:flex-none lg:justify-end lg:w-[110px]">
                 {sinEntregar ? (
-                  <span className="text-[12px] font-semibold text-[var(--cf-ink-3)] px-2 py-1">Aún no entrega</span>
+                  <button type="button" onClick={() => abrirConfirmar(f)}
+                    className="text-[12px] font-semibold text-[var(--cf-ink)] bg-[var(--cf-gold)] hover:bg-[var(--cf-gold-dark)] rounded-[9px] px-3.5 py-2 transition-colors whitespace-nowrap">
+                    Cerrar y cuadrar
+                  </button>
                 ) : !confirmado ? (
                   <button type="button" onClick={() => abrirConfirmar(f)}
                     className="text-[12px] font-semibold text-[var(--cf-ink)] bg-[var(--cf-gold)] hover:bg-[var(--cf-gold-dark)] rounded-[9px] px-3.5 py-2 transition-colors">
@@ -301,19 +311,26 @@ export default function CuadreDia({ fecha }) {
       <Modal
         open={!!modal}
         onClose={() => setModal(null)}
-        title={modal ? `Confirmar recibo — ${modal.nombre}` : ''}
+        title={modal ? `${modalCierra ? 'Cerrar y cuadrar' : 'Confirmar recibo'} — ${modal.nombre}` : ''}
         footer={
           <>
             {errorGuardar && (
               <p role="alert" className="w-full text-xs font-semibold" style={{ color: 'var(--cf-red-dark)' }}>{errorGuardar}</p>
             )}
             <Button variant="secondary" onClick={() => setModal(null)} disabled={guardando}>Cancelar</Button>
-            <Button onClick={confirmar} loading={guardando}>Confirmar</Button>
+            <Button onClick={confirmar} loading={guardando}>{modalCierra ? 'Cerrar y cuadrar' : 'Confirmar'}</Button>
           </>
         }
       >
         {modal && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {modalCierra && (
+              <p className="text-[12px] leading-snug rounded-[10px] px-3 py-2.5"
+                style={{ background: 'var(--cf-gold-tint)', color: 'var(--cf-gold-text)', border: '1px solid var(--cf-gold-border)' }}>
+                {modal.nombre} no ha entregado su caja. Al cuadrar se la cierras por este día: ya no podrá registrar
+                cobros de ese día hasta que se la reabras.
+              </p>
+            )}
             {/* EL CUERPO DEL MODAL PASA A `Cuadre` (T33).
                 Lo que cambia, y por qué importa en el momento en que una persona
                 le entrega dinero a otra:

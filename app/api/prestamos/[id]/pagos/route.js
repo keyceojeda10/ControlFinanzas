@@ -130,7 +130,8 @@ export async function POST(request, { params }) {
     })
     if (cierreHoy && !cierreHoy.reabiertoEn) {
       return Response.json({
-        error: 'Ya cerraste tu caja de hoy. Reabre la caja desde la pantalla de Caja para seguir registrando pagos.',
+        // Puede haberla cerrado el dueño al cuadrar: no se dice «cerraste».
+        error: 'Tu caja de hoy ya está cerrada. Pide que la reabran desde Caja para seguir registrando pagos.',
       }, { status: 403 })
     }
   }

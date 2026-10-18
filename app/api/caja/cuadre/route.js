@@ -15,26 +15,16 @@ import { getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
 // La MISMA función que usan el cierre normal y el automático. Este archivo no
 // la tenía —estaba duplicada y privada en los otros dos— y por eso escribía 0.
 import { calcularDesembolsadoDia } from '@/lib/dinero/desembolsado'
+import { getStatsDia } from '@/lib/caja/stats-dia'
+import { enLaManoDelDia } from '@/lib/dinero/en-la-mano'
+
+/* Lo que el cobrador tiene en la mano ese día, con la MISMA cuenta de su caja
+   (la referencia). Para cuadrar a quien todavía no ha entregado. */
+async function enLaManoDe(organizationId, fecha, cobradorId) {
+  return Math.round(enLaManoDelDia(await getStatsDia(organizationId, fecha, cobradorId)))
+}
 
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
-
-// Recaudado del sistema por cobrador en el día (pagos reales, sin ajustes).
-async function recaudadoPorCobradorDia(organizationId, inicio, fin) {
-  const rows = await prisma.pago.groupBy({
-    by: ['cobradorId'],
-    where: {
-      organizationId,
-      fechaPago: { gte: inicio, lt: fin },
-      tipo: { notIn: ['recargo', 'descuento'] },
-      cobradorId: { not: null },
-      prestamo: { estado: { not: 'cancelado' } },
-    },
-    _sum: { montoPagado: true },
-  })
-  const map = {}
-  for (const r of rows) if (r.cobradorId) map[r.cobradorId] = Math.round(r._sum?.montoPagado || 0)
-  return map
-}
 
 /**
  * Esperado por cobrador PARA LA FECHA que se está cuadrando.
@@ -108,13 +98,12 @@ export async function GET(request) {
   const fecha = searchParams.get('fecha') || getLocalDateStr(country)
   const { inicio, fin } = getLocalDayRange(fecha, country)
 
-  const [cobradores, recaudadoMap, esperadoMap, cierres, rutas, gastosPorCobrador, orgConfig] = await Promise.all([
+  const [cobradores, esperadoMap, cierres, rutas, gastosPorCobrador, orgConfig] = await Promise.all([
     prisma.user.findMany({
       where: { organizationId, rol: 'cobrador', activo: true },
       select: { id: true, nombre: true },
       orderBy: [{ orden: 'asc' }, { nombre: 'asc' }],
     }),
-    recaudadoPorCobradorDia(organizationId, inicio, fin),
     esperadoPorCobradorDia(organizationId, fecha),
     prisma.cierreCaja.findMany({ where: { organizationId, fecha: { gte: inicio, lt: fin } } }),
     prisma.ruta.findMany({ where: { organizationId, activo: true }, select: { cobradorId: true, nombre: true, saldoCapital: true, capitalHabilitado: true } }),
@@ -142,14 +131,16 @@ export async function GET(request) {
   const gastosPorCobradorMap = {}
   for (const g of gastosPorCobrador) if (g.cobradorId) gastosPorCobradorMap[g.cobradorId] = Math.round(g._sum?.monto || 0)
 
-  const filas = cobradores.map((c) => {
+  const filas = await Promise.all(cobradores.map(async (c) => {
     const cierre = cierrePorCobrador[c.id] || null
     const capital = capitalPorCobrador[c.id] || 0
     const gastosDelDia = gastosPorCobradorMap[c.id] || 0
-    // La misma vara que el POST (N3): lo que tenía en la mano al cerrar.
-    const recaudadoSistema = orgConfig?.capitalEsEfectivo && capital > 0
+    /* La misma vara que el POST (N3): lo que tenía en la mano al cerrar, o —si
+       todavía no ha entregado— lo que tiene ahora, con la cuenta de su caja. */
+    const baseEnElFajo = orgConfig?.capitalEsEfectivo && capital > 0
+    const recaudadoSistema = baseEnElFajo
       ? capital - gastosDelDia
-      : Math.round(cierre?.enLaManoSistema ?? (recaudadoMap[c.id] || 0))
+      : (cierre?.enLaManoSistema != null ? Math.round(cierre.enLaManoSistema) : await enLaManoDe(organizationId, fecha, c.id))
     const estado = estadoDe(cierre, recaudadoSistema)
     return {
       cobradorId: c.id,
@@ -164,7 +155,7 @@ export async function GET(request) {
       notaCuadre: cierre?.notaCuadre || null,
       estado,
     }
-  })
+  }))
 
   // Resumen global del día.
   const confirmados = filas.filter((f) => f.estado !== 'pendiente')
@@ -246,14 +237,6 @@ export async function POST(request) {
     })
     const gastosAprobados = Math.round(gastosAprobadosAgg._sum?.monto || 0)
 
-    // Lo que de verdad entro ese dia. Se calcula SIEMPRE, aparte de
-    // `recaudadoSistema`, porque son dos preguntas distintas y confundirlas es
-    // lo que rompio el cierre de este cliente (ver abajo).
-    const recaudadoAgg = await prisma.pago.aggregate({
-      where: { organizationId, cobradorId, fechaPago: { gte: inicio, lt: fin }, tipo: { notIn: ['recargo', 'descuento'] }, prestamo: { estado: { not: 'cancelado' } } },
-      _sum: { montoPagado: true },
-    })
-    const recaudadoDia = Math.round(recaudadoAgg._sum?.montoPagado || 0)
 
     // Con `capitalEsEfectivo`, lo que se coteja contra el fajo NO es el cobro
     // del dia sino la bolsa de la ruta: el cobrador entrega todo lo que lleva
@@ -266,19 +249,15 @@ export async function POST(request) {
        no existían. Ahora es lo que el sistema decía al cerrar (`enLaManoSistema`,
        la cifra del botón «Usar»). Los cierres de antes no la tienen: ahí queda
        lo de siempre. */
+    // Lo que tiene en la mano: lo guardado al cerrar o, si no ha entregado, el de
+    // ahora — con la cuenta de su caja, la referencia.
+    const enLaMano = cierreExistente?.enLaManoSistema != null
+      ? Math.round(cierreExistente.enLaManoSistema)
+      : await enLaManoDe(organizationId, fecha, cobradorId)
     const recaudadoSistema = orgConfig?.capitalEsEfectivo && capitalCobrador > 0
       ? capitalCobrador - gastosCobrador
-      : Math.round(cierreExistente?.enLaManoSistema ?? recaudadoDia)
+      : enLaMano
     const diferenciaRecibido = efectivoRecibido - recaudadoSistema
-
-    /* ⚠ NO SE CUADRA A QUIEN NO HA ENTREGADO (decisión del dueño, 17 oct 2026).
-       Cuadrar sin cierre le CREABA uno al cobrador: desde ese momento cada cobro
-       le daba «Ya cerraste tu caja de hoy» y tampoco podía cerrar él
-       (DETALLES-CAJA-Y-CAPITAL #16). Ahora espera a que cierre. */
-    if (!cierreExistente) {
-      resultados.push({ cobradorId, error: `${cobrador.nombre} todavía no ha cerrado su caja: cuádralo cuando la entregue.` })
-      continue
-    }
 
     const dataConfirmacion = {
       efectivoRecibido,
@@ -288,9 +267,39 @@ export async function POST(request) {
       notaCuadre: item.nota || null,
     }
 
-    // Siempre hay cierre: sin él se salió arriba (#16).
     let cierre
-    {
+    if (!cierreExistente) {
+      /* ══ EL DUEÑO LE CIERRA LA CAJA AL COBRADOR (devuelto el 17 oct 2026) ══
+         Se había quitado (#16: «no se cuadra hasta que el cobrador cierre») y
+         PRESTA MIL trabaja así: el dueño cuenta la plata y cierra por cada
+         cobrador, unas 240 veces al mes. «Desaparecieron los botones… ahora
+         depende de los cobradores y no le gustó para nada.» El botón dice que
+         CIERRA, y cerrar se deshace reabriendo la caja.
+
+         Las cifras, las mismas que guarda el cobrador cuando cierra él
+         (`caja/route.js`): entrega lo que su caja le propone —lo del día, en la
+         mano—, los gastos como la caja (pendientes y aprobados) y lo que prestó.
+         Lo que el dueño CONTÓ va aparte, en `efectivoRecibido`, y la diferencia
+         contra el sistema es el cuadre. */
+      const totalEsperado = Math.round(esperadoMap[cobradorId] || 0)
+      const totalDesembolsado = Math.round(await calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId))
+      cierre = await prisma.cierreCaja.create({
+        data: {
+          organizationId,
+          cobradorId,
+          fecha: new Date(fecha + 'T00:00:00-05:00'),
+          totalEsperado,
+          totalRecogido: enLaMano,
+          totalGastos: gastosCobrador + gastosAprobados,
+          totalDesembolsado,
+          saldoOperativo: enLaMano,
+          saldoRealCaja: enLaMano,
+          enLaManoSistema: enLaMano,
+          diferencia: Math.round(enLaMano - totalEsperado),
+          ...dataConfirmacion,
+        },
+      })
+    } else {
       // ⚠ SI EL CIERRE VIENE CON EL DESEMBOLSO EN CERO, se rellena aquí.
       //
       // El cuadre solo escribía la confirmación, así que un cierre creado antes
@@ -370,7 +379,7 @@ export async function POST(request) {
       accion: 'confirmar_cuadre',
       entidadTipo: 'caja',
       entidadId: cierre.id,
-      detalle: `Cuadre ${cobrador.nombre} (${fecha}): recibido $${efectivoRecibido.toLocaleString('es-CO')} vs sistema $${recaudadoSistema.toLocaleString('es-CO')} = ${diferenciaRecibido >= 0 ? '+' : ''}$${diferenciaRecibido.toLocaleString('es-CO')}`,
+      detalle: `${cierreExistente ? 'Cuadre' : 'Cerró la caja y cuadró a'} ${cobrador.nombre} (${fecha}): recibido $${efectivoRecibido.toLocaleString('es-CO')} vs sistema $${recaudadoSistema.toLocaleString('es-CO')} = ${diferenciaRecibido >= 0 ? '+' : ''}$${diferenciaRecibido.toLocaleString('es-CO')}`,
       ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
     })
 
@@ -378,7 +387,7 @@ export async function POST(request) {
   }
 
   const errores = resultados.filter((r) => r.error)
-  // Un solo cobrador que todavía no cerró: se dice por qué, con 409.
+  // Si ninguno se pudo cuadrar, se dice por qué.
   if (errores.length && errores.length === resultados.length) {
     return Response.json({ error: errores[0].error, resultados }, { status: 409 })
   }
