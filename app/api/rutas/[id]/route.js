@@ -992,6 +992,29 @@ export async function DELETE(request, { params }) {
   })
   if (!ruta) return Response.json({ error: 'Ruta no encontrada' }, { status: 404 })
 
+  /* ⚠ SOLO SE BORRA UNA RUTA VACÍA (DETALLES-RUTAS #5, decisión de Carlos del
+     18 oct 2026). Se borraba de una vez: los clientes quedaban sin ruta y la
+     plata de la ruta pasaba en silencio a «Sin asignar» —12 rutas borradas en
+     8 negocios la dejaron así—. Si tiene clientes con préstamo vivo o capital,
+     se une con otra, que pasa clientes y plata con su asiento. */
+  const clientesConPrestamo = await prisma.cliente.count({
+    where: { rutaId: id, organizationId, prestamos: { some: { estado: 'activo' } } },
+  })
+  /* El capital frena solo si la ruta tiene capital PROPIO. En una ruta sin él,
+     `saldoCapital` es la cuenta interna de lo que se movió con sus préstamos:
+     plata del negocio sin bolsa aparte, que al borrarla queda en «Sin asignar». */
+  const capital = ruta.capitalHabilitado ? Math.round(ruta.saldoCapital || 0) : 0
+  if (clientesConPrestamo > 0 || capital !== 0) {
+    const tiene = [
+      clientesConPrestamo > 0 ? `${clientesConPrestamo} cliente${clientesConPrestamo === 1 ? '' : 's'} con préstamo activo` : null,
+      capital !== 0 ? `$${Math.abs(capital).toLocaleString('es-CO')} de capital` : null,
+    ].filter(Boolean).join(' y ')
+    return Response.json({
+      error: `No se puede eliminar: tiene ${tiene}. Únela con otra ruta, que pasa los clientes y la plata.`,
+      noVacia: true, clientesConPrestamo, capital,
+    }, { status: 409 })
+  }
+
   // Desasignar clientes y eliminar ruta en una transaccion atomica
   await prisma.$transaction([
     prisma.cliente.updateMany({

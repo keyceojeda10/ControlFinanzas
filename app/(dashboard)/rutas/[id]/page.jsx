@@ -395,6 +395,8 @@ export default function RutaDetallePage({ params }) {
   const [nuevoNombre,    setNuevoNombre]    = useState('')
   const [eliminando,     setEliminando]     = useState(false)
   const [confirmEliminarRuta, setConfirmEliminarRuta] = useState(false)
+  // Por qué no se puede borrar (#5): { clientes, capital, mensaje }.
+  const [bloqueoEliminar, setBloqueoEliminar] = useState(null)
   const [optimizando,    setOptimizando]    = useState(false)
   const [optimResult,    setOptimResult]    = useState(null)
   const [showMap,        setShowMap]        = useState(false)
@@ -1617,7 +1619,18 @@ export default function RutaDetallePage({ params }) {
     }
   }
 
+  /* ⚠ SOLO SE BORRA UNA RUTA VACÍA (DETALLES-RUTAS #5, decisión de Carlos). Si
+     tiene clientes con préstamo o capital, se dice por qué y se ofrece unirla
+     con otra, que es la que pasa clientes y plata con su asiento. El servidor
+     hace la misma cuenta: esto solo evita preguntar algo que va a fallar. */
   const eliminarRuta = async () => {
+    const clientes = (ruta?.clientes ?? []).filter((c) => (c.prestamosActivos?.length ?? 0) > 0).length
+    // Solo el capital PROPIO frena, igual que en el servidor.
+    const capital = ruta?.capitalHabilitado ? Math.round(ruta?.saldoCapital ?? 0) : 0
+    if (clientes > 0 || capital !== 0) {
+      setBloqueoEliminar({ clientes, capital })
+      return
+    }
     setConfirmEliminarRuta(true)
   }
 
@@ -1627,10 +1640,12 @@ export default function RutaDetallePage({ params }) {
     const res = await fetch(`/api/rutas/${id}`, { method: 'DELETE' })
     if (res.ok) {
       router.push('/rutas')
-    } else {
-      alert('Error al eliminar la ruta')
-      setEliminando(false)
+      return
     }
+    const d = await res.json().catch(() => ({}))
+    setEliminando(false)
+    if (d?.noVacia) setBloqueoEliminar({ clientes: d.clientesConPrestamo ?? 0, capital: d.capital ?? 0, mensaje: d.error })
+    else alert(d?.error || 'No se pudo eliminar la ruta')
   }
 
   // Debounced save — collapses rapid drag/click operations into one API call
@@ -4208,6 +4223,18 @@ export default function RutaDetallePage({ params }) {
           >
             Unir con otra ruta
           </button>
+          {/* Eliminar, a la vista (#5/#12): antes solo se llegaba escribiéndolo
+              en el buscador. Solo la ruta vacía; si no, dice por qué. */}
+          {esOwner && (
+            <button
+              type="button"
+              onClick={() => { cerrarEditarRuta(); eliminarRuta() }}
+              className="w-full text-left text-sm font-semibold py-2 transition-opacity active:opacity-70"
+              style={{ color: 'var(--cf-red-dark)' }}
+            >
+              Eliminar esta ruta
+            </button>
+          )}
         </div>
       </Modal>
 
@@ -4469,11 +4496,25 @@ export default function RutaDetallePage({ params }) {
       <ConfirmModal
         open={confirmEliminarRuta}
         title="Eliminar ruta"
-        message={ruta ? `¿Eliminar la ruta "${ruta.nombre}"? Los clientes quedarán sin ruta asignada.` : ''}
+        message={ruta ? `¿Eliminar la ruta "${ruta.nombre}"? No tiene préstamos activos ni capital. ${(ruta.clientes?.length ?? 0) > 0 ? `Sus ${ruta.clientes.length} cliente${ruta.clientes.length === 1 ? '' : 's'} sin préstamo quedan sin ruta. ` : ''}Queda anotado en la Actividad.` : ''}
         confirmLabel="Eliminar"
         confirmColor="red"
         onConfirm={_doEliminarRuta}
         onCancel={() => setConfirmEliminarRuta(false)}
+      />
+
+      {/* No está vacía: se dice por qué y se ofrece unirla (#5). */}
+      <ConfirmModal
+        open={!!bloqueoEliminar}
+        title="Esta ruta no se puede eliminar"
+        message={bloqueoEliminar ? (bloqueoEliminar.mensaje ?? `Tiene ${[
+          bloqueoEliminar.clientes > 0 ? `${bloqueoEliminar.clientes} cliente${bloqueoEliminar.clientes === 1 ? '' : 's'} con préstamo activo` : null,
+          bloqueoEliminar.capital !== 0 ? `${formatMoney(Math.abs(bloqueoEliminar.capital))} de capital` : null,
+        ].filter(Boolean).join(' y ')}. Únela con otra ruta: pasa los clientes y la plata.`) : ''}
+        confirmLabel="Unir con otra ruta"
+        confirmColor="blue"
+        onConfirm={() => { setBloqueoEliminar(null); setUnirAbierta(true) }}
+        onCancel={() => setBloqueoEliminar(null)}
       />
 
     </div>
