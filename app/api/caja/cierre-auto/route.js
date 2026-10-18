@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { calcularDesembolsadoDia } from '@/lib/dinero/desembolsado'
 import { getUtcOffset, getLocalDayRange } from '@/lib/i18n'
 import { esperadoDeCartera, SELECT_PRESTAMO } from '@/lib/dinero/esperado'
+import { SIN_ABONO_PREVIO } from '@/lib/dinero/abono-previo'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
@@ -74,6 +75,8 @@ async function calcularRecogido(organizationId, cobradorId, fechaInicio, fechaFi
       fechaPago: { gte: fechaInicio, lte: fechaFin },
       tipo: { notIn: ['recargo', 'descuento'] },
       prestamo: { estado: { not: 'cancelado' } },
+      // El abono previo de un migrado no se cobró ese día (abono-previo.js).
+      AND: [SIN_ABONO_PREVIO],
     },
     _sum: { montoPagado: true },
   })

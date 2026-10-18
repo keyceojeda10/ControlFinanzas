@@ -9,7 +9,8 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
 import { cobrosDeRenovadas, coteo } from '@/lib/dinero/coteo'
-import { cuentaDelDia, afectaElFajo, desembolsosOriginalesDelDia, cobrosRevertidosElMismoDia, corregidosDeOtroDia, reversosYaEnLoPrestado, esDesembolsoActualizado } from '@/lib/dinero/conciliacion'
+import { cuentaDelDia, afectaElFajo, desembolsosOriginalesDelDia, cobrosRevertidosElMismoDia, corregidosDeOtroDia, reversosYaEnLoPrestado, esDesembolsoActualizado, esReversoDeEdicion } from '@/lib/dinero/conciliacion'
+import { SIN_ABONO_PREVIO, prestamosMigrados, esAsientoDeMigracion } from '@/lib/dinero/abono-previo'
 import { entraAlFajo } from '@/lib/dinero/cuentas'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 import { esFinanciacion } from '@/lib/financiar'
@@ -26,7 +27,30 @@ async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId
   // En renovaciones = diferencia entregada en mano; en préstamos nuevos = montoPrestado.
   // Busca por creadoPorId (cobrador creó) OR rutaId (movimiento pertenece a su ruta,
   // aunque lo haya creado el owner).
-  const [movimientos, prestamosRutaDia] = await Promise.all([
+  // Préstamos de la ruta del cobrador en el día (para detectar los que no tienen
+  // MovimientoCapital — orgs sin capital configurado — y también para obtener nombres).
+  const prestamosRutaDia = await prisma.prestamo.findMany({
+    where: {
+      organizationId,
+      createdAt: { gte: inicio, lt: fin },
+      estado: { not: 'cancelado' },
+      cliente: { ruta: { cobradorId } },
+    },
+    select: {
+      id: true,
+      montoPrestado: true,
+      renovadoDeId: true,
+      interesFinanciado: true,
+      createdAt: true,
+      cliente: { select: { nombre: true, cedula: true, ruta: { select: { id: true, nombre: true } } } },
+    },
+  })
+  /* ⚠ Y LOS ASIENTOS DE SUS PRÉSTAMOS, AUNQUE NO LLEVEN SU RUTA. En un negocio
+     sin capital por ruta el asiento de un préstamo que hace el DUEÑO va sin
+     `rutaId` y a nombre del dueño: aquí una renovación así salía en $0 y en la
+     caja del cobrador por el monto de la cartulina. Ver `detalleDesembolsadoDia`. */
+  const idsDeSusRutas = prestamosRutaDia.map((p) => p.id)
+  const [movimientos] = await Promise.all([
     prisma.movimientoCapital.findMany({
       where: {
         organizationId,
@@ -36,6 +60,7 @@ async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId
         OR: [
           { creadoPorId: cobradorId },
           ...(rutaIds.length > 0 ? [{ rutaId: { in: rutaIds } }] : []),
+          ...(idsDeSusRutas.length > 0 ? [{ referenciaId: { in: idsDeSusRutas } }] : []),
         ],
       },
       // `metodoPago`: un desembolso puede salir por transferencia, y entonces NO
@@ -46,24 +71,6 @@ async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId
       // `descripcion`: sin ella `corregidosDeOtroDia` no distingue el préstamo
       // que salió hoy del que solo se corrigió hoy.
       select: { referenciaId: true, monto: true, rutaId: true, createdAt: true, metodoPago: true, metodoPagoId: true, descripcion: true },
-    }),
-    // Préstamos de la ruta del cobrador en el día (para detectar los que no tienen
-    // MovimientoCapital — orgs sin capital configurado — y también para obtener nombres).
-    prisma.prestamo.findMany({
-      where: {
-        organizationId,
-        createdAt: { gte: inicio, lt: fin },
-        estado: { not: 'cancelado' },
-        cliente: { ruta: { cobradorId } },
-      },
-      select: {
-        id: true,
-        montoPrestado: true,
-        renovadoDeId: true,
-        interesFinanciado: true,
-        createdAt: true,
-        cliente: { select: { nombre: true, cedula: true, ruta: { select: { id: true, nombre: true } } } },
-      },
     }),
   ])
 
@@ -145,7 +152,11 @@ async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId
   const soloCorregidos = corregidosDeOtroDia(movimientos)
   for (const p of prestamosExtra) if (!soloCorregidos.has(p.id)) agregar(p)
 
-  return items
+  /* Los migrados no se entregaron hoy: de la caja no salió un billete (decisión
+     del dueño, 18 oct 2026; ver `lib/dinero/abono-previo.js`). Igual que en
+     `detalleDesembolsadoDia`, para que las dos cajas digan lo mismo. */
+  const migrados = await prestamosMigrados(prisma, items.map((i) => i.id))
+  return items.filter((i) => !migrados.has(i.id))
 }
 
 export async function GET(request, { params }) {
@@ -219,6 +230,8 @@ export async function GET(request, { params }) {
   const wherePagoCaja = {
     fechaPago: { gte: inicio, lt: fin },
     prestamo: { organizationId, estado: { not: 'cancelado' } },
+    // El abono previo de un migrado no se cobró ese día (abono-previo.js).
+    AND: [SIN_ABONO_PREVIO],
     OR: [
       { cobradorId },
       ...(rutaIds.length > 0 ? [{ prestamo: { cliente: { rutaId: { in: rutaIds } } } }] : []),
@@ -469,9 +482,34 @@ export async function GET(request, { params }) {
   const actualizadosDeOtroDia = primerMovPorRuta.filter((m) => m.rutaId && m.tipo === 'desembolso'
     && esDesembolsoActualizado(m) && corregidosHoy.has(m.referenciaId) && !noMovioNada(m))
   for (const m of actualizadosDeOtroDia) ajustesDia -= m.monto
+  /* ── LOS PRÉSTAMOS QUE YA ESTABAN EN LA CALLE ─────────────────────────────
+     Pasar un migrado al sistema mueve el capital de la ruta (sale su
+     desembolso, entra su abono previo) pero de las manos del cobrador no salió
+     ni entró un billete (decisión del dueño, 18 oct 2026; ver
+     `lib/dinero/abono-previo.js`). Ya no cuentan como prestado ni cobrado del
+     día, así que la bolsa los recoge aquí, con su nombre, y «Le queda en la
+     ruta» sigue dando el `saldoCapital`. La edición del mismo día de un migrado
+     va con él: es el mismo préstamo entrando con otra cifra. */
+  const migradosDelLibro = await prestamosMigrados(prisma, primerMovPorRuta
+    .filter((m) => m.referenciaTipo === 'prestamo').map((m) => m.referenciaId))
+  const refsMigradasHoy = new Set(primerMovPorRuta
+    .filter((m) => m.tipo === 'desembolso' && !noMovioNada(m) && esAsientoDeMigracion(m, migradosDelLibro))
+    .map((m) => m.referenciaId).filter(Boolean))
+  const asientosDeMigracion = primerMovPorRuta.filter((m) => m.rutaId && !noMovioNada(m)
+    && (esAsientoDeMigracion(m, migradosDelLibro)
+      || (refsMigradasHoy.has(m.referenciaId) && (esDesembolsoActualizado(m) || esReversoDeEdicion(m)))))
+  const conSigno = (m) => (m.tipo === 'desembolso' ? -1 : m.tipo === 'recaudo' ? 1 : (m.saldoNuevo >= m.saldoAnterior ? 1 : -1)) * m.monto
+  const migracionesDia = Math.round(asientosDeMigracion.reduce((a, m) => a + conSigno(m), 0))
+  const idsMigracion = new Set(asientosDeMigracion.map((m) => m.id))
+  const detalleMigraciones = asientosDeMigracion
+    .map((m) => ({ monto: Math.round(conSigno(m)), descripcion: `Ya estaba en la calle · ${m.descripcion || 'préstamo'}` }))
+    .filter((m) => m.monto !== 0)
+
   for (const m of primerMovPorRuta) {
     if (!m.rutaId) continue
     if (noMovioNada(m)) continue
+    // Ya contado arriba, en su línea: no es corrección ni plata del fajo.
+    if (idsMigracion.has(m.id)) continue
     if (m.tipo === 'inyeccion' || m.tipo === 'capital_inicial') {
       inyeccionesDia += m.monto
       if (esEfectivo(m)) inyeccionesEfectivo += m.monto
@@ -501,7 +539,7 @@ export async function GET(request, { params }) {
     // Los ya descontados por «lo cobrado» tampoco se nombran aquí: si no,
     // «Salió del capital de la ruta» seguiría confesando los $3.393.000.
     .filter((m) => m.rutaId && m.tipo === 'ajuste' && !noMovioNada(m)
-      && !reversosYaDescontados.has(m.id) && !delFajo(m))
+      && !reversosYaDescontados.has(m.id) && !delFajo(m) && !idsMigracion.has(m.id))
     .map((m) => ({
       monto: Math.round(m.ajusteArranqueRuta ? m.monto : ((m.saldoNuevo >= m.saldoAnterior) ? m.monto : -m.monto)),
       descripcion: m.descripcion || 'Corrección',
@@ -1439,8 +1477,8 @@ export async function GET(request, { params }) {
 
        Se manda la cifra Y el motivo, porque un número sin nombre en esta
        pantalla es de donde salen las preguntas. */
-    correccionesDeLibro: Math.round(ajustesDia - ajustesEfectivo),
-    correccionesDeLibroDetalle: detalleCorreccionesDeLibro,
+    correccionesDeLibro: Math.round(ajustesDia - ajustesEfectivo + migracionesDia),
+    correccionesDeLibroDetalle: detalleCorreccionesDeLibro.concat(detalleMigraciones),
     // Lo que queda en la ruta contando lo que entró a la cuenta.
     //
     // Comprobado contra producción el 3 ago: da EXACTO el `saldoCapital` de la
@@ -1468,7 +1506,7 @@ export async function GET(request, { params }) {
     quedaEnLaRuta: Math.round(
       saldoAperturaTotal + cobradoEfectivoNeto + cobradoDigital - prestadoNeto
       - (gastosDia - gastosPendientesDia)
-      + inyeccionesDia - retirosDia + ajustesDia
+      + inyeccionesDia - retirosDia + ajustesDia + migracionesDia
     ),
     // Y de eso, lo que lleva en billetes: la cifra que entrega al cerrar.
     quedaEnEfectivo: cuentaSuma,

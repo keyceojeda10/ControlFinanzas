@@ -18,9 +18,10 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { explicar } from '@/lib/dinero/definiciones'
-import { afectaCaja, esIngreso } from '@/lib/dinero/conciliacion'
+import { afectaCaja, esIngreso, esReversoDeEdicion, esDesembolsoActualizado } from '@/lib/dinero/conciliacion'
 import { getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
 import { esFinanciacion } from '@/lib/financiar'
+import { SIN_ABONO_PREVIO, prestamosMigrados, esAsientoDeMigracion } from '@/lib/dinero/abono-previo'
 
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
 const TOPE = 300
@@ -74,6 +75,8 @@ export async function GET(request) {
           ...(cifra === 'recaudoDigital' ? { metodoPago: 'transferencia' } : {}),
           ...(cifra === 'recaudoEfectivo' ? { NOT: { metodoPago: 'transferencia' } } : {}),
           prestamo: { estado: { not: 'cancelado' } },
+          // Igual que la cifra que explica: sin el abono previo de los migrados.
+          AND: [SIN_ABONO_PREVIO],
           ...suyo,
         },
         select: {
@@ -134,8 +137,10 @@ export async function GET(request) {
         select: { referenciaId: true, monto: true },
       })
       const entregado = new Map(movs.map((m) => [m.referenciaId, plata(m.monto)]))
+      // Igual que «Lo que prestaste»: los migrados no se entregaron ese día.
+      const migrados = soloSeguro ? new Set() : await prestamosMigrados(prisma, prestamos.map((p) => p.id))
 
-      filas = prestamos.map((p) => {
+      filas = prestamos.filter((p) => !migrados.has(p.id)).map((p) => {
         const efectivo = entregado.has(p.id)
           ? entregado.get(p.id)
           : (p.renovadoDeId ? 0 : plata(p.montoPrestado))
@@ -230,6 +235,44 @@ export async function GET(request) {
         cuando: m.createdAt,
         ir: null,
       }))
+      break
+    }
+
+    case 'migraciones': {
+      /* Los asientos con los que entraron hoy los préstamos migrados, con signo:
+         la lista tiene que sumar la línea, que es su neto. Misma regla que
+         `resumirLibro` (abono-previo.js), y el mismo universo de asientos que
+         la caja: en la de un cobrador, los suyos y los de sus rutas. */
+      const movs = await prisma.movimientoCapital.findMany({
+        where: {
+          organizationId,
+          createdAt: { gte: inicio, lt: fin },
+          tipo: { in: ['desembolso', 'recaudo', 'ajuste'] },
+          ...(cobradorId ? { OR: [{ creadoPorId: cobradorId }, ...(rutaIds.length ? [{ rutaId: { in: rutaIds } }] : [])] } : {}),
+        },
+        select: {
+          id: true, tipo: true, monto: true, descripcion: true, createdAt: true,
+          saldoAnterior: true, saldoNuevo: true, referenciaTipo: true, referenciaId: true, ajusteArranqueRuta: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: TOPE,
+      })
+      const vivos = movs.filter(afectaCaja)
+      const migrados = await prestamosMigrados(prisma, vivos.filter((m) => m.referenciaTipo === 'prestamo').map((m) => m.referenciaId))
+      const refs = new Set(vivos.filter((m) => m.tipo === 'desembolso' && esAsientoDeMigracion(m, migrados)).map((m) => m.referenciaId))
+      filas = vivos
+        .filter((m) => esAsientoDeMigracion(m, migrados) || (refs.has(m.referenciaId) && (esReversoDeEdicion(m) || esDesembolsoActualizado(m))))
+        .map((m) => {
+          const signo = m.tipo === 'desembolso' ? -1 : m.tipo === 'recaudo' ? 1 : (esIngreso(m) ? 1 : -1)
+          return {
+            id: m.id,
+            titulo: m.descripcion || 'Préstamo migrado',
+            detalle: signo > 0 ? 'lo que ya te habían pagado: sube el capital' : 'ya estaba en la calle: baja el capital',
+            monto: plata(signo * m.monto),
+            cuando: m.createdAt,
+            ir: m.referenciaTipo === 'prestamo' && m.referenciaId ? `/prestamos/${m.referenciaId}` : null,
+          }
+        })
       break
     }
 

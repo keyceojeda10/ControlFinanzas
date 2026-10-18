@@ -56,6 +56,10 @@ Son dos preguntas distintas y confundirlas es el error clásico:
 - Un reverso mueve la bolsa, **no el fajo** (`afectaElFajo()`).
 - Un **descuento** baja el capital pero no es plata: fuera del neto y fuera del
   salto de asientos.
+- Un **préstamo migrado** (abono previo o carga masiva) mueve el capital pero
+  no la caja: fuera de lo cobrado y lo prestado del día, en su línea del libro.
+  Lo deciden `SIN_ABONO_PREVIO`, `prestamosMigrados()` y `esAsientoDeMigracion()`
+  en `lib/dinero/abono-previo.js`; no volver a mirar la nota suelta.
 - ⚠ `MovimientoCapital.saldoAnterior/saldoNuevo` es el saldo **de todo el
   negocio**, no el de la ruta. Nunca restar la primera y la última foto de un
   conjunto filtrado.

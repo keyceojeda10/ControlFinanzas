@@ -99,7 +99,10 @@ export function minutosParaElCambioDeDia(ahora = Date.now()) {
 const TABLAS_EN_ORDEN = [
   'CuotaAmortizacion', 'Pago', 'MovimientoCapital', 'Prestamo',
   'GastoMenor', 'CierreCaja', 'Cliente', 'Ruta', 'MetodoPago', 'Capital',
-  'ActividadLog', 'User', 'Organization',
+  // Las notificaciones las escribe la app con cada préstamo y cobro desde que
+  // existe `notificar()`: sin barrerlas, la organización no se deja borrar y la
+  // prueba siguiente choca con su id.
+  'ActividadLog', 'Notificacion', 'Evento', 'User', 'Organization',
 ]
 
 export async function limpiar(cx, { silencioso = false } = {}) {

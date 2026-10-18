@@ -16,6 +16,7 @@ import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 import { cobrosDeRenovadas, coteo } from '@/lib/dinero/coteo'
 import { enLaManoDelDia } from '@/lib/dinero/en-la-mano'
 import { rutaIdsDe, getDayRange, calcularEsperadoReal, calcularSegurosDia, getStatsDia } from '@/lib/caja/stats-dia'
+import { SIN_ABONO_PREVIO } from '@/lib/dinero/abono-previo'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -424,6 +425,8 @@ export async function GET(request) {
     fechaPago: { gte: inicio, lt: fin },
     tipo: { notIn: ['recargo', 'descuento'] },
     prestamo: { estado: { not: 'cancelado' } },
+    // El abono previo de un migrado no se cobró ese día (abono-previo.js).
+    AND: [SIN_ABONO_PREVIO],
   }
   /* La LISTA tiene que traer los mismos pagos que el TOTAL de arriba, o el
      cobrador ve una suma que no puede reconstruir sumando lo que le enseñan.
@@ -505,6 +508,7 @@ export async function GET(request) {
           fechaPago: { gte: inicio, lt: fin },
           tipo: { notIn: ['recargo', 'descuento'] },
           cobradorId: { not: null },
+          AND: [SIN_ABONO_PREVIO],
         },
         select: { cobradorId: true },
         distinct: ['cobradorId'],
@@ -555,6 +559,7 @@ export async function GET(request) {
           fechaPago: { gte: inicio, lt: fin },
           tipo: { notIn: ['recargo', 'descuento'] },
           prestamo: { estado: { not: 'cancelado' } },
+          AND: [SIN_ABONO_PREVIO],
         },
         select: {
           montoPagado: true,
@@ -848,6 +853,7 @@ export async function GET(request) {
       fechaPago: { gte: inicioRango, lt: finRango },
       tipo: { notIn: ['recargo', 'descuento'] },
       prestamo: { estado: { not: 'cancelado' } },
+      AND: [SIN_ABONO_PREVIO],
     }
     if (cobradorRango) wherePagosRango.cobradorId = cobradorRango
 
