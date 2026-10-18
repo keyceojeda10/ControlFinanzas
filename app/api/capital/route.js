@@ -132,6 +132,8 @@ export async function POST(request) {
         organizationId,
         rutaId: { in: [rutaIdValida, ...unidas.map((u) => u.rutaId).filter(Boolean)] },
         ajusteArranqueRuta: true,
+        // El capital con que nació la ruta no es un descuento de préstamos (#3).
+        tipo: { notIn: ['inyeccion', 'capital_inicial'] },
       },
       select: { id: true },
     })

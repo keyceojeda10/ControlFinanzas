@@ -405,6 +405,10 @@ export default function RutaDetallePage({ params }) {
   const [reciboCobro, setReciboCobro] = useState(null)
   /* La vista previa del recibo: el papel se ve antes de salir hacia el chat. */
   const [previoAbierto, setPrevioAbierto] = useState(false)
+  // La hoja de WhatsApp que se abre DESDE el recibo: va dentro de él (#6).
+  const [waDelRecibo, setWaDelRecibo] = useState(false)
+  // La hoja de WhatsApp del recibo se va con el recibo: el siguiente abre cerrado.
+  useEffect(() => { if (!reciboCobro) setWaDelRecibo(false) }, [reciboCobro])
   const [modalPagoRapido, setModalPagoRapido] = useState(null)
   // La pantalla de «estoy en eso» mientras el cobro viaja (components/cf/Procesando).
   const { procesando, conPantalla } = useProcesando()
@@ -1194,6 +1198,12 @@ export default function RutaDetallePage({ params }) {
           clienteNombre: nombre,
           ...(coords ?? {}),
         })
+        /* SIN SEÑAL SE DICE (DETALLES-RUTAS #19). Solo se ponía verde la
+           tarjeta: el cobrador no sabía si el cobro había entrado, y el que no
+           ve confirmación cobra otra vez. Mismo aviso y misma cola que Cobros
+           de hoy. */
+        window.dispatchEvent(new Event('paymentQueued'))
+        try { sessionStorage.setItem('cf-toast', `Cobro de ${nombre} guardado en el teléfono. Se sube al volver la señal.`) } catch {}
         setPagoRapidoOk(clienteId)
         setTimeout(() => setPagoRapidoOk(null), 1200)
       } catch (e) {
@@ -1364,6 +1374,18 @@ export default function RutaDetallePage({ params }) {
     }
   }
 
+  /* ── ¿RESERVAR EL SALDO DE LOS QUE LLEGAN? TRES SALIDAS (DETALLES-RUTAS #8) ──
+     Era un `confirm` del navegador: «Aceptar» reservaba y «Cancelar» agregaba
+     IGUAL los clientes, sin reservar. No había forma de echarse atrás. Ahora
+     la pregunta tiene sus tres respuestas, y «Cancelar» no agrega a nadie.
+     Lo que escribe cada una es lo de siempre: el servidor no cambia. */
+  const [preguntaReserva, setPreguntaReserva] = useState(null)
+  const preguntarReserva = (datos) => new Promise((resolver) => setPreguntaReserva({ ...datos, resolver }))
+  const responderReserva = (respuesta) => {
+    preguntaReserva?.resolver(respuesta)
+    setPreguntaReserva(null)
+  }
+
   const asignarClientes = async () => {
     if (!seleccionados.length) return
     setErrorAsignar('')
@@ -1384,9 +1406,9 @@ export default function RutaDetallePage({ params }) {
     if (conPrestamo.length > 0) {
       const saldoTotal = conPrestamo.reduce((a, c) => a + Math.round(c.saldoPendienteTotal || 0), 0)
       const nombres = conPrestamo.map((c) => c.nombre).join(', ')
-      descontarCapitalRuta = confirm(
-        `${conPrestamo.length === 1 ? 'Este cliente ya trae' : 'Estos clientes ya traen'} un préstamo activo (saldo $${saldoTotal.toLocaleString('es-CO')}):\n\n${nombres}\n\n¿Descontar ese saldo del capital de ESTA ruta?\n\nAceptar = sí, reservarlo en el capital de la ruta.\nCancelar = no tocar el capital de la ruta.`
-      )
+      const respuesta = await preguntarReserva({ cuantos: conPrestamo.length, saldoTotal, nombres })
+      if (respuesta === null) return
+      descontarCapitalRuta = respuesta === 'reservar'
     }
 
     setAsignando(true)
@@ -1466,9 +1488,10 @@ export default function RutaDetallePage({ params }) {
       sinonimos: ['quitar cliente', 'sacar de la ruta', 'desenrutar', 'sacar un cliente'],
       disponible: puedeGestionarRutas,
       ejecutar: () => setModoVista('ordenar') },
-    { id: 'ruta-ordenar', label: 'Cambiar el orden del recorrido', pista: 'Arrastrando o con flechas',
+    { id: 'ruta-ordenar', label: 'Cambiar el orden del recorrido', pista: 'Arrastrando o escribiendo el número',
       sinonimos: ['ordenar', 'reordenar', 'cambiar el orden', 'mover un cliente de puesto'],
-      disponible: puedeGestionarRutas,
+      // Sin permiso extra: el cobrador de la ruta ordena su recorrido (el
+      // servidor lo deja y la pestaña «Ordenar» está). #20 y #26.
       ejecutar: () => setModoVista('ordenar') },
     { id: 'ruta-optimizar', label: 'Optimizar el recorrido', pista: 'Ordena por cercanía',
       sinonimos: ['optimizar', 'ruta mas corta', 'ordenar por cercania', 'que camine menos'],
@@ -2000,6 +2023,9 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
     >
       <FilaCobro
         {...fila}
+        /* Sin el permiso «Gestionar clientes en rutas» el servidor no deja
+           sacar a nadie: el botón no se ofrece (DETALLES-RUTAS #20). */
+        contexto={!puedeGestionarRutas && fila.contexto?.zona === 'inactivo' ? { ...fila.contexto, accion: null } : fila.contexto}
         activa={actual}
         onClick={() => abrirPagoRapido(porId.get(fila.id))}
         /* ── EL NOMBRE Y LA FOTO LLEVAN A LA FICHA ──
@@ -2039,7 +2065,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
         onAccion={() => {
           const c = porId.get(fila.id)
           if (fila.contexto?.zona === 'sindeuda') irGuardando(porId.get(fila.id) ?? fila, i, `/prestamos/nuevo?clienteId=${fila.id}`)
-          else if (fila.contexto?.zona === 'inactivo') setConfirmQuitar({ id: fila.id, nombre: fila.nombre })
+          else if (fila.contexto?.zona === 'inactivo') { if (puedeGestionarRutas) setConfirmQuitar({ id: fila.id, nombre: fila.nombre }) }
           else abrirPagoRapido(c)
         }}
       />
@@ -2245,6 +2271,20 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
   // parecia una confirmacion, parecia un fallo de pintado.
   //
   // z-index por encima de la hoja de cobro (10001): el recibo la sustituye.
+  /* EL QUE SIGUE, de verdad (DETALLES-RUTAS #18). Se tomaba el PRIMERO de la
+     lista con cobro pendiente, aunque ya estuviera marcado «No pagó» o «Hasta
+     aquí hoy» —`cobroPendienteHoy` no se apaga al cerrar la visita— y aunque
+     estuviera antes del que acaba de pagar. Ahora: el siguiente en el orden de
+     la ruta que siga por visitar; si no queda ninguno después, el primero que
+     quedó atrás. */
+  const siguienteDelRecibo = (() => {
+    if (!reciboCobro) return null
+    const lista = ruta?.clientes ?? []
+    const porVisitar = (c) => c.cobroPendienteHoy && !c.visitaCerradaHoy && c.id !== reciboCobro.clienteId
+    const aqui = lista.findIndex((c) => c.id === reciboCobro.clienteId)
+    return lista.slice(aqui + 1).find(porVisitar) ?? lista.slice(0, Math.max(0, aqui)).find(porVisitar) ?? null
+  })()
+
   const pantallaRecibo = reciboCobro && typeof document !== 'undefined' ? createPortal(
     <div data-recibo="1" className={CAPA_RECIBO.className} style={CAPA_RECIBO.style}>
       <Recibo
@@ -2281,17 +2321,22 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
              el estado de la pantalla igual que la imagen, así que decía el
              mismo saldo viejo. Arreglar solo la imagen habría dejado el mismo
              fallo por el otro camino, que ya pasó una vez con este recibo. */
-          if (c) setModalWA({ cliente: c, prestamo: reciboCobro?.prestamo ?? c.prestamosActivos?.[0] ?? null })
+          /* ⚠ SU PROPIA HOJA, DENTRO DEL RECIBO (DETALLES-RUTAS #6). La de la
+             pantalla vive debajo de la capa del recibo (10001 frente a 10002):
+             el botón cambiaba el estado y no se veía nada, y dentro del
+             recorrido ni siquiera estaba montada. Y abría en «Cobro», pidiéndole
+             la cuota a quien acababa de pagarla: con el pago abre en «Pago», como
+             la hoja de pago de la ficha. */
+          if (c) setWaDelRecibo(true)
         }}
         onSiguiente={() => {
           setReciboCobro(null)
           // «El nombre del siguiente» es la accion dorada: se busca la proxima
           // parada pendiente y se abre su cobro. Si no queda ninguna, el
           // recorrido ha terminado y la pantalla de cierre toma el relevo.
-          const siguiente = (ruta?.clientes ?? []).find((c) => c.cobroPendienteHoy && c.id !== reciboCobro.clienteId)
-          if (siguiente) abrirPagoRapido(siguiente)
+          if (siguienteDelRecibo) abrirPagoRapido(siguienteDelRecibo)
         }}
-        siguienteNombre={(ruta?.clientes ?? []).find((c) => c.cobroPendienteHoy && c.id !== reciboCobro.clienteId)?.nombre ?? null}
+        siguienteNombre={siguienteDelRecibo?.nombre ?? null}
         /* ⚠ ESTOS DOS NO ESTABAN, y sus botones se pintaban igual: «Guardar
            imagen» e «Imprimir» llevaban aquí sin hacer NADA desde que se montó
            la pantalla. Un botón sin función detrás no da error ni se ve
@@ -2312,6 +2357,16 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
         onCerrar={() => setPrevioAbierto(false)}
         dibujar={dibujarRecibo}
         {...datosDelComprobante()}
+      />
+      <HojaWhatsApp
+        open={waDelRecibo}
+        onClose={() => setWaDelRecibo(false)}
+        cliente={ruta?.clientes?.find((c) => c.id === reciboCobro.clienteId)}
+        prestamo={reciboCobro.prestamo ?? ruta?.clientes?.find((c) => c.id === reciboCobro.clienteId)?.prestamosActivos?.[0] ?? null}
+        pago={{ id: reciboCobro.pagoId ?? null, montoPagado: reciboCobro.monto, fechaPago: reciboCobro.fechaPago, tipo: reciboCobro.tipo }}
+        orgNombre={orgNombre}
+        ocultarSaldo={ocultarSaldoWA}
+        organizationId={organizationId}
       />
     </div>,
     document.body,
@@ -2412,6 +2467,142 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
     </>
   )
 
+  /* ── LO QUE SE MONTA EN LAS TRES VISTAS (DETALLES-RUTAS #6 y #7) ──
+     La hoja de WhatsApp, el «Deshacer» del cobro y la ventana del cierre
+     vivían solo en la vista de la lista. Dentro del recorrido «Avisarle» no
+     abría nada, y en la pantalla de «ruta terminada» «Registrar cierre»
+     tampoco: la ventana salía recién al tocar «Atrás». Como la hoja de cobro,
+     se declaran UNA vez y cada vista las pone. */
+  const hojaWhatsApp = (
+    <>
+      {/* La hoja de plantillas estaba DENTRO del `lg:hidden`, igual que le pasó
+          a la hoja de cobro: en PC se montaba en un `display:none` y el botón de
+          WhatsApp de la tabla no abría nada. El estado cambiaba y no se veía.
+          Se descubrió pulsando en el espejo — leyendo el archivo no se nota,
+          porque el `<HojaWhatsApp>` sí está y sí recibe sus datos. */}
+      <HojaWhatsApp
+        open={!!modalWA}
+        onClose={() => setModalWA(null)}
+        cliente={modalWA?.cliente}
+        prestamo={modalWA?.prestamo}
+        orgNombre={orgNombre}
+        ocultarSaldo={ocultarSaldoWA}
+        organizationId={organizationId}
+      />
+    </>
+  )
+
+  const avisoDeshacer = (
+    <>
+      {undoPago && (
+        <div className="fixed bottom-24 left-3 right-3 sm:left-auto sm:right-4 sm:bottom-6 sm:w-auto z-50 animate-slide-up">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-[12px] border border-[var(--cf-green)] bg-[var(--cf-card)] sm:min-w-[320px]"
+            style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
+          >
+            <svg className="w-4 h-4 text-[var(--cf-green-dark)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="text-sm text-[var(--cf-ink)] flex-1 truncate">Pago registrado — {undoPago.clienteNombre}</span>
+            <button
+              onClick={deshacerPago}
+              className="text-sm font-bold text-[var(--cf-gold)] hover:text-[var(--cf-gold)]/80 transition-colors shrink-0"
+            >
+              Deshacer
+            </button>
+            <button
+              onClick={() => { if (undoTimerRef.current) clearTimeout(undoTimerRef.current); setUndoPago(null) }}
+              className="text-[var(--cf-ink-2)] hover:text-[var(--cf-ink)] transition-colors shrink-0"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  )
+
+  const ventanaCierre = (
+    <>
+      {/* Modal: cierre de caja */}
+      <Modal
+        open={modalCaja}
+        onClose={() => setModalCaja(false)}
+        title="Registrar cierre de caja"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setModalCaja(false)}>Cancelar</Button>
+            <Button onClick={registrarCierre} loading={guardandoCaja}>Registrar</Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          {errorCaja && (
+            <div className="text-[var(--cf-red-dark)] text-sm bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] rounded-[12px] px-4 py-3">
+              {errorCaja}
+            </div>
+          )}
+          {/* ── SE COMPARA CONTRA LO QUE DEBE TENER, NO CONTRA LA META ──
+              Decia «Total esperado hoy» y restaba lo recogido MENOS lo esperado.
+              Eso responde otra pregunta: si un cliente no pago, al cobrador le
+              salia «Diferencia -$50.000» EN ROJO, como si le faltara plata a
+              el. Y no le falta — es que ese cliente no pago, cosa que ya se
+              sabe. Confundir «no cobre todo» con «me falta plata» acusa a quien
+              acaba de trabajar todo el dia.
+
+              Lo que hay que cuadrar es EL FAJO: lo cobrado en efectivo, menos
+              lo que entrego en prestamos, menos lo que gasto. `cierreDelDia` ya
+              lo calcula, y es el mismo que usa la pantalla de cierre. */}
+          <div className="rounded-[12px] overflow-hidden" style={{ border: '1px solid var(--cf-border)' }}>
+            {cierreHoyRuta.lineas.map((l, i) => (
+              <div key={l.id} className="flex justify-between items-center text-sm px-3.5 py-2.5"
+                style={{ borderTop: i === 0 ? 'none' : '1px solid var(--cf-hairline)' }}>
+                <span style={{ color: 'var(--cf-ink-3)' }}>{l.texto}</span>
+                <span className="font-mono-display" style={{ fontWeight: 600, color: l.resta ? 'var(--cf-ink-2)' : 'var(--cf-ink)' }}>
+                  {l.valor}
+                </span>
+              </div>
+            ))}
+            <div className="flex justify-between items-center px-3.5 py-3"
+              style={{ borderTop: '1px solid var(--cf-border)', background: 'var(--cf-fill)' }}>
+              <span style={{ fontWeight: 700, color: 'var(--cf-ink)' }}>{cierreHoyRuta.totalTexto}</span>
+              <span className="font-mono-display" style={{ fontWeight: 700, fontSize: 17, color: cierreHoyRuta.aFavor ? 'var(--cf-red-dark)' : 'var(--cf-ink)' }}>
+                {cierreHoyRuta.total}
+              </span>
+            </div>
+          </div>
+
+          <MoneyInput
+            label="Cuanto traes de verdad"
+            placeholder={cierreHoyRuta.total}
+            value={totalRecogido}
+            onChange={(e) => setTotalRecogido(e.target.value)}
+          />
+
+          {/* La diferencia, contra el fajo que TOCA. */}
+          {totalRecogido && (() => {
+            const debe = Math.abs(cierreHoyRuta.numeros?.neto ?? 0)
+            const trae = Math.round(Number(String(totalRecogido).replace(/\./g, '')) || 0)
+            const dif = trae - debe
+            if (dif === 0) {
+              return <p className="text-sm" style={{ color: 'var(--cf-green-dark)', fontWeight: 700 }}>Cuadra exacto.</p>
+            }
+            return (
+              <p className="text-sm">
+                <span style={{ color: 'var(--cf-ink-3)' }}>{dif > 0 ? 'Traes de mas: ' : 'Falta: '}</span>
+                <span className="font-mono-display" style={{ fontWeight: 700, color: dif > 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)' }}>
+                  {formatMoney(Math.abs(dif))}
+                </span>
+              </p>
+            )
+          })()}
+        </div>
+      </Modal>
+
+    </>
+  )
+
   if (enRecorrido) {
     // ── SE ACABO EL RECORRIDO → LA PANTALLA DE CIERRE (T04-03) ──
     //
@@ -2442,6 +2633,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
         />
         {hojaCobro}
         {pantallaRecibo}{procesando}
+        {hojaWhatsApp}{avisoDeshacer}{ventanaCierre}
         </CapaRecorrido>
       )
     }
@@ -2498,6 +2690,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
       />
       {hojaCobro}
       {pantallaRecibo}{procesando}
+      {hojaWhatsApp}{avisoDeshacer}{ventanaCierre}
       </CapaRecorrido>
     )
   }
@@ -2580,7 +2773,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
           estado={ordenError ?? (ordenOffline ? 'Guardado en el teléfono, se sube al volver la señal'
             : ordenGuardado ? 'Guardado' : null)}
           onPosicion={reordenarPorNumero}
-          onQuitar={quitarDeLaRuta}
+          onQuitar={puedeGestionarRutas ? quitarDeLaRuta : undefined}
         />
       </div>
     )}
@@ -2659,7 +2852,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
             )}
           </div>
         )}
-        onQuitar={(f) => setConfirmQuitar({ id: f.id, nombre: f.nombre })}
+        onQuitar={puedeGestionarRutas ? (f) => setConfirmQuitar({ id: f.id, nombre: f.nombre }) : undefined}
         filas={(modoVista === 'auditoria'
           ? (ruta.clientes ?? [])
           : (ruta.clientes ?? []).filter((c) => c.cobroPendienteHoy || c.pagoHoy)
@@ -3105,7 +3298,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                 estado={ordenError ?? (ordenOffline ? 'Guardado en el teléfono, se sube al volver la señal'
                   : ordenGuardado ? 'Guardado' : null)}
                 onPosicion={reordenarPorNumero}
-                onQuitar={quitarDeLaRuta}
+                onQuitar={puedeGestionarRutas ? quitarDeLaRuta : undefined}
               />
             )
           }
@@ -3825,81 +4018,6 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
         )}
       </Modal>
 
-      {/* Modal: cierre de caja */}
-      <Modal
-        open={modalCaja}
-        onClose={() => setModalCaja(false)}
-        title="Registrar cierre de caja"
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setModalCaja(false)}>Cancelar</Button>
-            <Button onClick={registrarCierre} loading={guardandoCaja}>Registrar</Button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          {errorCaja && (
-            <div className="text-[var(--cf-red-dark)] text-sm bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] rounded-[12px] px-4 py-3">
-              {errorCaja}
-            </div>
-          )}
-          {/* ── SE COMPARA CONTRA LO QUE DEBE TENER, NO CONTRA LA META ──
-              Decia «Total esperado hoy» y restaba lo recogido MENOS lo esperado.
-              Eso responde otra pregunta: si un cliente no pago, al cobrador le
-              salia «Diferencia -$50.000» EN ROJO, como si le faltara plata a
-              el. Y no le falta — es que ese cliente no pago, cosa que ya se
-              sabe. Confundir «no cobre todo» con «me falta plata» acusa a quien
-              acaba de trabajar todo el dia.
-
-              Lo que hay que cuadrar es EL FAJO: lo cobrado en efectivo, menos
-              lo que entrego en prestamos, menos lo que gasto. `cierreDelDia` ya
-              lo calcula, y es el mismo que usa la pantalla de cierre. */}
-          <div className="rounded-[12px] overflow-hidden" style={{ border: '1px solid var(--cf-border)' }}>
-            {cierreHoyRuta.lineas.map((l, i) => (
-              <div key={l.id} className="flex justify-between items-center text-sm px-3.5 py-2.5"
-                style={{ borderTop: i === 0 ? 'none' : '1px solid var(--cf-hairline)' }}>
-                <span style={{ color: 'var(--cf-ink-3)' }}>{l.texto}</span>
-                <span className="font-mono-display" style={{ fontWeight: 600, color: l.resta ? 'var(--cf-ink-2)' : 'var(--cf-ink)' }}>
-                  {l.valor}
-                </span>
-              </div>
-            ))}
-            <div className="flex justify-between items-center px-3.5 py-3"
-              style={{ borderTop: '1px solid var(--cf-border)', background: 'var(--cf-fill)' }}>
-              <span style={{ fontWeight: 700, color: 'var(--cf-ink)' }}>{cierreHoyRuta.totalTexto}</span>
-              <span className="font-mono-display" style={{ fontWeight: 700, fontSize: 17, color: cierreHoyRuta.aFavor ? 'var(--cf-red-dark)' : 'var(--cf-ink)' }}>
-                {cierreHoyRuta.total}
-              </span>
-            </div>
-          </div>
-
-          <MoneyInput
-            label="Cuanto traes de verdad"
-            placeholder={cierreHoyRuta.total}
-            value={totalRecogido}
-            onChange={(e) => setTotalRecogido(e.target.value)}
-          />
-
-          {/* La diferencia, contra el fajo que TOCA. */}
-          {totalRecogido && (() => {
-            const debe = Math.abs(cierreHoyRuta.numeros?.neto ?? 0)
-            const trae = Math.round(Number(String(totalRecogido).replace(/\./g, '')) || 0)
-            const dif = trae - debe
-            if (dif === 0) {
-              return <p className="text-sm" style={{ color: 'var(--cf-green-dark)', fontWeight: 700 }}>Cuadra exacto.</p>
-            }
-            return (
-              <p className="text-sm">
-                <span style={{ color: 'var(--cf-ink-3)' }}>{dif > 0 ? 'Traes de mas: ' : 'Falta: '}</span>
-                <span className="font-mono-display" style={{ fontWeight: 700, color: dif > 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)' }}>
-                  {formatMoney(Math.abs(dif))}
-                </span>
-              </p>
-            )
-          })()}
-        </div>
-      </Modal>
-
       {/* Modal: inyectar/retirar capital de la ruta */}
       <Modal
         open={!!modalCapital}
@@ -4289,6 +4407,33 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
           dentro, o sea dentro de un `display:none` en escritorio, asi que
           «Cobrar» en la tabla de PC no abria NADA. Ver el comentario de alla. */}
 
+      <Modal
+        open={!!preguntaReserva}
+        onClose={() => responderReserva(null)}
+        title="¿Reservar su saldo en esta ruta?"
+        /* Apilados a lo ancho: tres botones en fila no caben en un teléfono y
+           las etiquetas se partían en tres renglones. La que reserva, arriba. */
+        footer={
+          <div className="flex flex-col gap-2 w-full">
+            <Button className="w-full" onClick={() => responderReserva('reservar')}>Agregar y reservar</Button>
+            <Button className="w-full" variant="secondary" onClick={() => responderReserva('no')}>Agregar sin reservar</Button>
+            <Button className="w-full" variant="secondary" onClick={() => responderReserva(null)}>Cancelar</Button>
+          </div>
+        }
+      >
+        {preguntaReserva && (
+          <div className="space-y-3 text-sm" style={{ color: 'var(--cf-ink-2)' }}>
+            <p>
+              {preguntaReserva.cuantos === 1 ? 'Este cliente ya trae' : 'Estos clientes ya traen'} un préstamo activo:{' '}
+              <strong style={{ color: 'var(--cf-ink)' }}>{preguntaReserva.nombres}</strong>.
+              {' '}{preguntaReserva.cuantos === 1 ? 'Debe' : 'Entre todos deben'}{' '}
+              <strong className="font-mono-display" style={{ color: 'var(--cf-ink)' }}>{formatMoney(preguntaReserva.saldoTotal)}</strong>.
+            </p>
+            <p>«Agregar y reservar» descuenta ese saldo del capital de esta ruta. «Agregar sin reservar» no toca el capital. «Cancelar» no agrega a nadie.</p>
+          </div>
+        )}
+      </Modal>
+
       <ConfirmModal
         open={confirmEliminarRuta}
         title="Eliminar ruta"
@@ -4321,47 +4466,9 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
     {hojaCobro}
     {pantallaRecibo}{procesando}
 
-    {/* La hoja de plantillas estaba DENTRO del `lg:hidden`, igual que le pasó
-        a la hoja de cobro: en PC se montaba en un `display:none` y el botón de
-        WhatsApp de la tabla no abría nada. El estado cambiaba y no se veía.
-        Se descubrió pulsando en el espejo — leyendo el archivo no se nota,
-        porque el `<HojaWhatsApp>` sí está y sí recibe sus datos. */}
-    <HojaWhatsApp
-      open={!!modalWA}
-      onClose={() => setModalWA(null)}
-      cliente={modalWA?.cliente}
-      prestamo={modalWA?.prestamo}
-      orgNombre={orgNombre}
-      ocultarSaldo={ocultarSaldoWA}
-      organizationId={organizationId}
-    />
-
-    {undoPago && (
-      <div className="fixed bottom-24 left-3 right-3 sm:left-auto sm:right-4 sm:bottom-6 sm:w-auto z-50 animate-slide-up">
-        <div className="flex items-center gap-3 px-4 py-3 rounded-[12px] border border-[var(--cf-green)] bg-[var(--cf-card)] sm:min-w-[320px]"
-          style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
-        >
-          <svg className="w-4 h-4 text-[var(--cf-green-dark)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-          <span className="text-sm text-[var(--cf-ink)] flex-1 truncate">Pago registrado — {undoPago.clienteNombre}</span>
-          <button
-            onClick={deshacerPago}
-            className="text-sm font-bold text-[var(--cf-gold)] hover:text-[var(--cf-gold)]/80 transition-colors shrink-0"
-          >
-            Deshacer
-          </button>
-          <button
-            onClick={() => { if (undoTimerRef.current) clearTimeout(undoTimerRef.current); setUndoPago(null) }}
-            className="text-[var(--cf-ink-2)] hover:text-[var(--cf-ink)] transition-colors shrink-0"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      </div>
-    )}
+    {hojaWhatsApp}
+    {avisoDeshacer}
+    {ventanaCierre}
     {/* Fuera del bloque del móvil (`lg:hidden`): la hoja no se pinta en un
         portal, y dentro de ese bloque en el PC quedaba montada pero invisible. */}
     {esOwner && ruta && (

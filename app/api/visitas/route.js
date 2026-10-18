@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { logActividad }     from '@/lib/activity-log'
+import { inicioDelDiaLocal } from '@/lib/i18n'
 
 // `pago_parcial` es el que faltaba: el cliente SÍ pagó, pero ya dijo que no da
 // más por hoy. Los otros cuatro describen por qué no pagó nada, y ninguno vale
@@ -127,13 +128,13 @@ export async function DELETE(request) {
       return Response.json({ error: 'Solo se pueden deshacer las visitas de hoy' }, { status: 400 })
     }
 
-    // El mismo corte de día que usan la ruta y cobros-hoy: medianoche local
-    // guardada en UTC. Restar 24h desde «ahora» borraría también las de ayer
-    // por la tarde.
-    const ahora = new Date()
-    const inicio = new Date(Date.UTC(
-      ahora.getUTCFullYear(), ahora.getUTCMonth(), ahora.getUTCDate(), 0, 0, 0, 0,
-    ))
+    /* El mismo corte de día que usan la ruta y cobros-hoy: la medianoche de
+       BOGOTÁ (05:00 UTC), no la de Greenwich (DETALLES-RUTAS #30). Con la de
+       Greenwich, después de las 7 p. m. «hoy» ya era mañana: la visita cerrada
+       por la tarde no se encontraba, la respuesta decía 200 con cero borradas y
+       la visita seguía cerrada sin avisar. Y entre medianoche y las 5 a. m.
+       podía borrar las de la tarde anterior. */
+    const inicio = inicioDelDiaLocal(session.user.country ?? 'co')
     const fin = new Date(inicio.getTime() + 24 * 60 * 60 * 1000)
 
     const { count } = await prisma.visitaReagendada.deleteMany({

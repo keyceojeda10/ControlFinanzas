@@ -1048,7 +1048,8 @@ export function DiaDeCobro({
         despues={cobraDespues}
         tono="neutro"
         texto
-        resumen={[{ etiqueta: 'Próximo cobro', valor: proximoCobro, texto: true }]}
+        // Sin fecha no hay fila: la calcula el servidor al guardar (#66).
+        resumen={proximoCobro ? [{ etiqueta: 'Próximo cobro', valor: proximoCobro, texto: true }] : []}
       />
     </>
   )

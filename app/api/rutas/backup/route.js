@@ -78,23 +78,39 @@ export async function POST(request) {
     })
     const clientesValidos = new Set(clientesExistentes.map((c) => c.id))
 
-    // Ejecutar restauracion en una transaccion
+    /* ⚠ SOLO SE TOCA A QUIEN ESTÁ EN EL ARCHIVO (DETALLES-RUTAS #9). Antes se
+       sacaba primero a TODOS los clientes de TODAS las rutas y luego se
+       devolvía solo a los del respaldo: el que se creó o se enrutó después del
+       respaldo quedaba sin ruta, sin que nadie lo pidiera. Ahora cada cliente
+       del archivo vuelve a su ruta y su puesto, y los que la ruta tiene hoy y
+       el respaldo no conoce se quedan en ella, al final, en su orden. */
     await prisma.$transaction(async (tx) => {
-      // 1. Desasignar todos los clientes de la org
-      await tx.cliente.updateMany({
-        where: { organizationId, estado: { not: 'eliminado' } },
-        data: { rutaId: null, ordenRuta: null },
-      })
-
-      // 2. Re-asignar segun backup
+      const delArchivo = []
       for (const ruta of backup.rutas) {
         if (!rutasValidas.has(ruta.id)) continue
         for (const c of ruta.clientes) {
           if (!clientesValidos.has(c.id)) continue
+          delArchivo.push(c.id)
+        }
+      }
+      for (const ruta of backup.rutas) {
+        if (!rutasValidas.has(ruta.id)) continue
+        let ultimo = 0
+        for (const c of ruta.clientes) {
+          if (!clientesValidos.has(c.id)) continue
+          ultimo = Math.max(ultimo, c.orden ?? 0)
           await tx.cliente.update({
             where: { id: c.id },
             data: { rutaId: ruta.id, ordenRuta: c.orden ?? 0 },
           })
+        }
+        const queLlegaronDespues = await tx.cliente.findMany({
+          where: { organizationId, rutaId: ruta.id, estado: { not: 'eliminado' }, id: { notIn: delArchivo.length ? delArchivo : ['__ninguno__'] } },
+          orderBy: { ordenRuta: 'asc' },
+          select: { id: true },
+        })
+        for (const c of queLlegaronDespues) {
+          await tx.cliente.update({ where: { id: c.id }, data: { ordenRuta: ++ultimo } })
         }
       }
     /* Margen de tiempo: un cliente por actualización con cientos de clientes

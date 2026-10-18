@@ -61,7 +61,15 @@ const PERIODO_DEL = { diario: 'día', semanal: 'la semana', quincenal: 'la quinc
    eso adelanta INTERESES y el capital no baja, y nadie lo podía saber
    (DETALLES-PRESTAMOS #34). Aquí se dice por modo, y si lo que quería era bajar
    el capital, a un toque. En el dinámico lo de más ya baja el capital. */
-function notaDePagoDeMas(modo, cuota, deMas, onACapital, formatMoney) {
+/* «para mañana», «para hoy» o «para el jue 22 oct»: la fecha relativa viene
+   con mayúscula porque se usa sola en las tarjetas (DETALLES-PRESTAMOS #65). */
+function paraCuando(cuando) {
+  if (cuando === 'Mañana') return 'mañana'
+  if (cuando === 'Hoy') return 'hoy'
+  return `el ${cuando}`
+}
+
+function notaDePagoDeMas(modo, cuota, deMas, onACapital, formatMoney, { alDia = false } = {}) {
   const que = modo === 'solo_interes'
     ? 'Eso adelanta los intereses de las próximas cuotas: el capital no baja.'
     : modo === 'lineal_dinamico'
@@ -69,7 +77,7 @@ function notaDePagoDeMas(modo, cuota, deMas, onACapital, formatMoney) {
       : 'Eso adelanta las próximas cuotas: no perdona interés.'
   return {
     tono: 'extra',
-    texto: `Le tocaba ${formatMoney(cuota)}: paga ${formatMoney(deMas)} de más. ${que}`,
+    texto: `${alDia ? 'Para quedar al día eran' : 'Le tocaba'} ${formatMoney(cuota)}: paga ${formatMoney(deMas)} de más. ${que}`,
     accion: onACapital && modo !== 'lineal_dinamico' ? { texto: 'Cambiar a abono a capital', onPulsar: onACapital } : null,
   }
 }
@@ -1065,7 +1073,8 @@ export default function RegistrarPago({
   // reporto que no podia distinguir el destino del excedente: este aviso lo hace
   // explicito y ofrece la eleccion. En modos con tabla la semantica es otra (no aplica).
   const esModoSimpleExcedente = !['lineal', 'lineal_dinamico', 'solo_interes', 'saldo'].includes(prestamo?.modoInteres)
-  const cuotaRefExcedente = Math.round(cuotaDiaria ?? 0)
+  // Contra lo que debe HOY, no contra una cuota: ponerse al día no es «de más» (#61).
+  const cuotaRefExcedente = Math.max(Math.round(cuotaDiaria ?? 0), Math.round(montoAlDia || 0))
   const excedentePago = Math.round(Number(monto) || 0) - cuotaRefExcedente
   const mostrarAvisoExcedente =
     esModoSimpleExcedente &&
@@ -1309,13 +1318,24 @@ export default function RegistrarPago({
       : refServidor > 0 ? Math.min(refServidor, Math.round(saldoPendiente ?? refServidor))
         : cuotaDeReferencia({ cuota: cuotaDiaria, saldo: saldoPendiente, alDia: montoAlDia })
     const comoVa = refCuota && montoNum > 0 ? comoFueElPago({ tipo: 'completo', montoPagado: montoNum, cuotaEsperada: refCuota }) : null
+    /* ⚠ LO ATRASADO NO ES «DE MÁS» (DETALLES-PRESTAMOS #61). La cuota de
+       referencia tiene tope de UNA cuota aunque deba diez, así que ponerse al
+       día salía «paga $120.000 de más… Cambiar a abono a capital»: la hoja
+       empujaba a registrar como abono a capital lo que era pagar lo vencido.
+       De más es solo lo que pasa de lo que debe HOY (`montoAlDia`). */
+    const debeHoy = Math.max(refCuota ?? 0, Math.round(montoAlDia || 0))
+    const pagaLoAtrasado = comoVa?.clase === 'extra' && debeHoy > (refCuota ?? 0) && montoNum <= debeHoy
     const notaDeCuota = comoVa?.clase === 'parcial'
       ? { tono: 'parcial', texto: `Pago parcial: le tocaba ${formatMoney(refCuota)} y quedan faltando ${formatMoney(-comoVa.diferencia)}.` }
-      : comoVa?.clase === 'extra'
-        ? notaDePagoDeMas(prestamo?.modoInteres, refCuota, comoVa.diferencia, montoNum < Math.round(saldoPendiente ?? 0)
-          ? () => { setTipo('capital'); setDiasAbonados(null) }
-          : null, formatMoney)
-        : null
+      : pagaLoAtrasado
+        ? { tono: 'parcial', texto: montoNum === debeHoy
+            ? `Paga lo atrasado: con ${formatMoney(montoNum)} queda al día.`
+            : `Paga parte de lo atrasado: para quedar al día le faltan ${formatMoney(debeHoy - montoNum)}.` }
+        : comoVa?.clase === 'extra'
+          ? notaDePagoDeMas(prestamo?.modoInteres, debeHoy, montoNum - debeHoy, montoNum < Math.round(saldoPendiente ?? 0)
+            ? () => { setTipo('capital'); setDiasAbonados(null) }
+            : null, formatMoney, { alDia: debeHoy > (refCuota ?? 0) })
+          : null
 
     const { filas } = adaptarDespuesDelPago(
       { ...(prestamo ?? {}), saldoPendiente, cuotaDiaria },
@@ -1326,6 +1346,10 @@ export default function RegistrarPago({
         // la vez crece el total. El adaptador no puede saberlo solo.
         interesSubeLaDeuda: subeLaDeuda,
         deudaQueNace: interesQueNace,
+        // El interés que perdona el abono a capital, con la cuenta del servidor (#64).
+        deudaQueSeVa: tipo === 'capital' && !conTablaAbono && montoNum > 0
+          ? interesQueAhorraUnAbono({ monto: montoNum, tasaInteres: prestamo?.tasaInteres, diasPlazo: prestamo?.diasPlazo, fechaInicio: prestamo?.fechaInicio })
+          : 0,
         metodoPago,
         nombreCuenta: elegido.nombreCuenta,
         enFajo: entraAlFajo(metodoPago, metodoPagoId, new Set(metodosPago.filter((x) => x.esDelCobrador).map((x) => x.id))),
@@ -1482,7 +1506,7 @@ export default function RegistrarPago({
             <div style={{ marginTop: 9, paddingTop: 11, borderTop: '1px solid var(--cf-border)' }}>
               <FilaInterruptor
                 etiqueta="Aplazar el próximo cobro"
-                explicacion={`La cuota de ${formatMoney(Math.round(cuotaDiaria ?? 0))} queda para el ${formatFechaCobroRelativa(fechaAplazada)}. No cambia de monto.`}
+                explicacion={`La cuota de ${formatMoney(Math.round(cuotaDiaria ?? 0))} queda para ${paraCuando(formatFechaCobroRelativa(fechaAplazada))}. No cambia de monto.`}
                 encendido={aplazar}
                 onCambiar={setAplazar}
               />
@@ -1490,7 +1514,14 @@ export default function RegistrarPago({
           ) : null}
           despues={filas}
           textoLoRaro="Abonar por días"
-          onLoRaro={() => setVerAbonoDias(true)}
+          /* Abre con los días que ya representa el monto puesto (#62): con
+             «Al día» en $132.000 decía «1 día de cuota · $132.000». */
+          onLoRaro={() => {
+            const d = montoNum > 0 ? diasDeMonto(montoNum) : 1
+            setDiasAbonados(d)
+            setSliderVisual(d)
+            setVerAbonoDias(true)
+          }}
         />
         </HojaInferior>
 
@@ -1834,7 +1865,7 @@ export default function RegistrarPago({
               style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 8%, transparent)', borderColor: 'color-mix(in srgb, var(--cf-ink-2) 25%, transparent)' }}
             >
               <p className="font-medium mb-1" style={{ color: 'var(--cf-ink-2)' }}>
-                Estás cobrando {formatMoney(excedentePago)} más que la cuota
+                Estás cobrando {formatMoney(excedentePago)} más {Math.round(montoAlDia || 0) > Math.round(cuotaDiaria ?? 0) ? 'de lo que necesita para quedar al día' : 'que la cuota'}
               </p>
               <p className="text-[var(--cf-ink-3)] mb-2">
                 Así como está, ese excedente <strong>adelanta las próximas cuotas</strong> (el interés ya viene incluido en el total, no se descuenta nada). Si querías que <strong>reduzca el capital y perdone parte del interés</strong>, cámbialo a abono a capital.

@@ -695,6 +695,8 @@ export function TimelinePrestamo({
   // Nuevos: lo que absorbe de los otros tres bloques.
   cuotasPagadas = null, cuotasTotales = null,
   prestamoNumeroCliente = null, prestamosCompletadosCliente = 0,
+  // Los días de atraso del SERVIDOR: los mismos que la pastilla (#58).
+  diasMora = null,
 }) {
   // Calcular pcts de forma segura (sin useHooks dentro de condicionales)
   const inicio = fechaInicio ? new Date(fechaInicio) : null
@@ -710,9 +712,14 @@ export function TimelinePrestamo({
   // Early return DESPUES de los hooks
   if (!fechaInicio || !fechaFin) return null
 
-  // Si el progreso de pago va por delante del tiempo → buena señal
-  const adelantado = animPago > animTiempo + 5
-  const atrasado = animPago < animTiempo - 5
+  /* «VA ATRASADO» LO DICE LA MORA, NO EL RELOJ (DETALLES-PRESTAMOS #58).
+     Comparaba el % del tiempo, al milisegundo, con el % pagado: en un diario de
+     20 días la cuota de HOY ya contaba como vencida apenas empezaba el día, y la
+     tarjeta decía «Va atrasado» con la pastilla «Al día» al lado. Ahora atrasado
+     es lo mismo que en el resto de la ficha: tiene días de atraso. «Adelantado»
+     sigue saliendo de comparar, y solo si no debe nada vencido. */
+  const atrasado = diasMora != null ? diasMora > 0 : animPago < animTiempo - 5
+  const adelantado = !atrasado && animPago > animTiempo + 5
   const cuotasQueFaltan = (cuotasTotales > 0 && cuotasPagadas != null)
     ? Math.max(0, cuotasTotales - cuotasPagadas)
     : 0

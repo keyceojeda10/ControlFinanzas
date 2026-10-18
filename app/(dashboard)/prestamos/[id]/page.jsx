@@ -321,6 +321,8 @@ function PrestamoDetalleContenido({ params }) {
   // tecla. Se limpia al elegir una de las opciones calculadas.
   const [liqTecleado, setLiqTecleado] = useState(null)
   const [liqNota, setLiqNota] = useState('')
+  // El aviso del motivo sale al tocar el campo o al intentar cerrar, no al abrir (#69).
+  const [liqMotivoTocado, setLiqMotivoTocado] = useState(false)
   // Por dónde entra la plata del cierre. Iba siempre sin medio, o sea como
   // efectivo: una transferencia le sumaba al fajo del cobrador plata que no
   // tenía (DETALLES-PRESTAMOS #8).
@@ -497,7 +499,7 @@ function PrestamoDetalleContenido({ params }) {
     ? Math.max(0, Math.round(Math.min(Number(liqData.saldoActual ?? Infinity), Number(liqData.capitalRestante ?? 0))))
     : 0
   async function abrirLiquidacion() {
-    setLiqError(''); setLiqData(null); setLiqNota('')
+    setLiqError(''); setLiqData(null); setLiqNota(''); setLiqMotivoTocado(false)
     setLiqMetodo({ metodoPago: 'efectivo', metodoPagoId: null })
     setModalLiquidacion(true)
     setLiqCargando(true)
@@ -2197,6 +2199,7 @@ function PrestamoDetalleContenido({ params }) {
             : (diasPlazo > 0 ? Math.ceil(diasPlazo / obtenerDiasPorPeriodo(frecuencia)) : null)}
           prestamoNumeroCliente={statsCliente?.numeroEsteDe}
           prestamosCompletadosCliente={statsCliente?.completados}
+          diasMora={diasMora ?? null}
         />
       )}
 
@@ -2610,7 +2613,7 @@ function PrestamoDetalleContenido({ params }) {
                 {salioOtroDia
                   ? 'Se quitan los cobros de hoy. Los de días anteriores ya están cuadrados y se quedan como están.'
                   : 'La caja queda como si el préstamo nunca hubiera existido.'} Si esa plata
-                sí entró, no lo elimines: cancélalo.
+                sí entró, no lo elimines: anúlalo.
               </p>
             </div>
           )}
@@ -3268,7 +3271,7 @@ function PrestamoDetalleContenido({ params }) {
                 deshabilitado={liqMonto < 0 || bajoElPiso || !liqNota.trim()}
                 error={liqError || (bajoElPiso
                   ? `Tiene que ser al menos el capital que falta: ${formatMoney(pisoDelCierre)}. Para perdonar capital usa Descuento.`
-                  : (!liqNota.trim() && liqMonto > 0 ? 'Escribe el motivo: queda en el historial.' : null))}
+                  : (liqMotivoTocado && !liqNota.trim() && liqMonto > 0 ? 'Escribe el motivo: queda en el historial.' : null))}
               />
             }
           >
@@ -3354,10 +3357,11 @@ function PrestamoDetalleContenido({ params }) {
               <span style={{
                 fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
                 textTransform: 'uppercase', color: 'var(--cf-ink-3)',
-              }}>Motivo (queda en el historial)</span>
+              }}>Motivo (obligatorio: queda en el historial)</span>
               <input
                 value={liqNota}
                 onChange={(e) => setLiqNota(e.target.value)}
+                onBlur={() => setLiqMotivoTocado(true)}
                 placeholder="Pago anticipado pactado"
                 style={{
                   height: 52, padding: '0 16px', borderRadius: 14, width: '100%',

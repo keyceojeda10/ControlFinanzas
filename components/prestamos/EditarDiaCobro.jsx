@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/Button'
 import { encolarMutacion } from '@/lib/offline'
 import HojaInferior from '@/components/cf/HojaInferior'
 import { DiaDeCobro, PieGestion } from '@/components/pantallas/Gestion'
-import { diasDeCobro, adaptarDiaDeCobro } from '@/lib/adaptadores/gestion'
+import { diasDeCobro, adaptarDiaDeCobro, losDias } from '@/lib/adaptadores/gestion'
 
 const DIAS_SEMANA = [
   { value: '1', label: 'Lunes' },
@@ -182,7 +182,7 @@ export default function EditarDiaCobro({
           <PieGestion
             onCancelar={handleClose}
             onAceptar={handleSubmit}
-            textoAceptar={nombreElegido ? `Guardar los ${nombreElegido}` : 'Guardar'}
+            textoAceptar={nombreElegido ? `Guardar los ${losDias(nombreElegido)}` : 'Guardar'}
             aceptando={loading}
             deshabilitado={elegido == null}
             error={error}

@@ -736,11 +736,17 @@ export async function GET(request, { params }) {
     }
   })
 
+  /* QUIÉN COBRA ESTA RUTA: su cobrador o, si no tiene, el dueño que la cobra
+     él mismo (DETALLES-RUTAS #2). Con `?? undefined` Prisma quitaba el filtro:
+     una ruta sin cobrador enseñaba el cierre de caja de cualquier persona del
+     negocio, y «Actividad del día» la de todos. */
+  const quienCobra = ruta.cobradorId ?? session.user.id
+
   // Cierre de caja del día
   const cierre = await prisma.cierreCaja.findFirst({
     where: {
       organizationId,
-      cobradorId: ruta.cobradorId ?? undefined,
+      cobradorId: quienCobra,
       fecha:      { gte: hoy(), lt: manana() },
     },
   })
@@ -768,7 +774,7 @@ export async function GET(request, { params }) {
       createdAt: { gte: _hoy, lt: _manana },
       OR: [
         { accion: 'editar_pago', entidadId: { in: pagoIdsRuta.length ? pagoIdsRuta : ['__none__'] } },
-        { accion: { in: ['anular_pago', 'editar_prestamo', 'eliminar_prestamo'] }, userId: ruta.cobradorId ?? undefined },
+        { accion: { in: ['anular_pago', 'editar_prestamo', 'eliminar_prestamo'] }, userId: quienCobra },
       ],
     },
     select: { id: true, accion: true, entidadTipo: true, entidadId: true, detalle: true, createdAt: true, userId: true, user: { select: { nombre: true } } },

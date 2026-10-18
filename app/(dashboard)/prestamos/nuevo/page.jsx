@@ -1113,8 +1113,8 @@ function NuevoPrestamo() {
   ]
 
   const DIAS_SEMANA = [
-    { v: '1', l: 'Lun' }, { v: '2', l: 'Mar' }, { v: '3', l: 'Mie' },
-    { v: '4', l: 'Jue' }, { v: '5', l: 'Vie' }, { v: '6', l: 'Sab' }, { v: '0', l: 'Dom' },
+    { v: '1', l: 'Lun' }, { v: '2', l: 'Mar' }, { v: '3', l: 'Mié' },
+    { v: '4', l: 'Jue' }, { v: '5', l: 'Vie' }, { v: '6', l: 'Sáb' }, { v: '0', l: 'Dom' },
   ]
 
   const completedIndices = paso > 0 ? [0] : []

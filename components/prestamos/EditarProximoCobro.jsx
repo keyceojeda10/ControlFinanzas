@@ -25,7 +25,7 @@
 import { useState, useEffect } from 'react'
 import HojaInferior from '@/components/cf/HojaInferior'
 import { AplazarCobro, PieGestion } from '@/components/pantallas/Gestion'
-import { adaptarAplazar, cuandosDeAplazar, fechaCorta } from '@/lib/adaptadores/gestion'
+import { adaptarAplazar, cuandosDeAplazar, baseDeAplazar, fechaCorta } from '@/lib/adaptadores/gestion'
 
 /* Los cinco de `VisitaReagendada`, con la etiqueta en cristiano. El orden es el de
    frecuencia real en la calle: no estaba primero, «otro» al final. */
@@ -57,12 +57,16 @@ export default function EditarProximoCobro({
   // dentro del cuerpo, «mañana» cambiaría de día si la hoja queda abierta a
   // medianoche, y peor, las fechas se recalcularían en cada tecleo.
   const [cuandos, setCuandos] = useState(() => cuandosDeAplazar())
+  // Desde el próximo cobro si está por venir, no desde hoy (#67).
+  const [desdeAplazar, setDesdeAplazar] = useState(() => new Date())
 
   useEffect(() => {
     if (!open) return
     setError('')
     setMotivo(null)
-    const opciones = cuandosDeAplazar()
+    const { base, desdeElCobro } = baseDeAplazar(prestamo?.proximoCobro)
+    setDesdeAplazar(base)
+    const opciones = cuandosDeAplazar(base, { desdeElCobro })
     setCuandos(opciones)
     // Arranca en «en 3 días», que es la que la lámina trae marcada: aplazar un día
     // suele significar volver a aplazar mañana.
@@ -184,7 +188,7 @@ export default function EditarProximoCobro({
           <input
             type="date"
             value={fecha}
-            min={aISO(new Date())}
+            min={aISO(new Date(desdeAplazar.getTime() + 86400000))}
             onChange={(e) => setFecha(e.target.value)}
             style={{
               height: 52, padding: '0 16px', borderRadius: 14, width: '100%',

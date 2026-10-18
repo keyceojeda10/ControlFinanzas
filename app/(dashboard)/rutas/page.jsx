@@ -388,7 +388,7 @@ export default function RutasPage() {
     input.onchange = async (e) => {
       const file = e.target.files?.[0]
       if (!file) return
-      if (!confirm('Esto reemplazará la configuración actual de TODAS las rutas con el archivo seleccionado. ¿Continuar?')) return
+      if (!confirm('Los clientes del archivo vuelven a la ruta y al puesto que tenían. Los que llegaron después se quedan en su ruta, al final. ¿Continuar?')) return
       setRestoreLoading(true)
       try {
         const text = await file.text()
@@ -400,7 +400,7 @@ export default function RutasPage() {
         })
         const data = await res.json()
         if (!res.ok) { alert(data.error ?? 'Error al restaurar'); return }
-        alert(`Restauracion completada: ${data.restaurados} clientes reasignados`)
+        alert(`Restauración completada: ${data.restaurados} clientes vuelven a su ruta`)
         window.location.reload()
       } catch { alert('Error al leer el archivo') } finally { setRestoreLoading(false) }
     }
