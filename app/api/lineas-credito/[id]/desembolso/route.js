@@ -41,7 +41,7 @@ export async function DELETE(request, { params }) {
     const hoy = new Date()
     const creado = new Date(desembolso.createdAt)
     if (creado.toDateString() !== hoy.toDateString()) {
-      return Response.json({ error: 'Solo se pueden eliminar desembolsos del dia de hoy' }, { status: 400 })
+      return Response.json({ error: 'Solo se pueden eliminar desembolsos del día de hoy' }, { status: 400 })
     }
 
     await prisma.desembolsoLinea.delete({ where: { id: desembolsoId } })

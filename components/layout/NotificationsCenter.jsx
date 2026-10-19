@@ -6,6 +6,8 @@ import { InstallGuideModal } from '@/components/layout/InstallButton'
 import { useAuth } from '@/hooks/useAuth'
 import { pedirCompartido, olvidarCompartido } from '@/lib/pedir-compartido'
 import { destinoDeNotificacion } from '@/lib/notificacion-destino'
+import { cuandoNotificacion, mensajeLegible } from '@/lib/notificacion-texto'
+import { useCountry } from '@/hooks/useCountry'
 
 function isStandalone() {
   if (typeof window === 'undefined') return false
@@ -56,6 +58,7 @@ const DISMISS_COOLDOWN_MS = 48 * 60 * 60 * 1000
 export default function NotificationsCenter({ size = 'md' }) {
   const { isOnline, pendingCount, failedDetails, openSyncDrawer } = useOffline()
   const { esOwner } = useAuth()
+  const { country, locale, timezone } = useCountry()
   const [open, setOpen] = useState(false)
   const [showInstallGuide, setShowInstallGuide] = useState(false)
   const [deferredPrompt, setDeferredPrompt] = useState(null)
@@ -273,11 +276,11 @@ export default function NotificationsCenter({ size = 'md' }) {
     }
     if (notifNoLeidas > 0) {
       const first = notifInApp.find(n => !n.leida)
-      if (first) return { icon: 'user', title: first.titulo, message: first.mensaje }
+      if (first) return { icon: 'user', title: first.titulo, message: mensajeLegible(first.mensaje, locale) }
       return { icon: 'bell', title: `${notifNoLeidas} notificaciones`, message: 'Tienes avisos sin leer' }
     }
     return null
-  }, [showInstallToast, showPushToast, notifNoLeidas, notifInApp])
+  }, [showInstallToast, showPushToast, notifNoLeidas, notifInApp, locale])
 
   useEffect(() => {
     if (toastShownRef.current || open) return
@@ -509,9 +512,11 @@ export default function NotificationsCenter({ size = 'md' }) {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-[13px] font-medium" style={{ color: 'var(--cf-ink)' }}>{n.titulo}</p>
-                      <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>{n.mensaje}</p>
+                      {/* «caja del 2026-10-18» → «18 de oct», y la hora en 12 h y en la
+                          del negocio, no «18 oct, 19:22» (QA #37). Ver lib/notificacion-texto. */}
+                      <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>{mensajeLegible(n.mensaje, locale)}</p>
                       <p className="text-[10px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>
-                        {new Date(n.createdAt).toLocaleDateString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        {cuandoNotificacion(n.createdAt, country, timezone)}
                       </p>
                     </div>
                     {!n.leida && (

@@ -28,6 +28,8 @@
 
 import HojaInferior from '@/components/cf/HojaInferior'
 import { useEffect, useState } from 'react'
+import { useCountry } from '@/hooks/useCountry'
+import { cuandoNotificacion, mensajeLegible } from '@/lib/notificacion-texto'
 import Pendientes from '@/components/armazon/Pendientes'
 import { estadoPush, activarPush } from '@/lib/push-cliente'
 import { grupoDe } from '@/lib/avisos-preferencias'
@@ -147,9 +149,10 @@ function Tarjeta({ titulo, dato, nota, accion, onAccion, secundaria, onSecundari
 function Guardado({ n, onAbrir, onBorrar }) {
   const aspecto = ASPECTO[grupoDe(n.tipo)] ?? ASPECTO.equipo
   const tono = TONOS[aspecto.tono]
-  const cuando = new Date(n.createdAt).toLocaleDateString('es', {
-    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
-  })
+  /* «18 de oct, 7:22 p. m.», en la hora del negocio. Con `'es'` salía en 24 h
+     y en la zona del teléfono: «18 oct, 19:22» (QA #37). */
+  const { country, locale, timezone } = useCountry()
+  const cuando = cuandoNotificacion(n.createdAt, country, timezone)
   /* ⚠ ERA UN <button> QUE ENVOLVÍA LA FILA ENTERA, y por eso no había dónde
      poner el de borrar: un botón dentro de otro no es HTML válido y el navegador
      lo desarma por su cuenta. Ahora la fila es un contenedor con dos botones
@@ -181,7 +184,8 @@ function Guardado({ n, onAbrir, onBorrar }) {
         </span>
         <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)' }}>{n.titulo}</span>
-          <span style={{ fontSize: 13, color: 'var(--cf-ink-2)', lineHeight: 1.4 }}>{n.mensaje}</span>
+          {/* Los avisos viejos traen «caja del 2026-10-18»: se lee «18 de oct». */}
+          <span style={{ fontSize: 13, color: 'var(--cf-ink-2)', lineHeight: 1.4 }}>{mensajeLegible(n.mensaje, locale)}</span>
           <span className="cf-num" style={{ fontSize: 11, color: 'var(--cf-ink-3)', marginTop: 1 }}>{cuando}</span>
         </span>
         {!n.leida && (

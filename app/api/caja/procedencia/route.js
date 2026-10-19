@@ -22,6 +22,7 @@ import { afectaCaja, esIngreso, esReversoDeEdicion, esDesembolsoActualizado } fr
 import { getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
 import { esFinanciacion } from '@/lib/financiar'
 import { SIN_ABONO_PREVIO, prestamosMigrados, esAsientoDeMigracion } from '@/lib/dinero/abono-previo'
+import { anotadoEnDelId, horaGasto } from '@/lib/gastos'
 
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
 const TOPE = 300
@@ -182,10 +183,16 @@ export async function GET(request) {
         id: g.id,
         // La descripcion YA existe en la base y no se enseñaba: solo el total.
         titulo: g.description || 'Gasto sin describir',
-        detalle: [g.cobrador?.nombre, g.estado === 'pendiente' ? 'sin aprobar' : null]
-          .filter(Boolean).join(' · '),
+        /* LA HORA ES LA DE CUANDO SE ANOTÓ. `g.fecha` es el día del gasto,
+           guardado al mediodía: como `cuando` salía «12:00 p. m.» en todos (QA
+           #26). Va escrita aquí —y no en `cuando`, que la hoja lee como una
+           hora— porque si se anotó otro día hay que decir cuál. */
+        detalle: [
+          horaGasto({ fecha: g.fecha, anotadoEn: anotadoEnDelId(g.id, g.fecha) }),
+          g.cobrador?.nombre, g.estado === 'pendiente' ? 'sin aprobar' : null,
+        ].filter(Boolean).join(' · '),
         monto: plata(g.monto),
-        cuando: g.fecha,
+        cuando: null,
         ir: null,
       }))
       break

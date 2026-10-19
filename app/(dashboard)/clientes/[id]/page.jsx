@@ -880,7 +880,7 @@ export default function ClienteDetallePage({ params }) {
                       />
                     </div>
                   </div>
-                  <p className="text-[10px] text-[var(--cf-ink-3)] mt-2">Tasa: {lc.tasaInteres}% mensual · Corte dia {lc.diaCorte}</p>
+                  <p className="text-[10px] text-[var(--cf-ink-3)] mt-2">Tasa: {lc.tasaInteres}% mensual · Corte día {lc.diaCorte}</p>
                 </Card>
               )
             })}

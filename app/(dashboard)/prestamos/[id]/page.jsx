@@ -1716,7 +1716,7 @@ function PrestamoDetalleContenido({ params }) {
                 Interés moratorio: {formatMoney(moratorio.montoMoratorio)}
               </p>
               <p className="text-xs text-[var(--cf-ink-3)] mt-1">
-                {moratorio.diasMoraEfectivos} dias efectivos de mora sobre {formatMoney(moratorio.montoBase)} en mora
+                {moratorio.diasMoraEfectivos} días efectivos de mora sobre {formatMoney(moratorio.montoBase)} en mora
               </p>
             </div>
           </div>
@@ -3492,7 +3492,7 @@ function PrestamoDetalleContenido({ params }) {
         <div className="space-y-4">
           <div className="bg-[rgba(245,158,11,0.06)] border border-[rgba(245,158,11,0.2)] rounded-[12px] p-3">
             <p className="text-xs text-[var(--cf-ink-3)]">
-              Calculado: {formatMoney(moratorio?.montoMoratorio ?? 0)} ({moratorio?.diasMoraEfectivos ?? 0} dias sobre {formatMoney(moratorio?.montoBase ?? 0)})
+              Calculado: {formatMoney(moratorio?.montoMoratorio ?? 0)} ({moratorio?.diasMoraEfectivos ?? 0} días sobre {formatMoney(moratorio?.montoBase ?? 0)})
             </p>
           </div>
           <div className="space-y-1.5">

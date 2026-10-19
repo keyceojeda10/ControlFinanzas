@@ -6,6 +6,7 @@ import MoneyInput from '@/components/ui/MoneyInput'
 import { porQueNegativa, esAlarma } from '@/lib/dinero/ruta-negativa'
 import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
 import QueNecesitas from '@/components/acciones/QueNecesitas'
+import { cuandoMovimientoDeGasto } from '@/lib/gastos'
 
 const TIPO_LABELS = {
   capital_inicial: 'Capital inicial',
@@ -835,7 +836,9 @@ export default function CapitalTab() {
                     </span>
                   </div>
                   {m.descripcion && <p className="text-xs text-[var(--cf-ink-3)] mt-0.5 truncate">{m.descripcion}</p>}
-                  <p className="text-[10px] text-[var(--cf-ink-3)] mt-0.5">{fechaCorta(m.createdAt)}</p>
+                  {/* Un gasto lleva la fecha del gasto, al mediodía: su hora sale
+                      de cuándo se anotó, no «12:00 p. m.» (#26). */}
+                  <p className="text-[10px] text-[var(--cf-ink-3)] mt-0.5">{cuandoMovimientoDeGasto(m) ?? fechaCorta(m.createdAt)}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-3">
                   <div className="text-right">

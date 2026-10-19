@@ -633,7 +633,7 @@ function TabOrganizacion({ bloques, tema, onTema }) {
           <div className="min-w-0">
             <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em]">Modo abreviado de montos</p>
             <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug mt-1">
-              Escribe montos sin los ultimos tres ceros. Por ejemplo, 100 se convierte en 100.000 y 1.500 en 1.500.000.
+              Escribe montos sin los últimos tres ceros. Por ejemplo, 100 se convierte en 100.000 y 1.500 en 1.500.000.
             </p>
           </div>
           <Toggle
@@ -717,7 +717,7 @@ function TabOrganizacion({ bloques, tema, onTema }) {
           <h3 className="font-medium text-white text-sm">Intereses moratorios</h3>
         </div>
         <p className="text-xs text-[var(--cf-ink-3)] mb-4">
-          Cuando un cliente lleva varios dias sin pagar, el sistema calcula un interes adicional. Tu decides si aplicarlo o no desde cada prestamo.
+          Cuando un cliente lleva varios días sin pagar, el sistema calcula un interés adicional. Tú decides si aplicarlo o no desde cada préstamo.
         </p>
         <div className="space-y-4">
           <div className="space-y-1.5">
@@ -735,7 +735,7 @@ function TabOrganizacion({ bloques, tema, onTema }) {
             </p>
           </div>
           <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-[var(--cf-ink-3)]">Dias de gracia</label>
+            <label className="block text-xs font-medium text-[var(--cf-ink-3)]">Días de gracia</label>
             <input
               type="number"
               min="0"

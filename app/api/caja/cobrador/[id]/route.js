@@ -14,6 +14,7 @@ import { SIN_ABONO_PREVIO, prestamosMigrados, esAsientoDeMigracion } from '@/lib
 import { entraAlFajo } from '@/lib/dinero/cuentas'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 import { esFinanciacion } from '@/lib/financiar'
+import { anotadoEnDelId } from '@/lib/gastos'
 
 const TIPOS_AJUSTE_PAGO = ['recargo', 'descuento']
 
@@ -285,7 +286,8 @@ export async function GET(request, { params }) {
     }),
     prisma.gastoMenor.findMany({
       where: { organizationId, cobradorId, estado: { in: ['pendiente', 'aprobado'] }, fecha: { gte: inicio, lt: fin } },
-      select: { monto: true, description: true, fecha: true, estado: true },
+      // `id`: de ahí sale la hora en que se anotó (`anotadoEnDelId`); `fecha` va al mediodía.
+      select: { id: true, monto: true, description: true, fecha: true, estado: true },
       orderBy: { fecha: 'asc' },
     }),
     getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId, rutaIds),
@@ -1687,6 +1689,8 @@ export async function GET(request, { params }) {
       description: g.description,
       monto: Math.round(g.monto || 0),
       fecha: g.fecha,
+      // La hora de la fila: cuándo se anotó, no el mediodía de `fecha` (QA #26).
+      anotadoEn: anotadoEnDelId(g.id, g.fecha),
       estado: g.estado,
     })),
   })

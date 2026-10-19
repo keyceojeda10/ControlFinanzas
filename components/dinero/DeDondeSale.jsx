@@ -26,8 +26,11 @@ import HojaInferior from '@/components/cf/HojaInferior'
 import { formatMoney } from '@/lib/i18n'
 
 function Fila({ f, onIr }) {
+  // En la hora de Bogotá, como la caja: sin `timeZone` salía la del teléfono.
   const cuando = f.cuando
-    ? new Date(f.cuando).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
+    ? new Date(f.cuando).toLocaleTimeString('es-CO', {
+      hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/Bogota',
+    })
     : null
   const clicable = !!(f.ir && onIr)
   return (

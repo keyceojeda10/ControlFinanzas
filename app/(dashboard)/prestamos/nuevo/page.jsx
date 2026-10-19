@@ -1652,10 +1652,10 @@ function NuevoPrestamo() {
                   <div className="flex gap-1 p-1 rounded-[12px] mb-2 mt-1.5" style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}>
                     <button type="button" onClick={() => { setModoDiaCobro('semana'); setDiaCobroMes(''); setDiaCobroMes2('') }}
                       className="flex-1 py-1.5 text-[10px] font-semibold rounded-[8px] transition-all"
-                      style={modoDiaCobro === 'semana' ? { background: 'var(--cf-card)', color: 'var(--cf-gold)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' } : { color: 'var(--cf-ink-3)' }}>Dia de la semana</button>
+                      style={modoDiaCobro === 'semana' ? { background: 'var(--cf-card)', color: 'var(--cf-gold)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' } : { color: 'var(--cf-ink-3)' }}>Día de la semana</button>
                     <button type="button" onClick={() => { setModoDiaCobro('mes'); setDiaCobroSemana('') }}
                       className="flex-1 py-1.5 text-[10px] font-semibold rounded-[8px] transition-all"
-                      style={modoDiaCobro === 'mes' ? { background: 'var(--cf-card)', color: 'var(--cf-gold)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' } : { color: 'var(--cf-ink-3)' }}>Dias del mes</button>
+                      style={modoDiaCobro === 'mes' ? { background: 'var(--cf-card)', color: 'var(--cf-gold)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' } : { color: 'var(--cf-ink-3)' }}>Días del mes</button>
                   </div>
                   {modoDiaCobro === 'semana' ? (
                     /* ⚠ EL MISMO SELECTOR, SEGUNDA VÍA. «Qué día cobras» sale
@@ -1746,8 +1746,8 @@ function NuevoPrestamo() {
                         })}
                       </p>
                       <p className="text-[10px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
-                        Son {calculo.diasPrimerPeriodo} dias desde que entregas, asi que esa cuota
-                        trae el interes de {calculo.diasPrimerPeriodo} dias y no de un mes:{' '}
+                        Son {calculo.diasPrimerPeriodo} días desde que entregas, así que esa cuota
+                        trae el interés de {calculo.diasPrimerPeriodo} días y no de un mes:{' '}
                         <span className="font-mono-display font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
                           {formatMoney(calculo.tablaAmortizacion[0].cuotaTotal)}
                         </span>. Las demas van completas.
@@ -2106,7 +2106,7 @@ function NuevoPrestamo() {
               {clienteId && (
                 <div>
                   <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Días sin cobro</label>
-                  <p className="text-[10px] mt-0.5 mb-2" style={{ color: 'var(--cf-ink-3)' }}>Dias en que NO se cobra. Se guarda en la ficha del cliente.</p>
+                  <p className="text-[10px] mt-0.5 mb-2" style={{ color: 'var(--cf-ink-3)' }}>Días en que NO se cobra. Se guarda en la ficha del cliente.</p>
                   <DiasSinCobroSelector value={diasSinCobroCliente} onChange={(arr) => { setDiasSinCobroCliente(arr); setDiasSinCobroEditado(true) }} compact />
                 </div>
               )}

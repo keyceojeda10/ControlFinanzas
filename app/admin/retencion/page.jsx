@@ -167,7 +167,7 @@ export default function RetencionPage() {
       {/* Tabla */}
       {loading ? <SkeletonTable rows={5} /> : lista.length === 0 ? (
         <p className="text-sm text-[var(--cf-ink-3)] text-center py-8">
-          {tab === 'vencidos' ? 'No hay vencidos recientes' : tab === 'porVencer' ? 'Nadie vence en los proximos 7 dias' : 'Todos los registros recientes ya crearon prestamos'}
+          {tab === 'vencidos' ? 'No hay vencidos recientes' : tab === 'porVencer' ? 'Nadie vence en los próximos 7 días' : 'Todos los registros recientes ya crearon préstamos'}
         </p>
       ) : (
         <div className="bg-[var(--cf-surface)] border border-[var(--cf-border)] rounded-[16px] overflow-hidden">
@@ -177,7 +177,7 @@ export default function RetencionPage() {
             <span className="text-center">Plan</span>
             <span className="text-center">Uso</span>
             <span className="text-center">{tab === 'sinActividad' ? 'Registro' : 'Vencimiento'}</span>
-            <span className="text-center">Ultima act.</span>
+            <span className="text-center">Última act.</span>
             <span className="text-right">Acciones</span>
           </div>
 

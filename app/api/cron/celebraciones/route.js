@@ -78,7 +78,7 @@ export async function POST(req) {
         key,
         destinatarios: owners.map(o => o.id),
         title: 'Cierre perfecto',
-        body: `${cobrador.nombre} cerro caja con $0 de diferencia`,
+        body: `${cobrador.nombre} cerró caja con $0 de diferencia`,
         url: '/caja',
       })
     }
@@ -112,7 +112,7 @@ export async function POST(req) {
         notificaciones.push({
           key: `mejor-dia-${hoyStr}`,
           destinatarios: todosUserIds,
-          title: 'Gran dia de recaudo',
+          title: 'Gran día de recaudo',
           body: `${formatMoney(recaudadoHoy, country)} hoy — ${pct - 100}% por encima del promedio semanal`,
           url: '/caja',
         })
@@ -137,8 +137,8 @@ export async function POST(req) {
         notificaciones.push({
           key: `racha-sin-mora-${hoyStr}`,
           destinatarios: todosUserIds,
-          title: 'Racha de 5 dias sin mora nueva',
-          body: `${totalActivos} prestamos activos y ningun cliente nuevo en mora`,
+          title: 'Racha de 5 días sin mora nueva',
+          body: `${totalActivos} préstamos activos y ningún cliente nuevo en mora`,
           url: '/prestamos',
         })
       }
@@ -162,7 +162,7 @@ export async function POST(req) {
           key: `capital-${ms}-${hoyStr}`,
           destinatarios: owners.map(o => o.id),
           title: 'Hito de cartera',
-          body: `Tu cartera activa supero ${formatMoney(ms, country)}`,
+          body: `Tu cartera activa superó ${formatMoney(ms, country)}`,
           url: '/dashboard',
         })
         break

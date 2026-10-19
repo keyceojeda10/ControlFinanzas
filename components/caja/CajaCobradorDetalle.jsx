@@ -6,6 +6,7 @@
 // Se usa en la pantalla dedicada /caja/cobrador/[id] y en la pestaña "Caja por ruta".
 
 import { formatMoney } from '@/lib/i18n'
+import { horaGasto } from '@/lib/gastos'
 import { Card } from '@/components/ui/Card'
 import DesgloseMetodoPago from '@/components/caja/DesgloseMetodoPago'
 import { fraseDeLoQueQueda } from '@/lib/caja/queda-en-la-ruta'
@@ -1035,7 +1036,8 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
                     <p className="text-xs text-[var(--cf-ink)] truncate">{g.description}</p>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <span className="text-[10px] font-semibold" style={{ color }}>{g.estado}</span>
-                      <span className="text-[10px] text-[var(--cf-ink-3)]">{fmtHora(g.fecha)}</span>
+                      {/* La hora en que se anotó; `fecha` va al mediodía y decía «12:00 p. m.» (#26). */}
+                      {horaGasto(g) && <span className="text-[10px] text-[var(--cf-ink-3)]">{horaGasto(g)}</span>}
                     </div>
                   </div>
                   <span className="text-sm font-semibold font-mono-display shrink-0 text-[var(--cf-red-dark)]">-{formatMoney(g.monto)}</span>

@@ -882,7 +882,7 @@ function ModalEliminarCorte({ lineaId, corte, onClose, onSuccess }) {
           Se eliminara el corte del periodo <strong className="text-[var(--cf-ink)]">{corte.periodo}</strong>.
         </p>
         <p className="text-xs text-[var(--cf-ink-3)] mb-4">
-          Los intereses y saldos se recalcularan. Solo se puede eliminar el ultimo corte.
+          Los intereses y saldos se recalcularán. Solo se puede eliminar el último corte.
         </p>
 
         {error && <p className="text-xs text-[var(--cf-red-dark)] mb-3">{error}</p>}

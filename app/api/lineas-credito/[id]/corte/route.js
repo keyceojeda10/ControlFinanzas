@@ -45,7 +45,7 @@ export async function DELETE(request, { params }) {
     })
 
     if (ultimoCorte.id !== corteId) {
-      return Response.json({ error: 'Solo se puede eliminar el ultimo corte generado' }, { status: 400 })
+      return Response.json({ error: 'Solo se puede eliminar el último corte generado' }, { status: 400 })
     }
 
     await prisma.corteLinea.delete({ where: { id: corteId } })

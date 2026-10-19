@@ -248,7 +248,7 @@ export default function OrgDetallePage() {
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] text-[var(--cf-ink-3)]">Dia fijo (opcional)</label>
+                  <label className="text-[10px] text-[var(--cf-ink-3)]">Día fijo (opcional)</label>
                   <input
                     type="number"
                     min="1"
@@ -266,7 +266,7 @@ export default function OrgDetallePage() {
                   onClick={() => {
                     const dias = parseInt(extensionDias) || 30
                     const diaFijo = parseInt(diaFijoPago) || null
-                    const label = diaFijo ? `${dias} dias (dia fijo: ${diaFijo})` : `${dias} dias`
+                    const label = diaFijo ? `${dias} días (día fijo: ${diaFijo})` : `${dias} días`
                     if (confirm(`Renovar suscripcion de "${org.nombre}" por ${label}?`)) {
                       accionSuscripcion(sub.id, 'renovar', { dias, diaFijo })
                     }
@@ -281,8 +281,8 @@ export default function OrgDetallePage() {
                   onClick={() => {
                     const dias = parseInt(extensionDias)
                     const diaFijo = parseInt(diaFijoPago) || null
-                    if (!dias || dias < 1) { alert('Ingresa la cantidad de dias'); return }
-                    const label = diaFijo ? `${dias} dias (dia fijo: ${diaFijo})` : `${dias} dias`
+                    if (!dias || dias < 1) { alert('Ingresa la cantidad de días'); return }
+                    const label = diaFijo ? `${dias} días (día fijo: ${diaFijo})` : `${dias} días`
                     if (confirm(`Extender suscripcion de "${org.nombre}" por ${label}?`)) {
                       accionSuscripcion(sub.id, 'extender', { dias, diaFijo })
                     }
@@ -306,7 +306,7 @@ export default function OrgDetallePage() {
                     }
                   }}
                 >
-                  Quitar dias
+                  Quitar días
                 </Button>
                 <Button
                   variant="danger"
@@ -344,7 +344,7 @@ export default function OrgDetallePage() {
                     }
                   }}
                 >
-                  Vence ese dia
+                  Vence ese día
                 </Button>
                 <p className="text-[10px] text-[var(--cf-ink-3)] basis-full">
                   Se guarda al final del día, para que el día pactado se disfrute entero.
@@ -353,7 +353,7 @@ export default function OrgDetallePage() {
 
               {diaFijoPago && (
                 <p className="text-[10px] text-[var(--cf-gold)]">
-                  Con dia fijo {diaFijoPago}: al renovar/extender, la fecha se ajusta para que venza el dia {diaFijoPago} del mes
+                  Con día fijo {diaFijoPago}: al renovar/extender, la fecha se ajusta para que venza el día {diaFijoPago} del mes
                 </p>
               )}
             </div>

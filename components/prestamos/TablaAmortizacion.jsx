@@ -14,7 +14,7 @@ const fmtFecha = (d) => {
 }
 
 const LABEL_FRECUENCIA = {
-  diario: 'Dia',
+  diario: 'Día',
   semanal: 'Semana',
   quincenal: 'Quincena',
   mensual: 'Mes',

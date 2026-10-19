@@ -219,7 +219,7 @@ export default function NuevaLineaPage() {
 
             {/* Dia de corte */}
             <div>
-              <label className="text-xs font-medium text-[var(--cf-ink-2)] mb-1.5 block">Dia de corte mensual</label>
+              <label className="text-xs font-medium text-[var(--cf-ink-2)] mb-1.5 block">Día de corte mensual</label>
               <select
                 value={diaCorte}
                 onChange={e => setDiaCorte(e.target.value)}
@@ -229,7 +229,7 @@ export default function NuevaLineaPage() {
                   <option key={d} value={d}>{d === 30 ? '30 (último del mes)' : d}</option>
                 ))}
               </select>
-              <p className="text-[11px] text-[var(--cf-ink-3)] mt-1">Ese dia se genera el estado de cuenta del mes: cuanto debe en total (capital + intereses) y cuanto ha pagado.</p>
+              <p className="text-[11px] text-[var(--cf-ink-3)] mt-1">Ese día se genera el estado de cuenta del mes: cuánto debe en total (capital + intereses) y cuánto ha pagado.</p>
             </div>
 
             {/* Pago minimo */}

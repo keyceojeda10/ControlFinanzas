@@ -13,6 +13,7 @@ import { prisma }           from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
 import { getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
 import { notificar } from '@/lib/notificar'
+import { diaDeCalendario } from '@/lib/notificacion-texto'
 
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
 
@@ -35,6 +36,8 @@ export async function POST(request) {
     : getLocalDateStr()
 
   const { inicio, fin } = getLocalDayRange(fechaLocal)
+  // Para las frases del aviso: «su caja del 18 de oct», no «del 2026-10-18» (QA #37).
+  const diaDicho = diaDeCalendario(fechaLocal)
 
   const cierre = await prisma.cierreCaja.findFirst({
     where: { organizationId, cobradorId, fecha: { gte: inicio, lt: fin } },
@@ -70,7 +73,7 @@ export async function POST(request) {
     notificar({
       organizationId, para: 'owners', tipo: 'solicitud_reapertura',
       titulo: 'Piden reabrir una caja',
-      mensaje: `${session.user.nombre} pide reabrir su caja del ${fechaLocal} para seguir registrando abonos.`,
+      mensaje: `${session.user.nombre} pide reabrir su caja del ${diaDicho} para seguir registrando abonos.`,
       href: '/caja', datos: { cierreId: cierre.id },
     })
 
@@ -102,7 +105,7 @@ export async function POST(request) {
     notificar({
       organizationId, para: 'owners', tipo: 'caja_reabierta',
       titulo: 'Caja reabierta',
-      mensaje: `${session.user.nombre} reabrió su caja del ${fechaLocal} para seguir registrando abonos.`,
+      mensaje: `${session.user.nombre} reabrió su caja del ${diaDicho} para seguir registrando abonos.`,
       href: '/caja', datos: { cierreId: cierre.id },
     })
   }
