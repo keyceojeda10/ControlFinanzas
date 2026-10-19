@@ -44,7 +44,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { BotonPrimario, Chip, EtiquetaCampo, Pastilla } from '@/components/cf/primitivos'
 import MoneyInput from '@/components/ui/MoneyInput'
 import { formatMoney } from '@/lib/i18n'
-import { montoConTasa, inicioPorLoAbonado } from '@/lib/cartulina-datos'
+import { montoConTasa, inicioPorLoAbonado, choqueDeCuota } from '@/lib/cartulina-datos'
 import { MODOS_EN_ORDEN, etiquetaModo } from '@/lib/dinero/modos'
 
 const FRECUENCIAS = [
@@ -114,6 +114,12 @@ function inicioDeLaFila(f, base, hoy = hoyBogota()) {
   return inicioPorLoAbonado({ ...efectivo(f, base), fechaInicio: f.fechaInicio, yaAbonado: f.yaAbonado, hoy })
 }
 
+/* La cuota del papel contra la que sale con la forma de cobro: ver
+   `choqueDeCuota` (lib/cartulina-datos.js, DETALLES-CARTERA #7). */
+function choqueDeLaFila(f, base) {
+  return choqueDeCuota({ ...efectivo(f, base), cuotaLeida: f.cuotaLeida, hoy: hoyBogota() })
+}
+
 /* El semáforo se recalcula EN EL NAVEGADOR cada vez que se edita una fila, no
    solo cuando llega del servidor: si no, corregir el monto de una fila roja la
    dejaría roja y el usuario no sabría que ya está bien. Misma regla que
@@ -144,6 +150,9 @@ function estadoDe(f, base) {
      perfectas, porque esa hoja no trae «cuántos cobros» en ninguna parte. Y si
      todo está marcado, nada está marcado: el prestamista deja de mirar. */
   if (!MODOS_SIN_PLAZO.includes(e.modoInteres) && !(Number(f.plazoUnidades) > 0)) return 'ambar'
+  /* Y si la cuota del papel no es la que sale: se guardaría otra cuota y el
+     cobrador cobraría otra plata (DETALLES-CARTERA #7, decisión de Carlos). */
+  if (choqueDeLaFila(f, base)) return 'ambar'
   return 'verde'
 }
 
@@ -246,6 +255,8 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
         // El estado en que va: lo que el OCR haya podido leer de las cuotas
         // tachadas, o el saldo que el prestamista se sabe de memoria.
         yaAbonado: c.montoPagadoHasta ?? '',
+        // La cuota escrita en el papel: se compara con la que sale (`choqueDeLaFila`).
+        cuotaLeida: Number(c.valorCuota) > 0 ? Number(c.valorCuota) : '',
         saldoPendiente: c.saldoPendiente ?? '',
         /* Lo que el lector tuvo que CORREGIR de la cartulina. Se guarda para
            enseñarlo en la fila: una cifra ajustada sin decirlo es una cifra
@@ -751,6 +762,28 @@ function Fila({ f, base, onAbrir, abierta, onEditar, onQuitar }) {
           {f._avisos?.map((t, i) => (
             <span key={i} style={{ fontSize: 11, lineHeight: 1.35, color: 'var(--cf-gold-dark)' }}>{t}</span>
           ))}
+
+          {/* ── LA CUOTA DEL PAPEL Y LA QUE SE VA A GUARDAR (DETALLES-CARTERA #7) ──
+              Las dos cifras con su nombre y, si hay una forma de cobro que da
+              la del papel, el botón para usarla. */}
+          {(() => {
+            const ch = choqueDeLaFila(f, base)
+            if (!ch) return null
+            return (
+              <span style={{ fontSize: 11, lineHeight: 1.4, color: 'var(--cf-ink-2)' }}>
+                En la cartulina dice <b className="cf-num" style={{ color: 'var(--cf-ink)' }}>{formatMoney(ch.leida)}</b>; con {etiquetaModo(ch.modo)} sale <b className="cf-num" style={{ color: 'var(--cf-ink)' }}>{formatMoney(ch.conElModo)}</b>.
+                {ch.sugerido ? (
+                  <>
+                    {' '}Con «{etiquetaModo(ch.sugerido)}» sale igual.{' '}
+                    <button type="button" onClick={() => onEditar('modoInteres', ch.sugerido)}
+                      style={{ border: 0, background: 'none', padding: 0, font: 'inherit', fontWeight: 700, color: 'var(--cf-ink)', textDecoration: 'underline', cursor: 'pointer' }}>
+                      Usar «{etiquetaModo(ch.sugerido)}»
+                    </button>
+                  </>
+                ) : ' Con ninguna forma de cobro sale esa cuota: revisa el monto, el interés o los cobros.'}
+              </span>
+            )
+          })()}
 
           {/* ── QUÉ DATO MIRAR, Y QUÉ DICE EL PAPEL ──
               «Que diga qué número puede no corresponder para que el cliente sepa

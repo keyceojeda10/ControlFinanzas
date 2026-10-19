@@ -31,6 +31,7 @@ import {
   siguientePeriodo,
   esAbiertoConDevengo,
   periodoEnCursoAbierto,
+  pisoDelCierreAnticipado,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { registrarMovimientoCapital, asegurarCapital } from '@/lib/capital'
@@ -587,7 +588,8 @@ export async function POST(request, { params }) {
        misma cifra que enseña la ficha; para perdonar capital están Descuento y
        Mover a perdidos, que lo apuntan como lo que es. (DETALLES-PRESTAMOS #8.) */
     if (tipo === 'liquidacion') {
-      const pisoCapital = Math.min(Math.round(saldoLocked), Math.round(calcularCapitalRestante(prestamoLocked) ?? 0))
+      // La MISMA cuenta que la hoja (`pisoDelCierreAnticipado`, DETALLES-PRESTAMOS #72).
+      const pisoCapital = pisoDelCierreAnticipado(prestamoLocked)
       if (montoFinal < pisoCapital) throw new Error(`LIQUIDACION_BAJO_CAPITAL:${pisoCapital}`)
     }
     if (tipo === 'capital') {

@@ -495,8 +495,9 @@ function PrestamoDetalleContenido({ params }) {
   // ── Liquidacion anticipada ──────────────────────────────────────
   // El piso del cierre: el capital que falta (nunca más que lo que debe). Lo
   // mismo exige el servidor; aquí es para decirlo antes de deslizar.
+  // `pisoCierre` es la MISMA cuenta del servidor (calculos.js, DETALLES-PRESTAMOS #72).
   const pisoDelCierre = liqData
-    ? Math.max(0, Math.round(Math.min(Number(liqData.saldoActual ?? Infinity), Number(liqData.capitalRestante ?? 0))))
+    ? Math.max(0, Math.round(liqData.pisoCierre ?? Math.min(Number(liqData.saldoActual ?? Infinity), Number(liqData.capitalRestante ?? 0))))
     : 0
   async function abrirLiquidacion() {
     setLiqError(''); setLiqData(null); setLiqNota(''); setLiqMotivoTocado(false)

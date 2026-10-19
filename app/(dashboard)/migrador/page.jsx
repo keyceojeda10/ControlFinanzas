@@ -15,7 +15,7 @@ import DiasSinCobroSelector from '@/components/ui/DiasSinCobroSelector'
 // de los negocios se queda en cinco clientes tecleando de uno en uno.
 import LoteFotos from '@/components/migrador/LoteFotos'
 import PreguntaPlataDeHoy from '@/components/cf/PreguntaPlataDeHoy'
-import { montoConTasa, inicioPorLoAbonado } from '@/lib/cartulina-datos'
+import { montoConTasa, inicioPorLoAbonado, choqueDeCuota } from '@/lib/cartulina-datos'
 import { MODOS_EN_ORDEN, etiquetaModo } from '@/lib/dinero/modos'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
@@ -46,6 +46,8 @@ function fichaVacia(defaults) {
     esEnCurso: false,
     yaAbonado: '',
     cuotaManual: '',
+    // La cuota escrita en la cartulina (solo si vino de una foto).
+    cuotaLeida: '',
     diasSinCobro: [],
     rutaId: defaults.rutaId,
   }
@@ -371,6 +373,25 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
           {/* Modo interés */}
           <ModoInteresSelector modoInteres={ficha.modoInteres} onChange={v => { set('modoInteres', v); setModoInteresTocado(true); if (v !== 'manual' && v !== 'saldo') set('cuotaManual', '') }}
             monto={ficha.monto} tasa={ficha.tasa} frecuencia={ficha.frecuencia} diasPlazo={diasPlazo} />
+
+          {/* La cuota de la cartulina contra la que sale con esta forma de cobro
+              (DETALLES-CARTERA #7, igual que en el lote). */}
+          {(() => {
+            const ch = choqueDeCuota({ cuotaLeida: ficha.cuotaLeida, monto: ficha.monto, tasa: ficha.tasa, frecuencia: ficha.frecuencia, plazoUnidades: ficha.plazoUnidades, modoInteres: ficha.modoInteres, hoy: hoyISO() })
+            if (!ch) return null
+            return (
+              <div className="rounded-[10px] border px-3 py-2.5 text-[12px] leading-snug"
+                style={{ borderColor: 'var(--cf-border)', background: 'var(--cf-surface)', color: 'var(--cf-ink-2)' }}>
+                En la cartulina dice <b style={{ color: 'var(--cf-ink)' }}>{formatMoney(ch.leida)}</b>; con {etiquetaModo(ch.modo)} sale <b style={{ color: 'var(--cf-ink)' }}>{formatMoney(ch.conElModo)}</b>.
+                {ch.sugerido ? (
+                  <button type="button" onClick={() => { set('modoInteres', ch.sugerido); setModoInteresTocado(true) }}
+                    className="block mt-1.5 font-semibold underline underline-offset-2" style={{ color: 'var(--cf-ink)' }}>
+                    Usar «{etiquetaModo(ch.sugerido)}», que da la misma cuota
+                  </button>
+                ) : ' Con ninguna forma de cobro sale esa cuota: revisa el monto, el interés o los cobros.'}
+              </div>
+            )
+          })()}
 
           {ficha.modoInteres === 'manual' && (
             <div>
@@ -808,6 +829,7 @@ export default function MigradorPage() {
         nueva.plazoUnidades = String(Math.round(Number(d.diasPlazo) / porPeriodo))
       }
       if (d.fechaInicio) nueva.fechaInicio = d.fechaInicio
+      if (Number(d.valorCuota) > 0) nueva.cuotaLeida = Number(d.valorCuota)
       if (d.montoPagadoHasta || d.cuotasPagadas) {
         nueva.esEnCurso = true
         if (d.montoPagadoHasta) nueva.yaAbonado = String(d.montoPagadoHasta)
