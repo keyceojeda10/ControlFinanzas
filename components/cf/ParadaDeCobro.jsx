@@ -203,7 +203,7 @@ export function FilaCobro({
      cuando aparece. */
   calificacion,
   avisoMora, avisos = [], prestamos = [],
-  cuota, periodo, debe, cobrada = false, abonoHoy, cerradaPorHoy, abonadoAntesDeCerrar,
+  cuota, periodo, debe, cobrada = false, abonoHoy, cerradaPorHoy, abonadoAntesDeCerrar, quedaAtraso,
   onReabrir, onCerrarVisita,
   /* Borra el último cobro de HOY de esta parada. Solo se pasa a quien puede:
      el API deja al owner siempre y al cobrador solo su propio pago y antes de
@@ -505,6 +505,10 @@ export function FilaCobro({
                   ? `Abonó ${abonadoAntesDeCerrar} · cerrado por hoy`
                   : 'Cerrado por hoy')
               : cobradoA ? `Cobrado ${cobradoA}` : 'Cobrado'}
+            {/* Pagó la cuota de hoy y sigue debiendo: es atraso (#69). */}
+            {quedaAtraso && !cerradaPorHoy && (
+              <span style={{ color: 'var(--cf-red-dark)' }}> · queda con atraso de {quedaAtraso}</span>
+            )}
           </span>
         ) : (
           /* ── Y LA DIRECCIÓN TAMPOCO ──

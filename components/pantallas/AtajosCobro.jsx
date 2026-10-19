@@ -123,7 +123,7 @@ export default function AtajosCobro({
   const [elegidoId, setElegidoId] = useState(porDefecto)
   const p = activos.find((x) => x.id === elegidoId) ?? activos.find((x) => x.id === porDefecto) ?? null
 
-  const opciones = p ? opcionesDeMonto(p) : []
+  const opciones = p ? opcionesDeMonto(p, { varios: activos.length > 1 }) : []
   // Qué pastilla está puesta: 'cuota' | 'alDia' | 'todo' | 'otro' | null.
   const [opcion, setOpcion] = useState(null)
   const [monto, setMonto] = useState('')

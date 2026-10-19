@@ -10,6 +10,7 @@ import { registrarPagoSuscripcion } from '@/lib/libro-pagos'
 import { ultimoPago, ultimaSuscripcion } from '@/lib/cobro-intento'
 import { registrarAdminLog }  from '@/lib/admin-log'
 import { cortarCuentasGuardadas } from '@/lib/cuentas-guardadas'
+import { normalizarEmail, formasDelEmail } from '@/lib/normalizar-email'
 import {
   MESES_PERIODO, ofertaPublica, pagoCuadra, inicioDelPeriodo, resumenPrecio,
   leerPreferencial, describirPreferencial, adicionalesDelMonto,
@@ -757,14 +758,16 @@ export async function PATCH(req, { params }) {
       data.telefono = body.telefono.trim() || null
       cambios.push(`teléfono ${user.telefono || '(vacío)'} → ${data.telefono || '(vacío)'}`)
     }
-    if (typeof body.email === 'string' && body.email.trim().toLowerCase() !== user.email) {
-      const email = body.email.trim().toLowerCase()
+    /* Como lo guardan el registro y la creación del cobrador: sin la misma
+       forma, el login no la encuentra (lib/normalizar-email.js). */
+    if (typeof body.email === 'string' && normalizarEmail(body.email) !== user.email) {
+      const email = normalizarEmail(body.email)
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
         return NextResponse.json({ error: 'Ese correo no tiene forma de correo' }, { status: 400 })
       }
       // ⚠ El correo ES la llave con la que entra. Si ya lo tiene otro, cambiarlo
       //   dejaría a uno de los dos sin poder iniciar sesión.
-      const ocupado = await prisma.user.findFirst({ where: { email, NOT: { id: body.userId } }, select: { id: true } })
+      const ocupado = await prisma.user.findFirst({ where: { email: { in: formasDelEmail(body.email) }, NOT: { id: body.userId } }, select: { id: true } })
       if (ocupado) return NextResponse.json({ error: 'Ese correo ya lo usa otra cuenta' }, { status: 409 })
       data.email = email
       cambios.push(`correo ${user.email} → ${email}`)

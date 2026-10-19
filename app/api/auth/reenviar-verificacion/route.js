@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { enviarEmail, emailVerificacion } from '@/lib/email'
 import { rateLimit, getClientIp } from '@/lib/rate-limit'
-import { normalizarEmail } from '@/lib/normalizar-email'
+import { buscarUsuarioPorEmail } from '@/lib/normalizar-email'
 import { sendTemplate } from '@/lib/bot/whatsapp-cloud'
 
 const reenvioLimiter = rateLimit('reenvio-verificacion', 3, 60 * 60 * 1000) // 3/hora
@@ -18,8 +18,7 @@ export async function POST(req) {
     const { email, canal } = body
     if (!email) return NextResponse.json({ error: 'Email requerido' }, { status: 400 })
 
-    const emailNorm = normalizarEmail(email)
-    const user = await prisma.user.findUnique({ where: { email: emailNorm } })
+    const user = await buscarUsuarioPorEmail(prisma, email)
 
     // Responder siempre OK para no filtrar si el email existe
     if (!user || user.emailVerificado) {
@@ -43,7 +42,8 @@ export async function POST(req) {
 
     // Siempre enviar email como respaldo
     const { subject, html } = emailVerificacion({ nombre: user.nombre, codigo: tokenVerificacion })
-    await enviarEmail({ to: emailNorm, subject, html })
+    // Al guardado, no al escrito (ver `buscarUsuarioPorEmail`).
+    await enviarEmail({ to: user.email, subject, html })
 
     return NextResponse.json({ ok: true })
   } catch (err) {

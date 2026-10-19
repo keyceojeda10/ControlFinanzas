@@ -1,7 +1,7 @@
 // app/api/auth/verificar-email/route.js — Verifica email con codigo OTP
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { normalizarEmail } from '@/lib/normalizar-email'
+import { buscarUsuarioPorEmail } from '@/lib/normalizar-email'
 
 export async function POST(req) {
   try {
@@ -11,8 +11,7 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Email y código son requeridos' }, { status: 400 })
     }
 
-    const emailNorm = normalizarEmail(email)
-    const user = await prisma.user.findUnique({ where: { email: emailNorm } })
+    const user = await buscarUsuarioPorEmail(prisma, email)
 
     if (!user) {
       return NextResponse.json({ error: 'Código inválido' }, { status: 400 })

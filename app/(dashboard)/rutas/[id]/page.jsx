@@ -1104,7 +1104,14 @@ export default function RutaDetallePage({ params }) {
     setPagandoRapido(clienteId)
     setRuta(prev => prev ? {
       ...prev,
-      clientes: prev.clientes.map(c => c.id === clienteId ? { ...c, pagoHoy: true, cobroPendienteHoy: false } : c)
+      /* Hecho solo si este pago cubre lo que la parada le pedía hoy (#69). Lo
+         daba por hecho siempre: Nubia, con dos préstamos, salía del recorrido
+         y al refrescar volvía, porque le faltaba la cuota del otro. */
+      clientes: prev.clientes.map(c => {
+        if (c.id !== clienteId) return c
+        const pide = Math.max(0, (Number(c.pideHoy ?? (c.cobroPendienteHoy ? c.cuota : 0)) || 0) - cuota)
+        return { ...c, pagoHoy: true, montoPagadoHoy: (Number(c.montoPagadoHoy) || 0) + cuota, pideHoy: pide, cobroPendienteHoy: pide > 0 }
+      })
     } : prev)
     // La pantalla de «estoy en eso» sale EN EL ACTO tras el gesto y cubre todo
     // lo que tarde: la lectura del GPS (ya casi nada, ver `lib/geo.js`) y el
@@ -2334,6 +2341,8 @@ export default function RutaDetallePage({ params }) {
       cobrarEtiqueta: pide.etiqueta,
       abonoHoy: pide.abono,
       montoCobrado: c.montoPagadoHoy,
+      // Lo que le queda para ponerse al día: si la visita ya está hecha, es atraso (#69).
+      atraso: c.montoParaPonerseAlDia,
       debe: c.saldoPendiente,
       metros: c.distanciaMetros,
     }))
@@ -2353,7 +2362,11 @@ export default function RutaDetallePage({ params }) {
     const conCoords = (ruta?.clientes ?? []).filter((c) => c.latitud != null && c.longitud != null)
     if (conCoords.length < 3) return null
     const actual = totalDistance(conCoords)
-    const propuesta = totalDistance(optimizeRoute(conCoords))
+    /* ⚠ `optimizeRoute` DEVUELVE UN OBJETO, no la lista (DETALLES-RUTAS #54).
+       Pasárselo a `totalDistance` sumaba sobre algo sin `length` y daba 0: «bajaría
+       el recorrido a 0,0 km» en una ruta de 7,9 km. La distancia del orden nuevo
+       la trae ella misma, medida con la misma `totalDistance`. */
+    const propuesta = optimizeRoute(conCoords).distanciaDespues
     if (!(actual > propuesta)) return null
     return propuestaPorCercania({ actualMetros: actual, propuestaMetros: propuesta })
   })()

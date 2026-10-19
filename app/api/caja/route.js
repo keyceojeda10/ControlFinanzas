@@ -16,7 +16,7 @@ import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 import { cobrosDeRenovadas, coteo } from '@/lib/dinero/coteo'
 import { enLaManoDelDia } from '@/lib/dinero/en-la-mano'
 import { rutaIdsDe, getDayRange, calcularEsperadoReal, calcularSegurosDia, getStatsDia } from '@/lib/caja/stats-dia'
-import { SIN_ABONO_PREVIO } from '@/lib/dinero/abono-previo'
+import { SIN_ABONO_PREVIO, prestamosMigrados } from '@/lib/dinero/abono-previo'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -96,7 +96,14 @@ async function calcularCapitalPorRuta(organizationId) {
     saldoCapital: Math.round(r.saldoCapital || 0),
     capitalHabilitado: !!r.capitalHabilitado,
   }))
-  const enRutas = porRuta.reduce((a, r) => a + r.saldoCapital, 0)
+  /* ⚠ SOLO LAS RUTAS CON CAPITAL PROPIO (DETALLES-CAJA #24). En una sin él,
+     `saldoCapital` es la cuenta interna de lo que movieron sus préstamos con la
+     plata del negocio, no plata suya —como en las tarjetas de abajo
+     (`agruparCajaPorRuta`) y al unir rutas—. Sumándolas, un negocio sin
+     ninguna ruta con capital veía «Capital en las rutas −$500.933» y un aviso
+     de rutas en negativo que no tenía arreglo. */
+  const conCapital = porRuta.filter((r) => r.capitalHabilitado)
+  const enRutas = conCapital.reduce((a, r) => a + r.saldoCapital, 0)
   const global = Math.round(capital?.saldo || 0)
 
   return {
@@ -108,7 +115,7 @@ async function calcularCapitalPorRuta(organizationId) {
     sinAsignar: global - enRutas,
     // Una sub-bolsa no puede tener menos de cero pesos FÍSICOS: si está
     // negativa, salió plata que nunca se registró como entrada.
-    negativas: porRuta.filter((r) => r.saldoCapital < 0).length,
+    negativas: conCapital.filter((r) => r.saldoCapital < 0).length,
   }
 }
 
@@ -208,8 +215,14 @@ async function calcularPrestadoPorRutaDia(organizationId, inicio, fin) {
     if (!prev || m.createdAt > prev.createdAt) entregadoPorPrestamo.set(m.referenciaId, m)
   }
 
+  /* Sin los migrados, como «Lo que prestaste» de la caja (`detalleDesembolsadoDia`):
+     de la caja no salió un billete (decisión de Carlos, 18 oct 2026). Sin esto
+     «Por ruta» decía $1.100.000 y la caja $900.000 (DETALLES-CAJA #23). */
+  const migrados = await prestamosMigrados(prisma, prestamos.map((p) => p.id))
+
   const porRuta = new Map()
   for (const p of prestamos) {
+    if (migrados.has(p.id)) continue
     const mov = entregadoPorPrestamo.get(p.id)
     // Sin movimiento: en un préstamo nuevo lo entregado ES el monto; en una
     // renovación, cero.

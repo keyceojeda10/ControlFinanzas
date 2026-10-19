@@ -11,7 +11,7 @@ import { getUtcOffset } from '@/lib/i18n'
 import { tienePeriodoEsperadoHoy, tieneCobroPendienteHoy, calcularDiasMora, calcularProximoCobro, calcularMontoParaPonerseAlDia } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
-import { faltaDeHoy } from '@/lib/dinero/esperado'
+import { faltaDeHoy, cuotaDelPeriodo } from '@/lib/dinero/esperado'
 
 const hoy = (country = 'co') => {
   const now = new Date()
@@ -166,7 +166,14 @@ export async function GET(request) {
            o pagó hoy, y la meta suma la cuota de esos préstamos. */
         const vivo = prestamo.estado === 'activo' && !prestamo.esClavo
         const pendienteEste = vivo && !hoySinCobro && tieneCobroPendienteHoy(prestamo, diasDelPrestamo, festivos)
-        if (pendienteEste) pendienteCliente = true
+        /* La visita de hoy se cierra con la cuota de hoy (#69): pendiente es
+           que la parada todavía le pida algo, la misma cuenta que la ruta por
+           dentro (app/api/rutas/[id]). El atrasado que pagó su cuota ya cobró. */
+        if (pendienteEste && faltaDeHoy({
+          cuota: cuotaDelPeriodo(prestamo),
+          pagadoHoy: cobradoDeEste,
+          alDia: calcularMontoParaPonerseAlDia(prestamo, diasDelPrestamo, festivos),
+        }) > 0) pendienteCliente = true
         if (vivo && (pendienteEste || cobradoDeEste > 0) && tienePeriodoEsperadoHoy(prestamo, sinCobroDelPrestamo, diasDelPrestamo, festivos)) {
           esperadoHoy += prestamo.cuotaDiaria
           // Nunca más de lo que le falta para ponerse al día (#67).
@@ -312,12 +319,19 @@ export async function POST(request) {
     }
   }
 
+  /* ⚠ LA RUTA NUEVA VA AL FINAL DEL ORDEN (DETALLES-RUTAS #49). Nacía con
+     `orden: 0` y se ponía delante de las que ya se habían ordenado. Ese orden
+     decide qué rutas siguen activas cuando el negocio pasa del límite de su
+     plan (`obtenerRutasPermitidas`): crear una podía dejar en «Solo lectura»
+     una vieja que se está cobrando. */
+  const ultima = await prisma.ruta.aggregate({ where: { organizationId }, _max: { orden: true } })
   const ruta = await prisma.ruta.create({
     data: {
       organizationId,
       nombre:    nombre.trim(),
       cobradorId: cobradorId || null,
       capitalHabilitado: capitalInicialNum > 0,
+      orden: (ultima._max.orden ?? -1) + 1,
     },
   })
 

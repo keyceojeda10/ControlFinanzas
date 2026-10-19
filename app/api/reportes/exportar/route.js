@@ -211,7 +211,7 @@ export async function GET(req) {
     const rows = await prisma.user.findMany({
       where: { organizationId: orgId, rol: 'cobrador' },
       include: {
-        rutas: { where: { activo: true }, take: 1, select: { nombre: true } },
+        rutas: { where: { activo: true }, select: { nombre: true }, orderBy: { orden: 'asc' } },
         cierresCaja: {
           where: { fecha: { gte: fechaDesde, lte: fechaHasta } },
           select: {
@@ -237,7 +237,8 @@ export async function GET(req) {
       const eficiencia = esperado > 0 ? Math.round((recogido / esperado) * 100) : 0
       return [
         c.nombre,
-        c.rutas[0]?.nombre ?? '',
+        // Todas sus rutas, no la primera (DETALLES-RUTAS #14).
+        c.rutas.map((r) => r.nombre).join(', '),
         c.cierresCaja.length,
         esperado,
         recogido,

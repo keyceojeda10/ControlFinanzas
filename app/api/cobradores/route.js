@@ -8,22 +8,21 @@ import { logActividad } from '@/lib/activity-log'
 
 import { PLAN_NAMES, PLANES_CONFIG, cuposDe, selectCupos, admiteAdicionales } from '@/lib/planes'
 import { getUtcOffset } from '@/lib/i18n'
-import { normalizarEmail } from '@/lib/normalizar-email'
+import { normalizarEmail, buscarUsuarioPorEmail } from '@/lib/normalizar-email'
 import { tienePeriodoEsperadoHoy } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 
-const getLocalDate = (country = 'co') => new Date(Date.now() - Math.abs(getUtcOffset(country)) * 60 * 60 * 1000)
+/* ⚠ LA MEDIANOCHE DEL PAÍS, NO LA DEL SERVIDOR (DETALLES-RUTAS #57). Restaba
+   la hora del país y luego `setHours(0)` en la hora del servidor, que es UTC:
+   el «hoy» iba de 7 p. m. a 7 p. m. y a las 12:50 a. m. del domingo enseñaba
+   «HOY $84.400», lo del sábado por la noche, mientras la ruta decía $0. Es la
+   misma de app/api/cobradores/[id] y app/api/rutas/[id]. */
 const hoy = (country = 'co') => {
-  const d = getLocalDate(country)
-  d.setHours(0, 0, 0, 0)
-  return d
+  const absOffset = Math.abs(getUtcOffset(country))
+  const col = new Date(Date.now() - absOffset * 60 * 60 * 1000)
+  return new Date(Date.UTC(col.getUTCFullYear(), col.getUTCMonth(), col.getUTCDate(), absOffset, 0, 0, 0))
 }
-const manana = (country = 'co') => {
-  const d = getLocalDate(country)
-  d.setDate(d.getDate() + 1)
-  d.setHours(0, 0, 0, 0)
-  return d
-}
+const manana = (country = 'co') => new Date(hoy(country).getTime() + 24 * 60 * 60 * 1000)
 
 // ─── GET /api/cobradores ────────────────────────────────────────
 export async function GET(request) {
@@ -83,7 +82,7 @@ export async function GET(request) {
         },
       },
       pagos: {
-        where:      { fechaPago: { gte: hoy(), lt: manana() } },
+        where:      { fechaPago: { gte: hoy(session.user.country), lt: manana(session.user.country) } },
         // `metodoPago` es 'efectivo' | 'transferencia', y es lo que separa lo
         // que el cobrador TIENE EN EL BOLSILLO de lo que ya está en la cuenta.
         // Sin él, «debe entregar» miente en cuanto un cliente paga por Nequi.
@@ -150,7 +149,8 @@ export async function GET(request) {
       ruta:            c.rutas[0] ? { id: c.rutas[0].id, nombre: c.rutas[0].nombre } : null,
       // TODAS sus rutas: «Ya cobra en …» nombraba solo la primera (DETALLES-RUTAS #61).
       rutas:           c.rutas.map((r) => ({ id: r.id, nombre: r.nombre })),
-      cantidadClientes: c.rutas[0]?.clientes?.length ?? 0,
+      // Los de TODAS sus rutas (#14): decía «Zona Norte · 3 clientes» de quien lleva dos.
+      cantidadClientes: c.rutas.reduce((n, r) => n + (r.clientes?.length ?? 0), 0),
       recaudadoHoy,
       recaudadoEfectivoHoy: Math.round(recaudadoEfectivoHoy),
       recaudadoDigitalHoy: Math.round(recaudadoDigitalHoy),
@@ -220,8 +220,8 @@ export async function POST(request) {
   // Normalizar email (quita puntos decorativos de Gmail, lowercase)
   const emailNorm = normalizarEmail(email)
 
-  // Email único global
-  const existeEmail = await prisma.user.findUnique({ where: { email: emailNorm } })
+  // Email único global, también contra las cuentas guardadas sin sus puntos.
+  const existeEmail = await buscarUsuarioPorEmail(prisma, email, { select: { id: true } })
   if (existeEmail) return Response.json({ error: 'Este correo ya está en uso. Si la persona ya tiene cuenta, intenta con otro correo o edita un cobrador existente.' }, { status: 409 })
 
   const hashedPassword = await bcrypt.hash(password.trim(), 10)

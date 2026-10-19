@@ -1367,6 +1367,9 @@ export function UnirRuta({
               vista.origen.llevabaCapital
                 ? { etiqueta: `Capital de ${origen}`, valor: formatMoney(vista.origen.capital) }
                 : { etiqueta: origen, valor: 'no llevaba capital propio', texto: true },
+              ...(vista.origen.llevabaCapital && vista.destino.llevabaCapital === false
+                ? [{ etiqueta: vista.destino.nombre, valor: 'empieza con capital propio', texto: true }]
+                : []),
               { etiqueta: 'Capital del negocio', valor: 'no cambia', texto: true },
               { etiqueta: origen, valor: 'queda archivada', texto: true },
             ]}

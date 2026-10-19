@@ -268,6 +268,7 @@ export async function GET() {
       let ultimoPagoHoyId = null
       let saldoCliente = 0
       let faltaHoyCliente = 0
+      let pideHoyCliente = 0
 
       for (const p of c.prestamos) {
         // p.pagos ya viene filtrado por hoy desde la query (where fechaPago gte/lt)
@@ -413,10 +414,12 @@ export async function GET() {
           ...extraInfo,
         })
 
-        if (pendienteEste) cobroPendienteHoy = true
+        // La visita de hoy se cierra con la cuota de hoy (#69): ver app/api/rutas/[id].
+        if (pendienteEste) pideHoyCliente += faltaDeHoy({ cuota: cuotaReal, pagadoHoy: montoPagadoHoy, alDia })
       }
 
       const yaPageHoy = pagadoHoy > 0
+      cobroPendienteHoy = pideHoyCliente > 0
       const pendienteHoyCliente = !_hoySinCobro && cobroPendienteHoy
       // El cobro de hoy también es un pago, aunque la fecha del préstamo no
       // se haya movido todavía.
@@ -446,6 +449,7 @@ export async function GET() {
         rutaNombre: ruta?.nombre ?? 'Sin ruta',
         cuota: cuotaCliente,
         faltaHoy: Math.round(faltaHoyCliente),
+        pideHoy: Math.round(pideHoyCliente),
         frecuencia: frecuencia ?? 'diario',
         // Un préstamo dado por perdido. Lo tenía la ruta y aquí no, así que el
         // mismo cliente salía avisado en una pantalla y mudo en la otra —y la

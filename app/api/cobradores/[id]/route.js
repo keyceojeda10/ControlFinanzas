@@ -7,7 +7,7 @@ import bcrypt               from 'bcryptjs'
 import { calcularEstadoCliente } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
-import { normalizarEmail } from '@/lib/normalizar-email'
+import { normalizarEmail, formasDelEmail } from '@/lib/normalizar-email'
 import { cortarCuentasGuardadas } from '@/lib/cuentas-guardadas'
 import { cuposDe, selectCupos, admiteAdicionales } from '@/lib/planes'
 
@@ -76,14 +76,22 @@ export async function GET(request, { params }) {
   })
 
   // Recalcular estado real de cada cliente
-  const ruta = cobrador.rutas[0] ?? null
-  if (ruta) {
-    ruta.clientes = ruta.clientes.map(c => ({
-      id: c.id,
-      nombre: c.nombre,
-      estado: calcularEstadoCliente(c.prestamos, obtenerDiasSinCobro(c, ruta, org)),
-    }))
-  }
+  /* ⚠ TODAS SUS RUTAS, NO LA PRIMERA (DETALLES-RUTAS #14, decisión de Carlos).
+     Andrés lleva Ruta Centro y Zona Norte y su ficha decía «Zona Norte · activo»
+     y «Clientes (3)»: los de una sola. Los clientes van juntos, cada uno con su
+     ruta cuando hay más de una. `ruta` se queda (la primera) para quien ya la
+     lee, pero con los clientes de todas. */
+  const variasRutas = cobrador.rutas.length > 1
+  const clientesDeTodas = cobrador.rutas.flatMap((r) => r.clientes.map((c) => ({
+    id: c.id,
+    nombre: c.nombre,
+    estado: calcularEstadoCliente(c.prestamos, obtenerDiasSinCobro(c, r, org)),
+    ...(variasRutas ? { rutaNombre: r.nombre } : {}),
+  })))
+  const ruta = cobrador.rutas[0]
+    ? { id: cobrador.rutas[0].id, nombre: cobrador.rutas[0].nombre, diasSinCobro: cobrador.rutas[0].diasSinCobro, clientes: clientesDeTodas }
+    : null
+  const rutas = cobrador.rutas.map((r) => ({ id: r.id, nombre: r.nombre, cantidadClientes: r.clientes.length }))
 
   return Response.json({
     id:           cobrador.id,
@@ -106,6 +114,7 @@ export async function GET(request, { params }) {
       reabrirCajaSinAprobacion: cobrador.puedeReabrirCajaSinAprobacion ?? false,
     },
     ruta,
+    rutas,
     recaudadoHoy: cobrador.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo)).reduce((a, p) => a + p.montoPagado, 0),
     pagosMes:     cobrador.pagos.length,
   })
@@ -141,8 +150,8 @@ export async function PATCH(request, { params }) {
   if (body.email !== undefined) {
     const email = normalizarEmail(body.email)
     if (!email) return Response.json({ error: 'El correo no puede estar vacío' }, { status: 400 })
-    // Verificar unicidad global (excluyendo al propio cobrador)
-    const existe = await prisma.user.findFirst({ where: { email, id: { not: id } } })
+    // Verificar unicidad global (excluyendo al propio cobrador), también sin sus puntos.
+    const existe = await prisma.user.findFirst({ where: { email: { in: formasDelEmail(body.email) }, id: { not: id } } })
     if (existe) {
       return Response.json({ error: 'Este correo ya está registrado por otro usuario' }, { status: 409 })
     }

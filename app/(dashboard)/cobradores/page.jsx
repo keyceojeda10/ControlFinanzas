@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { useRouter } from 'next/navigation'
 import { Cobradores } from '@/components/pantallas/Cobradores'
-import { agrupaCobradores } from '@/lib/adaptadores/cobradores'
+import { agrupaCobradores, nombresDeRutas } from '@/lib/adaptadores/cobradores'
 import Link                    from 'next/link'
 import { useAuth }             from '@/hooks/useAuth'
 import { Badge }               from '@/components/ui/Badge'
@@ -402,8 +402,9 @@ function CobradoresPageInner() {
                 </svg>
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-[var(--cf-ink)] truncate">{c.nombre}</p>
-                <p className="text-[11px] text-[var(--cf-ink-3)] truncate">{c.ruta?.nombre || 'Sin ruta'}</p>
+                {/* El nombre no se recorta; y todas sus rutas, no la primera (#14). */}
+                <p className="text-sm font-semibold text-[var(--cf-ink)] break-words">{c.nombre}</p>
+                <p className="text-[11px] text-[var(--cf-ink-3)] break-words">{nombresDeRutas(c) || 'Sin ruta'}</p>
               </div>
               <div className="flex flex-col gap-1 shrink-0">
                 <button type="button" onClick={() => moverCobrador(i, -1)} disabled={i === 0}

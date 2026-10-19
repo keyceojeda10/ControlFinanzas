@@ -201,6 +201,20 @@ export default function CapitalTab() {
     }
   }
 
+  /* ⚠ CERRAR LA DEJA LIMPIA, también al cancelar (DETALLES-CAJA #25). Las
+     cinco operaciones son la MISMA ventana: con «Cancelar» solo se cerraba, y
+     «Cuadrar el saldo» abría con los $500.000 escritos en «Meto plata» y el
+     botón «Cuadrar en $500.000» listo para tocar. */
+  const cerrarModal = () => {
+    setShowModal(false)
+    setModalMonto('')
+    setModalDesc('')
+    setModalDireccion('ingreso')
+    setModalRutaId('')
+    setModalAbsorber(false)
+    setError('')
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
@@ -220,12 +234,7 @@ export default function CapitalTab() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Error al registrar')
-      setShowModal(false)
-      setModalMonto('')
-      setModalDesc('')
-      setModalDireccion('ingreso')
-      setModalRutaId('')
-      setModalAbsorber(false)
+      cerrarModal()
       fetchResumen()
       fetchConfig()
       setPage(1)
@@ -958,18 +967,37 @@ export default function CapitalTab() {
                   </p>
                 </div>
               )}
-              {porRuta.filter(r => r.capitalHabilitado).length > 0 && modalTipo !== 'capital_inicial' && (
-                <div>
-                  <label className="text-xs text-[var(--cf-ink-3)] mb-1 block">Ruta (opcional)</label>
-                  <select value={modalRutaId} onChange={(e) => setModalRutaId(e.target.value)}
-                    className="w-full bg-[var(--cf-surface)] border border-[var(--cf-border)] text-[var(--cf-ink)] rounded-[10px] px-3 py-2.5 text-sm">
-                    <option value="">General (sin ruta)</option>
-                    {porRuta.filter(r => r.capitalHabilitado).map((r) => (
-                      <option key={r.rutaId} value={r.rutaId}>{r.nombre}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
+              {/* ⚠ METER PLATA SE PUEDE EN CUALQUIER RUTA (DETALLES-RUTAS #10, decisión
+                  de Carlos). Este es el único sitio para meter o sacar plata de una
+                  ruta, pero solo listaba las que ya tenían capital propio: a una ruta
+                  que ya existía no había forma de activárselo. Al meterle plata, el
+                  servidor la marca con capital propio (`/api/capital`). Sacar o
+                  cuadrar sigue siendo solo en las que ya lo llevan. */}
+              {(() => {
+                const elegibles = porRuta.filter((r) => r.activo !== false
+                  && (modalTipo === 'inyeccion' || r.capitalHabilitado))
+                if (!elegibles.length || modalTipo === 'capital_inicial') return null
+                const elegida = porRuta.find((r) => r.rutaId === modalRutaId)
+                return (
+                  <div>
+                    <label className="text-xs text-[var(--cf-ink-3)] mb-1 block">Ruta (opcional)</label>
+                    <select value={modalRutaId} onChange={(e) => setModalRutaId(e.target.value)}
+                      className="w-full bg-[var(--cf-surface)] border border-[var(--cf-border)] text-[var(--cf-ink)] rounded-[10px] px-3 py-2.5 text-sm">
+                      <option value="">General (sin ruta)</option>
+                      {elegibles.map((r) => (
+                        <option key={r.rutaId} value={r.rutaId}>
+                          {r.capitalHabilitado ? r.nombre : `${r.nombre} · activa su capital`}
+                        </option>
+                      ))}
+                    </select>
+                    {elegida && !elegida.capitalHabilitado && (
+                      <p className="text-xs mt-1.5 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
+                        Con esta entrada, {elegida.nombre} empieza a llevar su propia plata: lo que cobre y preste se suma y se resta aquí.
+                      </p>
+                    )}
+                  </div>
+                )
+              })()}
               {modalTipo === 'ajuste' && (
                 <div>
                   <label className="text-xs text-[var(--cf-ink-3)] mb-1 block">Dirección del ajuste</label>
@@ -1044,7 +1072,7 @@ export default function CapitalTab() {
               </div>
               {error && <p className="text-sm text-[var(--cf-red-dark)]">{error}</p>}
               <div className="flex gap-3">
-                <button type="button" onClick={() => { setShowModal(false); setError(''); setModalDireccion('ingreso'); setModalRutaId(''); setModalAbsorber(false) }}
+                <button type="button" onClick={cerrarModal}
                   className="flex-1 px-4 py-2.5 border border-[var(--cf-border)] text-[var(--cf-ink-3)] rounded-[10px] text-sm hover:bg-[var(--cf-fill)] transition-colors">
                   Cancelar
                 </button>

@@ -282,13 +282,17 @@ export default function RutasPage() {
 
   useEffect(() => { fetchRutas() }, [fetchRutas])
 
-  useEffect(() => {
+  /* Las rutas que entran en el plan. Se vuelven a pedir al crear una (#48):
+     la ruta nueva entraba a la lista sin estar en este conjunto y la nota la
+     daba por «Solo lectura» hasta recargar. */
+  const cargarPermitidas = useCallback(() => {
     if (!esOwner) return
     fetch('/api/plan/uso')
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d?.rutasPermitidas) setRutasPermitidas(new Set(d.rutasPermitidas)) })
       .catch(() => {})
   }, [esOwner])
+  useEffect(() => { cargarPermitidas() }, [cargarPermitidas])
 
   // Cargar recomendaciones (solo owner, en paralelo, sin bloquear)
   const fetchRecomendaciones = useCallback(async () => {
@@ -349,6 +353,7 @@ export default function RutasPage() {
         return
       }
       setRutas((prev) => [...prev, { ...data, cantidadClientes: 0, esperadoHoy: 0, recaudadoHoy: 0 }])
+      cargarPermitidas()
       setNombre('')
       setCapitalRuta('')
       setOrigenCapital('nuevo')
@@ -866,7 +871,7 @@ export default function RutasPage() {
       <ModalSugerenciasRutas
         open={showSugerencias}
         onClose={() => setShowSugerencias(false)}
-        onSuccess={() => { fetchRutas({ soft: true }); fetchRecomendaciones() }}
+        onSuccess={() => { fetchRutas({ soft: true }); fetchRecomendaciones(); cargarPermitidas() }}
       />
     </div>
   )

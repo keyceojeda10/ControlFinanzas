@@ -258,12 +258,24 @@ export default function CobrosHoyPage() {
     setData(prev => prev ? {
       ...prev,
       clientes: prev.clientes.map(c =>
-        c.id === clienteId ? { ...c, pagoHoy: true, cobroPendienteHoy: false } : c
+        // Hecho solo si cubre lo que la parada le pedía hoy (#69).
+        c.id === clienteId ? (() => {
+          const pide = Math.max(0, (Number(c.pideHoy ?? (c.cobroPendienteHoy ? c.cuota : 0)) || 0) - montoFinal)
+          return { ...c, pagoHoy: true, montoCobradoHoy: (Number(c.montoCobradoHoy) || 0) + montoFinal, pideHoy: pide, cobroPendienteHoy: pide > 0 }
+        })() : c
       ),
       resumen: {
         ...prev.resumen,
-        pendientes: tipoPago === 'completo' ? Math.max(0, prev.resumen.pendientes - 1) : prev.resumen.pendientes,
-        pagados: tipoPago === 'completo' ? prev.resumen.pagados + 1 : prev.resumen.pagados,
+        // Sale de pendientes cuando la visita queda hecha (#69), no por el tipo del pago.
+        ...(() => {
+          const cli = prev.clientes.find((x) => x.id === clienteId)
+          const quedaHecha = Boolean(cli?.cobroPendienteHoy)
+            && (Number(cli.pideHoy ?? cli.cuota) || 0) - montoFinal <= 0
+          return {
+            pendientes: quedaHecha ? Math.max(0, prev.resumen.pendientes - 1) : prev.resumen.pendientes,
+            pagados: quedaHecha ? prev.resumen.pagados + 1 : prev.resumen.pagados,
+          }
+        })(),
         recaudadoHoy: prev.resumen.recaudadoHoy + montoFinal,
         // Lo que este cliente cubre de lo que falta; la cifra exacta llega con
         // la recarga de después del cobro.

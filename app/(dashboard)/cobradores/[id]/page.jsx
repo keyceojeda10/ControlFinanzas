@@ -16,6 +16,7 @@ import { ConfirmModal }             from '@/components/ui/ConfirmModal'
 import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
 import QueNecesitas from '@/components/acciones/QueNecesitas'
 import TelefonosGuardados from '@/components/cuentas/TelefonosGuardados'
+import { nombresDeRutas } from '@/lib/adaptadores/cobradores'
 
 export default function CobradorDetallePage({ params }) {
   return <CobradorDetalleInner params={params} />
@@ -160,7 +161,8 @@ function CobradorDetalleInner({ params }) {
   useCabecera({
     titulo: data?.nombre,
     subtitulo: data ? [
-      data.ruta?.nombre ?? 'sin ruta',
+      // Todas sus rutas (#14), no la primera.
+      nombresDeRutas(data) || 'sin ruta',
       data.activo === false ? 'inactivo' : 'activo',
     ].filter(Boolean).join(' · ') : null,
   })
@@ -572,7 +574,10 @@ function CobradorDetalleInner({ params }) {
                 href={`/clientes/${c.id}`}
                 className="flex items-center justify-between py-2 border-b border-[var(--cf-border)] last:border-0 hover:bg-[var(--cf-card)] -mx-1 px-1 rounded-[8px] transition-colors"
               >
-                <p className="text-sm text-[var(--cf-ink)]">{c.nombre}</p>
+                <div className="min-w-0">
+                  <p className="text-sm text-[var(--cf-ink)] break-words">{c.nombre}</p>
+                  {c.rutaNombre && <p className="text-[11px] text-[var(--cf-ink-3)]">{c.rutaNombre}</p>}
+                </div>
                 <Badge variant={c.estado === 'mora' ? 'red' : c.estado === 'activo' ? 'green' : 'gray'}>
                   {c.estado === 'mora' ? 'En mora' : c.estado === 'activo' ? 'Al día' : 'Cancelado'}
                 </Badge>

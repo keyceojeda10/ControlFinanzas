@@ -19,7 +19,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useCountry } from '@/hooks/useCountry'
 import { ResumenDelDia, AvisoResumen, ResumenDeOtroDia } from '@/components/cf/ResumenDelDia'
-import { armarResumen, tocaOfrecerlo, fechaLocal, POSPONER_MS, CLAVE_VISTO, CLAVE_POSPUESTO, queResumenAbrir, resumenGuardado, fechaLarga } from '@/lib/resumen-del-dia'
+import { armarResumen, tocaOfrecerlo, fechaLocal, POSPONER_MS, CLAVE_VISTO, CLAVE_POSPUESTO, queResumenAbrir, resumenGuardado, fechaLarga, personaOcupada } from '@/lib/resumen-del-dia'
 import { HORAS_RESUMEN, normalizarPrefs } from '@/lib/avisos-preferencias'
 
 const PRIMERA_HORA = Math.min(...HORAS_RESUMEN)
@@ -35,6 +35,19 @@ export default function ResumenDelDiaAuto() {
   const [otroDia, setOtroDia] = useState(null)    // { fecha, d } — el resumen de un día pasado
   const horaRef = useRef(undefined)               // undefined = aún no se ha leído
   const ocupado = useRef(false)
+  // Cuándo tocó, escribió o desplazó por última vez (#50): el aviso espera.
+  const ultimaInteraccion = useRef(Date.now())
+  useEffect(() => {
+    const marcar = () => { ultimaInteraccion.current = Date.now() }
+    const eventos = ['pointerdown', 'keydown', 'wheel', 'touchstart', 'scroll']
+    for (const e of eventos) window.addEventListener(e, marcar, { passive: true, capture: true })
+    return () => { for (const e of eventos) window.removeEventListener(e, marcar, { capture: true }) }
+  }, [])
+  const estaOcupada = () => personaOcupada({
+    enfocado: typeof document !== 'undefined' ? document.activeElement : null,
+    hayVentana: typeof document !== 'undefined' && Boolean(document.querySelector('[role="dialog"], [aria-modal="true"]')),
+    ultimaInteraccion: ultimaInteraccion.current,
+  })
 
   const traer = useCallback(async () => {
     // `?detalle=1`: las listas detrás de cada cifra (quién pagó, quién no, mañana).
@@ -47,6 +60,7 @@ export default function ResumenDelDiaAuto() {
     const ahora = new Date()
     if (ahora.getHours() < PRIMERA_HORA) return
     if (leer(CLAVE_VISTO) === fechaLocal(ahora)) return
+    if (estaOcupada()) return                         // vuelve a mirar al minuto
     ocupado.current = true
     try {
       if (horaRef.current === undefined) {
@@ -59,6 +73,8 @@ export default function ResumenDelDiaAuto() {
       if (!r) return
       // Un día sin movimiento no merece un pop-up: se da por visto y ya.
       if (r.cobrado === 0 && r.prestado === 0 && r.gastos === 0) { guardar(CLAVE_VISTO, fechaLocal(ahora)); return }
+      // Mientras se traía el resumen pudo ponerse a hacer algo.
+      if (estaOcupada()) return
       setResumen(r); setFase('aviso')
     } finally { ocupado.current = false }
   }, [rol, fase, traer])

@@ -4,7 +4,7 @@ import crypto           from 'crypto'
 import { prisma }       from '@/lib/prisma'
 import { enviarEmail, emailResetPassword } from '@/lib/email'
 import { forgotLimiter, getClientIp } from '@/lib/rate-limit'
-import { normalizarEmail } from '@/lib/normalizar-email'
+import { buscarUsuarioPorEmail } from '@/lib/normalizar-email'
 
 const SECRET = process.env.NEXTAUTH_SECRET
 if (!SECRET) throw new Error('NEXTAUTH_SECRET no configurado')
@@ -30,8 +30,7 @@ export async function POST(req) {
     return NextResponse.json({ error: 'El correo es requerido' }, { status: 400 })
   }
 
-  const user = await prisma.user.findUnique({
-    where: { email: normalizarEmail(email) },
+  const user = await buscarUsuarioPorEmail(prisma, email, {
     select: { id: true, nombre: true, email: true, activo: true },
   })
 

@@ -12,8 +12,7 @@ import { numerarPorCliente, camposDeNumero } from '@/lib/prestamos/numero'
 const syncTimestamps = new Map()
 const SYNC_COOLDOWN_MS = 2 * 60 * 1000
 
-function hoyLocalUTC(country = 'co') {
-  const now = new Date()
+function hoyLocalUTC(country = 'co', now = new Date()) {
   const absOffset = Math.abs(getUtcOffset(country))
   const col = new Date(now.getTime() - absOffset * 60 * 60 * 1000)
   const y = col.getUTCFullYear(), m = col.getUTCMonth(), d = col.getUTCDate()
@@ -221,9 +220,10 @@ export async function GET() {
       let diasDesdeUltimoPago = null
       for (const p of activos) {
         if (p.pagos && p.pagos.length > 0) {
-          const fecha = new Date(p.pagos[0].fechaPago)
-          fecha.setHours(0, 0, 0, 0)
-          const dias = Math.floor((inicioHoy - fecha) / 86400000)
+          // El día del pago en el país, igual que `inicioHoy` (#57): con
+          // `setHours(0)` en UTC un cobro de la noche contaba un día de menos.
+          const fecha = hoyLocalUTC(undefined, new Date(p.pagos[0].fechaPago))
+          const dias = Math.round((inicioHoy - fecha) / 86400000)
           if (diasDesdeUltimoPago === null || dias < diasDesdeUltimoPago) diasDesdeUltimoPago = dias
         }
       }

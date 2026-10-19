@@ -932,13 +932,17 @@ const MOVIMIENTOS_MANUALES = [
       {pagosDelDiaFiltrados.length > 0 && (() => {
         const desglose = {}
         pagosDelDiaFiltrados.forEach(p => {
-          if (!['completo', 'parcial'].includes(p.tipo)) return
-          const mp = p.metodoPago || 'otro'
-          if (mp === 'transferencia') {
+          /* Los MISMOS pagos que el total de arriba (`wherePagosDia` en
+             /api/caja) y que «Por ruta». Contando solo «completo» y «parcial»
+             se quedaba fuera la liquidación: «$552.967» arriba y $330.300
+             abajo (DETALLES-CAJA #22). Lo que no es transferencia es efectivo,
+             como en `agruparCajaPorRuta`. */
+          if (p.tipo === 'recargo' || p.tipo === 'descuento') return
+          if (p.metodoPago === 'transferencia') {
             const pl = p.plataforma || 'Transferencia'
             if (!desglose[pl]) desglose[pl] = { monto: 0, tipo: 'transferencia' }
             desglose[pl].monto += Number(p.montoPagado || 0)
-          } else if (mp === 'efectivo') {
+          } else {
             if (!desglose['Efectivo']) desglose['Efectivo'] = { monto: 0, tipo: 'efectivo' }
             desglose['Efectivo'].monto += Number(p.montoPagado || 0)
           }

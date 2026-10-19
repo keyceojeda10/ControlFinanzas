@@ -363,6 +363,8 @@ export async function GET(request, { params }) {
     // Lo que le queda de la cuota de hoy (#66). Se suma junto al «Falta» de la
     // ruta, así las paradas suman lo mismo que dice arriba.
     let faltaHoyCliente = 0
+    // Lo que la parada le pide hoy entre todos sus préstamos que deben (#69).
+    let pideHoyCliente = 0
     // Pago de hoy con coords mas reciente — alimenta el badge en la card del cliente.
     let pagoHoyGeoCliente = null
     // Detalle de pagos de hoy (vista de auditoria): monto, metodo y hora de cada cobro real.
@@ -579,6 +581,15 @@ export async function GET(request, { params }) {
         faltaHoy += leFalta
         faltaHoyCliente += leFalta
       }
+      /* ⚠ LA VISITA DE HOY SE CIERRA CON LA CUOTA DE HOY (DETALLES-RUTAS #69,
+         regla de Carlos). «Pendiente» era «no está al día»: el cliente atrasado
+         que pagaba la cuota de hoy seguía pendiente, el recorrido no pasaba al
+         siguiente aunque el recibo dijera «Sigue: …» y «Visitas de hoy» no se
+         movía. Ahora lo que le queda hoy a cada préstamo que debe es su cuota
+         menos lo pagado hoy (nunca más de lo que le falta para ponerse al
+         día, `faltaDeHoy`); cuando llega a cero, la visita está hecha. Lo que
+         siga debiendo es atraso y se enseña como atraso. */
+      if (pendienteEste) pideHoyCliente += faltaDeHoy({ cuota, pagadoHoy: montoPagadoHoy, alDia: montoAlDiaPrestamo })
       const saldoPendientePrestamo = calcularSaldoPendiente(p)
       carteraTotal    += saldoPendientePrestamo
       carteraCliente  += saldoPendientePrestamo
@@ -643,11 +654,9 @@ export async function GET(request, { params }) {
       const pc = calcularProximoCobro(p, diasExcluidosPrestamo, festivos)
       if (pc && (!proximoCobro || pc < proximoCobro)) proximoCobro = pc
 
-      // Pendiente hoy según cobertura real esperada al día de hoy.
-      if (!_hoySinCobro && tieneCobroPendienteHoy(p, diasExcluidosPrestamo, festivos)) {
-        cobroPendienteHoy = true
-      }
     }
+    // Pendiente hoy = la parada todavía le pide algo hoy (#69, ver arriba).
+    cobroPendienteHoy = pideHoyCliente > 0
 
     const yaPageHoy = pagadoHoy > 0
     const pendienteHoyCliente = !_hoySinCobro && cobroPendienteHoy
@@ -735,6 +744,7 @@ export async function GET(request, { params }) {
       prestamosCompletados,
       cuota:     cuotaCliente,
       faltaHoy:  Math.round(faltaHoyCliente),
+      pideHoy:   Math.round(pideHoyCliente),
       hoySinCobro: _hoySinCobro,
       cobroPendienteHoy: pendienteHoyCliente,
       // Presentación, no dinero: ver la nota larga de arriba. El cliente sigue

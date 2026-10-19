@@ -8,7 +8,7 @@ import { registroLimiter, registroIntentos, getClientIp } from '@/lib/rate-limit
 import { DIAS_PRUEBA_BASE } from '@/lib/planes'
 import { marcarPruebaSiete } from '@/lib/seguimiento/prueba'
 import { COUNTRY_CODES, getCountryConfig, validatePhone } from '@/lib/i18n'
-import { normalizarEmail } from '@/lib/normalizar-email'
+import { normalizarEmail, emailComoSeGuardabaAntes } from '@/lib/normalizar-email'
 import { sendTemplate, sendButtons, wamidDe } from '@/lib/bot/whatsapp-cloud'
 import { notificarEstadoLead } from '@/lib/bot/notificar-meta'
 import { buscarLeads, ventanaAbierta } from '@/lib/bot/telefono'
@@ -68,7 +68,7 @@ export async function POST(req) {
       return NextResponse.json({ success: false, error: 'Debes aceptar los términos y condiciones' }, { status: 400 })
     }
 
-    // Normalizar email (elimina puntos antes del @ para prevenir duplicados tipo Gmail)
+    // Normalizar email (sin los puntos decorativos de Gmail; ver lib/normalizar-email.js)
     const emailNorm = normalizarEmail(email)
 
     // Verificar email único. Si ya existe pero NO está verificado → eliminar y permitir re-registro
@@ -86,6 +86,13 @@ export async function POST(req) {
           prisma.organization.delete({ where: { id: existente.organizationId } }),
         ])
       } else {
+        return NextResponse.json({ success: false, error: 'Este email ya está registrado' }, { status: 400 })
+      }
+    } else {
+      /* La cuenta guardada sin sus puntos antes del 18 oct: puede ser la misma
+         persona o no, así que no se borra ni se duplica (lib/normalizar-email.js). */
+      const vieja = emailComoSeGuardabaAntes(email)
+      if (vieja !== emailNorm && await prisma.user.findUnique({ where: { email: vieja }, select: { id: true } })) {
         return NextResponse.json({ success: false, error: 'Este email ya está registrado' }, { status: 400 })
       }
     }

@@ -55,7 +55,7 @@ import { SINONIMOS_GESTION, EXTRAS_PRESTAMO } from '@/lib/acciones/prestamo'
 // `calcularPrestamo`, no una división que se parezca.
 import { obtenerDiasPorPeriodo } from '@/lib/dinero/calendario'
 import { formatMoney, getUtcOffset } from '@/lib/i18n'
-import { saldoTrasCadaPago } from '@/lib/dinero/saldo-tras-cada-pago'
+import { saldoTrasCadaPago, interesPerdonadoPorElAbono } from '@/lib/dinero/saldo-tras-cada-pago'
 import { esDelDiaAbierto } from '@/lib/dinero/reverso-del-dia'
 import DiasSinCobroSelector from '@/components/ui/DiasSinCobroSelector'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
@@ -2404,11 +2404,15 @@ function PrestamoDetalleContenido({ params }) {
                         Compartir
                       </button>
                     )}
-                    {pago.tipo === 'capital' && tasaInteres > 0 && (
-                      <span className="text-[10px] px-2 py-1 rounded-[6px] font-mono-display" style={{ background: 'rgba(168, 85, 247, 0.1)', color: 'var(--cf-ink-2)' }}>
-                        -{formatMoney(Math.round(pago.montoPagado * tasaInteres / 100))} int.
-                      </span>
-                    )}
+                    {/* Lo que el abono perdonó de verdad, no monto × tasa (DETALLES-PRESTAMOS #71). */}
+                    {(() => {
+                      const perdonado = interesPerdonadoPorElAbono(prestamo, pago, { offsetHoras: getUtcOffset(country) })
+                      return perdonado ? (
+                        <span className="text-[10px] px-2 py-1 rounded-[6px] font-mono-display" style={{ background: 'rgba(168, 85, 247, 0.1)', color: 'var(--cf-ink-2)' }}>
+                          -{formatMoney(perdonado)} int.
+                        </span>
+                      ) : null
+                    })()}
                     <div className="flex-1" />
                     {session?.user?.rol === 'owner' && (
                       <button
