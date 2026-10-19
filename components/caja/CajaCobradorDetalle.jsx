@@ -449,7 +449,12 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
             <div className="mt-2.5 pt-2.5" style={{ borderTop: '1px solid var(--cf-hairline)' }}>
               <div className="flex items-baseline justify-between gap-3">
                 <span className="text-[12px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
-                  {cr.correccionesDeLibro > 0 ? 'Volvió al capital de la ruta' : 'Salió del capital de la ruta'}
+                  {/* Sin capital propio no hay «capital de la ruta»: la plata vive
+                      en la del negocio (#36). `quedaEnLaRuta` solo llega con
+                      capital propio en todas sus rutas (#30). */}
+                  {cr.correccionesDeLibro > 0
+                    ? `Volvió al capital ${cr.quedaEnLaRuta != null ? 'de la ruta' : 'del negocio'}`
+                    : `Salió del capital ${cr.quedaEnLaRuta != null ? 'de la ruta' : 'del negocio'}`}
                 </span>
                 <span className="cf-fig text-[14px] font-bold" style={{ color: 'var(--cf-ink-2)' }}>
                   {formatMoney(Math.abs(cr.correccionesDeLibro))}

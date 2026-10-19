@@ -219,7 +219,7 @@ export default function CompletarTelefonoModal() {
             className="w-full h-9 text-xs hover:underline transition-colors"
             style={{ color: 'rgba(255,255,255,0.45)' }}
           >
-            Recordar mas tarde
+            Recordar más tarde
           </button>
         </form>
       </div>

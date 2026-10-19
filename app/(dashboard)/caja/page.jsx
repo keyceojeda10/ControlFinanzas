@@ -1532,7 +1532,7 @@ const MOVIMIENTOS_MANUALES = [
                 />
               ) : (
               <Button type="submit" loading={guardando} className="w-full">
-                {modoAjusteCierre ? 'Guardar correccion' : 'Confirmar y entregar caja'}
+                {modoAjusteCierre ? 'Guardar corrección' : 'Confirmar y entregar caja'}
               </Button>
               )}
             </form>

@@ -89,7 +89,10 @@ export default function CuadreDia({ fecha, abrirCobradorId = null }) {
     // Al EDITAR un cuadre ya hecho se parte de lo que se CONTÓ, no de la cifra
     // del sistema: abrir y confirmar sin tocar convertía cualquier faltante en
     // «Cuadró» (DETALLES-CAJA-Y-CAPITAL #15).
-    setMontoRecibido(String(fila.efectivoRecibido != null ? fila.efectivoRecibido : (fila.recaudadoSistema || 0)))
+    /* Y al CONFIRMAR lo que el cobrador entregó se parte de lo que ÉL DIJO, no de
+       la cifra de la app: Camilo entregó $60.000 y el campo traía $67.800, a un
+       toque de confirmar de más sin verlo (DETALLES-CAJA-Y-CAPITAL #38). */
+    setMontoRecibido(String(fila.efectivoRecibido ?? fila.entregadoReportado ?? fila.recaudadoSistema ?? 0))
     setNota(fila.notaCuadre || '')
   }
 
@@ -295,15 +298,24 @@ export default function CuadreDia({ fecha, abrirCobradorId = null }) {
                   <p className="text-[10px] uppercase tracking-wider text-[var(--cf-ink-3)]">Sistema</p>
                   <p className="text-[13px] font-bold font-mono-display text-[var(--cf-ink)]">{formatMoney(f.recaudadoSistema)}</p>
                 </div>
+                {/* Lo que el cobrador ENTREGÓ, antes de que se confirme: decía
+                    «Recibido —» con los $60.000 de Camilo ya entregados (#38). */}
                 <div className="lg:w-[140px] lg:text-right">
-                  <p className="text-[10px] uppercase tracking-wider text-[var(--cf-ink-3)]">Recibido</p>
-                  <p className="text-[13px] font-bold font-mono-display text-[var(--cf-ink)]">{f.efectivoRecibido != null ? formatMoney(f.efectivoRecibido) : '—'}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-[var(--cf-ink-3)]">{f.efectivoRecibido == null && f.entregadoReportado != null ? 'Entregó' : 'Recibido'}</p>
+                  <p className="text-[13px] font-bold font-mono-display text-[var(--cf-ink)]">{f.efectivoRecibido != null ? formatMoney(f.efectivoRecibido) : f.entregadoReportado != null ? formatMoney(f.entregadoReportado) : '—'}</p>
                 </div>
                 <div className="lg:w-[140px] lg:text-right">
                   <p className="text-[10px] uppercase tracking-wider text-[var(--cf-ink-3)]">Diferencia</p>
-                  <p className="text-[13px] font-bold font-mono-display" style={{ color: f.diferencia == null ? 'var(--cf-ink-3)' : f.diferencia === 0 ? 'var(--cf-green-dark)' : f.diferencia < 0 ? 'var(--cf-red-dark)' : 'var(--cf-gold-dark)' }}>
-                    {f.diferencia == null ? '—' : `${f.diferencia > 0 ? '+' : ''}${formatMoney(f.diferencia)}`}
-                  </p>
+                  {/* Sin confirmar, la diferencia contra lo que ENTREGÓ ya se sabe:
+                      era «—» con los $7.800 que le faltaban a Camilo (#38). */}
+                  {(() => {
+                    const dif = f.diferencia ?? (f.entregadoReportado != null ? Math.round(f.entregadoReportado - f.recaudadoSistema) : null)
+                    return (
+                      <p className="text-[13px] font-bold font-mono-display" style={{ color: dif == null ? 'var(--cf-ink-3)' : dif === 0 ? 'var(--cf-green-dark)' : dif < 0 ? 'var(--cf-red-dark)' : 'var(--cf-gold-dark)' }}>
+                        {dif == null ? '—' : `${dif > 0 ? '+' : ''}${formatMoney(dif)}`}
+                      </p>
+                    )
+                  })()}
                 </div>
               </div>
               {/* El botón, al final de la fila en PC. Es el mismo `abrirConfirmar`
@@ -374,6 +386,22 @@ export default function CuadreDia({ fecha, abrirCobradorId = null }) {
 
                 El endpoint, el guardado y `nota` no se tocan: la causa elegida
                 escribe en `nota`, que es lo que ya viajaba. */}
+            {/* LO QUE ÉL DIJO, ANTES DE CONTAR (#38). La hoja decía solo «La app
+                dice que tienes $67.800»: lo que Camilo entregó no salía en ningún
+                sitio. Las dos cifras y la resta, con su nombre. */}
+            {modal.estado === 'pendiente' && modal.entregadoReportado != null && (
+              <p className="text-[13px] leading-snug rounded-[10px] px-3 py-2.5"
+                style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink-2)', border: '1px solid var(--cf-border)' }}>
+                <strong style={{ color: 'var(--cf-ink)' }}>{modal.nombre} dice que entrega {formatMoney(modal.entregadoReportado)}.</strong>{' '}
+                La app dice {formatMoney(modal.recaudadoSistema)}
+                {Math.round(modal.entregadoReportado) === Math.round(modal.recaudadoSistema)
+                  ? ': coinciden.'
+                  : Number(modal.entregadoReportado) < Number(modal.recaudadoSistema)
+                    ? `: faltan ${formatMoney(Math.round(modal.recaudadoSistema - modal.entregadoReportado))}.`
+                    : `: sobran ${formatMoney(Math.round(modal.entregadoReportado - modal.recaudadoSistema))}.`}
+                {' '}Cuenta el efectivo y escribe lo que recibiste.
+              </p>
+            )}
             <Cuadre
               segunLaApp={formatMoney(modal.recaudadoSistema)}
               contado={tecleado != null ? tecleado : montoParaMostrarConModo(montoRecibido, modoAbreviado, undefined)}
