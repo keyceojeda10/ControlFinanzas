@@ -359,7 +359,7 @@ export default function Estilo() {
             <BotonPrimario style={{ flex: 2 }}>Cobrar y pasar al siguiente</BotonPrimario>
             <BotonSecundario style={{ flex: 1 }} cancelar>Cancelar</BotonSecundario>
           </BarraAccion>
-          <BotonDestructivo>Mover a perdidos</BotonDestructivo>
+          <BotonDestructivo>Marcar como clavo</BotonDestructivo>
           <BotonTexto>Ver los 7 cobros de hoy</BotonTexto>
         </div>
 
@@ -1859,7 +1859,7 @@ export default function Estilo() {
                   { id: 'renovar', nombre: 'Renovar el préstamo', valor: '70% pagado' },
                   { id: 'editar', nombre: 'Editar préstamo' },
                   { id: 'anticipado', nombre: 'Cerrar anticipado', valor: 'ya pagó todo' },
-                  { id: 'perdidos', nombre: 'Mover a perdidos', peligro: true },
+                  { id: 'perdidos', nombre: 'Marcar como clavo', peligro: true },
                 ],
               },
             ]}
@@ -2230,7 +2230,7 @@ export default function Estilo() {
           <PieGestion onCancelar={() => {}} onAceptar={() => {}} textoAceptar="Perdonar $48.000" />
         </HojaDemo>
 
-        <HojaDemo id="ges-perdidos" titulo="Mover a perdidos" subtitulo="Julián Vélez · 35 días de atraso · cumple 18%">
+        <HojaDemo id="ges-perdidos" titulo="Marcar como clavo" subtitulo="Julián Vélez · 35 días de atraso · cumple 18%">
           <MoverAPerdidos
             montoEnJuego="$184.733"
             contactoLinea={<>Le escribiste hace <strong>22 días</strong> · lo visitaron hace <strong>12</strong></>}
@@ -2245,8 +2245,8 @@ export default function Estilo() {
             perdidaEtiqueta="Pérdida de julio" perdidaValor="$184.733" />
           {/* `peligro`: la accion destacada es NO hacerlo. Es la unica pantalla del
               sistema donde el dorado no va en la accion principal. */}
-          <PieGestion peligro textoCancelar="Seguir cobrando" onCancelar={() => {}}
-            onAceptar={() => {}} textoAceptar="Dar por perdido" />
+          <PieGestion peligro textoCancelar="No marcarlo" onCancelar={() => {}}
+            onAceptar={() => {}} textoAceptar="Marcar como clavo" />
         </HojaDemo>
 
         <HojaDemo id="ges-cerrar" titulo="Quiere pagar todo hoy" subtitulo="Andrés Cortés · le faltan 3 de 12 cuotas">

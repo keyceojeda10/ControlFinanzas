@@ -486,9 +486,9 @@ function PrestamoDetalleContenido({ params }) {
       })
       if (res.ok) { await fetchPrestamo({ soft: true }); return }
       const d = await res.json().catch(() => ({}))
-      setErrorAccion(d.error || 'No se pudo sacar de perdidos.')
+      setErrorAccion(d.error || 'No se pudo quitar de clavos.')
     } catch {
-      setErrorAccion('No se pudo sacar de perdidos. Revisa la conexión.')
+      setErrorAccion('No se pudo quitar de clavos. Revisa la conexión.')
     }
   }
 
@@ -1382,8 +1382,8 @@ function PrestamoDetalleContenido({ params }) {
     // (DETALLES-PRESTAMOS #13).
     if (esOwner) {
       cierra.push(esClavo
-        ? { id: 'recuperar', nombre: 'Sacar de perdidos', sinVolver: true, hacer: () => quitarClavo() }
-        : { id: 'perdidos', nombre: 'Mover a perdidos', peligro: true, hacer: () => setModalClavo(true) })
+        ? { id: 'recuperar', nombre: 'Quitar de clavos', sinVolver: true, hacer: () => quitarClavo() }
+        : { id: 'perdidos', nombre: 'Marcar como clavo', peligro: true, hacer: () => setModalClavo(true) })
     }
     /* ── ⚠ CANCELAR ENTRA AQUÍ, Y BAJA DEL PIE DE LA PANTALLA ──
        Vivía suelto al final de la página: en el teléfono había que bajar tres
@@ -2947,7 +2947,7 @@ function PrestamoDetalleContenido({ params }) {
             abierta={modalClavo}
             onCerrar={cerrarHoja(setModalClavo)}
         onVolver={vinoDeGestion ? volverAGestion(setModalClavo) : undefined}
-            titulo="Mover a perdidos"
+            titulo="Marcar como clavo"
             subtitulo={[
               cliente?.nombre,
               diasMora > 0 ? `${diasMora} ${diasMora === 1 ? 'día' : 'días'} sin pagar` : null,
@@ -2955,9 +2955,10 @@ function PrestamoDetalleContenido({ params }) {
             accion={
               <PieGestion
                 peligro
-                textoCancelar="Seguir cobrando"
+                // «Seguir cobrando» decía que un clavo ya no se cobra: se sigue cobrando.
+                textoCancelar="No marcarlo"
                 onCancelar={() => setModalClavo(false)}
-                textoAceptar="Dar por perdido"
+                textoAceptar="Marcar como clavo"
                 onAceptar={confirmarClavo}
                 aceptando={clavoEnviando}
                 error={clavoError}
@@ -2987,11 +2988,12 @@ function PrestamoDetalleContenido({ params }) {
               />
               <span style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, color: 'var(--cf-ink)' }}>
-                  Registrarlo como dinero perdido
+                  Registrar la pérdida en tu capital
                 </span>
                 <span style={{ display: 'block', fontSize: 12, lineHeight: 1.45, color: 'var(--cf-ink-3)', marginTop: 3 }}>
-                  Resta de tu capital lo que no recuperaste. Sin marcar, el préstamo
-                  solo sale de tus números y el capital se queda como está.
+                  Resta de tu capital lo que no ha vuelto. Sin marcar, el préstamo
+                  solo sale de tus números y el capital se queda como está. En los
+                  dos casos se le sigue cobrando.
                 </span>
               </span>
             </label>

@@ -1257,7 +1257,7 @@ function NuevoPrestamo() {
                   <path d="M12 9v4M12 17h.01" /><path d="M10.3 3.8L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.8a2 2 0 00-3.4 0z" />
                 </svg>
                 <span className="text-sm" style={{ color: 'var(--cf-red-dark)' }}>
-                  <strong>Cliente en perdidos:</strong> {perdidosDelElegido.cantidad === 1 ? 'tiene un préstamo' : `tiene ${perdidosDelElegido.cantidad} préstamos`} dado por perdido y debe {formatMoney(perdidosDelElegido.saldo)}.{' '}
+                  <strong>Cliente con clavo:</strong> {perdidosDelElegido.cantidad === 1 ? 'tiene un préstamo' : `tiene ${perdidosDelElegido.cantidad} préstamos`} marcado{perdidosDelElegido.cantidad === 1 ? '' : 's'} como clavo y debe {formatMoney(perdidosDelElegido.saldo)}.{' '}
                   {esOwner ? 'Prestarle es alto riesgo: al guardar te pediremos confirmarlo.' : 'No puedes prestarle: pídeselo al dueño.'}
                 </span>
               </div>

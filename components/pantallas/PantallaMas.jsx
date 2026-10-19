@@ -166,7 +166,7 @@ export default function PantallaMas({
       { icono: 'simulador', nombre: 'Simulador', cifra: 'Cuánto quedaría de cuota', destino: '/prestamos/simulador' },
       puedeReportarGastos && { icono: 'gastos', nombre: 'Gastos', cifra: null, destino: '/gastos' },
       { icono: 'reportes',  nombre: 'Reportes',  cifra: 'La hoja de cobros del día', destino: '/reportes' },
-      { icono: 'perdidos',  nombre: 'Perdidos',  cifra: 'Los de tu ruta', destino: '/clavos' },
+      { icono: 'perdidos',  nombre: 'Clavos',  cifra: 'Los de tu ruta', destino: '/clavos' },
     ].filter(Boolean)
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: sinMargen ? '0' : '8px var(--cf-pad-screen) 0' }}>
@@ -227,7 +227,7 @@ export default function PantallaMas({
     { icono: 'reportes',   nombre: 'Reportes',            cifra: null, destino: '/reportes' },
     { icono: 'gastos',     nombre: 'Gastos',              cifra: gastosMes, tono: 'ambar', destino: '/gastos' },
     { icono: 'cobradores', nombre: 'Cobradores',          cifra: cobradoresSinRegistrar, tono: 'mal', destino: '/cobradores' },
-    { icono: 'perdidos',   nombre: 'Perdidos',            cifra: perdidos, destino: '/clavos' },
+    { icono: 'perdidos',   nombre: 'Clavos',              cifra: perdidos, destino: '/clavos' },
     // `socios.resumen` NUNCA EXISTIÓ: `adaptarMas` solo produce `{ cantidad }`,
     // así que la fila salía sin cifra incluso cuando aparecía. Ahora dice
     // cuántos hay, y cuando no hay ninguno lo dice también — que es

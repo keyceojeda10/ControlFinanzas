@@ -702,7 +702,7 @@ export default function ClienteDetallePage({ params }) {
             <path d="M12 9v4M12 17h.01" /><path d="M10.3 3.8L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.8a2 2 0 00-3.4 0z" />
           </svg>
           <span className="text-sm" style={{ color: 'var(--cf-red-dark)' }}>
-            <strong>En perdidos · debe {formatMoney(saldoEnPerdidos)}</strong>
+            <strong>Tiene un clavo · debe {formatMoney(saldoEnPerdidos)}</strong>
             {' '}{esOwner ? 'Si le vuelves a prestar, te pediremos confirmarlo.' : 'No puedes prestarle: pídeselo al dueño.'}
           </span>
         </div>
@@ -1789,7 +1789,7 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, orgNombre, ocultarSaldo
           </p>
         </div>
         {p.esClavo && (
-          <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 15%, transparent)', color: 'var(--cf-red-dark)' }}>Perdido</span>
+          <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 15%, transparent)', color: 'var(--cf-red-dark)' }}>Clavo</span>
         )}
         <Badge variant={badge.variant}>{badge.label}</Badge>
         <svg className="w-4 h-4 text-[var(--cf-border)] group-hover:text-[var(--cf-ink-3)] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1821,7 +1821,7 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, orgNombre, ocultarSaldo
         </div>
         <div className="flex items-center gap-1.5">
           {p.esClavo && (
-            <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 15%, transparent)', color: 'var(--cf-red-dark)' }}>Perdido</span>
+            <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 15%, transparent)', color: 'var(--cf-red-dark)' }}>Clavo</span>
           )}
           <Badge variant={badge.variant}>{badge.label}</Badge>
         </div>

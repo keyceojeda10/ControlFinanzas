@@ -3667,10 +3667,10 @@ export default function RutaDetallePage({ params }) {
                                 {c.tieneClavo && (
                                   <span className="shrink-0 text-[10px] font-extrabold uppercase tracking-[.07em] px-1.5 py-0.5 rounded-md"
                                     style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 15%, transparent)', color: 'var(--cf-red-dark)' }}
-                                  >Perdido</span>
+                                  >Clavo</span>
                                 )}
                                 <p className="text-[10px] truncate" style={{ color: c.tieneClavo && c._clase === 'completado' ? 'var(--cf-red-dark)' : cfg.color }}>
-                                  {c.tieneClavo && c._clase === 'completado' ? 'Préstamo perdido' : cfg.label}
+                                  {c.tieneClavo && c._clase === 'completado' ? 'Préstamo en clavo' : cfg.label}
                                   {c.diasMora > 0 ? ` · ${c.diasMora}d mora` : ''}
                                 </p>
                               </div>

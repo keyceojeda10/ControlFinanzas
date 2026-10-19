@@ -160,7 +160,7 @@ const ESTADOS = [
 
      Ninguno de los dos es un estado en la base: los resuelve el endpoint con
      `clavo=1` y `nuevos=1`, igual que «mora» y «renovar». */
-  { value: 'clavo',      label: 'Perdidos', color: 'var(--cf-red-dark)' },
+  { value: 'clavo',      label: 'Clavos', color: 'var(--cf-red-dark)' },
   /* ⚠ «DE HOY», NO «NUEVOS (24h)». Lo puse primero a 24 horas y el dueño lo
      cuestionó con razón: todo lo demás de la app es un día —caja, cierre,
      recaudado— y una ventana móvil no cuadra contra ninguno.

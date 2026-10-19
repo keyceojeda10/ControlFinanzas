@@ -182,7 +182,7 @@ const NAV_MORE_OWNER = [
     ),
   },
   {
-    label: 'Préstamos perdidos',
+    label: 'Clavos',
     href:  '/clavos',
     icon: (
       <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

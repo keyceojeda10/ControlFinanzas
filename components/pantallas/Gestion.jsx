@@ -740,12 +740,13 @@ export function MoverAPerdidos({
         <span style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--cf-red-darker)' }}>
           {/* La pérdida solo si se marca la casilla: sin marcar, decía que la
               registraba igual (DETALLES-PRESTAMOS #17). */}
-          Darlo por perdido saca <strong>{montoEnJuego}</strong> de tu cartera
+          Marcarlo como clavo saca <strong>{montoEnJuego}</strong> de tu cartera al día
           {perdidaValor
             ? <> y registra <strong>{perdidaValor}</strong> como pérdida del mes.</>
             : <>. Tu capital no baja: para eso marca la casilla de abajo.</>}
-          {' '}El cliente queda marcado en rojo en todo el sistema: tus cobradores
-          no podrán prestarle y tú tendrás que confirmarlo.
+          {' '}Se le sigue cobrando: lo que pague es plata recuperada. El cliente
+          queda marcado en rojo en todo el sistema: tus cobradores no podrán
+          prestarle y tú tendrás que confirmarlo.
         </span>
       </div>
 
@@ -756,7 +757,7 @@ export function MoverAPerdidos({
         border: '1px solid var(--cf-border)', padding: '18px 20px',
         display: 'flex', flexDirection: 'column', gap: 12,
       }}>
-        <Rotulo>Antes de darlo por perdido</Rotulo>
+        <Rotulo>Antes de marcarlo como clavo</Rotulo>
         <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
           <span aria-hidden style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -782,7 +783,7 @@ export function MoverAPerdidos({
 
       {motivos?.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 'none' }}>
-          <Rotulo>Por qué lo das por perdido</Rotulo>
+          <Rotulo>Por qué lo marcas como clavo</Rotulo>
           <Etiquetas opciones={motivos} activo={motivo} onElegir={onMotivo} />
         </div>
       )}

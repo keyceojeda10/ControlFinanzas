@@ -67,7 +67,7 @@ const HERRAMIENTAS = [
   { href: '/migrador',             nombre: 'Pasar mi cuaderno' },
   { href: '/carga-masiva',         nombre: 'Importar Excel' },
   { href: '/cargar-cartera',       nombre: 'Que me la carguen' },
-  { href: '/clavos',               nombre: 'Perdidos' },
+  { href: '/clavos',               nombre: 'Clavos' },
   { href: '/actividad',            nombre: 'Historial' },
   // Venía del grupo «Cuenta», que se fue: ver la nota de abajo. Configuración y
   // Soporte se quedaron cubiertos por HojaCuenta, pero Tutoriales no está ahí,

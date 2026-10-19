@@ -93,7 +93,7 @@ const ESTADOS_CLIENTE = [
      es cierto se lee como «no hay ninguno» y hace descartar el filtro sin
      probarlo — está escrito tres líneas más abajo, en el sitio donde se pintan. */
   { value: 'nuevos',    label: 'De hoy', sinConteo: true },
-  { value: 'clavo',     label: 'Con perdidos', color: 'var(--cf-red-dark)', sinConteo: true },
+  { value: 'clavo',     label: 'Con clavo', color: 'var(--cf-red-dark)', sinConteo: true },
   /* «Cancelados» siempre salía en 0: nadie queda en ese estado. Los que sí
      existen son los INACTIVOS, y se pintaban «al día» (17 oct 2026). */
   { value: 'inactivo', label: 'Inactivos' },

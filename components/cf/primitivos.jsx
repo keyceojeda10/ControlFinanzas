@@ -374,9 +374,11 @@ export function EtiquetaClavo({ style }) {
         strokeWidth="2.6" strokeLinecap="round" aria-hidden style={{ flex: 'none' }}>
         <path d="M18 6L6 18M6 6l12 12" />
       </svg>
-      {/* «Perdido», como el chip, el menú y la ficha: la pastilla decía «Clavo»
-          y era el tercer nombre para lo mismo (DETALLES-PRESTAMOS #48). */}
-      Perdido
+      {/* UN SOLO NOMBRE en todas las pantallas (DETALLES-PRESTAMOS #48), y desde
+          el 19 oct 2026 es «Clavo»: es la palabra del prestamista. «Perdido» se
+          leía como plata que ya no se cobra, y un clavo se sigue cobrando
+          (Carlos, por su mejor cliente). */}
+      Clavo
     </Pastilla>
   )
 }

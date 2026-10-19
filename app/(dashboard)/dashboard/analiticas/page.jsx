@@ -694,7 +694,7 @@ export default function AnaliticasPage() {
             <Card href="/clavos" className="!border-[var(--cf-red-dark)] border-opacity-50">
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--cf-red-dark)]">Perdidos</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--cf-red-dark)]">Clavos</p>
                   <p className="text-[11px] text-[var(--cf-ink-3)] mt-0.5">
                     {cartera.clavos} préstamo{cartera.clavos === 1 ? '' : 's'} irrecuperable{cartera.clavos === 1 ? '' : 's'}
                   </p>

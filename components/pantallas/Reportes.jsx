@@ -409,7 +409,7 @@ export function ComoVaElNegocio({
           borderRadius: 'var(--cf-r-card)', padding: '15px 18px',
         }}>
           <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)' }}>Perdidos</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)' }}>Clavos</span>
             <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>{clavos.detalle}</span>
           </span>
           <span className="cf-fig" style={{ fontSize: 16, fontWeight: 600, color: 'var(--cf-red-dark)', flex: 'none' }}>

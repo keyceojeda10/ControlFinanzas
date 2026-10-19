@@ -14,7 +14,7 @@ const ORDEN_OPTS = [
 ]
 
 export default function ClavosPage() {
-  useCabecera({ titulo: 'Préstamos perdidos', subtitulo: 'Los que sacaste de tu cartera' })
+  useCabecera({ titulo: 'Clavos', subtitulo: 'Préstamos marcados como clavo · se les sigue cobrando' })
 
   const { formatMoney } = useCountry()
   const [data, setData] = useState(null)
@@ -58,18 +58,28 @@ export default function ClavosPage() {
     return <div className="max-w-3xl lg:max-w-6xl mx-auto space-y-3"><SkeletonCard /><SkeletonCard /></div>
   }
   if (!data || data.error) {
-    return <p className="text-sm text-[var(--cf-red-dark)]">No se pudieron cargar los préstamos perdidos</p>
+    return <p className="text-sm text-[var(--cf-red-dark)]">No se pudieron cargar los clavos</p>
   }
 
   return (
     <div className="max-w-3xl lg:max-w-6xl mx-auto space-y-5">
       {/* Titulo y subtitulo, en la cabecera del armazon y en un solo sitio. */}
 
+      {/* ── QUÉ ES UN CLAVO, DICHO UNA VEZ (19 oct 2026) ──
+          «Perdido» se leía como plata que ya no se cobra, y el mejor cliente de
+          Carlos lo dijo: puede confundir. Un clavo está marcado como pérdida en
+          las cuentas del dueño, pero se le sigue cobrando, y es lo primero que
+          hay que ir a buscar: es la plata que más fácil se pierde. */}
+      <p className="text-[13px] leading-snug rounded-[12px] px-4 py-3"
+        style={{ color: 'var(--cf-ink-2)', background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}>
+        Un clavo está marcado como pérdida en tus cuentas, pero <strong style={{ color: 'var(--cf-ink)' }}>se le sigue cobrando</strong>: lo que pague es plata recuperada. Son los primeros a los que hay que ir.
+      </p>
+
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          // «Perdidos», como el menú y el título: «Clavos» era un tercer nombre.
-          { label: 'Perdidos', value: stats.total, color: 'var(--cf-red-dark)' },
+          // «Clavos», como el menú y el título: un solo nombre (DETALLES-PRESTAMOS #48).
+          { label: 'Clavos', value: stats.total, color: 'var(--cf-red-dark)' },
           { label: 'Capital prestado', value: formatMoney(stats.capitalEnClavos), color: 'var(--cf-gold-dark)' },
           { label: 'Saldo pendiente', value: formatMoney(stats.saldoEnClavos), color: 'var(--cf-gold)' },
           { label: 'Recuperado', value: formatMoney(stats.recuperado), color: 'var(--cf-green-dark)' },
@@ -133,7 +143,7 @@ export default function ClavosPage() {
                 {[
                   { value: '', label: 'Todos' },
                   { value: 'activo', label: 'En cobro' },
-                  { value: 'perdida', label: 'Pérdida total' },
+                  { value: 'perdida', label: 'Con pérdida registrada' },
                 ].map(opt => (
                   <button
                     key={opt.value}
@@ -220,7 +230,7 @@ export default function ClavosPage() {
         )}
         {filtrados.length === 0 && (
           <p className="px-4 py-8 text-sm text-[var(--cf-ink-3)] text-center">
-            {hayFiltros ? 'No hay clavos con estos filtros.' : 'No tienes préstamos perdidos. Cuando apartes un préstamo de tu cartera, aparece aquí.'}
+            {hayFiltros ? 'No hay clavos con estos filtros.' : 'No tienes clavos. Cuando marques un préstamo como clavo, aparece aquí.'}
           </p>
         )}
         {filtrados.map(it => (

@@ -1174,7 +1174,7 @@ export async function POST(request, { params }) {
     if (err?.message?.startsWith('LIQUIDACION_BAJO_CAPITAL:')) {
       const piso = Number(err.message.split(':')[1])
       return Response.json({
-        error: `Para cerrarlo tiene que pagar al menos el capital que falta: $${piso.toLocaleString('es-CO')}. Para perdonar capital usa Descuento o Mover a perdidos.`,
+        error: `Para cerrarlo tiene que pagar al menos el capital que falta: $${piso.toLocaleString('es-CO')}. Para perdonar capital usa Descuento o Marcar como clavo.`,
         pisoCapital: piso,
       }, { status: 400 })
     }
