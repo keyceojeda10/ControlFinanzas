@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useCountry } from '@/hooks/useCountry'
 import { Button } from '@/components/ui/Button'
 import Link from 'next/link'
+import PreguntaPlataDeHoy from '@/components/cf/PreguntaPlataDeHoy'
 
 export default function PasoConfirmar({ datosImportar, onVolver, onReiniciar }) {
   const { formatMoney } = useCountry()
@@ -105,6 +106,10 @@ export default function PasoConfirmar({ datosImportar, onVolver, onReiniciar }) 
             </div>
           </div>
         )}
+
+        {/* La cartera importada dejó la caja en negativo: se pregunta con
+            cuánta plata trabaja (DETALLES-CARTERA #2). */}
+        <PreguntaPlataDeHoy />
 
         <div className="flex gap-3 pt-2">
           <button

@@ -12,6 +12,7 @@ import { interesCobradoDeLosPrestamos, SELECT_PARA_INTERES } from '@/lib/dinero/
 import { PAGOS_DEL_CALCULO } from '@/lib/dinero/pagos-del-calculo'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 import { SIN_ABONO_PREVIO, prestamosMigrados } from '@/lib/dinero/abono-previo'
+import { faltaLaPlataDeHoy, yaDijoSuPlata } from '@/lib/dinero/plata-de-hoy'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -591,6 +592,11 @@ export async function GET(request) {
   // patrimonio exactamente en los gastos del mes, y es el numero por el que el
   // dueño decide si retira utilidades.
   const cajaDisponible = capitalRow?.saldo ?? 0
+  /* En negativo y sin haber dicho nunca con cuánta plata trabaja: el Inicio le
+     pregunta «¿Cuánta plata tienes hoy para prestar?» en vez de decirle en rojo
+     que no le queda caja (lib/dinero/plata-de-hoy.js, DETALLES-CARTERA #2). */
+  const faltaPlataDeHoy = !esCobrador && Number(cajaDisponible) < 0
+    && faltaLaPlataDeHoy({ saldo: cajaDisponible, yaLaDijo: await yaDijoSuPlata(prisma, orgId) })
   const gastosMes = gastosMesAgg?._sum?.monto ?? 0 // se sigue enviando: la UI lo muestra aparte
   const patrimonio = esCobrador ? null : calcularPatrimonio({ saldoPorCobrar, cajaDisponible })
 
@@ -774,6 +780,7 @@ export async function GET(request) {
       clientesCobradosHoy,
     },
     finanzas: esCobrador ? null : {
+      faltaPlataDeHoy,
       cajaDisponible,
       gastosMes,
       patrimonio,

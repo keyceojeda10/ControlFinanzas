@@ -512,7 +512,7 @@ export default function Panel({
   nombre = '',
   fecha = '',
   hero,
-  caja, cajaNegativa = false, videoCaja = false,
+  caja, cajaNegativa = false, faltaPlataDeHoy = false, videoCaja = false,
   mora,
   atencion = [],
   porRuta,
@@ -633,14 +633,17 @@ export default function Panel({
                plata que nunca anotaron como capital (ver la memoria
                `capital_negativo_no_es_bug`). Debajo de un negativo, el pie dice
                qué significa y la tarjeta ya lleva a la caja, donde se ajusta. */
-            <TarjetaDato rotulo="En caja" pie={cajaNegativa ? 'Hay más prestado que capital anotado' : 'Para prestar ahora'} destino="/caja" onIr={onIr}
-              accion={cajaNegativa && videoCaja ? (
+            /* Y si nunca dijo con cuánta plata trabaja (acaba de pasar su
+               cuaderno), no es rojo: falta un dato, y la pregunta está en la
+               columna (`PreguntaPlataDeHoy`, DETALLES-CARTERA #2). */
+            <TarjetaDato rotulo="En caja" pie={faltaPlataDeHoy ? 'Falta anotar tu plata para prestar' : cajaNegativa ? 'Hay más prestado que capital anotado' : 'Para prestar ahora'} destino="/caja" onIr={onIr}
+              accion={cajaNegativa && !faltaPlataDeHoy && videoCaja ? (
                 <EnlaceVideoBienvenida leccion={leccion(2)} origen="panel_caja" style={{ fontSize: 13 }}>
                   Ver cómo se arregla
                 </EnlaceVideoBienvenida>
               ) : null}>
               <span className="cf-fig" style={{
-                fontSize: 20, letterSpacing: '-.025em', color: cajaNegativa ? 'var(--cf-red-dark)' : 'var(--cf-ink)',
+                fontSize: 20, letterSpacing: '-.025em', color: cajaNegativa && !faltaPlataDeHoy ? 'var(--cf-red-dark)' : 'var(--cf-ink)',
               }}>{caja}</span>
             </TarjetaDato>
           )}

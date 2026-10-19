@@ -19,6 +19,7 @@ import AsistenteChat from '@/components/asistente/AsistenteChat'
 import { rotulo } from '@/lib/dinero/definiciones'
 import PanelDinero from '@/components/pantallas/PanelDinero'
 import { adaptarPanelDinero, notaDelPanel } from '@/lib/adaptadores/panel-dinero'
+import PreguntaPlataDeHoy from '@/components/cf/PreguntaPlataDeHoy'
 import { pedirCompartido } from '@/lib/pedir-compartido'
 
 const OnboardingWizard    = dynamic(() => import('@/components/onboarding/OnboardingWizard'),    { ssr: false })
@@ -1818,7 +1819,16 @@ export default function DashboardPage() {
             bajoAtencion={esOwner && data.finanzas ? (() => {
               const pd = adaptarPanelDinero(data, rutasData)
               const dinero = (n) => formatMoney(n, session?.user?.country)
-              return <PanelDinero datos={pd} nota={notaDelPanel(pd, dinero)} fmt={dinero} />
+              // Antes del panel: si la caja está en negativo y nunca dijo con
+              // cuánta plata trabaja, se le pregunta (DETALLES-CARTERA #2).
+              return (
+                <>
+                  {data.finanzas.faltaPlataDeHoy && (
+                    <PreguntaPlataDeHoy falta pais={session?.user?.country} onListo={() => loadDashboard()} />
+                  )}
+                  <PanelDinero datos={pd} nota={notaDelPanel(pd, dinero)} fmt={dinero} />
+                </>
+              )
             })() : null}
             sinMargen
             // La clase de 2 minutos bajo «En caja» en negativo: solo al dueño.

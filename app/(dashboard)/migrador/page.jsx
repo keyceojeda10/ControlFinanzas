@@ -14,7 +14,8 @@ import DiasSinCobroSelector from '@/components/ui/DiasSinCobroSelector'
 // El cuaderno entero de una sentada. Ver la nota larga del componente: el 73 %
 // de los negocios se queda en cinco clientes tecleando de uno en uno.
 import LoteFotos from '@/components/migrador/LoteFotos'
-import { montoConTasa } from '@/lib/cartulina-datos'
+import PreguntaPlataDeHoy from '@/components/cf/PreguntaPlataDeHoy'
+import { montoConTasa, inicioPorLoAbonado } from '@/lib/cartulina-datos'
 import { MODOS_EN_ORDEN, etiquetaModo } from '@/lib/dinero/modos'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
@@ -429,6 +430,29 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
                 onChange={e => set('yaAbonado', e.target.value)}
                 placeholder="Monto total ya abonado"
               />
+              {/* Si ya venía pagando y la fecha sigue en hoy, no empezó hoy: con
+                  esa fecha quedaba «adelantado» todo lo abonado y el cobrador
+                  no lo visitaba en días (DETALLES-CARTERA #2). Se ofrece, no se
+                  cambia sola: la fecha es del prestamista. */}
+              {(() => {
+                if (!(Number(ficha.yaAbonado) > 0) || ficha.fechaInicio !== hoyISO()) return null
+                const estimada = inicioPorLoAbonado({
+                  monto: ficha.monto, tasa: ficha.tasa, frecuencia: ficha.frecuencia, plazoUnidades: ficha.plazoUnidades,
+                  modoInteres: ficha.modoInteres, yaAbonado: ficha.yaAbonado, hoy: hoyISO(),
+                })
+                if (estimada === ficha.fechaInicio) return null
+                const dia = new Date(`${estimada}T12:00:00Z`).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', timeZone: 'UTC' })
+                return (
+                  <div className="mt-2 rounded-[10px] border px-3 py-2.5 text-[12px] leading-snug"
+                    style={{ borderColor: 'var(--cf-border)', background: 'var(--cf-surface)', color: 'var(--cf-ink-2)' }}>
+                    Si ya venía pagando, no empezó hoy. Por lo que lleva abonado, empezó el {dia}.
+                    <button type="button" onClick={() => set('fechaInicio', estimada)}
+                      className="block mt-1.5 font-semibold underline underline-offset-2" style={{ color: 'var(--cf-ink)' }}>
+                      Usar esa fecha
+                    </button>
+                  </div>
+                )
+              })()}
             </div>
           )}
 
@@ -788,6 +812,14 @@ export default function MigradorPage() {
         nueva.esEnCurso = true
         if (d.montoPagadoHasta) nueva.yaAbonado = String(d.montoPagadoHasta)
       }
+      /* Sin fecha en la cartulina y con abonos, no empezó hoy: tantas cuotas
+         atrás como lleva abonadas (DETALLES-CARTERA #2, igual que el lote). */
+      if (!d.fechaInicio && Number(nueva.yaAbonado) > 0) {
+        nueva.fechaInicio = inicioPorLoAbonado({
+          monto: nueva.monto, tasa: nueva.tasa, frecuencia: nueva.frecuencia, plazoUnidades: nueva.plazoUnidades,
+          modoInteres: nueva.modoInteres, yaAbonado: nueva.yaAbonado, hoy: hoyISO(),
+        })
+      }
 
       setFicha(nueva)
       // Si el papel traía dos préstamos, se dice cuál se tomó.
@@ -1084,6 +1116,11 @@ export default function MigradorPage() {
       {/* ════════ VISTA: LISTA ════════ */}
       {vista === 'lista' && (
         <>
+          {/* Lo pasado dejó la caja en negativo: «¿Cuánta plata tienes hoy
+              para prestar?» (DETALLES-CARTERA #2). Se vuelve a mirar con cada
+              cliente nuevo; si ya la dijo, no sale. */}
+          <div className="mb-4"><PreguntaPlataDeHoy key={creados.length} /></div>
+
           {/* Resumen global */}
           <div className="rounded-[20px] cf-card-shadow border p-4 mb-4"
             style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-gold) 6%, var(--cf-card)), var(--cf-card))', borderColor: 'color-mix(in srgb, var(--cf-gold) 25%, var(--cf-border))' }}>
