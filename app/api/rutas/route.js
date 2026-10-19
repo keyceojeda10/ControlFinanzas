@@ -8,7 +8,7 @@ import { logActividad } from '@/lib/activity-log'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { PLANES_CONFIG, cuposDe, selectCupos, admiteAdicionales } from '@/lib/planes'
 import { getUtcOffset } from '@/lib/i18n'
-import { tienePeriodoEsperadoHoy, tieneCobroPendienteHoy, calcularDiasMora, calcularProximoCobro, calcularMontoParaPonerseAlDia } from '@/lib/calculos'
+import { tienePeriodoEsperadoHoy, tieneCobroPendienteHoy, calcularDiasMora, calcularProximoCobro, calcularMontoParaPonerseAlDia, calcularMontoEnMora } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 import { faltaDeHoy, cuotaDelPeriodo, tocaDeHoy } from '@/lib/dinero/esperado'
@@ -67,6 +67,8 @@ export async function GET(request) {
               frecuencia: true,
               fechaInicio: true,
               diasPlazo: true,
+              // La lee la tabla derivada de `calcularMontoEnMora` (el «Atraso», #73).
+              fechaFin: true,
               diaCobroSemana: true,
               diaCobroMes: true,
               primerCobro: true,
@@ -203,11 +205,15 @@ export async function GET(request) {
           // Cartera = lo que falta por cobrar de este préstamo. NO es el
           // capital: incluye el interés que todavía no ha entrado.
           carteraRuta += Math.max(0, (prestamo.totalAPagar ?? 0) - (prestamo.totalPagado ?? 0))
-          // Atraso: lo que le falta para ponerse al día. Se reutiliza la función
-          // del sistema en vez de escribir la resta aquí — es la misma cifra que
-          // enseñan la ficha del cliente y el detalle de la ruta, y dos fórmulas
-          // para lo mismo acaban discrepando.
-          atrasoRuta += calcularMontoParaPonerseAlDia(prestamo, diasExcluidos, festivos)
+          // Atraso: lo vencido de días PASADOS. Se reutiliza la función del
+          // sistema en vez de escribir la resta aquí — dos fórmulas para lo
+          // mismo acaban discrepando.
+          /* ⚠ SIN LA CUOTA DE HOY (DETALLES-RUTAS #73). Era «ponerse al día», que
+             la incluye: a las 8 a. m. Ruta Centro decía «Atraso $292.700» =
+             los $130.800 de Wilmer más los $161.900 que tocan hoy, y nadie está
+             atrasado por lo de hoy. Lo de hoy ya sale en «Te faltan». Es la
+             cifra de la ruta por dentro (`montoEnMora`). */
+          atrasoRuta += calcularMontoEnMora(prestamo, diasExcluidos, festivos)
         }
       }
 

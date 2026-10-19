@@ -11,12 +11,14 @@ import { entraAlFajo } from '@/lib/dinero/cuentas'
 import { StaggeredList } from '@/components/ui/StaggeredList'
 import MonedaCF from '@/components/ui/MonedaCF'
 import MetodoPagoSelector from '@/components/pagos/MetodoPagoSelector'
+import AtajosCobro from '@/components/pantallas/AtajosCobro'
+import { tituloFrecuencia } from '@/lib/frecuencia'
 import { obtenerRutasOffline, guardarEnCache, leerDeCache, guardarPagoPendiente, obtenerPagosPendientes } from '@/lib/offline'
 import { nuevaClaveCobro } from '@/lib/pagos-sin-senal'
 import CobrarHoy from '@/components/pantallas/CobrarHoy'
 import HojaWhatsApp from '@/components/whatsapp/HojaWhatsApp'
 import {
-  adaptarCobrosHoy, ORDENES, RANGOS_ATRASO, conteosAtraso, resumenSeleccion,
+  adaptarCobrosHoy, ORDENES, RANGOS_ATRASO, conteosAtraso, resumenSeleccion, inicialesDe,
 } from '@/lib/adaptadores/cobros'
 import HojaFiltros from '@/components/pantallas/HojaFiltros'
 import { useSitioDeLaLista } from '@/hooks/useSitioDeLaLista'
@@ -51,8 +53,9 @@ export default function CobrosHoyPage() {
   const undoTimerRef = useRef(null)
   const [metaCumplida, setMetaCumplida] = useState(false)
   const [rutasColapsadas, setRutasColapsadas] = useState({})
-  const [montoParcial, setMontoParcial] = useState('')
-  const [modoParcial, setModoParcial] = useState(false)
+  // El método elegido en la hoja de cobro: se elige ARRIBA y vale para las tres
+  // salidas (cuota, otro monto, no pagó), como en la ruta.
+  const [metodoRapido, setMetodoRapido] = useState({ metodoPago: 'efectivo', metodoPagoId: null })
   const [subiendoFoto, setSubiendoFoto] = useState(false)
   const [fotoSubida, setFotoSubida] = useState(false)
   const fotoInputRef = useRef(null)
@@ -199,20 +202,19 @@ export default function CobrosHoyPage() {
     }
   }, [data, metaCumplida])
 
+  /* ── LA HOJA DE COBRO ES LA DE LA RUTA (DETALLES-RUTAS #74, #75, #77) ──
+     Aquí había un modal propio: «Cobrar otro monto» no dejaba pasar de una
+     cuota y callaba (Wilmer, 6 días de atraso, no se podía poner al día), tras
+     un abono pedía la cuota entera con «Tiene cuotas atrasadas» (Yaneth debía
+     $12.000 y la hoja decía $32.000), y con dos préstamos decía «Préstamo 1» y
+     «Préstamo 2». La ruta ya tenía la buena (AtajosCobro): con las cifras del
+     servidor ofrece lo que le falta hoy, ponerse al día y todo. El cobro sigue
+     pasando por `ejecutarPago`, con su cola sin señal y sus duplicados. */
   const abrirPago = (cliente) => {
     if (pagando) return
     const activos = cliente.prestamosActivos ?? []
     if (activos.length === 0) return
-    if (activos.length > 1) {
-      setModalPago({ id: cliente.id, nombre: cliente.nombre, cuota: null, prestamoActivo: null, prestamosActivos: activos, abonoConPendiente: false })
-      return
-    }
-    const p = activos[0]
-    const cuota = p.cuotaDiaria || cliente.cuota
-    if (!cuota || cuota <= 0) return
-    setModoParcial(false)
-    setMontoParcial('')
-    setModalPago({ id: cliente.id, nombre: cliente.nombre, cuota, prestamoActivo: p.id, prestamosActivos: activos, abonoConPendiente: cliente.pagoHoy && cliente.cobroPendienteHoy, faltaHoy: cliente.faltaHoy, esBalloon: p.esBalloon || false, cuotaNumero: p.cuotaNumero ?? null, modoInteres: p.modoInteres, cuotaExtraHoy: p.cuotaExtraHoy || false, montoCuotaExtra: p.montoCuotaExtra || 0 })
+    setModalPago({ id: cliente.id, nombre: cliente.nombre, rutaId: cliente.rutaId ?? null, prestamosActivos: activos, faltaHoy: cliente.faltaHoy })
   }
 
   /* `?empezar=1`: llega del aviso «Hoy le toca cobrar» (components/cf/AvisoCobrarHoy.jsx)
@@ -230,9 +232,33 @@ export default function CobrosHoyPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data])
 
-  const elegirPrestamo = (prestamoId, cuota, extra = {}) => {
-    if (!modalPago) return
-    setModalPago(prev => prev ? { ...prev, prestamoActivo: prestamoId, cuota, esBalloon: extra.esBalloon || false, cuotaNumero: extra.cuotaNumero ?? null, modoInteres: extra.modoInteres, cuotaExtraHoy: extra.cuotaExtraHoy || false, montoCuotaExtra: extra.montoCuotaExtra || 0 } : prev)
+  /* «No pagó hoy»: deja constancia de la visita, como en la ruta. */
+  const registrarNoPago = async (prestamoId, motivo) => {
+    const cliente = modalPago
+    setModalPago(null)
+    const hoy = new Date()
+    try {
+      const res = await fetch('/api/visitas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clienteId: cliente?.id,
+          prestamoId,
+          rutaId: cliente?.rutaId ?? null,
+          fechaOriginal: hoy.toISOString(),
+          fechaReagendada: new Date(hoy.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+          motivo,
+        }),
+      })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        alert(d?.error || 'No se pudo anotar la visita')
+        return
+      }
+      fetchCobros()
+    } catch {
+      alert('Sin conexión: la visita no quedó anotada. Vuelve a intentarlo.')
+    }
   }
 
   const ejecutarPago = async (metodoPago, { confirmarDuplicado = false, montoCustom = null, metodoPagoId = null, plataforma = null, destino = null } = {}) => {
@@ -240,12 +266,13 @@ export default function CobrosHoyPage() {
     // `destino` para el reintento del duplicado: el modal ya está cerrado (#35).
     const objetivo = destino ?? modalPago
     if (!objetivo || pagando) return
-    const { id: clienteId, nombre, cuota, prestamoActivo } = objetivo
+    const { id: clienteId, nombre, cuota, cuotaOriginal, prestamoActivo } = objetivo
     const montoFinal = montoCustom ?? cuota
-    const tipoPago = montoCustom && montoCustom < cuota ? 'parcial' : 'completo'
+    /* La cuota exacta es una cuota COMPLETA; cualquier otra cifra —menos o
+       más— es un abono por esa cifra, que el servidor reparte. La misma regla
+       que la ruta (`ejecutarPagoRapido`). */
+    const tipoPago = montoFinal === (cuotaOriginal ?? cuota) ? 'completo' : 'parcial'
     setModalPago(null)
-    setModoParcial(false)
-    setMontoParcial('')
     setPagando(clienteId)
     // El cobro ya no espera al GPS aquí fuera: la lectura va DENTRO de la
     // pantalla de «estoy en eso», que sale en el acto tras el gesto.
@@ -313,7 +340,7 @@ export default function CobrosHoyPage() {
         const d = await res.json().catch(() => ({}))
         if (d?.duplicado && !confirmarDuplicado) {
           fetchCobros()
-          setConfirmDuplicado({ clienteId, nombre, cuota, prestamoActivo, metodoPago, metodoPagoId, montoCustom })
+          setConfirmDuplicado({ clienteId, nombre, cuota, cuotaOriginal, prestamoActivo, metodoPago, metodoPagoId, montoCustom, faltaHoy: objetivo.faltaHoy })
         } else {
           alert(d?.error || 'No se pudo registrar el pago')
           fetchCobros()
@@ -629,102 +656,53 @@ export default function CobrosHoyPage() {
         organizationId={organizationId}
       />
 
-      {/* ── Modal: elegir método de pago ── */}
-      <Modal open={!!modalPago} onClose={() => setModalPago(null)} title="Cobro rápido">
-        {modalPago && !modalPago.prestamoActivo && (modalPago.prestamosActivos?.length ?? 0) > 1 && (
-          <div className="space-y-3">
-            <p className="text-sm" style={{ color: 'var(--cf-ink-3)' }}>
-              <span className="font-medium" style={{ color: 'var(--cf-ink)' }}>{modalPago.nombre}</span> tiene varios préstamos. Elige cual cobrar.
-            </p>
-            <div className="space-y-2">
-              {modalPago.prestamosActivos.map((p, i) => (
-                <button
-                  key={p.id}
-                  onClick={() => elegirPrestamo(p.id, p.cuotaDiaria, { esBalloon: p.esBalloon, cuotaNumero: p.cuotaNumero, modoInteres: p.modoInteres, cuotaExtraHoy: p.cuotaExtraHoy, montoCuotaExtra: p.montoCuotaExtra })}
-                  disabled={!p.cuotaDiaria || p.cuotaDiaria <= 0}
-                  className="w-full text-left px-4 py-3.5 rounded-[12px] border transition-all active:scale-[0.99] disabled:opacity-50"
-                  style={{ background: 'var(--cf-card)', borderColor: 'var(--cf-border)' }}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>Préstamo {i + 1}</p>
-                    <span className="text-sm font-bold font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>{formatMoney(p.cuotaDiaria ?? 0)}</span>
-                  </div>
-                  {p.diasMora > 0 && (
-                    <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-red-dark)' }}>{p.diasMora} días de atraso</p>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
+      {/* ── La hoja de cobro, la misma de la ruta (ver `abrirPago`) ── */}
+      <Modal open={!!modalPago} onClose={() => setModalPago(null)} title="Cobrar">
+        {modalPago && (
+          <AtajosCobro
+            nombre={modalPago.nombre}
+            iniciales={inicialesDe(modalPago.nombre)}
+            ocupado={!!pagando}
+            prestamos={(modalPago.prestamosActivos ?? []).map((pr) => ({
+              id: pr.id,
+              esClavo: !!pr.esClavo,
+              cuota: pr.cuotaDiaria,
+              saldoPendiente: pr.saldoPendiente,
+              diasMora: pr.diasMora,
+              frecuencia: tituloFrecuencia(pr.frecuencia),
+              pagadoHoy: pr.pagadoHoy,
+              alDia: pr.montoParaPonerseAlDia,
+              totalAPagar: pr.totalAPagar,
+              totalPagado: pr.totalPagado,
+              montoPagadoHoy: pr.montoPagadoHoy,
+              // Lo que el modal viejo avisaba y no se puede perder al cambiarlo.
+              avisos: [
+                pr.esBalloon ? 'Es la última cuota: trae el capital completo más el interés del período.' : null,
+                pr.cuotaExtraHoy && Number(pr.montoCuotaExtra) > 0 ? `Hoy lleva una cuota extra de ${formatMoney(pr.montoCuotaExtra)} a capital, ya incluida en la cuota.` : null,
+                pr.cuotaNumero && ['lineal', 'lineal_dinamico', 'solo_interes', 'saldo'].includes(pr.modoInteres) ? `Cuota número ${pr.cuotaNumero}` : null,
+              ].filter(Boolean),
+            }))}
+            selectorMetodo={
+              <MetodoPagoSelector
+                metodosPago={metodosPago}
+                compact
+                // Aquí SOLO elige: cobra el botón de abajo, cuando se sabe QUÉ se cobra.
+                onSelect={({ metodoPago: mp, metodoPagoId: mpId }) => setMetodoRapido({ metodoPago: mp, metodoPagoId: mpId })}
+              />
+            }
+            onCobrarCuota={(pr) => ejecutarPago(metodoRapido.metodoPago, {
+              metodoPagoId: metodoRapido.metodoPagoId,
+              // El préstamo va EXPLÍCITO: el estado no ha llegado cuando la función lee.
+              destino: { id: modalPago.id, nombre: modalPago.nombre, cuota: pr.cuota, cuotaOriginal: pr.cuota, prestamoActivo: pr.id, faltaHoy: modalPago.faltaHoy },
+            })}
+            onOtroMonto={(pr, cuanto) => ejecutarPago(metodoRapido.metodoPago, {
+              metodoPagoId: metodoRapido.metodoPagoId,
+              // `cuotaOriginal` distinta: se registra como abono, no como cuota completa.
+              destino: { id: modalPago.id, nombre: modalPago.nombre, cuota: cuanto, cuotaOriginal: pr.cuota, prestamoActivo: pr.id, faltaHoy: modalPago.faltaHoy },
+            })}
+            onNoPago={(pr, motivo) => registrarNoPago(pr.id, motivo)}
+          />
         )}
-
-        {modalPago && modalPago.prestamoActivo && (() => {
-          return (
-          <div className="space-y-4">
-            <div className="text-center">
-              <p className="text-sm" style={{ color: 'var(--cf-ink-3)' }}>{modoParcial ? 'Pago parcial para' : 'Registrar 1 cuota para'}</p>
-              <p className="text-base font-bold mt-1" style={{ color: 'var(--cf-ink)' }}>{modalPago.nombre}</p>
-              {!modoParcial ? (
-                <p className="text-3xl font-extrabold font-mono-display mt-2" style={{ color: 'var(--cf-green-dark)' }}>{formatMoney(modalPago.cuota)}</p>
-              ) : (
-                <div className="mt-3 relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-bold" style={{ color: 'var(--cf-ink-3)' }}>$</span>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    value={montoParcial}
-                    onChange={e => setMontoParcial(e.target.value)}
-                    placeholder="Monto"
-                    autoFocus
-                    className="w-full text-center text-2xl font-extrabold font-mono-display py-3 pl-8 pr-3 rounded-[12px] border outline-none"
-                    style={{ background: 'var(--cf-card)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }}
-                    min={1}
-                    max={modalPago.cuota}
-                  />
-                  <p className="text-[11px] mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>Cuota completa: {formatMoney(modalPago.cuota)}</p>
-                </div>
-              )}
-            </div>
-            <button
-              onClick={() => { setModoParcial(!modoParcial); setMontoParcial('') }}
-              className="w-full text-center text-[12px] font-medium py-1.5 rounded-lg transition-all"
-              style={{ color: 'var(--cf-ink-2)' }}
-            >
-              {modoParcial ? 'Cobrar cuota completa' : 'Cobrar otro monto'}
-            </button>
-            {modalPago.esBalloon && (
-              <div className="rounded-[12px] px-3 py-2.5 text-center" style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--cf-red-dark) 25%, transparent)' }}>
-                <p className="text-xs font-semibold" style={{ color: 'var(--cf-red-dark)' }}>Cuota de capital + interés (globo)</p>
-                <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>Esta es la última cuota. Incluye la devolución del capital completo mas el interés del período.</p>
-              </div>
-            )}
-            {modalPago.cuotaExtraHoy && (
-              <div className="rounded-[12px] px-3 py-2.5 text-center" style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--cf-ink-2) 25%, transparent)' }}>
-                <p className="text-xs font-semibold" style={{ color: 'var(--cf-ink-2)' }}>Cuota extra programada: {formatMoney(modalPago.montoCuotaExtra)}</p>
-                <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>Esta cuota incluye un abono extra a capital. Ya está incluido en el monto total.</p>
-              </div>
-            )}
-            {modalPago.cuotaNumero && ['lineal', 'lineal_dinamico', 'solo_interes', 'saldo'].includes(modalPago.modoInteres) && (
-              <p className="text-[10px] text-center" style={{ color: 'var(--cf-ink-3)' }}>Cuota #{modalPago.cuotaNumero}</p>
-            )}
-            {modalPago.abonoConPendiente && (
-              <div className="rounded-[12px] px-3 py-2.5 text-center" style={{ background: 'color-mix(in srgb, var(--cf-gold-dark) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--cf-gold-dark) 25%, transparent)' }}>
-                <p className="text-xs font-semibold" style={{ color: 'var(--cf-gold-dark)' }}>Tiene cuotas atrasadas</p>
-                <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>Ya pagó hoy pero aún debe mas. Cada registro cubre 1 cuota.</p>
-              </div>
-            )}
-            <MetodoPagoSelector
-              metodosPago={metodosPago}
-              disabled={!!pagando}
-              onSelect={({ metodoPago: mp, metodoPagoId: mpId }) => {
-                const monto = modoParcial ? parseFloat(montoParcial) : null
-                if (modoParcial && (!monto || monto <= 0 || monto > modalPago.cuota)) return
-                ejecutarPago(mp, { montoCustom: monto, metodoPagoId: mpId })
-              }}
-            />
-          </div>
-          )
-        })()}
       </Modal>
 
       {/* ── Modal: confirmar pago duplicado ── */}
@@ -746,7 +724,7 @@ export default function CobrosHoyPage() {
                    llamaba a `ejecutarPago` en el mismo toque, que leía el modal
                    del render anterior (cerrado) y salía sin pagar: «Sí,
                    registrar igual» solo reabría el modal (DETALLES-PRESTAMOS #35). */
-                onClick={() => { const d = confirmDuplicado; setConfirmDuplicado(null); ejecutarPago(d.metodoPago, { confirmarDuplicado: true, metodoPagoId: d.metodoPagoId, montoCustom: d.montoCustom, destino: { id: d.clienteId, nombre: d.nombre, cuota: d.cuota, prestamoActivo: d.prestamoActivo } }) }}
+                onClick={() => { const d = confirmDuplicado; setConfirmDuplicado(null); ejecutarPago(d.metodoPago, { confirmarDuplicado: true, metodoPagoId: d.metodoPagoId, montoCustom: d.montoCustom, destino: { id: d.clienteId, nombre: d.nombre, cuota: d.cuota, cuotaOriginal: d.cuotaOriginal, prestamoActivo: d.prestamoActivo, faltaHoy: d.faltaHoy } }) }}
                 className="flex-1 py-2.5 rounded-[12px] text-sm font-semibold transition-all"
                 style={{ background: 'var(--cf-gold-dark)', color: 'var(--cf-gold-ink)' }}
               >

@@ -213,7 +213,7 @@ const MOVIMIENTOS_MANUALES = [
           // que se esperaba. Ya venían en la respuesta; solo se descartaban.
           setRutasDisponibles((rutas || []).map(r => ({
             id: r.id, nombre: r.nombre, cobrador: r.cobrador?.nombre,
-            esperadoHoy: r.esperadoHoy, cobrosHoy: r.cobrosHoy,
+            esperadoHoy: r.esperadoHoy, cobrosHoy: r.cobrosHoy, cobradosHoy: r.cobradosHoy,
           })))
         }
       } catch {}
@@ -296,7 +296,7 @@ const MOVIMIENTOS_MANUALES = [
         if (cancelado) return
         setRutasDisponibles((rutas || []).map((r) => ({
           id: r.id, nombre: r.nombre, cobrador: r.cobrador?.nombre,
-          esperadoHoy: r.esperadoHoy, cobrosHoy: r.cobrosHoy,
+          esperadoHoy: r.esperadoHoy, cobrosHoy: r.cobrosHoy, cobradosHoy: r.cobradosHoy,
         })))
       } catch {}
     })()
@@ -849,6 +849,7 @@ const MOVIMIENTOS_MANUALES = [
   const filasPorRuta = agruparCajaPorRuta(
     pagosDelDia, rutasDisponibles, undefined, cajaData?.prestadoPorRuta || [],
     cajaData?.capitalPorRuta || null, cajaData?.gastosPorRuta || null,
+    { esHoy: fechaSeleccionada === getColombiaDateStr() },
   )
   const totalesPorRuta = totalesCajaPorRuta(
     filasPorRuta, undefined, cajaData?.capitalPorRuta || null, cajaData?.gastosPorRuta || null,
@@ -1503,9 +1504,15 @@ const MOVIMIENTOS_MANUALES = [
                   onChange={(e) => setTotalRecogido(e.target.value)}
                 />
               </div>
+              {/* Cuánto falta o sobra, no solo «no coincide» (DETALLES-CAJA #33):
+                  Camilo escribió $60.000 contra $67.800 y la hoja no decía que
+                  faltaban $7.800. */}
               {totalRecogido !== '' && Number(totalRecogido) !== recaudadoRegistrado && (
                 <p className="text-[11px] text-[var(--cf-gold)]">
-                  No coincide con lo cobrado en sistema ({formatMoney(recaudadoRegistrado)}). Si la diferencia es correcta, continua.
+                  {Number(totalRecogido) < recaudadoRegistrado
+                    ? `Faltan ${formatMoney(recaudadoRegistrado - Number(totalRecogido))} para lo que dice la app (${formatMoney(recaudadoRegistrado)}).`
+                    : `Sobran ${formatMoney(Number(totalRecogido) - recaudadoRegistrado)} sobre lo que dice la app (${formatMoney(recaudadoRegistrado)}).`}
+                  {' '}{tactil && !modoAjusteCierre ? 'Si es correcto, desliza para entregar.' : 'Si es correcto, confírmalo abajo.'}
                 </p>
               )}
               {/* Aquí iba «Diferencia» en rojo contra lo que TOCABA COBRAR, la misma
@@ -2472,7 +2479,7 @@ const MOVIMIENTOS_MANUALES = [
                     <span className="block text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
                       {c.coteo.abonosAlRenovar > 0
                         ? `Cobró ${formatMoney(c.coteo.cobrado)} − abonos al renovar ${formatMoney(c.coteo.abonosAlRenovar)}`
-                        : 'Sin abonos el día que renovaron'}
+                        : 'Nadie abonó al renovar: es lo que cobró'}
                     </span>
                   </span>
                   <span className="text-[15px] font-bold font-mono-display shrink-0" style={{ color: 'var(--cf-ink)' }}>

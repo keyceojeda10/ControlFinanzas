@@ -7,6 +7,25 @@ import { calcularDiasMora } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
 import { exigeNivelReportes } from '@/lib/plan-servidor'
+import { esperadoDeCartera, selectPrestamoDelDia } from '@/lib/dinero/esperado'
+import { SIN_ABONO_PREVIO } from '@/lib/dinero/abono-previo'
+
+/* ══ EL RANKING SALE DE LOS COBROS, NO DE LOS CIERRES (DETALLES-COBRADORES #1, #2) ══
+ *
+ * «Recaudado», «Días trabajados» y «Eficiencia» se sacaban SOLO de los cierres
+ * de caja: Andrés salía con «Recaudado $65.200 · 1 día trabajado · Eficiencia
+ * 36,7 %» habiendo cobrado $831.467 en 7 días, porque cerró caja un solo día.
+ * El que no cierra caja quedaba castigado en el 60 % del puntaje.
+ *   · Recaudado: lo que él registró (sin ajustes ni abonos previos).
+ *   · Días trabajados: los días con al menos un cobro suyo.
+ *   · Eficiencia: de lo que tocaba cobrar cada día en sus rutas, cuánto se
+ *     cobró, con tope en lo que tocaba ese día: una liquidación grande no tapa
+ *     los días sin cobrar (en el negocio de la grabación daba 160 %). Hoy con
+ *     la cuenta de todas las pantallas (`loDeHoyDelPrestamo`, DETALLES-RUTAS
+ *     #70); los días pasados con el calendario, como la caja de un día pasado.
+ * Y «Clientes con atraso 0» con Wilmer a 6 días: el `select` no traía lo que
+ * lee `calcularDiasMora`. Ahora es la consulta compartida.
+ */
 
 export const dynamic = 'force-dynamic'
 
@@ -62,6 +81,9 @@ export async function GET(req) {
 
     const hasta = inicioDiaOffset(new Date(), offset)
     const desde = new Date(hasta.getTime() - 29 * DAY_MS)
+    // ⚠ `hasta` es el ARRANQUE de hoy: con `lte: hasta` los cobros de hoy no
+    // entraban. Los 30 días son de `desde` al final de hoy.
+    const finHoy = new Date(hasta.getTime() + DAY_MS)
 
     const [cobradores, org, festivos] = await Promise.all([
       prisma.user.findMany({
@@ -95,7 +117,7 @@ export async function GET(req) {
 
     const rutaIds = cobradores.flatMap((c) => c.rutas.map((r) => r.id))
 
-    const [cierres, pagos, clientesRutas] = await Promise.all([
+    const [cierres, pagos, clientesRutas, pagosDeLasRutas] = await Promise.all([
       prisma.cierreCaja.findMany({
         where: { organizationId: orgId, cobradorId: { in: cobradores.map((c) => c.id) }, fecha: { gte: desde, lte: hasta } },
         select: {
@@ -110,9 +132,10 @@ export async function GET(req) {
         where: {
           organizationId: orgId,
           cobradorId: { in: cobradores.map((c) => c.id) },
-          fechaPago: { gte: desde, lte: hasta },
+          fechaPago: { gte: desde, lt: finHoy },
           tipo: { notIn: TIPOS_AJUSTE },
           prestamo: { estado: { not: 'cancelado' } },
+          AND: [SIN_ABONO_PREVIO],
         },
         select: {
           cobradorId: true,
@@ -132,24 +155,29 @@ export async function GET(req) {
               diasSinCobro: true,
               estado: true,
               prestamos: {
-                where: { estado: 'activo', esClavo: false },
-                select: {
-                  estado: true,
-                  clienteId: true,
-                  cuotaDiaria: true,
-                  totalAPagar: true,
-                  totalPagado: true, abonadoCapital: true,
-                  fechaInicio: true,
-                  frecuencia: true,
-                  diasPlazo: true,
-                  diaCobroSemana: true,
-                  diaCobroMes: true,
-                  primerCobro: true,
-                  diaCobroMes2: true,
-                  proximoCobroManual: true, proximoCobroPorInteres: true,
+                /* Los vivos, y los que se terminaron de pagar dentro de los 30
+                   días: tocaba cobrarles hasta su último pago. */
+                where: {
+                  esClavo: false,
+                  OR: [{ estado: 'activo' }, { estado: 'completado', ultimoPagoAt: { gte: desde } }],
                 },
+                select: { ...selectPrestamoDelDia(), clienteId: true, ultimoPagoAt: true },
               },
             },
+          })
+        : [],
+      // Lo cobrado en sus rutas, lo registre quien lo registre: el numerador
+      // de la eficiencia (lo que tocaba es de las rutas, no de quién cobró).
+      rutaIds.length
+        ? prisma.pago.findMany({
+            where: {
+              organizationId: orgId,
+              fechaPago: { gte: desde, lt: finHoy },
+              tipo: { notIn: TIPOS_AJUSTE },
+              prestamo: { estado: { not: 'cancelado' }, cliente: { rutaId: { in: rutaIds } } },
+              AND: [SIN_ABONO_PREVIO],
+            },
+            select: { montoPagado: true, fechaPago: true, prestamo: { select: { cliente: { select: { rutaId: true } } } } },
           })
         : [],
     ])
@@ -159,6 +187,37 @@ export async function GET(req) {
       if (!cliente.rutaId) continue
       if (!clientesPorRuta.has(cliente.rutaId)) clientesPorRuta.set(cliente.rutaId, [])
       clientesPorRuta.get(cliente.rutaId).push(cliente)
+    }
+
+    /* Lo que tocaba cobrar en cada ruta, día por día de los 30. Un préstamo
+       cuenta desde que empezó y, si ya se terminó, hasta su último pago. */
+    const cobradoPorRutaDia = new Map()
+    for (const g of pagosDeLasRutas) {
+      const id = g.prestamo?.cliente?.rutaId
+      if (!id) continue
+      const k = `${id}|${toLocalDateStr(g.fechaPago, offset)}`
+      cobradoPorRutaDia.set(k, (cobradoPorRutaDia.get(k) ?? 0) + (Number(g.montoPagado) || 0))
+    }
+    const esperadoPorRuta = new Map()
+    const cubiertoPorRuta = new Map()
+    for (const ruta of cobradores.flatMap((c) => c.rutas)) {
+      const clientes = clientesPorRuta.get(ruta.id) ?? []
+      let total = 0
+      let cubierto = 0
+      for (let t = desde.getTime(); t < finHoy.getTime(); t += DAY_MS) {
+        const dia = new Date(t)
+        const vivos = clientes.map((c) => ({
+          ...c,
+          ruta,
+          prestamos: c.prestamos.filter((p) => new Date(p.fechaInicio).getTime() < t + DAY_MS
+            && (p.estado === 'activo' || (p.ultimoPagoAt && new Date(p.ultimoPagoAt).getTime() >= t))),
+        }))
+        const tocaba = esperadoDeCartera({ clientes: vivos, org, festivos }, dia).esperado
+        total += tocaba
+        cubierto += Math.min(tocaba, cobradoPorRutaDia.get(`${ruta.id}|${toLocalDateStr(dia, offset)}`) ?? 0)
+      }
+      esperadoPorRuta.set(ruta.id, total)
+      cubiertoPorRuta.set(ruta.id, cubierto)
     }
 
     const cierresPorCobrador = new Map()
@@ -178,10 +237,10 @@ export async function GET(req) {
       const misCierres = cierresPorCobrador.get(cobrador.id) ?? []
       const misPagos = pagosPorCobrador.get(cobrador.id) ?? []
 
-      const totalEsperado = misCierres.reduce((a, c) => a + (c.totalEsperado || 0), 0)
-      const totalRecaudado = misCierres.reduce((a, c) => a + (c.totalRecogido || 0), 0)
-      const diasTrabajados = misCierres.length
-      const eficiencia = totalEsperado > 0 ? Math.round((totalRecaudado / totalEsperado) * 1000) / 10 : 0
+      const totalRecaudado = Math.round(misPagos.reduce((a, p) => a + (Number(p.montoPagado) || 0), 0))
+      const totalEsperado = Math.round(cobrador.rutas.reduce((a, r) => a + (esperadoPorRuta.get(r.id) ?? 0), 0))
+      const cubiertoEnSusRutas = cobrador.rutas.reduce((a, r) => a + (cubiertoPorRuta.get(r.id) ?? 0), 0)
+      const eficiencia = totalEsperado > 0 ? Math.round((cubiertoEnSusRutas / totalEsperado) * 1000) / 10 : 0
 
       const totalPagos = misPagos.length
 
@@ -191,10 +250,10 @@ export async function GET(req) {
         const clientesDeRuta = clientesPorRuta.get(ruta.id) ?? []
         for (const cliente of clientesDeRuta) {
           if (cliente.estado !== 'activo') continue
-          if (!cliente.prestamos.length) continue
+          const vivos = cliente.prestamos.filter((p) => p.estado === 'activo')
+          if (!vivos.length) continue
           clientesActivos++
-          const diasExcluidos = obtenerDiasSinCobro(cliente, ruta, org)
-          const enMora = cliente.prestamos.some((p) => calcularDiasMora(p, diasExcluidos, festivos) > 0)
+          const enMora = vivos.some((p) => calcularDiasMora(p, obtenerDiasSinCobro(cliente, ruta, org, p), festivos) > 0)
           if (enMora) clientesMora++
         }
       }
@@ -208,6 +267,8 @@ export async function GET(req) {
           diasConPago.set(dia, createdMs)
         }
       }
+      // Días con al menos un cobro suyo.
+      const diasTrabajados = diasConPago.size
       let puntualidad = null
       if (diasConPago.size > 0) {
         const horasMinutos = [...diasConPago.values()].map((ms) => {
@@ -215,9 +276,11 @@ export async function GET(req) {
           return local.getUTCHours() * 60 + local.getUTCMinutes()
         })
         const promedioMin = Math.round(horasMinutos.reduce((a, b) => a + b, 0) / horasMinutos.length)
-        const hh = String(Math.floor(promedioMin / 60)).padStart(2, '0')
+        /* «02:04» no se entendía (DETALLES-COBRADORES #3): es la hora PROMEDIO
+           de su primer cobro de cada día, en 12 horas como el resto de la app. */
+        const h24 = Math.floor(promedioMin / 60)
         const mm = String(promedioMin % 60).padStart(2, '0')
-        puntualidad = `${hh}:${mm}`
+        puntualidad = `${h24 % 12 === 0 ? 12 : h24 % 12}:${mm} ${h24 < 12 ? 'a. m.' : 'p. m.'}`
       }
 
       const cierresConCuadre = misCierres.filter((c) => c.efectivoRecibido != null)
@@ -258,6 +321,7 @@ export async function GET(req) {
           eficiencia,
           diasTrabajados,
           totalRecaudado,
+          totalEsperado,
           totalPagos,
           clientesActivos,
           clientesMora,

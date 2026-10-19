@@ -164,9 +164,13 @@ function RankingCard({ cobrador }) {
               value={m.clientesMora ?? 0}
               sub={m.tasaMora != null ? `${m.tasaMora.toFixed(1).replace('.', ',')}%` : undefined}
             />
-            <MetricItem label="Puntualidad" value={m.puntualidad ?? '—'} />
-            <MetricItem label="GPS" value={`${m.pagosConGps ?? 0}%`} />
-            <MetricItem label="Fotos" value={`${m.pagosConFoto ?? 0}%`} />
+            {/* La hora promedio de su primer cobro de cada día, ya en 12 horas
+                (DETALLES-COBRADORES #3). «Puntualidad 02:04» no se entendía. */}
+            <MetricItem label="Primer cobro del día" value={m.puntualidad ?? '—'} sub={m.puntualidad ? 'en promedio' : undefined} />
+            {/* Con coma, como la eficiencia de al lado: «GPS 63.6%» junto a
+                «36,7%» en la misma tarjeta (DETALLES-COBRADORES #4). */}
+            <MetricItem label="GPS" value={`${Number(m.pagosConGps ?? 0).toFixed(1).replace('.', ',')}%`} />
+            <MetricItem label="Fotos" value={`${Number(m.pagosConFoto ?? 0).toFixed(1).replace('.', ',')}%`} />
             <MetricItem label="Faltante promedio" value={formatMoney(m.faltantePromedio ?? 0)} />
           </div>
         </div>

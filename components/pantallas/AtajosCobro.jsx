@@ -60,7 +60,7 @@ import { BLOQUE, BORDE_BLOQUE } from '@/components/cf/bloqueOscuro'
 import { useTactil } from '@/lib/tactil'
 import { formatMoney } from '@/lib/i18n'
 import { useAuth } from '@/hooks/useAuth'
-import { montoCrudo, montoCrudoConModo, montoParaMostrarConModo } from '@/lib/adaptadores/pago'
+import { montoCrudo, montoCrudoConModo, montoParaMostrar, montoParaMostrarConModo } from '@/lib/adaptadores/pago'
 import { opcionesDeMonto } from '@/lib/adaptadores/atajos-cobro'
 
 const MOTIVOS = [
@@ -280,6 +280,23 @@ export default function AtajosCobro({
         </div>
       </div>
 
+      {/* ── LO QUE CAMBIA EL COBRO DE HOY ──
+          La cuota globo y la cuota extra programada. El modal viejo de Cobros
+          de hoy las decía y la hoja compartida no: al pasarla allí se habrían
+          perdido en silencio. Los textos los arma quien monta la hoja. */}
+      {(p?.avisos?.length ?? 0) > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {p.avisos.map((a) => (
+            <p key={a} style={{
+              margin: 0, padding: '9px 12px', borderRadius: 'var(--cf-r-control)',
+              fontSize: 12.5, lineHeight: 1.45, color: 'var(--cf-ink-2)',
+              // Sin dorado: está reservado al monto, la acción y el foco.
+              background: 'var(--cf-fill)', border: '1px solid var(--cf-border)',
+            }}>{a}</p>
+          ))}
+        </div>
+      )}
+
       {/* ── CUÁNTO ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
         <span style={ROTULO}>Cuánto te paga</span>
@@ -302,7 +319,10 @@ export default function AtajosCobro({
               autoFocus
               type="text"
               inputMode="decimal"
-              value={monto}
+              /* Con el punto de los miles, como los demás campos de plata
+                 (DETALLES-RUTAS #76): «20000» no se distingue de «2000».
+                 El estado guarda los dígitos; solo se formatea para verlos. */
+              value={montoParaMostrar(monto, pais)}
               onChange={(e) => setMonto(montoCrudo(e.target.value))}
               aria-label="Monto que te paga"
               placeholder={modoAbreviado

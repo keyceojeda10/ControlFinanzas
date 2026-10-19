@@ -1520,6 +1520,38 @@ export async function GET(request, { params }) {
     quedaEnEfectivo: cuentaSuma,
   }
 
+  /* ══ «LE QUEDA EN LA RUTA» SOLO EXISTE CON CAPITAL PROPIO (DETALLES-CAJA #30) ══
+     En una ruta sin capital propio `saldoCapital` no es plata de la ruta: es la
+     cuenta interna de lo que sus préstamos movieron con la plata del negocio
+     (cf-v1172), y casi siempre es negativa. Andrés, el 19 oct: «Tiene que
+     entregar $49.700» y debajo «Le queda en la ruta −$586.033 · Lo de entregar
+     más los $14.200 que entraron a la cuenta», una explicación que no daba esa
+     cifra. Sin capital propio en TODAS sus rutas la cifra no se manda: la plata
+     de esas rutas vive en la bolsa del negocio.
+
+     Y cuando se manda, va con sus sumandos con nombre, que dan la cifra exacta:
+     la pantalla escribía siempre la misma frase («lo de entregar más lo de la
+     cuenta») aunque hubiera base, gastos sin aprobar o correcciones. */
+  const todasConCapitalPropio = rutas.length > 0 && rutas.every((r) => r.capitalHabilitado)
+  if (!todasConCapitalPropio) {
+    cuentaRuta.quedaEnLaRuta = null
+    cuentaRuta.explicacionQuedaEnLaRuta = []
+  } else {
+    const sumandos = [
+      { id: 'entregar', monto: Math.round(cuentaSuma) },
+      { id: 'base', monto: Math.round(saldoAperturaTotal - aperturaDeLaCuenta) },
+      { id: 'cuenta', monto: Math.round(cobradoDigital) },
+      { id: 'prestadoDigital', monto: -Math.round(prestadoDigital) },
+      // Ya salieron del fajo (el cobrador puso el billete) pero no de la ruta.
+      { id: 'gastosPendientes', monto: Math.round(gastosPendientesDia) },
+      { id: 'duenoSinEfectivo', monto: Math.round((inyeccionesDia - inyeccionesEfectivo) - (retirosDia - retirosEfectivo)) },
+      { id: 'correccionesDeLibro', monto: cuentaRuta.correccionesDeLibro },
+    ]
+    const resto = cuentaRuta.quedaEnLaRuta - sumandos.reduce((a, t) => a + t.monto, 0)
+    if (resto !== 0) sumandos.push({ id: 'otros', monto: resto })
+    cuentaRuta.explicacionQuedaEnLaRuta = sumandos.filter((t) => t.id === 'entregar' || t.monto !== 0)
+  }
+
   // Lo que hizo hoy: SIEMPRE cantidad y valor juntos. «10 renovaciones» sin el
   // valor no dice nada, y «$2.400.000 en renovaciones» sin cuantas tampoco.
   //

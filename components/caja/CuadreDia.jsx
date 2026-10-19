@@ -141,6 +141,11 @@ export default function CuadreDia({ fecha, abrirCobradorId = null }) {
       && Math.round(f.entregadoReportado) === Math.round(f.recaudadoSistema)
   )
 
+  // Los pendientes que aún no entregan y los que entregaron otra cifra.
+  const pendientesFilas = (data?.filas || []).filter((f) => f.estado === 'pendiente')
+  const sinEntregar = pendientesFilas.filter((f) => f.entregadoReportado == null).length
+  const conDiferencia = pendientesFilas.length - sinEntregar - exactos.length
+
   const confirmarExactos = async () => {
     if (!exactos.length) return
     setGuardando(true)
@@ -209,9 +214,18 @@ export default function CuadreDia({ fecha, abrirCobradorId = null }) {
         {errorGuardar && !modal && (
           <p role="alert" className="mt-2 text-xs font-semibold" style={{ color: 'var(--cf-red-dark)' }}>{errorGuardar}</p>
         )}
-        {g.pendientes > exactos.length && (
+        {/* ⚠ «NO COINCIDEN» SOLO SI YA ENTREGARON (DETALLES-CAJA #34). Antes de
+            que ninguno entregara decía «2 cobradores no coinciden con el
+            sistema» con los dos en «Recibido —»: el que no ha entregado no
+            coincide ni deja de coincidir. Se dicen por separado. */}
+        {sinEntregar > 0 && (
           <p className="mt-2 text-[11px] text-[var(--cf-ink-3)]">
-            {g.pendientes - exactos.length} cobrador{g.pendientes - exactos.length === 1 ? '' : 'es'} no coincide{g.pendientes - exactos.length === 1 ? '' : 'n'} con el sistema: cuéntale{g.pendientes - exactos.length === 1 ? '' : 's'} el efectivo y confirma abajo.
+            {sinEntregar} cobrador{sinEntregar === 1 ? '' : 'es'} todavía no entrega{sinEntregar === 1 ? '' : 'n'}.
+          </p>
+        )}
+        {conDiferencia > 0 && (
+          <p className="mt-2 text-[11px] text-[var(--cf-ink-3)]">
+            {conDiferencia} cobrador{conDiferencia === 1 ? '' : 'es'} entregó{conDiferencia === 1 ? '' : 'aron'} otra cifra que la del sistema: cuéntale{conDiferencia === 1 ? '' : 's'} el efectivo y confirma abajo.
           </p>
         )}
       </Card>

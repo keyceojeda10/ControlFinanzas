@@ -1006,7 +1006,7 @@ export function PestanasCaja({ pestanas = [], activa, onCambiar }) {
    él, el dueño ve que el trozo dorado grande es el efectivo que todavía no ha
    contado. */
 export function Cuentas({
-  total, tramos = [], cuentas = [], onMover,
+  total, tramos = [], cuentas = [], onMover, rotuloTotal = 'Tienes en total',
 }) {
   return (
     <>
@@ -1020,7 +1020,7 @@ export function Cuentas({
           <span style={{
             fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
             textTransform: 'uppercase', color: '#A3A8B2',
-          }}>Tienes en total</span>
+          }}>{rotuloTotal}</span>
           <span className="cf-fig" style={{
             fontSize: 32, fontWeight: 600, letterSpacing: '-.035em', lineHeight: 1, color: '#F3F3F6',
           }}>{total}</span>

@@ -317,6 +317,11 @@ export async function GET() {
             esBalloon: false,
             cuotaNumero: proximaCuotaClavo?.numeroPeriodo ?? null,
             esClavo: true,
+            // La hoja de cobro compartida (AtajosCobro), como en la ruta.
+            pagadoHoy: montoPagadoHoy > 0,
+            montoPagadoHoy: Math.round(montoPagadoHoy),
+            montoParaPonerseAlDia: 0,
+            frecuencia: p.frecuencia || 'diario',
             ...extraClavo,
           })
           continue
@@ -413,6 +418,16 @@ export async function GET() {
           fechaFin: p.fechaFin ?? null,
           totalPagado: Number(p.totalPagado ?? 0),
           totalAPagar: Number(p.totalAPagar ?? 0),
+          /* ── LA HOJA DE COBRO COMPARTIDA (DETALLES-RUTAS #75, #77) ──
+             Cobros de hoy usaba un modal propio que no dejaba cobrar más de una
+             cuota (Wilmer no se podía poner al día) y, tras un abono, pedía la
+             cuota entera (Yaneth: «$32.000» debiendo $12.000). Ahora usa
+             AtajosCobro, la de la ruta, que con estos cuatro campos ofrece «Le
+             falta hoy», «Ponerse al día» y «Todo», con las cifras del servidor. */
+          pagadoHoy: montoPagadoHoy > 0,
+          montoPagadoHoy: Math.round(montoPagadoHoy),
+          montoParaPonerseAlDia: Math.round(alDia),
+          frecuencia: p.frecuencia || 'diario',
           ...extraInfo,
         })
 

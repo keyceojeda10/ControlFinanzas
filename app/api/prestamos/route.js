@@ -20,6 +20,7 @@ import {
   mensajePrestamoConPerdida,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
+import { tocaCobrarEn } from '@/lib/dinero/esperado'
 import { registrarMovimientoCapital, asegurarCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
 import { trackEvent } from '@/lib/analytics'
@@ -432,6 +433,11 @@ export async function GET(request) {
     esClavo:          p.esClavo,
     pagoHoy:          pagoHoy(p),
     proximoCobro:     calcularProximoCobro(p, diasExcluidos, festivos),
+    /* Qué días de los próximos cuatro (0 = hoy) le toca cobro por calendario:
+       las ventanas de UN día («Mañana», «En 2 días») preguntan «a quién le
+       toca ese día», no «a quién le vence ahí el próximo» (DETALLES-RUTAS #72).
+       Lo usa también la copia sin conexión (`filtrarPrestamosGuardados`). */
+    cobraEn:          [0, 1, 2, 3].filter((d) => tocaCobrarEn(p, new Date(Date.now() + d * 86400000), diasExcluidos, festivos)),
   }})
 
   // Orden cronologico puro: prestamo mas nuevo arriba (ya viene del Prisma orderBy).
@@ -485,8 +491,19 @@ export async function GET(request) {
        «hoy» va con el convenio de la casa —el día arranca a las 05:00Z— para que
        un cobro de esta tarde no se caiga de la lista por el huso del servidor. */
     : hayVentana ? ((p) => {
-      if (p.estado !== 'activo' || p.diasMora > 0 || !p.proximoCobro) return false
+      if (p.estado !== 'activo' || !p.proximoCobro) return false
       const dias = Math.ceil((new Date(p.proximoCobro) - inicioHoy) / 86400000)
+      /* ⚠ UN SOLO DÍA ES «A QUIÉN LE TOCA ESE DÍA» (DETALLES-RUTAS #72). Con el
+         próximo cobro, «¿Y mañana? Ver a quién le toca» abría «Mañana 0» a las
+         8 a. m.: los 8 diarios de Ruta Centro tenían su próximo cobro HOY. Y
+         después de cobrar a 4, salían esos 4. Ahora: le toca ese día por
+         calendario y su próximo cobro no pasa de ahí (el que tiene las cuotas
+         cubiertas, como Óscar hasta el 27, no sale). El atrasado también: se
+         le visita mañana. Los rangos («de aquí a 7 días») siguen igual. */
+      if (ventanaDesde === ventanaHasta && Array.isArray(p.cobraEn) && ventanaDesde >= 0 && ventanaDesde <= 3) {
+        return !p.esClavo && p.cobraEn.includes(ventanaDesde) && dias <= ventanaDesde
+      }
+      if (p.diasMora > 0) return false
       return dias >= ventanaDesde && dias <= ventanaHasta
     })
     : null

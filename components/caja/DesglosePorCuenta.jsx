@@ -10,10 +10,13 @@ import { useState, useEffect } from 'react'
 import { useCountry } from '@/hooks/useCountry'
 import { getPlataformaInfo, PlataformaIcon } from '@/components/ui/LogoPlataforma'
 
+/* `total`: lo que dice la cifra grande. Con «Todo» ES el saldo —desde
+   DETALLES-CAJA #31 cuenta también los ajustes y suma lo mismo que «Saldo en
+   caja»—; con «Hoy» y «Este mes» es lo que se movió, no lo que hay. */
 const PERIODOS = [
-  { key: 'hoy',  label: 'Hoy' },
-  { key: 'mes',  label: 'Este mes' },
-  { key: 'todo', label: 'Todo' },
+  { key: 'hoy',  label: 'Hoy', total: 'Neto de hoy' },
+  { key: 'mes',  label: 'Este mes', total: 'Neto del mes' },
+  { key: 'todo', label: 'Todo', total: 'Tienes en total' },
 ]
 
 const ICON_EFECTIVO = (
@@ -49,7 +52,9 @@ export default function DesglosePorCuenta() {
           fontSize: 18, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: 0,
         }}>Dinero por cuenta</h2>
         <p style={{ fontSize: 12, lineHeight: 1.45, color: 'var(--cf-ink-3)', margin: '4px 0 0' }}>
-          Cuánto entró y salió por cada cuenta (efectivo, Nequi, Daviplata...). Es el movimiento del período, no un saldo de banco.
+          {periodo === 'todo'
+            ? 'Cuánto entró y salió por cada cuenta (efectivo, Nequi, Daviplata...). Sumado, es tu saldo en caja.'
+            : 'Cuánto entró y salió por cada cuenta (efectivo, Nequi, Daviplata...) en el período. Es lo que se movió, no un saldo de banco.'}
         </p>
       </div>
 
@@ -126,7 +131,7 @@ export default function DesglosePorCuenta() {
 
           El fetch, el estado y el endpoint no se tocan. */}
       {!loading && !error && cuentas && cuentas.length > 0 && (
-        <Cuentas {...adaptarCuentas(cuentas, formatMoney)} />
+        <Cuentas {...adaptarCuentas(cuentas, formatMoney)} rotuloTotal={PERIODOS.find((p) => p.key === periodo)?.total} />
       )}
     </div>
   )

@@ -8,6 +8,7 @@
 import { formatMoney } from '@/lib/i18n'
 import { Card } from '@/components/ui/Card'
 import DesgloseMetodoPago from '@/components/caja/DesgloseMetodoPago'
+import { fraseDeLoQueQueda } from '@/lib/caja/queda-en-la-ruta'
 
 const fmtHora = (d) => {
   if (!d) return '—'
@@ -409,7 +410,14 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
           {/* El capital de la ruta: la otra pregunta, la que cierra la resta de
               arriba. Va debajo porque no se entrega — es lo que la ruta tiene
               puesto, contando lo que está en el banco. */}
-          {(cr.cobradoDigital ?? 0) > 0 && (
+          {/* ⚠ SOLO CON CAPITAL PROPIO, Y CON SUS SUMANDOS (DETALLES-CAJA #30).
+              El servidor no manda la cifra si alguna de sus rutas no lleva
+              capital propio: ahí `saldoCapital` es la cuenta interna de sus
+              préstamos (Andrés: «−$586.033» bajo «Tiene que entregar
+              $49.700»). Y la frase de abajo era siempre «lo de entregar más lo
+              de la cuenta», aunque la diferencia fuera la base o un gasto sin
+              aprobar: ahora se escribe con los sumandos que dan la cifra. */}
+          {cr.quedaEnLaRuta != null && (cr.explicacionQuedaEnLaRuta?.length ?? 0) > 1 && (
             <>
               <div className="flex items-baseline justify-between gap-3 mt-2.5 pt-2.5" style={{ borderTop: '1px solid var(--cf-hairline)' }}>
                 <span className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
@@ -421,17 +429,8 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
                   {formatMoney(cr.quedaEnLaRuta ?? 0)}
                 </span>
               </div>
-              {/* ⚠ ESTE PIE DESCRIBÍA OTRA RESTA.
-                  Decía «entraTotal − salioTotal», y esos dos subtotales son
-                  ahora la cuenta de los BILLETES: su resta da lo que hay que
-                  entregar, no lo que queda en la ruta. Se explicaba con una
-                  cuenta que da otra cifra distinta de la que está encima.
-                  Ahora dice de dónde sale de verdad: lo entregado más lo que
-                  se fue al banco, que es justo lo que la diferencia. */}
               <p className="text-[11.5px] mt-1 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
-                {(cr.cobradoDigital ?? 0) > 0
-                  ? <>Lo de entregar más los {formatMoney(cr.cobradoDigital)} que entraron a la cuenta. Esa parte no la trae en billetes.</>
-                  : <>{formatMoney(entraTotal)} − {formatMoney(salioTotal)}.</>}
+                {fraseDeLoQueQueda(cr.explicacionQuedaEnLaRuta, formatMoney)}
               </p>
             </>
           )}
@@ -572,7 +571,7 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
             <span className="block text-[11px]" style={{ color: 'var(--cf-ink-3)', lineHeight: 1.45 }}>
               {data.coteo.abonosAlRenovar > 0
                 ? `Cobró ${formatMoney(data.coteo.cobrado)} − abonos al renovar ${formatMoney(data.coteo.abonosAlRenovar)}`
-                : 'Sin abonos el día que renovaron: es lo que cobró'}
+                : 'Nadie abonó al renovar: es lo que cobró'}
             </span>
           </span>
           <span className="cf-fig text-[16px] font-bold shrink-0" style={{ color: 'var(--cf-ink)' }}>
@@ -850,7 +849,11 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
               <div key={ruta.rutaId || 'otros'} className="rounded-[12px] bg-[var(--cf-card)] border border-[var(--cf-border)] p-3">
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <span className="text-sm font-semibold text-[var(--cf-ink)]">{ruta.nombre}</span>
-                  {ruta.rutaId && (
+                  {/* Solo con capital propio (DETALLES-CAJA #30): sin él, su
+                      `saldoCapital` es la cuenta interna de sus préstamos, no
+                      plata disponible. Ruta Centro decía «Disponible −$586.033»
+                      con «Capital en las rutas $0» arriba. */}
+                  {ruta.rutaId && ruta.capitalHabilitado && (
                     <span className="text-[11px] text-[var(--cf-ink-3)]">
                       Disponible:{' '}
                       {/* En rojo si quedo negativo: antes salia del mismo color que
