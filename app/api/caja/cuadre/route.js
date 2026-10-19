@@ -17,6 +17,7 @@ import { getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
 import { calcularDesembolsadoDia } from '@/lib/dinero/desembolsado'
 import { getStatsDia } from '@/lib/caja/stats-dia'
 import { enLaManoDelDia } from '@/lib/dinero/en-la-mano'
+import { diaDeCalendario } from '@/lib/notificacion-texto'
 
 /* Lo que el cobrador tiene en la mano ese día, con la MISMA cuenta de su caja
    (la referencia). Para cuadrar a quien todavía no ha entregado. */
@@ -365,7 +366,9 @@ export async function POST(request) {
         tipo: 'ajuste',
         direccion: falta < 0 ? 'egreso' : 'ingreso',
         monto: Math.abs(falta),
-        descripcion: `Cuadre de caja ${cobrador.nombre} (${fecha}): ${yaAsentado !== 0 ? 'corrección del cuadre' : (falta < 0 ? 'faltante' : 'sobrante')}${item.nota ? ' - ' + item.nota : ''}`,
+        // «Faltante en el cuadre de Camilo Ortiz (19 oct) · Lo trae mañana»: era
+        // «Cuadre de caja … (2026-10-19): faltante - …» (DETALLES-CAJA #45).
+        descripcion: `${yaAsentado !== 0 ? 'Corrección del cuadre' : (falta < 0 ? 'Faltante' : 'Sobrante')} en el cuadre de ${cobrador.nombre} (${diaDeCalendario(fecha)})${item.nota ? ` · ${item.nota}` : ''}`,
         referenciaId: cierre.id,
         referenciaTipo: 'cierre_cuadre',
         rutaId: ruta?.id || null,

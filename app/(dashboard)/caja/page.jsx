@@ -2463,7 +2463,6 @@ const MOVIMIENTOS_MANUALES = [
               const porCobrarCobrador = Math.max(0, Math.round((cierre?.totalEsperado || 0) - recaudadoDiaCobrador))
               const esperadoDiaCobrador = Math.round(c.esperadoDia || 0)
               const sugeridoCierre = Math.round(c.sugeridoCierre || 0)
-              const deltaSistemaVsCierre = cierre ? recaudadoDiaCobrador - Math.round(cierre.totalRecogido || 0) : null
               const cierreDesembolsado = Math.round(cierre?.totalDesembolsado || 0)
               // Lo que el sistema decía que tenía en la mano al cerrar (N1); null en los viejos.
               const cierreEnLaMano = cierre?.enLaManoSistema ?? null
@@ -2604,11 +2603,21 @@ const MOVIMIENTOS_MANUALES = [
 
                           <div className="text-xs text-[var(--cf-ink-3)] border-t border-[var(--cf-border)] pt-2">
                             Cobrado registrado en pagos: <span className="text-[var(--cf-green-dark)] font-semibold">{formatMoney(recaudadoDiaCobrador)}</span>
-                            {deltaSistemaVsCierre !== 0 && (
-                              <span className="ml-2 text-[var(--cf-gold)]">
-                                (diferencia vs cierre: {deltaSistemaVsCierre > 0 ? '+' : ''}{formatMoney(deltaSistemaVsCierre)})
-                              </span>
-                            )}
+                            {/* ⚠ LO QUE FALTÓ ES CONTRA LO QUE TENÍA EN LA MANO, no contra
+                                todo lo cobrado (DETALLES-CAJA-Y-CAPITAL #42). Decía
+                                «diferencia vs cierre: +$32.000» comparando $92.000
+                                —con los $24.200 de Nequi— contra los billetes que
+                                entregó; lo que faltó fueron $7.800, como en el Cuadre.
+                                Sin `enLaManoSistema` (cierres viejos) no se compara. */}
+                            {cierre && cierreEnLaMano != null && (() => {
+                              const dif = Math.round((cierre.totalRecogido || 0) - cierreEnLaMano)
+                              return (
+                                <span className="block mt-1" style={{ color: dif === 0 ? 'var(--cf-green-dark)' : 'var(--cf-gold-dark)' }}>
+                                  Tenía en la mano {formatMoney(cierreEnLaMano)} · entregó {formatMoney(Math.round(cierre.totalRecogido || 0))} ·{' '}
+                                  {dif === 0 ? 'cuadró' : dif < 0 ? `faltaron ${formatMoney(-dif)}` : `sobraron ${formatMoney(dif)}`}
+                                </span>
+                              )
+                            })()}
                           </div>
 
                           {detalleCobrador}

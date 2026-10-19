@@ -7,6 +7,7 @@ import { porQueNegativa, esAlarma } from '@/lib/dinero/ruta-negativa'
 import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
 import QueNecesitas from '@/components/acciones/QueNecesitas'
 import { cuandoMovimientoDeGasto } from '@/lib/gastos'
+import { filasDeMovimientos } from '@/lib/adaptadores/movimientos-capital'
 
 const TIPO_LABELS = {
   capital_inicial: 'Capital inicial',
@@ -783,9 +784,21 @@ export default function CapitalTab() {
                   <span>Prestado: <span className="font-semibold" style={{ color: 'var(--cf-gold-dark)' }}>{formatMoney(r.prestado)}</span></span>
                   <span>Cobrado: <span className="font-semibold" style={{ color: 'var(--cf-ink-2)' }}>{formatMoney(r.recaudado)}</span></span>
                 </div>
-                <p className="text-[10px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>
-                  No suman el saldo: faltan los retiros, los gastos y las reservas.
-                </p>
+                {/* Solo cuando NO suman, y con lo que falta en cifras. Salía
+                    siempre: Zona Norte, con $1.000.000 agregado y nada más, decía
+                    «No suman el saldo» sumando exacto (19 oct 2026). */}
+                {(() => {
+                  const suma = Math.round((r.inyectado || 0) - (r.prestado || 0) + (r.recaudado || 0))
+                  if (suma === Math.round(r.saldoCapital || 0)) return null
+                  const otros = [['retiros', r.retirado], ['gastos', r.gastos], ['reservas', r.arranqueAbsorbido]]
+                    .filter(([, v]) => Math.round(v || 0) > 0)
+                    .map(([n, v]) => `${n} ${formatMoney(v)}`)
+                  return (
+                    <p className="text-[10px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>
+                      {otros.length ? `Para llegar al saldo faltan: ${otros.join(', ')}.` : 'Para llegar al saldo faltan otros ajustes de la ruta.'}
+                    </p>
+                  )
+                })()}
                 <div className="flex gap-2 mt-2.5">
                   <button type="button" onClick={() => abrirMovimientoRuta(r.rutaId, 'inyeccion')}
                     className="flex-1 py-1.5 rounded-[8px] text-xs font-semibold transition-colors"
@@ -826,7 +839,7 @@ export default function CapitalTab() {
           <p className="text-sm text-[var(--cf-ink-3)] text-center py-6">No hay movimientos registrados</p>
         ) : (
           <div className="space-y-0 divide-y divide-[var(--cf-border)]">
-            {movimientos.map((m) => (
+            {filasDeMovimientos(movimientos).map((m) => (
               <div key={m.id} className="flex items-center justify-between py-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
@@ -842,12 +855,14 @@ export default function CapitalTab() {
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-3">
                   <div className="text-right">
-                    <p className={`text-sm font-bold ${esMovimientoIngreso(m) ? 'text-[var(--cf-green-dark)]' : 'text-[var(--cf-red-dark)]'}`}>
-                      {esMovimientoIngreso(m) ? '+' : '-'}{formatMoney(m.monto)}
+                    {/* La pareja de una puesta en cero va en una sola fila, sin
+                        signo: no cambia el capital del negocio (#45). */}
+                    <p className={`text-sm font-bold ${m.enCero ? 'text-[var(--cf-ink-3)]' : esMovimientoIngreso(m) ? 'text-[var(--cf-green-dark)]' : 'text-[var(--cf-red-dark)]'}`}>
+                      {m.enCero ? formatMoney(0) : `${esMovimientoIngreso(m) ? '+' : '-'}${formatMoney(m.monto)}`}
                     </p>
                     <p className="text-[10px] text-[var(--cf-ink-3)]">Saldo: {formatMoney(m.saldoNuevo)}</p>
                   </div>
-                  {TIPOS_MANUALES.includes(m.tipo) && (
+                  {TIPOS_MANUALES.includes(m.tipo) && !m.enCero && (
                     <>
                       <button type="button" onClick={() => abrirEditar(m)} title="Editar movimiento"
                         className="w-7 h-7 flex items-center justify-center rounded-[8px] text-[var(--cf-gold)] hover:bg-[var(--cf-fill)] transition-colors">

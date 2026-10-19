@@ -55,6 +55,9 @@ export function LoPuestoAqui({
   etiqueta = 'Lo que tienes puesto aquí',
   carteraEtiqueta = 'Cartera de la ruta', cartera,
   columnas = [],
+  // «$1.000.000 · disponible para prestar» si la ruta lleva capital propio
+  // (DETALLES-CAJA-Y-CAPITAL #44). `null` = no lo lleva, y no se pinta.
+  capital = null,
 }) {
   // ── ⚠ EL BORDE NO ES ADORNO: EN OSCURO ES LO ÚNICO QUE DIBUJA LA CAJA ──
   // Este bloque es carbón (#15161A) a propósito en los DOS temas. Pero en
@@ -81,6 +84,16 @@ export function LoPuestoAqui({
           }}>{cartera}</span>
         </div>
       </div>
+
+      {/* EL CAPITAL DE LA RUTA, DICHO AQUÍ (#44). Rutas dice «el capital de cada
+          ruta está adentro, en su detalle», y adentro no salía: solo la cartera.
+          El bloque abre la ficha del capital al tocarlo; ahora también lo dice. */}
+      {capital && (
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+          <span style={{ fontSize: 12, color: CARBON_TINTA_3 }}>Capital de la ruta · disponible para prestar</span>
+          <span className="cf-fig" style={{ fontSize: 15, fontWeight: 600, color: CARBON_TINTA, flex: 'none' }}>{capital}</span>
+        </div>
+      )}
 
       {columnas.length > 0 && (
         <>

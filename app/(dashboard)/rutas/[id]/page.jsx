@@ -3118,7 +3118,8 @@ export default function RutaDetallePage({ params }) {
           capitalTotal: ruta.capitalTotal,
           totalAPagarRuta: ruta.totalAPagarRuta,
           clientes: ruta.clientes,
-        }, (n) => formatMoney(n))} />
+        }, (n) => formatMoney(n))}
+        capital={ruta.capitalHabilitado ? formatMoney(ruta.saldoCapital ?? 0) : null} />
       </div>
       )}
 
