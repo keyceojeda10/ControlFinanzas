@@ -2220,14 +2220,20 @@ export default function DashboardPage() {
                           </p>
                           <div className="flex items-center justify-end gap-1 mt-0.5">
                             <span className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>{c.pagosHoy} cobros</span>
+                            {/* «Caja OK» solo si cuadró contra lo que tenía que entregar
+                                (`diferenciaDelCierre`); decía «Caja OK» en dorado también
+                                cuando faltaba plata, y comparaba con lo que tocaba cobrar
+                                (19 oct 2026). Sin cifra con qué comparar: «Cerró caja». */}
                             {c.cajaCerrada && (
                               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md" style={{
                                 background: c.cajaDiferencia === 0
                                   ? 'color-mix(in srgb, var(--cf-green-dark) 15%, transparent)'
-                                  : 'color-mix(in srgb, var(--cf-gold-dark) 15%, transparent)',
-                                color: c.cajaDiferencia === 0 ? 'var(--cf-green-dark)' : 'var(--cf-gold-dark)',
+                                  : c.cajaDiferencia == null ? 'var(--cf-fill)' : 'color-mix(in srgb, var(--cf-gold-dark) 15%, transparent)',
+                                color: c.cajaDiferencia === 0 ? 'var(--cf-green-dark)' : c.cajaDiferencia == null ? 'var(--cf-ink-3)' : 'var(--cf-gold-dark)',
                               }}>
-                                Caja OK
+                                {c.cajaDiferencia === 0 ? 'Caja OK'
+                                  : c.cajaDiferencia == null ? 'Cerró caja'
+                                    : c.cajaDiferencia < 0 ? `Faltaron ${formatMoney(-c.cajaDiferencia)}` : `Sobraron ${formatMoney(c.cajaDiferencia)}`}
                               </span>
                             )}
                           </div>

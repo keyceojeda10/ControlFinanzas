@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { getUtcOffset }     from '@/lib/i18n'
+import { diferenciaDelCierre } from '@/lib/adaptadores/ruta'
 
 export const dynamic = 'force-dynamic'
 
@@ -65,7 +66,9 @@ export async function GET() {
         cobradorId: { in: cobradorIds },
         fecha: { gte: inicioDiaUTC, lte: finDiaUTC },
       },
-      select: { cobradorId: true, diferencia: true, createdAt: true },
+      // Lo que hace falta para la misma resta que la ruta y el Cuadre
+      // (`diferenciaDelCierre`): `diferencia` era contra lo que TOCABA COBRAR.
+      select: { cobradorId: true, createdAt: true, totalRecogido: true, enLaManoSistema: true, efectivoRecibido: true, diferenciaRecibido: true, confirmadoEn: true },
     }),
   ])
 
@@ -75,7 +78,7 @@ export async function GET() {
   }
   const cierreMap = {}
   for (const c of cierresHoy) {
-    cierreMap[c.cobradorId] = { diferencia: c.diferencia, cerradoEn: c.createdAt }
+    cierreMap[c.cobradorId] = { diferencia: diferenciaDelCierre(c).dif, cerradoEn: c.createdAt }
   }
 
   const result = cobradores.map(c => {

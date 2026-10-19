@@ -39,6 +39,7 @@ import QueNecesitas from '@/components/acciones/QueNecesitas'
 import DeslizarParaConfirmar from '@/components/cf/DeslizarParaConfirmar'
 import CajaEntregada from '@/components/cf/CajaEntregada'
 import { useTactil } from '@/lib/tactil'
+import { diferenciaDelCierre } from '@/lib/adaptadores/ruta'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -2609,11 +2610,15 @@ const MOVIMIENTOS_MANUALES = [
                                 —con los $24.200 de Nequi— contra los billetes que
                                 entregó; lo que faltó fueron $7.800, como en el Cuadre.
                                 Sin `enLaManoSistema` (cierres viejos) no se compara. */}
-                            {cierre && cierreEnLaMano != null && (() => {
-                              const dif = Math.round((cierre.totalRecogido || 0) - cierreEnLaMano)
+                            {/* La misma resta que la ruta y la insignia del Inicio
+                                (`diferenciaDelCierre`): ya cuadrado, manda lo que contó
+                                el dueño, no lo que dijo el cobrador. */}
+                            {cierre && (() => {
+                              const { tenia, entrego, dif } = diferenciaDelCierre(cierre)
+                              if (tenia == null || dif == null) return null
                               return (
                                 <span className="block mt-1" style={{ color: dif === 0 ? 'var(--cf-green-dark)' : 'var(--cf-gold-dark)' }}>
-                                  Tenía en la mano {formatMoney(cierreEnLaMano)} · entregó {formatMoney(Math.round(cierre.totalRecogido || 0))} ·{' '}
+                                  Tenía en la mano {formatMoney(tenia)} · entregó {formatMoney(entrego)} ·{' '}
                                   {dif === 0 ? 'cuadró' : dif < 0 ? `faltaron ${formatMoney(-dif)}` : `sobraron ${formatMoney(dif)}`}
                                 </span>
                               )
