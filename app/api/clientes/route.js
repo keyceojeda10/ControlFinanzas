@@ -162,7 +162,7 @@ export async function GET(request) {
       diasSinCobro: true,
       montoMaximoPrestamo: true,
       calificacionManual: true,
-      ruta:       { select: { id: true, nombre: true, diasSinCobro: true } },
+      ruta:       { select: { id: true, nombre: true, diasSinCobro: true, capitalHabilitado: true } },
       prestamos: {
         where:  { estado: 'activo' },
         select: {
@@ -420,6 +420,8 @@ export async function GET(request) {
       estado:           c.estado === 'inactivo' ? 'inactivo' : calcularEstadoCliente(c.prestamos, diasExcluidos, festivos),
       rutaId:           c.rutaId,
       rutaNombre:       c.ruta?.nombre ?? null,
+      // Si su ruta lleva capital propio, sus préstamos pasan con su plata al moverlo (#8).
+      rutaCapitalPropio: !!c.ruta?.capitalHabilitado,
       prestamosActivos: c.prestamos.length,
       // El desglose del desplegable. Va ordenado por lo que se cobra ANTES:
       // abierto, lo primero que se lee es a cual hay que ir hoy.

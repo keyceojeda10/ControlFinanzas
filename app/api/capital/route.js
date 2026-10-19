@@ -5,6 +5,9 @@ import { prisma } from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
 import { registrarMovimientoManualCapital, registrarMovimientoCapital, getSaldosPorRuta } from '@/lib/capital'
 import { calcularSaldoPendiente } from '@/lib/calculos'
+import { empezarCapitalPropio } from '@/lib/rutas/traslado'
+import { ultimasPuestasEnCero } from '@/lib/rutas/capital-propio'
+import { DESCRIPCION_UNION } from '@/lib/rutas/fusionar'
 
 // GET — obtener saldo actual y config (capitalEstricto)
 export async function GET() {
@@ -99,15 +102,23 @@ export async function POST(request) {
 
   // Si viene rutaId, validar que la ruta pertenezca a la organizacion
   let rutaIdValida = null
+  let rutaDestino = null
   if (rutaId) {
     /* Solo rutas activas: una archivada (unida con otra) no la enseña ninguna
        caja, y la plata que entrara ahí no la vería nadie. */
-    const ruta = await prisma.ruta.findFirst({
+    rutaDestino = await prisma.ruta.findFirst({
       where: { id: rutaId, organizationId, activo: true },
-      select: { id: true },
+      select: { id: true, nombre: true, capitalHabilitado: true },
     })
-    if (!ruta) return Response.json({ error: 'Ruta no válida' }, { status: 400 })
-    rutaIdValida = ruta.id
+    if (!rutaDestino) return Response.json({ error: 'Ruta no válida' }, { status: 400 })
+    rutaIdValida = rutaDestino.id
+  }
+  /* ⚠ A UNA RUTA SIN CAPITAL PROPIO SOLO SE LE METE PLATA (DETALLES-RUTAS #10).
+     Sacar o cuadrar movería la cuenta interna de sus préstamos, que no es plata
+     de la ruta; la pantalla ya no lo ofrece y el servidor tampoco lo acepta. */
+  const empiezaSuCapital = !!rutaDestino && !rutaDestino.capitalHabilitado
+  if (empiezaSuCapital && tipo !== 'inyeccion' && tipo !== 'capital_inicial') {
+    return Response.json({ error: `${rutaDestino.nombre} todavía no lleva capital propio: primero métele plata.` }, { status: 400 })
   }
 
   const montoNum = Number(monto)
@@ -117,23 +128,29 @@ export async function POST(request) {
   // sub-bolsa (sin tocar el saldo global). Se calcula ANTES de la transaccion.
   let saldoPendienteRuta = 0
   if (absorberActivos && rutaIdValida && tipo === 'inyeccion') {
+    /* Si la ruta empieza hoy su capital, lo de antes no cuenta: sus reservas
+       se hicieron sobre la cuenta interna, que se pone en cero (#10). Si ya lo
+       llevaba, solo cuenta lo que pasó desde que empezó (`ultimasPuestasEnCero`). */
+    const desde = empiezaSuCapital ? null : (await ultimasPuestasEnCero(prisma, organizationId, [rutaIdValida])).get(rutaIdValida) ?? null
     // Guard de idempotencia: solo se puede absorber UNA vez por ruta. Si ya
     // existe un ajuste de arranque para esta ruta, no volver a descontar
     // (evita descontar los prestamos previos multiples veces).
     /* ⚠ TAMBIÉN SI LO ABSORBIÓ UNA RUTA QUE SE UNIÓ CON ESTA. Su bolsa llegó
        con esos préstamos ya descontados, y absorberlos otra vez los restaría
        dos veces (lib/rutas/fusionar.js). */
-    const unidas = await prisma.movimientoCapital.findMany({
-      where: { organizationId, tipo: 'ajuste', referenciaTipo: 'ruta', referenciaId: rutaIdValida },
+    // Solo las uniones: el traslado de un cliente también lleva `referenciaTipo: 'ruta'`.
+    const unidas = empiezaSuCapital ? [] : await prisma.movimientoCapital.findMany({
+      where: { organizationId, tipo: 'ajuste', referenciaTipo: 'ruta', referenciaId: rutaIdValida, descripcion: { startsWith: `${DESCRIPCION_UNION}: pasa a` } },
       select: { rutaId: true },
     })
-    const yaAbsorbido = await prisma.movimientoCapital.findFirst({
+    const yaAbsorbido = empiezaSuCapital ? null : await prisma.movimientoCapital.findFirst({
       where: {
         organizationId,
         rutaId: { in: [rutaIdValida, ...unidas.map((u) => u.rutaId).filter(Boolean)] },
         ajusteArranqueRuta: true,
         // El capital con que nació la ruta no es un descuento de préstamos (#3).
         tipo: { notIn: ['inyeccion', 'capital_inicial'] },
+        ...(desde && { createdAt: { gt: desde } }),
       },
       select: { id: true },
     })
@@ -153,6 +170,15 @@ export async function POST(request) {
   }
 
   const resultado = await prisma.$transaction(async (tx) => {
+    /* La ruta que empieza su capital arranca en CERO, no en la cuenta interna
+       de sus préstamos: meterle $500.000 a Ruta Centro la dejaba en −$149.933
+       (DETALLES-RUTAS #10, el mismo fallo que el #39 al unir). El saldo se lee
+       DENTRO de la transacción, después del candado del capital. */
+    if (empiezaSuCapital) {
+      await tx.$queryRaw`SELECT id FROM Capital WHERE organizationId = ${organizationId} FOR UPDATE`
+      const ahora = await tx.ruta.findUnique({ where: { id: rutaIdValida }, select: { id: true, nombre: true, saldoCapital: true, capitalHabilitado: true } })
+      if (!ahora.capitalHabilitado) await empezarCapitalPropio(tx, { organizationId, ruta: ahora, usuarioId: userId })
+    }
     const r = await registrarMovimientoManualCapital(tx, {
       organizationId,
       tipo,
@@ -187,7 +213,7 @@ export async function POST(request) {
       })
     }
     return r
-  })
+  }, { timeout: 30000 })
 
   logActividad({
     session,

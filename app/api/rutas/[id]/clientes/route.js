@@ -3,7 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { registrarMovimientoCapital } from '@/lib/capital'
+import { pasarPrestamosDeRuta, SELECT_PRESTAMO_TRASLADO } from '@/lib/rutas/traslado'
 import { calcularSaldoPendiente } from '@/lib/calculos'
 import { notificar } from '@/lib/notificar'
 import { anotarLlegadas } from '@/lib/rutas/procedencia'
@@ -44,10 +44,9 @@ export async function POST(request, { params }) {
     return Response.json({ error: 'Esta ruta está en «Solo lectura»: pasa del límite de tu plan. Mejora tu plan o reordena las rutas para elegir cuáles siguen activas.' }, { status: 403 })
   }
 
-  // descontarCapitalRuta: si true, el saldo pendiente de los préstamos activos de los
-  // clientes asignados se reserva del capital de ESTA ruta (reasignación: no cambia el
-  // total del negocio, solo la sub-bolsa). Resuelve el descuadre de que un cliente que
-  // entra a la ruta con un préstamo no descontaba nada del capital de la ruta.
+  // descontarCapitalRuta: «Agregar y reservar». El saldo de los préstamos que vienen
+  // de la plata del negocio se reserva del capital de ESTA ruta. Los que vienen de
+  // otra ruta con capital propio pasan con su plata siempre (lib/rutas/traslado.js).
   const { clienteIds, forzar, descontarCapitalRuta = false, posicion = 'final' } = await request.json()
   // Arriba o debajo de los que ya tiene la ruta (PRESTA MIL, 3 oct 2026).
   if (posicion !== 'final' && posicion !== 'inicio') {
@@ -66,7 +65,7 @@ export async function POST(request, { params }) {
   const clientes = await prisma.cliente.findMany({
     where: { id: { in: clienteIds }, organizationId, estado: { notIn: ['eliminado'] } },
     // El nombre de su ruta actual: si vienen de otra, queda anotado de cuál.
-    select: { id: true, nombre: true, rutaId: true, ruta: { select: { nombre: true } } },
+    select: { id: true, nombre: true, rutaId: true, ruta: { select: { id: true, nombre: true, capitalHabilitado: true } } },
   })
   if (clientes.length !== clienteIds.length) {
     return Response.json({ error: 'Uno o más clientes no son válidos' }, { status: 400 })
@@ -82,13 +81,16 @@ export async function POST(request, { params }) {
     )
   }
 
-  // Préstamos activos de los clientes a asignar (para descontar su saldo del capital de la ruta).
-  const prestamosActivos = descontarCapitalRuta
+  /* Los préstamos activos de los que llegan: cambian de bolsa si esta ruta o la
+     de donde vienen lleva capital propio (DETALLES-RUTAS #8). */
+  const hayBolsa = ruta.capitalHabilitado || clientes.some((c) => c.ruta?.capitalHabilitado && c.rutaId !== id)
+  const prestamosActivos = hayBolsa
     ? await prisma.prestamo.findMany({
       where: { clienteId: { in: clienteIds }, organizationId, estado: 'activo', esClavo: false },
-      select: { id: true, totalAPagar: true, totalPagado: true, abonadoCapital: true, pagos: { select: { montoPagado: true, tipo: true } } },
+      select: SELECT_PRESTAMO_TRASLADO,
     })
     : []
+  const origenDe = new Map(clientes.map((c) => [c.id, c.ruta ?? null]))
 
   // Asignar clientes en transaccion atomica (max orden + updates juntos)
   await prisma.$transaction(async (tx) => {
@@ -137,26 +139,14 @@ export async function POST(request, { params }) {
       clientes: clientes.map((c) => ({ id: c.id, rutaId: c.rutaId, rutaNombre: c.ruta?.nombre ?? null })),
     })
 
-    // Reservar el saldo pendiente de los préstamos activos en el capital de la ruta.
-    // ajusteArranqueRuta: no altera el saldo global de la org, solo la sub-bolsa de la ruta.
-    if (descontarCapitalRuta) {
-      for (const p of prestamosActivos) {
-        const saldo = Math.round(calcularSaldoPendiente(p))
-        if (saldo <= 0) continue
-        await registrarMovimientoCapital(tx, {
-          organizationId,
-          tipo: 'desembolso',
-          direccion: 'egreso',
-          monto: saldo,
-          descripcion: `Reserva de capital por préstamo de cliente asignado a la ruta`,
-          referenciaId: p.id,
-          referenciaTipo: 'prestamo',
-          rutaId: id,
-          ajusteArranqueRuta: true,
-          creadoPorId: session.user.id,
-        })
-      }
-    }
+    // Cada préstamo, a la bolsa que le toca (ver `pasarPrestamosDeRuta`).
+    await pasarPrestamosDeRuta(tx, {
+      organizationId,
+      destino: { id: ruta.id, nombre: ruta.nombre, capitalHabilitado: !!ruta.capitalHabilitado },
+      movidos: prestamosActivos.map((p) => ({ prestamoId: p.id, saldo: calcularSaldoPendiente(p), origen: origenDe.get(p.clienteId) })),
+      reservar: !!descontarCapitalRuta,
+      usuarioId: session.user.id,
+    })
   }, { timeout: 60000 })
 
   /* AL COBRADOR QUE RECIBE LOS CLIENTES. Se los pasaban a su ruta y se enteraba
@@ -219,7 +209,22 @@ export async function DELETE(request, { params }) {
   })
   if (!cliente) return Response.json({ error: 'Cliente no encontrado en esta ruta' }, { status: 404 })
 
-  await prisma.cliente.update({ where: { id: clienteId }, data: { rutaId: null, ordenRuta: null } })
+  /* Si la ruta lleva capital propio, recupera lo que le debe este cliente: sus
+     préstamos pasan a la plata del negocio (DETALLES-RUTAS #8). Si no, la ruta
+     se quedaba con ellos en la calle para siempre. */
+  const prestamos = ruta.capitalHabilitado
+    ? await prisma.prestamo.findMany({
+      where: { clienteId, organizationId, estado: 'activo', esClavo: false },
+      select: SELECT_PRESTAMO_TRASLADO,
+    })
+    : []
+  await prisma.$transaction(async (tx) => {
+    await tx.cliente.update({ where: { id: clienteId }, data: { rutaId: null, ordenRuta: null } })
+    await pasarPrestamosDeRuta(tx, {
+      organizationId, destino: null, usuarioId: session.user.id,
+      movidos: prestamos.map((p) => ({ prestamoId: p.id, saldo: calcularSaldoPendiente(p), origen: { id: ruta.id, nombre: ruta.nombre, capitalHabilitado: true } })),
+    })
+  }, { timeout: 60000 })
 
   return Response.json({ quitado: clienteId })
 }

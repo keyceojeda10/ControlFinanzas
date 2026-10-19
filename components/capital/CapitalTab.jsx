@@ -992,7 +992,7 @@ export default function CapitalTab() {
                     </select>
                     {elegida && !elegida.capitalHabilitado && (
                       <p className="text-xs mt-1.5 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
-                        Con esta entrada, {elegida.nombre} empieza a llevar su propia plata: lo que cobre y preste se suma y se resta aquí.
+                        Con esta entrada, {elegida.nombre} empieza a llevar su propia plata, desde cero: lo que cobre y preste se suma y se resta aquí.
                       </p>
                     )}
                   </div>
@@ -1052,7 +1052,9 @@ export default function CapitalTab() {
               {modalRutaId && modalTipo === 'inyeccion' && (() => {
                 const r = porRuta.find(x => x.rutaId === modalRutaId)
                 // Si la ruta ya absorbio sus prestamos previos una vez, no volver a ofrecer.
-                if (!r || (r.arranqueAbsorbido || 0) > 0) return null
+                // La que empieza hoy su capital arranca en cero: se ofrece aunque tenga
+                // reservas de antes (`ultimasPuestasEnCero`, DETALLES-RUTAS #10).
+                if (!r || (r.capitalHabilitado && (r.arranqueAbsorbido || 0) > 0)) return null
                 return (
                   <div className="rounded-[10px] border border-[var(--cf-border)] p-3" style={{ background: 'var(--cf-surface)' }}>
                     <label className="flex items-start gap-2 cursor-pointer">

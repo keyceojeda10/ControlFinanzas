@@ -1432,7 +1432,9 @@ export default function RutaDetallePage({ params }) {
      Era un `confirm` del navegador: «Aceptar» reservaba y «Cancelar» agregaba
      IGUAL los clientes, sin reservar. No había forma de echarse atrás. Ahora
      la pregunta tiene sus tres respuestas, y «Cancelar» no agrega a nadie.
-     Lo que escribe cada una es lo de siempre: el servidor no cambia. */
+     Desde cf-v1172 solo sale si esta ruta lleva capital propio y por lo que
+     viene de la plata del negocio; lo de otra ruta con capital pasa con su
+     plata sin preguntar (ver `asignarClientes`). */
   const [preguntaReserva, setPreguntaReserva] = useState(null)
   /* Y la de antes, «se mueven de su ruta», también en la app (#52): era una
      ventana del navegador justo antes de la de reservar, que ya era de la app. */
@@ -1451,24 +1453,38 @@ export default function RutaDetallePage({ params }) {
   const asignarClientes = async () => {
     if (!seleccionados.length) return
     setErrorAsignar('')
+    /* ── LA PLATA DE LOS QUE LLEGAN CON PRÉSTAMO (DETALLES-RUTAS #8) ──
+       Lo que pasa es lo mismo que cuenta el servidor (`pasarPrestamosDeRuta`):
+       el saldo de cada préstamo activo que no es clavo. Los que vienen de una
+       ruta CON capital propio pasan con su plata, siempre: esa ruta lo recupera.
+       Solo lo que viene de la plata del negocio pregunta si se reserva, y solo
+       si esta ruta lleva capital propio: sin él no hay bolsa que reservar. */
+    const todos = [...clientesSinRuta, ...clientesEnOtraRuta]
+    const elegidos = seleccionados.map((cid) => todos.find((c) => c.id === cid)).filter(Boolean)
+    const saldoQuePasa = (c) => (c.prestamos ?? [])
+      .filter((p) => !p.esClavo)
+      .reduce((a, p) => a + Math.round(Number(p.saldoPendiente) || 0), 0)
+    const conPrestamo = elegidos.filter((c) => saldoQuePasa(c) > 0)
+    const conSuPlata = conPrestamo.filter((c) => c.rutaCapitalPropio && c.rutaId && c.rutaId !== id)
+    const delNegocio = conPrestamo.filter((c) => !conSuPlata.includes(c))
+
     // Verificar si hay seleccionados de otra ruta
     const deOtraRuta = seleccionados.filter((cid) => clientesEnOtraRuta.some((c) => c.id === cid))
     if (deOtraRuta.length > 0) {
       const nombres = clientesEnOtraRuta.filter((c) => deOtraRuta.includes(c.id)).map((c) => `${c.nombre} (${c.rutaNombre})`).join(', ')
-      if (!(await preguntarMover({ cuantos: deOtraRuta.length, nombres }))) return
+      const porRuta = new Map()
+      for (const c of conSuPlata) porRuta.set(c.rutaNombre, (porRuta.get(c.rutaNombre) || 0) + saldoQuePasa(c))
+      const plata = porRuta.size
+        ? `${[...porRuta].map(([r, m]) => `${r} recupera ${formatMoney(m)}`).join(', ')} de lo que deben: ${ruta?.capitalHabilitado ? `sale del capital de ${ruta.nombre}` : 'lo pone el negocio'}.`
+        : null
+      if (!(await preguntarMover({ cuantos: deOtraRuta.length, nombres, plata }))) return
     }
 
-    // Si algún cliente que entra ya trae un préstamo activo, preguntar si su saldo se
-    // descuenta del capital de esta ruta (para que el capital de la ruta cuadre).
-    const todos = [...clientesSinRuta, ...clientesEnOtraRuta]
-    const conPrestamo = seleccionados
-      .map((cid) => todos.find((c) => c.id === cid))
-      .filter((c) => c && (c.prestamosActivos > 0 || (c.saldoPendienteTotal || 0) > 0))
     let descontarCapitalRuta = false
-    if (conPrestamo.length > 0) {
-      const saldoTotal = conPrestamo.reduce((a, c) => a + Math.round(c.saldoPendienteTotal || 0), 0)
-      const nombres = conPrestamo.map((c) => c.nombre).join(', ')
-      const respuesta = await preguntarReserva({ cuantos: conPrestamo.length, saldoTotal, nombres })
+    if (ruta?.capitalHabilitado && delNegocio.length > 0) {
+      const saldoTotal = delNegocio.reduce((a, c) => a + saldoQuePasa(c), 0)
+      const nombres = delNegocio.map((c) => c.nombre).join(', ')
+      const respuesta = await preguntarReserva({ cuantos: delNegocio.length, saldoTotal, nombres })
       if (respuesta === null) return
       descontarCapitalRuta = respuesta === 'reservar'
     }
@@ -4562,7 +4578,7 @@ export default function RutaDetallePage({ params }) {
       <ConfirmModal
         open={!!preguntaMover}
         title={preguntaMover?.cuantos === 1 ? '¿Mover este cliente a esta ruta?' : '¿Mover estos clientes a esta ruta?'}
-        message={preguntaMover ? `Salen de la ruta en que están: ${preguntaMover.nombres}. Su cobrador de ahora deja de verlos en su recorrido.` : ''}
+        message={preguntaMover ? `Salen de la ruta en que están: ${preguntaMover.nombres}. Su cobrador de ahora deja de verlos en su recorrido.${preguntaMover.plata ? ` ${preguntaMover.plata}` : ''}` : ''}
         confirmLabel={preguntaMover?.cuantos === 1 ? 'Moverlo' : 'Moverlos'}
         confirmColor="blue"
         onConfirm={() => responderMover(true)}

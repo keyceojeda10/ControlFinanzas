@@ -13,6 +13,7 @@ import { validateDocument, getDocumentConfig } from '@/lib/i18n'
 import { calificacionDe } from '@/lib/calificacion'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 import { anotarLlegadas, vieneDePorCliente } from '@/lib/rutas/procedencia'
+import { pasarPrestamosDeRuta, SELECT_PRESTAMO_TRASLADO } from '@/lib/rutas/traslado'
 import { numerarPorCliente, camposDeNumero } from '@/lib/prestamos/numero'
 
 // Helper: verificar que el cliente pertenece a la organización (y a la ruta del cobrador)
@@ -415,6 +416,22 @@ export async function PATCH(request, { params }) {
     ? await prisma.ruta.findUnique({ where: { id: clienteBase.rutaId }, select: { nombre: true } })
     : null
 
+  /* Y SU PLATA (DETALLES-RUTAS #8). Si sale de una ruta con capital propio,
+     esa ruta recupera lo que le deben sus préstamos: lo pone la ruta nueva si
+     lleva capital, o el negocio. Si no, la vieja se quedaba con el préstamo en
+     la calle y los cobros entraban a la otra. Sin pregunta de reservar: esa
+     está al agregarlo desde la ruta. */
+  const sacaDeSuBolsa = rutaId !== undefined && (rutaId || null) !== (clienteBase.rutaId || null) && !!clienteBase.rutaId
+  const bolsaDeAntes = sacaDeSuBolsa
+    ? await prisma.ruta.findUnique({ where: { id: clienteBase.rutaId }, select: { id: true, nombre: true, capitalHabilitado: true } })
+    : null
+  const [bolsaNueva, prestamosQueCambian] = bolsaDeAntes?.capitalHabilitado
+    ? await Promise.all([
+      rutaId ? prisma.ruta.findUnique({ where: { id: rutaId }, select: { id: true, nombre: true, capitalHabilitado: true } }) : null,
+      prisma.prestamo.findMany({ where: { clienteId: id, organizationId: session.user.organizationId, estado: 'activo', esClavo: false }, select: SELECT_PRESTAMO_TRASLADO }),
+    ])
+    : [null, []]
+
   /* EL PUESTO EN LA RUTA NUEVA (DETALLES-RUTAS #21). Al cambiarle la ruta se
      quedaba con su número de la vieja: caía arriba o en cualquier sitio de la
      nueva. Entra al final, como al agregarlo desde la ruta. Sin ruta, sin puesto. */
@@ -454,8 +471,14 @@ export async function PATCH(request, { params }) {
         clientes: [{ id, rutaId: clienteBase.rutaId, rutaNombre: rutaVieja?.nombre ?? null }],
       })
     }
+    if (prestamosQueCambian.length) {
+      await pasarPrestamosDeRuta(tx, {
+        organizationId: session.user.organizationId, destino: bolsaNueva, usuarioId: session.user.id,
+        movidos: prestamosQueCambian.map((p) => ({ prestamoId: p.id, saldo: calcularSaldoPendiente(p), origen: bolsaDeAntes })),
+      })
+    }
     return fila
-  })
+  }, { timeout: 30000 })
 
   logActividad({ session, accion: 'editar_cliente', entidadTipo: 'cliente', entidadId: id, detalle: `Cliente ${actualizado.nombre} editado`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
   if (idempKey) setCachedMutation(idempKey, actualizado)

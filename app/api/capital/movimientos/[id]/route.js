@@ -61,12 +61,13 @@ export async function DELETE(request, { params }) {
       error: 'Esa corrección la puso el sistema al borrar un gasto, y no se puede quitar: si la quitas, el gasto borrado seguiría restando de tu caja para siempre.',
     }, { status: 400 })
   }
-  /* Las dos mitades de unir dos rutas (lib/rutas/fusionar.js) van juntas:
-     quitar una inventa plata en el negocio y resucita la bolsa de la ruta
-     archivada. */
+  /* Las dos mitades de pasar plata de una bolsa a otra van juntas: unir dos
+     rutas (lib/rutas/fusionar.js), darle capital propio a una ruta o pasar un
+     cliente con préstamos (lib/rutas/traslado.js). Quitar una inventa plata en
+     el negocio. */
   if (movimiento.tipo === 'ajuste' && movimiento.referenciaTipo === 'ruta') {
     return Response.json({
-      error: 'Ese movimiento lo puso el sistema al unir dos rutas, y no se puede quitar: si lo quitas, el capital del negocio dejaría de cuadrar.',
+      error: 'Ese movimiento lo puso el sistema al pasar plata de una ruta a otra, y no se puede quitar: si lo quitas, el capital del negocio dejaría de cuadrar.',
     }, { status: 400 })
   }
 
@@ -131,11 +132,11 @@ export async function PATCH(request, { params }) {
       error: `No se puede editar un movimiento de tipo "${movimiento.tipo}". Gestiona la entidad original (préstamo, pago o gasto).`,
     }, { status: 400 })
   }
-  /* Ni se edita: cambiarle el monto descuadra el par, y quitarle el
-     «Unión de rutas» de la descripción lo haría contar como billetes. */
+  /* Ni se edita: cambiarle el monto descuadra el par, y cambiarle la
+     descripción lo haría contar como billetes (`CORRIGEN_EL_LIBRO`). */
   if (movimiento.tipo === 'ajuste' && movimiento.referenciaTipo === 'ruta') {
     return Response.json({
-      error: 'Ese movimiento lo puso el sistema al unir dos rutas, y no se puede cambiar.',
+      error: 'Ese movimiento lo puso el sistema al pasar plata de una ruta a otra, y no se puede cambiar.',
     }, { status: 400 })
   }
 
