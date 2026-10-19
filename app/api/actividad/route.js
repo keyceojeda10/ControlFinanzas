@@ -76,9 +76,38 @@ export async function GET(request) {
     })
     for (const g of gastos) estadoDeGasto.set(g.id, g.estado)
   }
-  const items = pagina.map((a) => (a.accion === 'registrar_gasto' && a.entidadId
-    ? { ...a, gastoEstado: estadoDeGasto.get(a.entidadId) ?? 'eliminado' }
-    : a))
+
+  // ── LO QUE LA APP ESPERABA QUE ENTREGARA EL COBRADOR ──
+  //
+  // QA, 19 oct 2026 (DETALLES-COBRADORES #8): «Camilo Ortiz entregó su caja ·
+  // $60.000 (faltaron $7.800)». El texto del cierre solo dice lo entregado; lo
+  // que el sistema decía que tenía en la mano lo guarda el cierre
+  // (`enLaManoSistema`), y el `entidadId` de la fila es el id del cierre.
+  // Se mandan los hechos crudos y el adaptador decide si de verdad son de ESTA
+  // fila (`faltoOSobro`): un ajuste posterior reescribe las dos cifras.
+  const CON_CIERRE = ['cierre_caja', 'ajuste_cierre_caja']
+  const idsCierre = pagina
+    .filter((a) => CON_CIERRE.includes(a.accion) && a.entidadId)
+    .map((a) => a.entidadId)
+  const cierrePorId = new Map()
+  if (idsCierre.length > 0) {
+    const cierres = await prisma.cierreCaja.findMany({
+      where: { id: { in: idsCierre }, organizationId: session.user.organizationId },
+      select: { id: true, totalRecogido: true, enLaManoSistema: true, editadoEn: true },
+    })
+    for (const c of cierres) cierrePorId.set(c.id, c)
+  }
+
+  const items = pagina.map((a) => {
+    if (a.accion === 'registrar_gasto' && a.entidadId) {
+      return { ...a, gastoEstado: estadoDeGasto.get(a.entidadId) ?? 'eliminado' }
+    }
+    const c = CON_CIERRE.includes(a.accion) ? cierrePorId.get(a.entidadId) : null
+    if (c) {
+      return { ...a, cierre: { totalRecogido: c.totalRecogido, enLaManoSistema: c.enLaManoSistema, editadoEn: c.editadoEn } }
+    }
+    return a
+  })
 
   return Response.json({ items, nextCursor })
 }
