@@ -24,6 +24,7 @@ import NovedadesModal from '@/components/layout/NovedadesModal'
 import UbicacionProvider from '@/components/providers/UbicacionProvider'
 import SesionTracker from '@/components/providers/SesionTracker'
 import { AccionesProvider } from '@/components/acciones/AccionesProvider'
+import ProfeProvider from '@/components/tutoriales/ProfeProvider'
 import PuertaInstalacion from '@/components/layout/PuertaInstalacion'
 import ResumenDelDiaAuto from '@/components/cf/ResumenDelDiaAuto'
 import AvisoCobrarHoy from '@/components/cf/AvisoCobrarHoy'
@@ -80,6 +81,9 @@ export default async function DashboardLayout({ children }) {
        el proveedor estuviera dentro del árbol de las pantallas, el buscador
        —que se monta al final de este mismo layout— no las vería. */
     <AccionesProvider>
+    {/* Los videos del profe: dentro de las acciones, porque su botón de tarea
+        ejecuta la que registró la pantalla abierta. */}
+    <ProfeProvider rol={session?.user?.rol ?? ''}>
     <Armazon nombre={nombre} rol={session?.user?.rol ?? ''} avatarId={avatarId}>
     {/* El país de la organización, para las 465 llamadas a `formatMoney` que no
         lo pasan. Ver el porqué en el propio componente. */}
@@ -193,6 +197,7 @@ export default async function DashboardLayout({ children }) {
       <Analytics />
     </div>
     </Armazon>
+    </ProfeProvider>
     </AccionesProvider>
   )
 }

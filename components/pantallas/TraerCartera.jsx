@@ -30,6 +30,8 @@
 // gris y a cero. Es lo que convierte «sube tu cartera» en una razón: se ve para
 // qué sirve el trabajo que se está pidiendo.
 
+import BotonProfe from '@/components/tutoriales/BotonProfe'
+
 const CARBON = '#15161A'
 
 function Tarjeta({ children, destacada = false, style }) {
@@ -186,6 +188,7 @@ export default function TraerCartera({
                 background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
                 font: 'inherit', fontSize: 14, fontWeight: 600, color: 'var(--cf-ink)',
               }}>Subir fotos</button>
+              <BotonProfe id="cartera-cuaderno" junto="«Subir fotos», en «Tómale foto a tu libreta»" style={{ marginLeft: -8 }} />
             </div>
           </Tarjeta>
 
@@ -203,6 +206,7 @@ export default function TraerCartera({
                   background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
                   font: 'inherit', fontSize: 14, fontWeight: 600, color: 'var(--cf-ink)',
                 }}>{o.accion}</button>
+                <BotonProfe id="cartera-excel" junto="«Subir archivo», en «Ya lo tengo en Excel»" style={{ marginLeft: -8 }} />
               </div>
             </Tarjeta>
           ))}

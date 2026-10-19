@@ -10,6 +10,7 @@ import MonedaCF from '@/components/ui/MonedaCF'
 import Avatar from '@/components/ui/Avatar'
 import { rotulo } from '@/lib/dinero/definiciones'
 import PlanGate from '@/components/ui/PlanGate'
+import BotonProfe from '@/components/tutoriales/BotonProfe'
 
 const MEDALS = {
   1: { color: 'var(--cf-gold)', label: '1°' },
@@ -210,7 +211,12 @@ function RankingSkeleton() {
 }
 
 export default function RankingCobradoresPage() {
-  useCabecera({ titulo: 'Ranking de cobradores' })
+  // El profe va junto al título: en el móvil, en la cabecera; en PC no hay
+  // cabecera, así que va a la derecha del periodo (más abajo).
+  useCabecera({
+    titulo: 'Ranking de cobradores',
+    acciones: <BotonProfe id="cobradores-seguir" junto="Ranking de cobradores" />,
+  })
 
   const { esOwner, loading: authLoading } = useAuth()
   const [cobradores, setCobradores] = useState([])
@@ -290,9 +296,14 @@ export default function RankingCobradoresPage() {
     <div className="max-w-3xl lg:max-w-6xl mx-auto pb-6">
       {/* El titulo lo pone el armazon. Se queda el PERIODO, que cambia con el
           filtro y es lo unico que la cabecera no puede saber. */}
-      {periodoLabel && (
-        <p className="text-sm mb-6" style={{ color: 'var(--cf-ink-3)' }}>{periodoLabel}</p>
-      )}
+      <div className={`flex items-center justify-between gap-3 ${periodoLabel ? 'mb-6' : 'lg:mb-6'}`}>
+        {periodoLabel && (
+          <p className="text-sm" style={{ color: 'var(--cf-ink-3)' }}>{periodoLabel}</p>
+        )}
+        <span className="hidden lg:inline-flex shrink-0 ml-auto">
+          <BotonProfe id="cobradores-seguir" junto="Ranking de cobradores" />
+        </span>
+      </div>
 
       {loading && <RankingSkeleton />}
 

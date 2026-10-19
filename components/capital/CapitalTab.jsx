@@ -8,6 +8,7 @@ import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
 import QueNecesitas from '@/components/acciones/QueNecesitas'
 import { cuandoMovimientoDeGasto } from '@/lib/gastos'
 import { filasDeMovimientos } from '@/lib/adaptadores/movimientos-capital'
+import BotonProfe from '@/components/tutoriales/BotonProfe'
 
 const TIPO_LABELS = {
   capital_inicial: 'Capital inicial',
@@ -731,7 +732,10 @@ export default function CapitalTab() {
       {/* Capital por ruta — sub-bolsas individuales (solo rutas con capital habilitado) */}
       {porRuta.filter(r => r.capitalHabilitado).length > 0 && (
         <div className="bg-[var(--cf-surface)] border border-[var(--cf-border)] rounded-[16px] px-4 py-4">
-          <p className="text-xs font-semibold text-[var(--cf-ink-3)] uppercase tracking-wide mb-3">Capital por ruta</p>
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <p className="text-xs font-semibold text-[var(--cf-ink-3)] uppercase tracking-wide">Capital por ruta</p>
+            <BotonProfe id="capital-capital-ruta" junto="Capital por ruta" style={{ marginBlock: -14, marginRight: -8 }} />
+          </div>
           <div className="space-y-2.5">
             {porRuta.filter(r => r.capitalHabilitado).map((r) => (
               <div key={r.rutaId} className="rounded-[12px] border border-[var(--cf-border)] p-3" style={{ background: 'var(--cf-card)' }}>

@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import ListaRutas from '@/components/pantallas/ListaRutas'
 import RutasEscritorio from '@/components/pantallas/RutasEscritorio'
 import HojaInferior, { salirDeHojaHacia } from '@/components/cf/HojaInferior'
+import { useRegistrarAcciones } from '@/components/acciones/AccionesProvider'
 import { adaptarRutas, adaptarSinRuta, resumenDelDia, bandaDelDia } from '@/lib/adaptadores/rutas'
 import Link                    from 'next/link'
 import { useRouter }           from 'next/navigation'
@@ -21,6 +22,7 @@ import RutaCard                from '@/components/rutas/RutaCard'
 import ModalSugerenciasRutas   from '@/components/rutas/ModalSugerenciasRutas'
 import { useCountry } from '@/hooks/useCountry'
 import { useMontado } from '@/hooks/useMontado'
+import BotonProfe from '@/components/tutoriales/BotonProfe'
 
 /** El «+» dorado. Círculo, como en clientes y préstamos. */
 function BotonNuevaRuta({ onClick }) {
@@ -64,6 +66,14 @@ export default function RutasPage() {
   const [loading,  setLoading]  = useState(true)
   const [error,    setError]    = useState('')
   const [showForm, setShowForm] = useState(false)
+  /* «Crear una ruta» para el buscador y para el botón «Crear ruta» del video
+     del profe: con esta pantalla abierta, abre el formulario aquí mismo. */
+  useRegistrarAcciones('rutas', [
+    { id: 'ruta-nueva', label: 'Crear una ruta', pista: 'Con su nombre y quién la cobra',
+      sinonimos: ['nueva ruta', 'crear ruta', 'agregar una ruta', 'otra ruta', 'abrir una ruta'],
+      disponible: esOwner,
+      ejecutar: () => setShowForm(true) },
+  ])
   const [nombre,   setNombre]   = useState('')
   const [capitalRuta, setCapitalRuta] = useState('')
   const [origenCapital, setOrigenCapital] = useState('nuevo') // 'nuevo' | 'existente'
@@ -430,16 +440,19 @@ export default function RutasPage() {
         }}>Ordenar</button>
       )}
       {montado && esOwner && (
-        <button type="button" onClick={() => setShowForm(true)} aria-label="Nueva ruta" style={{
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none',
-          width: 34, height: 34, borderRadius: 999,
-          background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
-          color: 'var(--cf-ink)', cursor: 'pointer',
-        }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-        </button>
+        <>
+          <button type="button" onClick={() => setShowForm(true)} aria-label="Nueva ruta" style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none',
+            width: 34, height: 34, borderRadius: 999,
+            background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+            color: 'var(--cf-ink)', cursor: 'pointer',
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </button>
+          <BotonProfe id="rutas-crear" junto="el «+» de crear ruta" style={{ margin: '-5px -6px -5px -4px' }} />
+        </>
       )}
     </>
   )

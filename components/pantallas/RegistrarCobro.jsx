@@ -58,6 +58,7 @@
 import { PlataformaIcon } from '@/components/ui/LogoPlataforma'
 import DeslizarParaConfirmar from '@/components/cf/DeslizarParaConfirmar'
 import { useRef } from 'react'
+import BotonProfe from '@/components/tutoriales/BotonProfe'
 /* ⚠ «¿DEDO O RATÓN?» VIVE EN `lib/tactil.js`, no aquí. Estaba escrito en este
    fichero y privado, así que las otras pantallas de cobro no podían alcanzarlo
    y confirmaban el dinero de otra forma. */
@@ -297,6 +298,9 @@ export default function RegistrarCobro({
               <path d="M16.9 3.6a2 2 0 012.8 2.8L8.5 17.6 4 19l1.4-4.5L16.9 3.6z" /><path d="M14.5 6l3.5 3.5" />
             </svg>
           </button>
+          {/* El profe del lápiz: más estrecho que sus 44 y con margen negativo,
+              para no quitarle ancho al monto (38px de cifra, 9 dígitos). */}
+          <BotonProfe id="prestamos-otro-monto" junto="el lápiz del monto" style={{ width: 36, marginLeft: -6, marginRight: -8, alignSelf: 'center' }} />
         </div>
         {notaCuota ? (
           <span role="status" style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
@@ -344,9 +348,15 @@ export default function RegistrarCobro({
           borderRadius: 'var(--cf-r-card)', padding: '13px 15px',
           display: 'flex', flexDirection: 'column', gap: 5,
         }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--cf-ink)' }}>
-            {explicacion.titulo}
-          </span>
+          {/* «Capital» e «Interés» llevan su video: el de la opción elegida va
+              al final del título de lo que acaba de elegir. */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: 'var(--cf-ink)' }}>
+              {explicacion.titulo}
+            </span>
+            {aplicacion === 'capital' && <BotonProfe id="prestamos-abono-capital" junto="«Capital» (en «¿A qué se aplica?»)" />}
+            {aplicacion === 'intereses' && <BotonProfe id="prestamos-intereses" junto="«Interés» (en «¿A qué se aplica?»)" />}
+          </div>
           <span style={{ fontSize: 12.5, lineHeight: 1.45, color: 'var(--cf-ink-3)' }}>
             {explicacion.texto}
           </span>

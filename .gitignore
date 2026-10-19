@@ -84,3 +84,7 @@ service-account.json
 
 # Capturas de pantalla con nombres, cédulas y cifras reales de clientes: nunca a git.
 /informes/
+
+# Los videos del profe (~190 MB): fuera de git. En el VPS, enlace a /home/cf-videos/profe.
+# Ver scripts/video/importar-tutoriales.mjs
+/public/videos/profe

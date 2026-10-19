@@ -34,6 +34,7 @@ import { puedeRetroceder } from '@/lib/armazon'
 import PreferenciasAvisos from '@/components/avisos/PreferenciasAvisos'
 import TelefonosGuardados from '@/components/cuentas/TelefonosGuardados'
 import EntrarConHuella from '@/components/configuracion/EntrarConHuella'
+import AyudaProfe from '@/components/tutoriales/AyudaProfe'
 
 const PAISES_LIST = getCountryList()
 const WHATSAPP_SOPORTE = '573011993001'
@@ -1556,6 +1557,8 @@ function ConfiguracionContent() {
             {anchaPantalla && <InstallSection />}
           </>
         )
+
+      case 'ayuda':     return <AyudaProfe esOwner={rol === 'owner'} />
 
       case 'equipo':    return <Remite nombre="Equipo" nota="Los cobradores y sus permisos se manejan en su propia pantalla." destino="/cobradores" accion="Ir a Cobradores" />
 

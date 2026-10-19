@@ -23,6 +23,8 @@
 import { Tarjeta, BloqueOscuro, BarraProgreso, BotonPrimario, BotonSecundario, BarraAccion, Moneda, Aviso } from '@/components/cf/primitivos'
 import { CifraQueCabe } from '@/components/cf/primitivos'
 import LineaCifra from '@/components/cf/LineaCifra'
+import BotonProfe from '@/components/tutoriales/BotonProfe'
+import { useProfe } from '@/components/tutoriales/ProfeProvider'
 
 /* Tira de tres cifras en tarjeta blanca (móvil). En escritorio son cinco. */
 /* ⚠ SE LLAMA «TiraTres» Y AHORA ADMITE CUATRO, a propósito de no renombrarla:
@@ -273,6 +275,9 @@ export default function FichaPrestamo({
   // cobrar hoy (302), la tabla de amortizacion, y esta.
   sinMargen = false,
 }) {
+  // ¿Se va a ver el botón del profe? La rayita que lo separa solo va si sí.
+  const profe = useProfe()
+  const veProfePagaTodo = Boolean(profe?.activo && profe.botonVisible && profe.visibles.some((v) => v.id === 'prestamos-paga-todo'))
   const esUnico = modo === 'unico'
   const hayMora = enMora && enMora !== '$0'
 
@@ -373,15 +378,21 @@ export default function FichaPrestamo({
                 descuadre; y en verde diría que al prestamista le conviene, cuando
                 es plata que deja de ganar. */}
             {cierreHoy && (
-              <LineaCifra
-                sobreOscuro
-                rotulo="Si paga todo hoy"
-                cifra={cierreHoy}
-                chip={cierrePerdona}
-                tonoChip="neutro"
-                onTocar={onCerrarHoy || undefined}
-                style={{ paddingTop: 12, borderTop: '1px solid rgba(255,255,255,.09)' }}
-              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,.09)' }}>
+                <LineaCifra
+                  sobreOscuro
+                  rotulo="Si paga todo hoy"
+                  cifra={cierreHoy}
+                  chip={cierrePerdona}
+                  tonoChip="neutro"
+                  onTocar={onCerrarHoy || undefined}
+                  style={{ flex: 1, minWidth: 0, width: 'auto' }}
+                />
+                {/* El profe de esta línea (lámina E2): rayita y botón a la derecha
+                    de la flecha, con el padding del bloque ya reducido. */}
+                {veProfePagaTodo && <span aria-hidden style={{ width: 1, height: 26, flex: 'none', background: 'rgba(255,255,255,.14)' }} />}
+                <BotonProfe id="prestamos-paga-todo" junto="la línea «Si paga todo hoy» del bloque negro" style={{ marginRight: -8 }} />
+              </div>
             )}
           </BloqueOscuro>
         )}

@@ -22,6 +22,9 @@
 // Las hojas que abre cada fila ya existen en `Gestion.jsx` (turnos 13 y 19). Esto
 // es lo que faltaba: la puerta.
 
+import BotonProfe from '@/components/tutoriales/BotonProfe'
+import { useProfe } from '@/components/tutoriales/ProfeProvider'
+
 const ROJO = 'var(--cf-red-dark)'
 
 function Rotulo({ children }) {
@@ -33,15 +36,43 @@ function Rotulo({ children }) {
   )
 }
 
-function Fila({ nombre, valor, peligro, onIr, primera }) {
+/* El botón del profe de cada fila (lámina E2). Cada fila de «Gestión» se
+   identifica por su `id`; los textos de `junto` son los del catálogo, tal cual,
+   aunque la fila diga otra cosa («Anular» es la fila «Anular el préstamo»).
+   Las filas que no están aquí no llevan botón. */
+const PROFE_DE_FILA = {
+  renovar: <BotonProfe id="prestamos-renovar" junto="Renovar el préstamo" />,
+  financiar: <BotonProfe id="prestamos-financiar" junto="Financiar el saldo" />,
+  recargo: <BotonProfe id="prestamos-recargo" junto="Recargo por mora" />,
+  descuento: <BotonProfe id="prestamos-recargo" junto="Descuento" />,
+  dia: <BotonProfe id="prestamos-cuando" junto="Día de cobro" />,
+  proximo: <BotonProfe id="prestamos-cuando" junto="Próximo cobro" />,
+  sincobro: <BotonProfe id="prestamos-cuando" junto="Días sin cobro" />,
+  plazo: <BotonProfe id="prestamos-plazo" junto="Modificar el plazo" />,
+  anticipado: <BotonProfe id="prestamos-paga-todo" junto="Cerrar anticipado" />,
+  'cambiar-modo': <BotonProfe id="prestamos-cambiar-modo" junto="Cambiar el modo de cobro" />,
+  perdidos: <BotonProfe id="prestamos-cerrar" junto="Marcar como clavo" />,
+  cancelar: <BotonProfe id="prestamos-cerrar" junto="Anular" />,
+  eliminar: <BotonProfe id="prestamos-cerrar" junto="Eliminar" />,
+}
+
+function Fila({ id, nombre, valor, peligro, onIr, primera }) {
+  const profe = useProfe()
+  const boton = PROFE_DE_FILA[id]
+  // La rayita que separa el botón del profe solo va si el botón se va a ver.
+  const conProfe = Boolean(boton && profe?.activo && profe.botonVisible
+    && profe.visibles.some((v) => v.id === boton.props.id))
   return (
+    <div style={{
+      display: 'flex', alignItems: 'center', width: '100%',
+      borderTop: primera ? 'none' : '1px solid var(--cf-hairline)',
+    }}>
     <button
       type="button"
       onClick={onIr}
       style={{
-        display: 'flex', alignItems: 'center', gap: 13, width: '100%',
-        height: 52, padding: '0 16px', background: 'none', border: 0,
-        borderTop: primera ? 'none' : '1px solid var(--cf-hairline)',
+        display: 'flex', alignItems: 'center', gap: 13, flex: 1, minWidth: 0,
+        height: 52, padding: conProfe ? '0 4px 0 16px' : '0 16px', background: 'none', border: 0,
         cursor: 'pointer', textAlign: 'left', font: 'inherit',
         // El rojo NO es un aviso de peligro genérico: es que esta acción reconoce
         // una pérdida. Ninguna otra fila lleva color.
@@ -61,6 +92,13 @@ function Fila({ nombre, valor, peligro, onIr, primera }) {
         <path d="M9 5l7 7-7 7" />
       </svg>
     </button>
+    {conProfe && (
+      <>
+        <span aria-hidden style={{ width: 1, height: 26, flex: 'none', background: 'var(--cf-border)' }} />
+        <span style={{ flex: 'none', marginRight: 4, display: 'inline-flex' }}>{boton}</span>
+      </>
+    )}
+    </div>
   )
 }
 

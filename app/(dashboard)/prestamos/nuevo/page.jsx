@@ -23,6 +23,7 @@ import { SelectorPorcentajePesos, CampoCuotaEnPesos, rotuloCuotaEnPesos } from '
 import { formatearTasa } from '@/lib/adaptadores/prestamos'
 import { GrupoSegmentado } from '@/components/cf/primitivos2'
 import { EtiquetaClavo } from '@/components/cf/primitivos'
+import BotonProfe from '@/components/tutoriales/BotonProfe'
 import AvisoUltimaCuota                            from '@/components/prestamos/AvisoUltimaCuota'
 import ModoInteresSelector, { AvisoPorCobro, avisoDelPorcentaje } from '@/components/prestamos/ModoInteresSelector'
 import TablaAmortizacion                           from '@/components/prestamos/TablaAmortizacion'
@@ -1959,7 +1960,10 @@ function NuevoPrestamo() {
           {modo === 'prestamo' && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-xl font-bold" style={{ color: 'var(--cf-ink)' }}>¿Cómo cobra el interés?</h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <h2 className="text-xl font-bold" style={{ color: 'var(--cf-ink)' }}>¿Cómo cobra el interés?</h2>
+                  <BotonProfe id="prestamos-modos" junto="¿Cómo cobra el interés?" />
+                </div>
                 <p className="text-sm mt-1" style={{ color: 'var(--cf-ink-3)' }}>La mayoría usa el Clásico. Si no estás seguro, déjalo así.</p>
               </div>
 

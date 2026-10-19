@@ -11,6 +11,7 @@ import { SkeletonCard }             from '@/components/ui/Skeleton'
 import { useCabecera }              from '@/components/armazon/Armazon'
 import CompartirCredenciales        from '@/components/cobradores/CompartirCredenciales'
 import BotonVerComo                 from '@/components/cobradores/BotonVerComo'
+import BotonProfe                   from '@/components/tutoriales/BotonProfe'
 import Link                         from 'next/link'
 import { ConfirmModal }             from '@/components/ui/ConfirmModal'
 import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
@@ -439,9 +440,12 @@ function CobradorDetalleInner({ params }) {
 
       {/* Ruta */}
       <Card>
-        <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-3" style={{ color: 'var(--cf-ink-3)' }}>
-          {susRutas.length > 1 ? `Rutas asignadas (${susRutas.length})` : 'Ruta asignada'}
-        </p>
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-3)' }}>
+            {susRutas.length > 1 ? `Rutas asignadas (${susRutas.length})` : 'Ruta asignada'}
+          </p>
+          <BotonProfe id="rutas-asignar-cobrador" junto="Rutas asignadas" style={{ marginBlock: -14, marginRight: -8 }} />
+        </div>
 
         {susRutas.length > 0 ? (
           <div className="flex flex-col gap-1">

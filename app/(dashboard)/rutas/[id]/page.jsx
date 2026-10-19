@@ -60,6 +60,7 @@ import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
 import QueNecesitas from '@/components/acciones/QueNecesitas'
 import HojaInferior                  from '@/components/cf/HojaInferior'
 import UnirRutas                     from '@/components/rutas/UnirRutas'
+import BotonProfe from '@/components/tutoriales/BotonProfe'
 import { anotarReciente } from '@/lib/recientes'
 import { rotulo } from '@/lib/dinero/definiciones'
 import { frenteACuotaDe } from '@/lib/dinero/cuota-de-referencia'
@@ -2294,6 +2295,7 @@ export default function RutaDetallePage({ params }) {
             <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
           </svg>
         </button>
+        <BotonProfe id="rutas-asignar-cobrador" junto="el lápiz («Quién la cobra»)" style={{ marginLeft: -6 }} />
       </div>
     ) : null
   ), [esOwner, ruta, editandoNombre])
@@ -3174,6 +3176,7 @@ export default function RutaDetallePage({ params }) {
             + Agregar
           </button>
         )}
+        {puedeGestionarRutas && <BotonProfe id="rutas-clientes" junto="+ Agregar" style={{ margin: '0 -6px 0 -4px' }} />}
         {(ruta.clientes?.length ?? 0) > 0 && (
           <button onClick={() => window.print()} className="shrink-0 h-10 px-3.5 rounded-[12px] border border-[#222] bg-[var(--cf-card)] text-[11px] text-[var(--cf-ink-2)] font-medium active:scale-95 transition-transform inline-flex items-center gap-1.5">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -3182,11 +3185,13 @@ export default function RutaDetallePage({ params }) {
             Imprimir hoja
           </button>
         )}
+        {(ruta.clientes?.length ?? 0) > 0 && <BotonProfe id="rutas-ordenar" junto="Imprimir hoja" style={{ margin: '0 -6px 0 -4px' }} />}
         {(ruta.clientes?.length ?? 0) >= 2 && clientesConCoords >= 2 && (
           <button onClick={() => setConfirmOptimizar(true)} disabled={optimizando} className="shrink-0 h-10 px-3.5 rounded-[12px] border border-[#222] bg-[var(--cf-card)] text-[11px] text-[var(--cf-ink-2)] font-medium active:scale-95 transition-transform disabled:opacity-50">
             {optimizando ? 'Optimizando...' : 'Optimizar'}
           </button>
         )}
+        {(ruta.clientes?.length ?? 0) >= 2 && clientesConCoords >= 2 && <BotonProfe id="rutas-ordenar" junto="Optimizar" style={{ margin: '0 -6px 0 -4px' }} />}
         {clientesConCoords >= 2 && (
           <>
             <button onClick={abrirGoogleMaps} className="shrink-0 h-10 px-3.5 rounded-[12px] border border-[rgba(66,133,244,0.2)] bg-[rgba(66,133,244,0.06)] text-[11px] text-[#4285f4] font-medium active:scale-95 transition-transform">
@@ -3195,6 +3200,7 @@ export default function RutaDetallePage({ params }) {
             <button onClick={() => setShowMap((v) => !v)} className="shrink-0 h-10 px-3.5 rounded-[12px] border border-[#222] bg-[var(--cf-card)] text-[11px] text-[var(--cf-ink-2)] font-medium active:scale-95 transition-transform">
               {showMap ? 'Ocultar mapa' : 'Ver mapa'}
             </button>
+            <BotonProfe id="rutas-ordenar" junto="Ver mapa" style={{ margin: '0 -6px 0 -4px' }} />
           </>
         )}
         {/* La ruta era un callejon: se entraba y no habia forma de saltar a su
@@ -3259,6 +3265,7 @@ export default function RutaDetallePage({ params }) {
       {/* Lista de clientes */}
       <div>
         <div className="flex items-center justify-between mb-2 sticky top-0 z-10 bg-[var(--cf-surface)] py-2 -mx-1 px-1">
+          <div className="flex items-center min-w-0">
           <span className="text-[11px] font-medium text-[var(--cf-ink-3)] uppercase tracking-wide">
             Clientes ({clientesFiltrados.length})
             {procedenciaFiltro && (
@@ -3268,6 +3275,8 @@ export default function RutaDetallePage({ params }) {
               </button>
             )}
           </span>
+          <BotonProfe id="rutas-tarjeta" junto="«Clientes (N)», sobre la lista de tarjetas" style={{ margin: '-14px 0 -14px -2px' }} />
+          </div>
           <span className="text-[10px] text-[#777]">
             {guardandoOrden && <span className="text-[var(--cf-ink-3)] flex items-center gap-1 inline-flex"><svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Guardando</span>}
             {ordenGuardado && <span className="text-[var(--cf-green-dark)]">Guardado</span>}
@@ -3306,7 +3315,8 @@ export default function RutaDetallePage({ params }) {
         {/* Toggle de vista: Trabajo del dia (3 secciones) vs Ordenar ruta (drag) vs Auditoria (admin) */}
         {ruta.clientes?.length > 0 && (
           <div className="flex items-center gap-2 mb-3">
-            <div className="flex gap-1 p-1 rounded-[12px] flex-1 min-w-0 shrink-0 basis-[58%]" style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}>
+            <div className="flex items-center flex-1 min-w-0 basis-[58%]">
+            <div className="flex gap-1 p-1 rounded-[12px] flex-1 min-w-0" style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}>
               {[
                 { key: 'trabajo', label: 'Cobros' },
                 { key: 'ordenar', label: 'Ordenar' },
@@ -3324,6 +3334,14 @@ export default function RutaDetallePage({ params }) {
                   {t.label}
                 </button>
               ))}
+            </div>
+            {/* ⚠ UN SOLO BOTÓN DEL PROFE EN ESTA BARRA. Ya iba justa (ver la nota
+                de «Hoy»): con dos, el último se salía por la derecha a 412px. El
+                de «Ordenar» sale al estar en Ordenar, donde «Hoy» y la vista no
+                se pintan; el de la lista, en Cobros. */}
+            {modoVista === 'ordenar' && (
+              <BotonProfe id="rutas-clientes" junto="la pestaña «Ordenar»" style={{ width: 34, height: 40, marginLeft: -2, marginRight: -4 }} />
+            )}
             </div>
             {/* ── «SOLO HOY»: ESCONDER A QUIEN NO TOCA ─────────────────────
                 Reportado por un cobrador: «no me aparece la opción de quitar el
@@ -3364,6 +3382,7 @@ export default function RutaDetallePage({ params }) {
               </button>
             )}
             {modoVista === 'trabajo' && (
+              <>
               <div className="flex rounded-[12px] border border-[var(--cf-border)] overflow-hidden shrink-0">
                 <button
                   type="button"
@@ -3394,6 +3413,8 @@ export default function RutaDetallePage({ params }) {
                   </svg>
                 </button>
               </div>
+              <BotonProfe id="rutas-lista-clientes" junto="«Hoy» y los botones de lista completa / agrupada" style={{ width: 34, height: 40, marginLeft: -4, marginRight: -4 }} />
+              </>
             )}
           </div>
         )}
@@ -4349,25 +4370,31 @@ export default function RutaDetallePage({ params }) {
           </div>
           {/* Unir: está aquí porque es donde el dueño busca «qué hago con esta
               ruta». Cierra el lápiz y abre su propia hoja. */}
+          <div className="flex items-center">
           <button
             type="button"
             onClick={() => { cerrarEditarRuta(); setUnirAbierta(true) }}
-            className="w-full text-left text-sm font-semibold py-2 transition-opacity active:opacity-70"
+            className="flex-1 min-w-0 text-left text-sm font-semibold py-2 transition-opacity active:opacity-70"
             style={{ color: 'var(--cf-gold-dark)' }}
           >
             Unir con otra ruta
           </button>
+          <BotonProfe id="rutas-unir" junto="Unir con otra ruta" />
+          </div>
           {/* Eliminar, a la vista (#5/#12): antes solo se llegaba escribiéndolo
               en el buscador. Solo la ruta vacía; si no, dice por qué. */}
           {esOwner && (
+            <div className="flex items-center">
             <button
               type="button"
               onClick={() => { cerrarEditarRuta(); eliminarRuta() }}
-              className="w-full text-left text-sm font-semibold py-2 transition-opacity active:opacity-70"
+              className="flex-1 min-w-0 text-left text-sm font-semibold py-2 transition-opacity active:opacity-70"
               style={{ color: 'var(--cf-red-dark)' }}
             >
               Eliminar esta ruta
             </button>
+            <BotonProfe id="rutas-eliminar" junto="Eliminar esta ruta" />
+            </div>
           )}
         </div>
       </Modal>
@@ -4578,12 +4605,13 @@ export default function RutaDetallePage({ params }) {
           bottom: 'calc(var(--cf-nav-inset) + var(--cf-h-nav) + env(safe-area-inset-bottom, 0px) + 12px)',
           zIndex: 46,
           padding: '0 var(--cf-pad-screen)', pointerEvents: 'none',
+          display: 'flex', alignItems: 'center', gap: 6,
         }}>
           <button
             type="button"
             onClick={() => setEnRecorrido(true)}
             style={{
-              pointerEvents: 'auto', width: '100%', height: 54, cursor: 'pointer',
+              pointerEvents: 'auto', flex: 1, minWidth: 0, height: 54, cursor: 'pointer',
               borderRadius: 'var(--cf-r-control)', border: 0,
               background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
               fontSize: 15.5, fontWeight: 700,
@@ -4592,6 +4620,7 @@ export default function RutaDetallePage({ params }) {
           >
             Empezar recorrido · {paradasPorHacer}
           </button>
+          <BotonProfe id="rutas-recorrido" junto="Empezar recorrido" flotante style={{ pointerEvents: 'auto', marginRight: -6 }} />
         </div>
       )}
 

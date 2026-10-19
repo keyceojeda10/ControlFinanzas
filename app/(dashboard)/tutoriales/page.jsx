@@ -7,14 +7,22 @@
 // y por eso existe `useCabecera` — para que la página DIGA qué pone la cabecera
 // en vez de dibujarse una propia.
 
-import TutorialesList from '@/components/TutorialesList'
+import ListaVideosProfe from '@/components/tutoriales/ListaVideosProfe'
 import { useCabecera } from '@/components/armazon/Armazon'
 
 export default function TutorialesPage() {
   useCabecera({
     titulo: 'Tutoriales',
-    subtitulo: 'Aprende a usar cada función del sistema paso a paso',
+    subtitulo: 'Los videos del profe, por sección',
   })
 
-  return <TutorialesList showCopyButton={false} />
+  /* LOS VIDEOS DEL PROFE, NO LAS GUÍAS ESCRITAS (19 oct 2026). Las guías de
+     `lib/tutorialesData.js` contradecían la pantalla (DETALLES-RUTAS #47); la
+     misma lista vive en Configuración → Ayuda. Las guías siguen para el
+     buscador y el panel de admin. */
+  return (
+    <div style={{ paddingBottom: 24 }}>
+      <ListaVideosProfe />
+    </div>
+  )
 }

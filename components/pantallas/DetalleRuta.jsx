@@ -1,5 +1,7 @@
 'use client'
 
+import BotonProfe from '@/components/tutoriales/BotonProfe'
+
 // components/pantallas/DetalleRuta.jsx — T27-02 «aquí sí el acumulado».
 //
 // ══ DOS TIEMPOS, DOS COLORES ════════════════════════════════════════════════
@@ -90,7 +92,10 @@ export function LoPuestoAqui({
           El bloque abre la ficha del capital al tocarlo; ahora también lo dice. */}
       {capital && (
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
-          <span style={{ fontSize: 12, color: CARBON_TINTA_3 }}>Capital de la ruta · disponible para prestar</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', minWidth: 0 }}>
+            <span style={{ fontSize: 12, color: CARBON_TINTA_3 }}>Capital de la ruta · disponible para prestar</span>
+            <BotonProfe id="capital-capital-ruta" junto="Capital de la ruta · disponible para prestar" style={{ margin: '-14px -4px -14px 0' }} />
+          </span>
           <span className="cf-fig" style={{ fontSize: 15, fontWeight: 600, color: CARBON_TINTA, flex: 'none' }}>{capital}</span>
         </div>
       )}

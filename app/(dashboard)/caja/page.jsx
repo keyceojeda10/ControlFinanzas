@@ -39,6 +39,7 @@ import QueNecesitas from '@/components/acciones/QueNecesitas'
 import DeslizarParaConfirmar from '@/components/cf/DeslizarParaConfirmar'
 import CajaEntregada from '@/components/cf/CajaEntregada'
 import { useTactil } from '@/lib/tactil'
+import BotonProfe from '@/components/tutoriales/BotonProfe'
 import { diferenciaDelCierre } from '@/lib/adaptadores/ruta'
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -1440,11 +1441,16 @@ const MOVIMIENTOS_MANUALES = [
           </Card>
         ) : mostrarFormularioCierre ? (
           <Card>
-            <p className="text-xs font-semibold text-[var(--cf-ink-3)] uppercase tracking-wide mb-4">
-              {modoAjusteCierre
-                ? 'Corregir monto entregado'
-                : (esAyer ? 'Cierre pendiente de ayer' : 'Entregar caja del día')}
-            </p>
+            <div className="flex items-center justify-between gap-2 mb-4">
+              <p className="text-xs font-semibold text-[var(--cf-ink-3)] uppercase tracking-wide">
+                {modoAjusteCierre
+                  ? 'Corregir monto entregado'
+                  : (esAyer ? 'Cierre pendiente de ayer' : 'Entregar caja del día')}
+              </p>
+              {!modoAjusteCierre && (
+                <BotonProfe id="cobradores-dia" junto="Entregar caja del día" style={{ marginBlock: -14, marginRight: -8 }} />
+              )}
+            </div>
             {exito && (
               <div className="mb-4 flex items-center gap-2 bg-[var(--cf-green-pill-bg)] border border-[color-mix(in_srgb,var(--cf-green-dark)_30%,transparent)] text-[var(--cf-green-dark)] text-sm rounded-[12px] px-4 py-3">
                 Cierre guardado exitosamente
@@ -1552,13 +1558,14 @@ const MOVIMIENTOS_MANUALES = [
 
         {/* Gastos */}
         <div className="space-y-2">
+          <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={() => {
               if (puedeReportarGastoCobrador) setShowGasto(true)
             }}
             disabled={!puedeReportarGastoCobrador}
-            className="w-full flex items-center justify-center gap-2 h-11 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-surface)] text-sm font-medium text-[var(--cf-ink-3)] transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[var(--cf-fill)]"
+            className="flex-1 min-w-0 flex items-center justify-center gap-2 h-11 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-surface)] text-sm font-medium text-[var(--cf-ink-3)] transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[var(--cf-fill)]"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -1566,6 +1573,8 @@ const MOVIMIENTOS_MANUALES = [
             </svg>
             Reportar gasto menor
           </button>
+          <BotonProfe id="caja-gastos" junto="Reportar gasto menor" />
+          </div>
           {!puedeReportarGastoCobrador && (
             <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug">
               {puedeReportarGastos

@@ -10,6 +10,8 @@ import { direccionIncompleta, telefonoLegible } from '@/lib/direcciones'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import Avatar from '@/components/ui/Avatar'
+import BotonProfe from '@/components/tutoriales/BotonProfe'
+import { useProfe } from '@/components/tutoriales/ProfeProvider'
 import { MarcaComoPaga } from '@/components/cf/primitivos'
 import LineaCifra from '@/components/cf/LineaCifra'
 import { TEXTO as TEXTO_CALIFICACION } from '@/lib/calificacion'
@@ -848,17 +850,21 @@ export function InfoContactoCard({ cliente, rutaNombre, onEditar, onWhatsApp }) 
    —prestarle otra vez— es la que trae al dueño a esta pantalla, así que va
    destacada; el resto son de mantenimiento y se leen de arriba abajo. */
 export function AccionesClienteChips({ acciones }) {
+  const profe = useProfe()
+  // La rayita que separa el botón del profe solo va si el botón se va a ver.
+  const veProfeWhatsApp = Boolean(profe?.activo && profe.botonVisible && profe.visibles.some((v) => v.id === 'clientes-whatsapp'))
   if (!acciones || acciones.length === 0) return null
   const [principal, ...resto] = acciones
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {principal && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <button
           onClick={principal.onClick}
           disabled={principal.disabled}
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            width: '100%', height: 48, borderRadius: 14, border: 0, cursor: 'pointer',
+            flex: 1, minWidth: 0, height: 48, borderRadius: 14, border: 0, cursor: 'pointer',
             background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
             font: 'inherit', fontSize: 15, fontWeight: 700,
             opacity: principal.disabled ? .4 : 1,
@@ -867,6 +873,9 @@ export function AccionesClienteChips({ acciones }) {
           <span style={{ width: 17, height: 17, display: 'inline-flex' }}>{principal.icon}</span>
           {principal.label}
         </button>
+        {/* Sin permiso para crear préstamos, «Enviar por WhatsApp» sube a principal. */}
+        {principal.label === 'Enviar por WhatsApp' && <BotonProfe id="clientes-whatsapp" junto="Enviar por WhatsApp" />}
+        </div>
       )}
 
       {resto.length > 0 && (
@@ -874,15 +883,25 @@ export function AccionesClienteChips({ acciones }) {
           background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
           borderRadius: 'var(--cf-r-card)', overflow: 'hidden',
         }}>
-          {resto.map((a, i) => (
-            <button
+          {resto.map((a, i) => {
+            // «Enviar por WhatsApp» lleva el botón del profe (lámina E2): la fila
+            // pasa a ser un div con el botón de la fila al lado del del profe,
+            // porque un <button> dentro de otro <button> no es HTML válido.
+            const conProfe = a.label === 'Enviar por WhatsApp' && veProfeWhatsApp
+            return (
+            <div
               key={i}
+              style={{
+                display: 'flex', alignItems: 'center', width: '100%',
+                borderTop: i === 0 ? 'none' : '1px solid var(--cf-hairline)',
+              }}
+            >
+            <button
               onClick={a.onClick}
               disabled={a.disabled}
               style={{
-                display: 'flex', alignItems: 'center', gap: 12, width: '100%',
-                height: 50, padding: '0 16px', background: 'none', border: 0,
-                borderTop: i === 0 ? 'none' : '1px solid var(--cf-hairline)',
+                display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0,
+                height: 50, padding: conProfe ? '0 4px 0 16px' : '0 16px', background: 'none', border: 0,
                 cursor: a.disabled ? 'default' : 'pointer',
                 textAlign: 'left', font: 'inherit',
                 opacity: a.disabled ? .4 : 1,
@@ -901,7 +920,15 @@ export function AccionesClienteChips({ acciones }) {
                 <path d="M9 5l7 7-7 7" />
               </svg>
             </button>
-          ))}
+            {conProfe && (
+              <>
+                <span aria-hidden style={{ width: 1, height: 26, flex: 'none', background: 'var(--cf-border)' }} />
+                <BotonProfe id="clientes-whatsapp" junto="Enviar por WhatsApp" style={{ marginRight: 4 }} />
+              </>
+            )}
+            </div>
+            )
+          })}
         </div>
       )}
     </div>

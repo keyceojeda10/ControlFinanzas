@@ -1,0 +1,2251 @@
+{
+ "actualizado": "2026-10-19",
+ "videos": [
+  {
+   "id": "inicio-bienvenida",
+   "serie": "inicio",
+   "titulo": "Bienvenida",
+   "estado": "montado",
+   "destino": "/videos/bienvenida-720.mp4",
+   "duracion": null,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 11.2,
+     "titulo": "¿Quién cobra?"
+    },
+    {
+     "t": 24.6,
+     "titulo": "Tu capital"
+    },
+    {
+     "t": 51.2,
+     "titulo": "El plan: $0"
+    },
+    {
+     "t": 74.6,
+     "titulo": "Trae tu cartera"
+    },
+    {
+     "t": 103.8,
+     "titulo": "Cobra todos los días"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "Primera entrada de una cuenta nueva",
+     "tipo": "pantalla completa"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Ya está en la app. Solo falta que salga en la lista de Ayuda.",
+   "src": "/videos/bienvenida-720.mp4",
+   "poster": "/videos/bienvenida-portada.jpg"
+  },
+  {
+   "id": "capital-capital",
+   "serie": "capital",
+   "titulo": "Capital",
+   "estado": "listo",
+   "destino": "/videos/capital/capital.mp4",
+   "duracion": 138.1,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 10,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 26.6,
+     "titulo": "Para qué sirve"
+    },
+    {
+     "t": 48.1,
+     "titulo": "Se mueve solo"
+    },
+    {
+     "t": 64.4,
+     "titulo": "Meter y sacar plata"
+    },
+    {
+     "t": 89.3,
+     "titulo": "Lo que está en la calle"
+    },
+    {
+     "t": 110.9,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/capital",
+     "tipo": "D1"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": "Registrar mi capital inicial",
+   "nota": "Regrabado el 19 oct con cf-v1174 («Ruta (opcional)» en Meto plata); menú ⊞ con «Clavos» (cf-v1181). Falta que Carlos lo vea.",
+   "src": "/videos/profe/capital/capital.mp4",
+   "poster": "/videos/profe/capital/capital.jpg"
+  },
+  {
+   "id": "caja-caja",
+   "serie": "caja",
+   "titulo": "La caja",
+   "estado": "listo",
+   "destino": "/videos/caja/caja.mp4",
+   "duracion": 197,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 15.9,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 38.2,
+     "titulo": "El saldo del día"
+    },
+    {
+     "t": 60.2,
+     "titulo": "Efectivo y transferencias"
+    },
+    {
+     "t": 82.3,
+     "titulo": "Los gastos"
+    },
+    {
+     "t": 102.2,
+     "titulo": "Días anteriores"
+    },
+    {
+     "t": 124.7,
+     "titulo": "Cerrar y reabrir"
+    },
+    {
+     "t": 161.4,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/caja",
+     "tipo": "D1"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Regrabado el 19 oct con cf-v1180 (v3): llegar, el saldo, efectivo y transferencias, gastos, días anteriores, cerrar y reabrir. Falta que Carlos lo vea.",
+   "src": "/videos/profe/caja/caja.mp4",
+   "poster": "/videos/profe/caja/caja.jpg"
+  },
+  {
+   "id": "caja-caja-ruta",
+   "serie": "caja",
+   "titulo": "Caja por ruta",
+   "estado": "listo",
+   "destino": "/videos/caja/por-ruta.mp4",
+   "duracion": 103.2,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 10.8,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 24.2,
+     "titulo": "Lo que entró hoy"
+    },
+    {
+     "t": 39.1,
+     "titulo": "Cada ruta"
+    },
+    {
+     "t": 56.7,
+     "titulo": "La caja de cada cobrador"
+    },
+    {
+     "t": 83.3,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/caja",
+     "tipo": "D1",
+     "pestana": "Por ruta"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Regrabado el 19 oct con cf-v1179 (v3): recaudado, cada ruta, la caja de Andrés y la pantalla completa. Falta que Carlos lo vea.",
+   "src": "/videos/profe/caja/por-ruta.mp4",
+   "poster": "/videos/profe/caja/por-ruta.jpg"
+  },
+  {
+   "id": "caja-cuadre",
+   "serie": "caja",
+   "titulo": "El cuadre del día",
+   "estado": "listo",
+   "destino": "/videos/caja/cuadre.mp4",
+   "duracion": 135.4,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 11.9,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 23.8,
+     "titulo": "El cobrador entrega"
+    },
+    {
+     "t": 43.5,
+     "titulo": "El resumen"
+    },
+    {
+     "t": 66.5,
+     "titulo": "Confirmar el recibo"
+    },
+    {
+     "t": 93.3,
+     "titulo": "Corregir y reabrir"
+    },
+    {
+     "t": 117.6,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/caja",
+     "tipo": "D1",
+     "pestana": "Cuadre"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Regrabado el 19 oct con cf-v1180 (v3): el cobrador entrega, el resumen, confirmar con faltante («Lo trae mañana»), corregir y reabrir. Falta que Carlos lo vea.",
+   "src": "/videos/profe/caja/cuadre.mp4",
+   "poster": "/videos/profe/caja/cuadre.jpg"
+  },
+  {
+   "id": "clientes-clientes",
+   "serie": "clientes",
+   "titulo": "Clientes",
+   "estado": "listo",
+   "destino": "/videos/clientes/clientes.mp4",
+   "duracion": 137.5,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 12.6,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 27.2,
+     "titulo": "Buscar"
+    },
+    {
+     "t": 40,
+     "titulo": "Las pestañas"
+    },
+    {
+     "t": 61.4,
+     "titulo": "Más filtros"
+    },
+    {
+     "t": 84.6,
+     "titulo": "Leer cada cliente"
+    },
+    {
+     "t": 115.5,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/clientes",
+     "tipo": "D1"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Lección 3 retocada el 19 oct: «Con clavo» (cf-v1179).",
+   "src": "/videos/profe/clientes/clientes.mp4",
+   "poster": "/videos/profe/clientes/clientes.jpg"
+  },
+  {
+   "id": "clientes-crear-cliente",
+   "serie": "clientes",
+   "titulo": "Crear un cliente",
+   "estado": "listo",
+   "destino": "/videos/clientes/crear.mp4",
+   "duracion": 123.9,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 11,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 25.2,
+     "titulo": "Quién es"
+    },
+    {
+     "t": 42,
+     "titulo": "Dónde ubicarlo"
+    },
+    {
+     "t": 59,
+     "titulo": "Ruta, días y tope"
+    },
+    {
+     "t": 82.3,
+     "titulo": "Listo, y desde foto"
+    },
+    {
+     "t": 108.8,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/clientes/nuevo",
+     "tipo": "D1"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Revisado el 18 oct contra cf-v1170: la pantalla no cambió.",
+   "src": "/videos/profe/clientes/crear.mp4",
+   "poster": "/videos/profe/clientes/crear.jpg"
+  },
+  {
+   "id": "clientes-ficha",
+   "serie": "clientes",
+   "titulo": "La ficha del cliente",
+   "estado": "listo",
+   "destino": "/videos/clientes/ficha.mp4",
+   "duracion": 149.8,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 9.7,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 19.7,
+     "titulo": "Lo de arriba"
+    },
+    {
+     "t": 42.6,
+     "titulo": "Lucas y sus préstamos"
+    },
+    {
+     "t": 62.7,
+     "titulo": "Las acciones"
+    },
+    {
+     "t": 88.6,
+     "titulo": "Gestionar el cliente"
+    },
+    {
+     "t": 116,
+     "titulo": "Mensajes por WhatsApp"
+    },
+    {
+     "t": 132.6,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/clientes/[id]",
+     "tipo": "D1"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Revisado el 18 oct contra cf-v1170: la pantalla no cambió.",
+   "src": "/videos/profe/clientes/ficha.mp4",
+   "poster": "/videos/profe/clientes/ficha.jpg"
+  },
+  {
+   "id": "clientes-whatsapp",
+   "serie": "clientes",
+   "titulo": "Mensajes por WhatsApp",
+   "estado": "listo",
+   "destino": "/videos/clientes/whatsapp.mp4",
+   "duracion": 103.4,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 10.2,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 23.3,
+     "titulo": "Los mensajes"
+    },
+    {
+     "t": 50.2,
+     "titulo": "Personalizar"
+    },
+    {
+     "t": 67.3,
+     "titulo": "Enviar"
+    },
+    {
+     "t": 86.2,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/clientes/[id]",
+     "tipo": "E2",
+     "junto_a": "Enviar por WhatsApp"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Revisado el 18 oct contra cf-v1170: la pantalla no cambió.",
+   "src": "/videos/profe/clientes/whatsapp.mp4",
+   "poster": "/videos/profe/clientes/whatsapp.jpg"
+  },
+  {
+   "id": "prestamos-lista",
+   "serie": "prestamos",
+   "titulo": "Préstamos",
+   "estado": "listo",
+   "destino": "/videos/prestamos/lista.mp4",
+   "duracion": 131.1,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 12.8,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 26.2,
+     "titulo": "Cifras y buscador"
+    },
+    {
+     "t": 41.5,
+     "titulo": "Las pestañas"
+    },
+    {
+     "t": 67.7,
+     "titulo": "Más filtros"
+    },
+    {
+     "t": 89,
+     "titulo": "Leer cada tarjeta"
+    },
+    {
+     "t": 116.4,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/prestamos",
+     "tipo": "D1"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Lección 3 retocada el 19 oct: la pestaña «Clavos» (cf-v1179).",
+   "src": "/videos/profe/prestamos/lista.mp4",
+   "poster": "/videos/profe/prestamos/lista.jpg"
+  },
+  {
+   "id": "prestamos-crear",
+   "serie": "prestamos",
+   "titulo": "Crear un préstamo",
+   "estado": "listo",
+   "destino": "/videos/prestamos/crear.mp4",
+   "duracion": 139.8,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 12.6,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 30.9,
+     "titulo": "Cuánto le prestas"
+    },
+    {
+     "t": 50.9,
+     "titulo": "Cada cuánto cobras"
+    },
+    {
+     "t": 70.3,
+     "titulo": "Interés y cuotas"
+    },
+    {
+     "t": 99.4,
+     "titulo": "Revisar y entregar"
+    },
+    {
+     "t": 124.2,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/prestamos/nuevo",
+     "tipo": "D1"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Formulario recapturado el 19 oct con cf-v1181 («Días sin cobro» con tilde); antes, lección 3 regrabada el 18 oct (Mié/Sáb).",
+   "src": "/videos/profe/prestamos/crear.mp4",
+   "poster": "/videos/profe/prestamos/crear.jpg"
+  },
+  {
+   "id": "prestamos-modos",
+   "serie": "prestamos",
+   "titulo": "Los modos de interés",
+   "estado": "listo",
+   "destino": "/videos/prestamos/modos.mp4",
+   "duracion": 114.6,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 10.3,
+     "titulo": "Dónde se escoge"
+    },
+    {
+     "t": 29.8,
+     "titulo": "Los más usados"
+    },
+    {
+     "t": 52.5,
+     "titulo": "Sobre saldo y globo"
+    },
+    {
+     "t": 72.1,
+     "titulo": "Los avanzados"
+    },
+    {
+     "t": 98.7,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/prestamos/nuevo",
+     "tipo": "E2",
+     "junto_a": "¿Cómo cobra el interés?"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Revisado el 18 oct contra cf-v1170: la pantalla no cambió.",
+   "src": "/videos/profe/prestamos/modos.mp4",
+   "poster": "/videos/profe/prestamos/modos.jpg"
+  },
+  {
+   "id": "prestamos-ficha",
+   "serie": "prestamos",
+   "titulo": "La ficha del préstamo",
+   "estado": "listo",
+   "destino": "/videos/prestamos/ficha.mp4",
+   "duracion": 135.7,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 9.9,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 23.7,
+     "titulo": "Lo de arriba"
+    },
+    {
+     "t": 42.3,
+     "titulo": "Las cifras"
+    },
+    {
+     "t": 60.9,
+     "titulo": "Cómo va"
+    },
+    {
+     "t": 79.8,
+     "titulo": "Firma y pagos"
+    },
+    {
+     "t": 97.9,
+     "titulo": "Los botones"
+    },
+    {
+     "t": 120.4,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/prestamos/[id]",
+     "tipo": "D1"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Ficha de Rosalba recapturada el 19 oct con cf-v1181 (copia del espejo con el reloj en el 20 oct): botón amarillo y «Si paga todo hoy» que ya no baja del capital.",
+   "src": "/videos/profe/prestamos/ficha.mp4",
+   "poster": "/videos/profe/prestamos/ficha.jpg"
+  },
+  {
+   "id": "prestamos-registrar-pago",
+   "serie": "prestamos",
+   "titulo": "Registrar un pago",
+   "estado": "listo",
+   "destino": "/videos/prestamos/registrar-pago.mp4",
+   "duracion": 88.2,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 8,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 24.7,
+     "titulo": "El monto"
+    },
+    {
+     "t": 37.6,
+     "titulo": "Cómo te pagó"
+    },
+    {
+     "t": 50.7,
+     "titulo": "Confirmar y recibo"
+    },
+    {
+     "t": 70.3,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "Hoja de pago",
+     "tipo": "E2",
+     "junto_a": "el título de la hoja"
+    }
+   ],
+   "para": [
+    "dueno",
+    "cobrador"
+   ],
+   "tarea": null,
+   "nota": "Retocado el 18 oct: «si va muy atrasado, sale en rojo» (rojo = mora grave).",
+   "src": "/videos/profe/prestamos/registrar-pago.mp4",
+   "poster": "/videos/profe/prestamos/registrar-pago.jpg"
+  },
+  {
+   "id": "prestamos-otro-monto",
+   "serie": "prestamos",
+   "titulo": "Otro monto",
+   "estado": "listo",
+   "destino": "/videos/prestamos/otro-monto.mp4",
+   "duracion": 94.9,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 11.5,
+     "titulo": "Cambiar la cifra"
+    },
+    {
+     "t": 24.5,
+     "titulo": "Pago parcial"
+    },
+    {
+     "t": 41,
+     "titulo": "Pagar de más"
+    },
+    {
+     "t": 58.1,
+     "titulo": "Ponerse al día"
+    },
+    {
+     "t": 77.9,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "Hoja de pago",
+     "tipo": "E2",
+     "junto_a": "el lápiz del monto"
+    }
+   ],
+   "para": [
+    "dueno",
+    "cobrador"
+   ],
+   "tarea": null,
+   "nota": "Lección 4 regrabada el 18 oct con Wilmer («Paga lo atrasado», «Abonar por días»).",
+   "src": "/videos/profe/prestamos/otro-monto.mp4",
+   "poster": "/videos/profe/prestamos/otro-monto.jpg"
+  },
+  {
+   "id": "prestamos-abono-capital",
+   "serie": "prestamos",
+   "titulo": "Abono a capital",
+   "estado": "listo",
+   "destino": "/videos/prestamos/abono-capital.mp4",
+   "duracion": 75,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 10.8,
+     "titulo": "Cómo se hace"
+    },
+    {
+     "t": 23,
+     "titulo": "Qué cambia"
+    },
+    {
+     "t": 43.2,
+     "titulo": "Confirmar"
+    },
+    {
+     "t": 55.9,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "Hoja de pago",
+     "tipo": "E2",
+     "junto_a": "«Capital» (en «¿A qué se aplica?»)"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Regrabado el 18 oct; historial recapturado el 19 con P71 arreglado.",
+   "src": "/videos/profe/prestamos/abono-capital.mp4",
+   "poster": "/videos/profe/prestamos/abono-capital.jpg"
+  },
+  {
+   "id": "prestamos-intereses",
+   "serie": "prestamos",
+   "titulo": "Pago de intereses",
+   "estado": "listo",
+   "destino": "/videos/prestamos/intereses.mp4",
+   "duracion": 82.4,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 10.8,
+     "titulo": "En Clásico"
+    },
+    {
+     "t": 23.4,
+     "titulo": "Le compra tiempo"
+    },
+    {
+     "t": 43.6,
+     "titulo": "Con tabla"
+    },
+    {
+     "t": 64.1,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "Hoja de pago",
+     "tipo": "E2",
+     "junto_a": "«Interés» (en «¿A qué se aplica?»)"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Revisado el 18 oct contra cf-v1170: la pantalla no cambió.",
+   "src": "/videos/profe/prestamos/intereses.mp4",
+   "poster": "/videos/profe/prestamos/intereses.jpg"
+  },
+  {
+   "id": "prestamos-recibos",
+   "serie": "prestamos",
+   "titulo": "Recibos y corregir un pago",
+   "estado": "listo",
+   "destino": "/videos/prestamos/recibos.mp4",
+   "duracion": 77.3,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 10.3,
+     "titulo": "Los recibos"
+    },
+    {
+     "t": 27.5,
+     "titulo": "Historial y estado de cuenta"
+    },
+    {
+     "t": 42.8,
+     "titulo": "Corregir un pago"
+    },
+    {
+     "t": 61.2,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/prestamos/[id]",
+     "tipo": "E2",
+     "junto_a": "Pagos"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Recapturado el 19 oct con cf-v1181: la ficha ya no muestra un «Si paga todo hoy» por debajo del capital.",
+   "src": "/videos/profe/prestamos/recibos.mp4",
+   "poster": "/videos/profe/prestamos/recibos.jpg"
+  },
+  {
+   "id": "prestamos-renovar",
+   "serie": "prestamos",
+   "titulo": "Renovar un préstamo",
+   "estado": "listo",
+   "destino": "/videos/prestamos/renovar.mp4",
+   "duracion": 102.6,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 12.6,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 27.4,
+     "titulo": "El total"
+    },
+    {
+     "t": 48.2,
+     "titulo": "Lo que le entregas"
+    },
+    {
+     "t": 68.2,
+     "titulo": "Entregar"
+    },
+    {
+     "t": 85.3,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/prestamos/[id] → hoja «Gestión»",
+     "tipo": "E2",
+     "junto_a": "Renovar el préstamo"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Revisado el 18 oct contra cf-v1170: la pantalla no cambió.",
+   "src": "/videos/profe/prestamos/renovar.mp4",
+   "poster": "/videos/profe/prestamos/renovar.jpg"
+  },
+  {
+   "id": "prestamos-financiar",
+   "serie": "prestamos",
+   "titulo": "Financiar el saldo",
+   "estado": "listo",
+   "destino": "/videos/prestamos/financiar.mp4",
+   "duracion": 82.4,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 12.1,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 23.4,
+     "titulo": "Cuánto le cobras"
+    },
+    {
+     "t": 47.2,
+     "titulo": "Financiar"
+    },
+    {
+     "t": 64.3,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/prestamos/[id] → hoja «Gestión»",
+     "tipo": "E2",
+     "junto_a": "Financiar el saldo"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Revisado el 18 oct contra cf-v1170: la pantalla no cambió.",
+   "src": "/videos/profe/prestamos/financiar.mp4",
+   "poster": "/videos/profe/prestamos/financiar.jpg"
+  },
+  {
+   "id": "prestamos-recargo",
+   "serie": "prestamos",
+   "titulo": "Recargo y descuento",
+   "estado": "listo",
+   "destino": "/videos/prestamos/recargo.mp4",
+   "duracion": 79.5,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 11.4,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 21.3,
+     "titulo": "El recargo"
+    },
+    {
+     "t": 44.3,
+     "titulo": "El descuento"
+    },
+    {
+     "t": 59.2,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/prestamos/[id] → hoja «Gestión»",
+     "tipo": "E2",
+     "junto_a": "Recargo por mora",
+     "desde": 21.3
+    },
+    {
+     "pantalla": "/prestamos/[id] → hoja «Gestión»",
+     "tipo": "E2",
+     "junto_a": "Descuento",
+     "desde": 44.3
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Revisado el 18 oct contra cf-v1170: la pantalla no cambió.",
+   "src": "/videos/profe/prestamos/recargo.mp4",
+   "poster": "/videos/profe/prestamos/recargo.jpg"
+  },
+  {
+   "id": "prestamos-cuando",
+   "serie": "prestamos",
+   "titulo": "Cuándo se cobra",
+   "estado": "listo",
+   "destino": "/videos/prestamos/cuando.mp4",
+   "duracion": 95.8,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 11.8,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 25.4,
+     "titulo": "El día de cobro"
+    },
+    {
+     "t": 45.7,
+     "titulo": "Aplazar un cobro"
+    },
+    {
+     "t": 64.9,
+     "titulo": "Días sin cobro"
+    },
+    {
+     "t": 80,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/prestamos/[id] → hoja «Gestión»",
+     "tipo": "E2",
+     "junto_a": "Día de cobro",
+     "desde": 25.4
+    },
+    {
+     "pantalla": "/prestamos/[id] → hoja «Gestión»",
+     "tipo": "E2",
+     "junto_a": "Próximo cobro",
+     "desde": 45.7
+    },
+    {
+     "pantalla": "/prestamos/[id] → hoja «Gestión»",
+     "tipo": "E2",
+     "junto_a": "Días sin cobro",
+     "desde": 64.9
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Lección 2 regrabada el 18 oct («Guardar los sábados»).",
+   "src": "/videos/profe/prestamos/cuando.mp4",
+   "poster": "/videos/profe/prestamos/cuando.jpg"
+  },
+  {
+   "id": "prestamos-plazo",
+   "serie": "prestamos",
+   "titulo": "Modificar el plazo",
+   "estado": "listo",
+   "destino": "/videos/prestamos/plazo.mp4",
+   "duracion": 75.6,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 11.5,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 21.8,
+     "titulo": "Extender el plazo"
+    },
+    {
+     "t": 45.2,
+     "titulo": "Corregir una fecha"
+    },
+    {
+     "t": 59.1,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/prestamos/[id] → hoja «Gestión»",
+     "tipo": "E2",
+     "junto_a": "Modificar el plazo"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Revisado el 18 oct contra cf-v1170: la pantalla no cambió.",
+   "src": "/videos/profe/prestamos/plazo.mp4",
+   "poster": "/videos/profe/prestamos/plazo.jpg"
+  },
+  {
+   "id": "prestamos-paga-todo",
+   "serie": "prestamos",
+   "titulo": "Si paga todo hoy",
+   "estado": "listo",
+   "destino": "/videos/prestamos/paga-todo.mp4",
+   "duracion": 74.7,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 10.3,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 23.8,
+     "titulo": "Cuánto le cobras"
+    },
+    {
+     "t": 43.9,
+     "titulo": "Cerrar"
+    },
+    {
+     "t": 57.6,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/prestamos/[id] → hoja «Gestión»",
+     "tipo": "E2",
+     "junto_a": "Cerrar anticipado"
+    },
+    {
+     "pantalla": "/prestamos/[id]",
+     "tipo": "E2",
+     "junto_a": "la línea «Si paga todo hoy» del bloque negro"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Regrabado el 18 oct con Wilmer. DETALLES-PRESTAMOS #72 no se ve en el video.",
+   "src": "/videos/profe/prestamos/paga-todo.mp4",
+   "poster": "/videos/profe/prestamos/paga-todo.jpg"
+  },
+  {
+   "id": "prestamos-cambiar-modo",
+   "serie": "prestamos",
+   "titulo": "Cambiar el modo de cobro",
+   "estado": "listo",
+   "destino": "/videos/prestamos/cambiar-modo.mp4",
+   "duracion": 72.6,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 8.6,
+     "titulo": "Qué hace"
+    },
+    {
+     "t": 27.4,
+     "titulo": "Escoger el modo"
+    },
+    {
+     "t": 41.2,
+     "titulo": "Revisar y cambiar"
+    },
+    {
+     "t": 57.1,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/prestamos/[id] → hoja «Gestión»",
+     "tipo": "E2",
+     "junto_a": "Cambiar el modo de cobro"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Revisado el 18 oct contra cf-v1170: la pantalla no cambió.",
+   "src": "/videos/profe/prestamos/cambiar-modo.mp4",
+   "poster": "/videos/profe/prestamos/cambiar-modo.jpg"
+  },
+  {
+   "id": "prestamos-cerrar",
+   "serie": "prestamos",
+   "titulo": "Clavo, anular o eliminar",
+   "estado": "listo",
+   "destino": "/videos/prestamos/cerrar.mp4",
+   "duracion": 86.6,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 12.7,
+     "titulo": "Marcar como clavo"
+    },
+    {
+     "t": 37.2,
+     "titulo": "Anular"
+    },
+    {
+     "t": 53.6,
+     "titulo": "Eliminar"
+    },
+    {
+     "t": 67.6,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/prestamos/[id] → hoja «Gestión»",
+     "tipo": "E2",
+     "junto_a": "Marcar como clavo",
+     "desde": 12.7
+    },
+    {
+     "pantalla": "/prestamos/[id] → hoja «Gestión»",
+     "tipo": "E2",
+     "junto_a": "Anular",
+     "desde": 37.2
+    },
+    {
+     "pantalla": "/prestamos/[id] → hoja «Gestión»",
+     "tipo": "E2",
+     "junto_a": "Eliminar",
+     "desde": 53.6
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Regrabado el 19 oct con cf-v1179: «Perdido» pasó a «Clavo» (se le sigue cobrando).",
+   "src": "/videos/profe/prestamos/cerrar.mp4",
+   "poster": "/videos/profe/prestamos/cerrar.jpg"
+  },
+  {
+   "id": "cartera-cuaderno",
+   "serie": "cartera",
+   "titulo": "Pasar tu cuaderno",
+   "estado": "listo",
+   "destino": "/videos/cartera/cuaderno.mp4",
+   "duracion": 118.5,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 12.3,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 34.3,
+     "titulo": "Las fotos"
+    },
+    {
+     "t": 52.2,
+     "titulo": "Revisar"
+    },
+    {
+     "t": 79.9,
+     "titulo": "Guardar"
+    },
+    {
+     "t": 98.9,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/migrador",
+     "tipo": "D1"
+    },
+    {
+     "pantalla": "/dashboard (cuenta nueva)",
+     "tipo": "E2",
+     "junto_a": "«Subir fotos», en «Tómale foto a tu libreta»"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": "Pasar mi cuaderno",
+   "nota": "Recapturado el 19 oct con cf-v1179 (K8 arreglado: «Atraso $19.200»). Falta que Carlos lo vea.",
+   "src": "/videos/profe/cartera/cuaderno.mp4",
+   "poster": "/videos/profe/cartera/cuaderno.jpg"
+  },
+  {
+   "id": "cartera-excel",
+   "serie": "cartera",
+   "titulo": "Pasar tu cartera desde Excel",
+   "estado": "listo",
+   "destino": "/videos/cartera/excel.mp4",
+   "duracion": 110.4,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 10.7,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 28.6,
+     "titulo": "Subir el archivo"
+    },
+    {
+     "t": 45.6,
+     "titulo": "Las columnas"
+    },
+    {
+     "t": 69.1,
+     "titulo": "Revisar e importar"
+    },
+    {
+     "t": 93.2,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/carga-masiva",
+     "tipo": "D1"
+    },
+    {
+     "pantalla": "/dashboard (cuenta nueva)",
+     "tipo": "E2",
+     "junto_a": "«Subir archivo», en «Ya lo tengo en Excel»"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": "Importar Excel",
+   "nota": "Grabado el 19 oct (cf-v1175) en la cuenta El Roble; menú ⊞ con «Clavos» (cf-v1181).",
+   "src": "/videos/profe/cartera/excel.mp4",
+   "poster": "/videos/profe/cartera/excel.jpg"
+  },
+  {
+   "id": "cobradores-crear",
+   "serie": "cobradores",
+   "titulo": "Crear un cobrador",
+   "estado": "listo",
+   "destino": "/videos/cobradores/crear.mp4",
+   "duracion": 92.8,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 10.6,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 21.4,
+     "titulo": "Sus datos"
+    },
+    {
+     "t": 35.5,
+     "titulo": "Los permisos"
+    },
+    {
+     "t": 56.3,
+     "titulo": "La entrada y la ruta"
+    },
+    {
+     "t": 77.3,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/cobradores/nuevo",
+     "tipo": "D1"
+    },
+    {
+     "pantalla": "/cobradores",
+     "tipo": "E2",
+     "junto_a": "Crear cobrador"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": "Crear cobrador",
+   "nota": "Grabado el 19 oct (cf-v1175); menú ⊞ con «Clavos» (cf-v1181).",
+   "src": "/videos/profe/cobradores/crear.mp4",
+   "poster": "/videos/profe/cobradores/crear.jpg"
+  },
+  {
+   "id": "caja-gastos",
+   "serie": "caja",
+   "titulo": "Los gastos",
+   "estado": "listo",
+   "destino": "/videos/caja/gastos.mp4",
+   "duracion": 107.2,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 12.4,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 24.4,
+     "titulo": "El cobrador reporta"
+    },
+    {
+     "t": 44.9,
+     "titulo": "Aprobar o rechazar"
+    },
+    {
+     "t": 71.9,
+     "titulo": "Tus gastos"
+    },
+    {
+     "t": 90.5,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/gastos",
+     "tipo": "D1"
+    },
+    {
+     "pantalla": "/caja (cobrador)",
+     "tipo": "E2",
+     "junto_a": "Reportar gasto menor"
+    }
+   ],
+   "para": [
+    "dueno",
+    "cobrador"
+   ],
+   "tarea": null,
+   "nota": "Regrabado el 19 oct con cf-v1179: «Anotar gasto», la hora real, «$35.000 aprobados este mes». Falta que Carlos lo vea.",
+   "src": "/videos/profe/caja/gastos.mp4",
+   "poster": "/videos/profe/caja/gastos.jpg"
+  },
+  {
+   "id": "cobradores-dia",
+   "serie": "cobradores",
+   "titulo": "El día del cobrador",
+   "estado": "listo",
+   "destino": "/videos/cobradores/dia.mp4",
+   "duracion": 144.8,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 13.7,
+     "titulo": "Lo que te toca hoy"
+    },
+    {
+     "t": 39,
+     "titulo": "La lista de cobros"
+    },
+    {
+     "t": 65.7,
+     "titulo": "Anotar el pago"
+    },
+    {
+     "t": 95.6,
+     "titulo": "Entregar la caja"
+    },
+    {
+     "t": 127.3,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/cobros-hoy",
+     "tipo": "D1"
+    },
+    {
+     "pantalla": "/caja (cobrador)",
+     "tipo": "E2",
+     "junto_a": "Entregar caja del día",
+     "desde": 95.6
+    }
+   ],
+   "para": [
+    "cobrador"
+   ],
+   "tarea": null,
+   "nota": "Grabado el 19 oct con cf-v1179 (Andrés, Ruta Centro): lo que le toca hoy, la lista, la hoja de cobro nueva y entregar la caja.",
+   "src": "/videos/profe/cobradores/dia.mp4",
+   "poster": "/videos/profe/cobradores/dia.jpg"
+  },
+  {
+   "id": "cobradores-seguir",
+   "serie": "cobradores",
+   "titulo": "Seguir a tus cobradores",
+   "estado": "listo",
+   "destino": "/videos/cobradores/seguir.mp4",
+   "duracion": 134.7,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 13.9,
+     "titulo": "Desde el Inicio"
+    },
+    {
+     "t": 35.2,
+     "titulo": "La lista de cobradores"
+    },
+    {
+     "t": 54.6,
+     "titulo": "Su ficha y «Ver como»"
+    },
+    {
+     "t": 77.3,
+     "titulo": "El historial"
+    },
+    {
+     "t": 98.6,
+     "titulo": "El ranking"
+    },
+    {
+     "t": 114,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/cobradores",
+     "tipo": "D1"
+    },
+    {
+     "pantalla": "/actividad",
+     "tipo": "E2",
+     "junto_a": "Historial"
+    },
+    {
+     "pantalla": "/cobradores/ranking",
+     "tipo": "E2",
+     "junto_a": "Ranking de cobradores"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Grabado el 19 oct con cf-v1181: el Inicio, «Cobrando hoy», la ficha y «Ver como», el Historial y el ranking. Falta que Carlos lo vea.",
+   "src": "/videos/profe/cobradores/seguir.mp4",
+   "poster": "/videos/profe/cobradores/seguir.jpg"
+  },
+  {
+   "id": "capital-capital-ruta",
+   "serie": "capital",
+   "titulo": "El capital de una ruta",
+   "estado": "listo",
+   "destino": "/videos/capital/capital-ruta.mp4",
+   "duracion": 110.8,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 12.3,
+     "titulo": "Para qué sirve"
+    },
+    {
+     "t": 29.3,
+     "titulo": "Meterle plata"
+    },
+    {
+     "t": 59.6,
+     "titulo": "Dónde la ves"
+    },
+    {
+     "t": 78.7,
+     "titulo": "Sacarle plata"
+    },
+    {
+     "t": 93.8,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/capital",
+     "tipo": "E2",
+     "junto_a": "Capital por ruta"
+    },
+    {
+     "pantalla": "/rutas/[id]",
+     "tipo": "E2",
+     "junto_a": "Capital de la ruta · disponible para prestar"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Grabado el 19 oct con cf-v1181: Zona Norte con $1.000.000 propios (meter, dónde se ve, sacar). Falta que Carlos lo vea.",
+   "src": "/videos/profe/capital/capital-ruta.mp4",
+   "poster": "/videos/profe/capital/capital-ruta.jpg"
+  },
+  {
+   "id": "reportes-reportes",
+   "serie": "reportes",
+   "titulo": "Los reportes",
+   "estado": "listo",
+   "destino": "/videos/reportes/reportes.mp4",
+   "duracion": 100.7,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 9.7,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 21.2,
+     "titulo": "Los informes"
+    },
+    {
+     "t": 44.5,
+     "titulo": "El resumen"
+    },
+    {
+     "t": 67.2,
+     "titulo": "Bajar un informe"
+    },
+    {
+     "t": 83.3,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/reportes",
+     "tipo": "D1"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Grabado el 19 oct (cf-v1175); menú ⊞ con «Clavos» (cf-v1181).",
+   "src": "/videos/profe/reportes/reportes.mp4",
+   "poster": "/videos/profe/reportes/reportes.jpg"
+  },
+  {
+   "id": "rutas-crear",
+   "serie": "rutas",
+   "titulo": "Crear una ruta",
+   "estado": "listo",
+   "destino": "/videos/rutas/crear.mp4",
+   "duracion": 76,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 9.5,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 20.7,
+     "titulo": "La ruta nueva"
+    },
+    {
+     "t": 42.9,
+     "titulo": "Desde las sugerencias"
+    },
+    {
+     "t": 60.9,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/rutas",
+     "tipo": "E2",
+     "junto_a": "el «+» de crear ruta"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": "Crear ruta",
+   "src": "/videos/profe/rutas/crear.mp4",
+   "poster": "/videos/profe/rutas/crear.jpg"
+  },
+  {
+   "id": "rutas-lista",
+   "serie": "rutas",
+   "titulo": "Rutas",
+   "estado": "listo",
+   "destino": "/videos/rutas/lista.mp4",
+   "duracion": 91.2,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 12,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 22.5,
+     "titulo": "Lo de hoy"
+    },
+    {
+     "t": 37.3,
+     "titulo": "Cada ruta"
+    },
+    {
+     "t": 60.3,
+     "titulo": "Ordenar"
+    },
+    {
+     "t": 75.3,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/rutas",
+     "tipo": "D1"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Lista de rutas y «Ordenar» recapturados el 19 oct con cf-v1181 («Sin cobrador», el aviso nuevo, «hoy toca»), con una Ruta Sur vacía de paso.",
+   "src": "/videos/profe/rutas/lista.mp4",
+   "poster": "/videos/profe/rutas/lista.jpg"
+  },
+  {
+   "id": "rutas-por-dentro",
+   "serie": "rutas",
+   "titulo": "La ruta por dentro",
+   "estado": "listo",
+   "destino": "/videos/rutas/por-dentro.mp4",
+   "duracion": 107.2,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 12.7,
+     "titulo": "Entrar"
+    },
+    {
+     "t": 32.9,
+     "titulo": "Lo que tienes puesto"
+    },
+    {
+     "t": 48.2,
+     "titulo": "Cómo va el día"
+    },
+    {
+     "t": 69.4,
+     "titulo": "Todo lo que puedes hacer"
+    },
+    {
+     "t": 91.5,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/rutas/[id]",
+     "tipo": "D1"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "src": "/videos/profe/rutas/por-dentro.mp4",
+   "poster": "/videos/profe/rutas/por-dentro.jpg"
+  },
+  {
+   "id": "rutas-lista-clientes",
+   "serie": "rutas",
+   "titulo": "La lista de la ruta",
+   "estado": "listo",
+   "destino": "/videos/rutas/lista-clientes.mp4",
+   "duracion": 110.4,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 9.1,
+     "titulo": "Completa o agrupada"
+    },
+    {
+     "t": 30.2,
+     "titulo": "Los grupos"
+    },
+    {
+     "t": 60.7,
+     "titulo": "«Hoy» y buscar"
+    },
+    {
+     "t": 74.5,
+     "titulo": "Las pestañas"
+    },
+    {
+     "t": 92.8,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/rutas/[id]",
+     "tipo": "E2",
+     "junto_a": "«Hoy» y los botones de lista completa / agrupada"
+    }
+   ],
+   "para": [
+    "dueno",
+    "cobrador"
+   ],
+   "tarea": null,
+   "nota": "Recapturado el 19 oct con cf-v1181: los seis grupos, con «Clavos» (voz de la lección 2 nueva).",
+   "src": "/videos/profe/rutas/lista-clientes.mp4",
+   "poster": "/videos/profe/rutas/lista-clientes.jpg"
+  },
+  {
+   "id": "rutas-tarjeta",
+   "serie": "rutas",
+   "titulo": "La tarjeta del cliente",
+   "estado": "listo",
+   "destino": "/videos/rutas/tarjeta.mp4",
+   "duracion": 102.5,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 9.1,
+     "titulo": "Lo que dice"
+    },
+    {
+     "t": 30.6,
+     "titulo": "Los botones"
+    },
+    {
+     "t": 41.8,
+     "titulo": "El botón grande"
+    },
+    {
+     "t": 66.9,
+     "titulo": "Los abonos"
+    },
+    {
+     "t": 86,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/rutas/[id]",
+     "tipo": "E2",
+     "junto_a": "«Clientes (N)», sobre la lista de tarjetas"
+    }
+   ],
+   "para": [
+    "dueno",
+    "cobrador"
+   ],
+   "tarea": null,
+   "src": "/videos/profe/rutas/tarjeta.mp4",
+   "poster": "/videos/profe/rutas/tarjeta.jpg"
+  },
+  {
+   "id": "rutas-clientes",
+   "serie": "rutas",
+   "titulo": "Meter y sacar clientes",
+   "estado": "listo",
+   "destino": "/videos/rutas/clientes.mp4",
+   "duracion": 95.6,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 9.6,
+     "titulo": "Agregar clientes"
+    },
+    {
+     "t": 39.4,
+     "titulo": "Traerlo de otra ruta"
+    },
+    {
+     "t": 63.2,
+     "titulo": "Sacar un cliente"
+    },
+    {
+     "t": 81.5,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/rutas/[id]",
+     "tipo": "E2",
+     "junto_a": "+ Agregar"
+    },
+    {
+     "pantalla": "/rutas/[id]",
+     "tipo": "E2",
+     "junto_a": "la pestaña «Ordenar»",
+     "desde": 63.2
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": "Agregar clientes",
+   "nota": "Lección 1 re-locutada el 19 oct: la pregunta de reservar el saldo solo sale si la ruta tiene capital propio (cf-v1172).",
+   "src": "/videos/profe/rutas/clientes.mp4",
+   "poster": "/videos/profe/rutas/clientes.jpg"
+  },
+  {
+   "id": "rutas-ordenar",
+   "serie": "rutas",
+   "titulo": "Ordenar e imprimir",
+   "estado": "listo",
+   "destino": "/videos/rutas/ordenar.mp4",
+   "duracion": 92.4,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 11.5,
+     "titulo": "Ordenar a mano"
+    },
+    {
+     "t": 30.6,
+     "titulo": "Optimizar"
+    },
+    {
+     "t": 44.5,
+     "titulo": "El mapa"
+    },
+    {
+     "t": 57.3,
+     "titulo": "Imprimir la hoja"
+    },
+    {
+     "t": 77.4,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/rutas/[id]",
+     "tipo": "E2",
+     "junto_a": "Optimizar",
+     "desde": 30.6
+    },
+    {
+     "pantalla": "/rutas/[id]",
+     "tipo": "E2",
+     "junto_a": "Ver mapa",
+     "desde": 44.5
+    },
+    {
+     "pantalla": "/rutas/[id]",
+     "tipo": "E2",
+     "junto_a": "Imprimir hoja",
+     "desde": 57.3
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Lección «Optimizar» recapturada el 19 oct (4,9 km, R54) y hoja impresa nueva con la fecha en minúscula (cf-v1181).",
+   "src": "/videos/profe/rutas/ordenar.mp4",
+   "poster": "/videos/profe/rutas/ordenar.jpg"
+  },
+  {
+   "id": "rutas-asignar-cobrador",
+   "serie": "rutas",
+   "titulo": "Asignar un cobrador",
+   "estado": "listo",
+   "destino": "/videos/rutas/asignar-cobrador.mp4",
+   "duracion": 80.2,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 9.7,
+     "titulo": "Desde la ruta"
+    },
+    {
+     "t": 33.4,
+     "titulo": "Desde el cobrador"
+    },
+    {
+     "t": 47.6,
+     "titulo": "Lo que él ve"
+    },
+    {
+     "t": 63.5,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/rutas/[id]",
+     "tipo": "E2",
+     "junto_a": "el lápiz («Quién la cobra»)"
+    },
+    {
+     "pantalla": "/cobradores/[id]",
+     "tipo": "E2",
+     "junto_a": "Rutas asignadas",
+     "desde": 33.4
+    },
+    {
+     "pantalla": "/cobradores/[id]",
+     "tipo": "E2",
+     "junto_a": "Ver como",
+     "desde": 47.6
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "«Ver como» recapturado el 19 oct en la noche con cf-v1181 (Ruta Sur rearmada un momento y borrada otra vez): su Inicio y sus Rutas cuadran. Menú ⊞ con «Clavos».",
+   "src": "/videos/profe/rutas/asignar-cobrador.mp4",
+   "poster": "/videos/profe/rutas/asignar-cobrador.jpg"
+  },
+  {
+   "id": "rutas-unir",
+   "serie": "rutas",
+   "titulo": "Unir rutas",
+   "estado": "listo",
+   "destino": "/videos/rutas/unir.mp4",
+   "duracion": 79.6,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 9.3,
+     "titulo": "Escoger la ruta"
+    },
+    {
+     "t": 23.8,
+     "titulo": "Antes de deslizar"
+    },
+    {
+     "t": 49.2,
+     "titulo": "El resultado"
+    },
+    {
+     "t": 64.7,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "Hoja «Editar la ruta»",
+     "tipo": "E2",
+     "junto_a": "Unir con otra ruta"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "src": "/videos/profe/rutas/unir.mp4",
+   "poster": "/videos/profe/rutas/unir.jpg"
+  },
+  {
+   "id": "rutas-eliminar",
+   "serie": "rutas",
+   "titulo": "Eliminar una ruta",
+   "estado": "listo",
+   "destino": "/videos/rutas/eliminar.mp4",
+   "duracion": 65.2,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 7.5,
+     "titulo": "Cuándo se puede"
+    },
+    {
+     "t": 26.8,
+     "titulo": "Eliminarla"
+    },
+    {
+     "t": 49.2,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "Hoja «Editar la ruta»",
+     "tipo": "E2",
+     "junto_a": "Eliminar esta ruta"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Grabado el 19 oct con cf-v1175 («Ruta Sur»: no se puede con clientes → se vacía → se elimina).",
+   "src": "/videos/profe/rutas/eliminar.mp4",
+   "poster": "/videos/profe/rutas/eliminar.jpg"
+  },
+  {
+   "id": "rutas-recorrido",
+   "serie": "rutas",
+   "titulo": "Cobrar con el recorrido",
+   "estado": "listo",
+   "destino": "/videos/rutas/recorrido.mp4",
+   "duracion": 99.1,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 11.2,
+     "titulo": "Empezar"
+    },
+    {
+     "t": 26.6,
+     "titulo": "La parada"
+    },
+    {
+     "t": 43.3,
+     "titulo": "Cobrar y seguir"
+    },
+    {
+     "t": 65.1,
+     "titulo": "Terminar"
+    },
+    {
+     "t": 85.1,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/rutas/[id]",
+     "tipo": "E2",
+     "junto_a": "Empezar recorrido"
+    }
+   ],
+   "para": [
+    "dueno",
+    "cobrador"
+   ],
+   "tarea": "Empezar recorrido",
+   "nota": "Revisado el 19 oct con cf-v1175: la parada y la hoja se ven igual (el R69 no cambia lo que muestra el video).",
+   "src": "/videos/profe/rutas/recorrido.mp4",
+   "poster": "/videos/profe/rutas/recorrido.jpg"
+  }
+ ]
+}

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { marcarSoloLectura } from '@/lib/modo-vista'
 import { olvidarLecturasDeOtraCuenta } from '@/lib/cambio-de-cuenta'
+import BotonProfe from '@/components/tutoriales/BotonProfe'
 
 // El proveedor `pase` lanza este código tal cual cuando el cobrador nunca
 // verificó su correo (misma puerta que en el login con clave). El código a
@@ -43,8 +44,9 @@ export default function BotonVerComo({ cobradorId, nombre }) {
 
   return (
     <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-1">
       <button type="button" onClick={ver} disabled={cargando}
-        className="flex items-center justify-center gap-2 w-full"
+        className="flex items-center justify-center gap-2 w-full flex-1 min-w-0"
         style={{ height: 'var(--cf-h-btn-2)', borderRadius: 'var(--cf-r-control)', background: 'var(--cf-card)',
           border: '1px solid var(--cf-border-strong)', color: 'var(--cf-ink)', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -52,6 +54,8 @@ export default function BotonVerComo({ cobradorId, nombre }) {
         </svg>
         {cargando ? 'Abriendo…' : `Ver como ${nombre}`}
       </button>
+      <BotonProfe id="rutas-asignar-cobrador" junto="Ver como" />
+      </div>
       <p className="text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>
         Ves su caja y su ruta como él las ve. Solo lectura: desde ahí no se registra nada.
       </p>
