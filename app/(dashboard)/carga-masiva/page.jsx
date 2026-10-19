@@ -113,7 +113,7 @@ export default function CargaMasivaPage() {
     }
   }
 
-  const handleMapeoConfirmado = async (mapeo, multiplicador = 1) => {
+  const handleMapeoConfirmado = async (mapeo, multiplicador = 1, { tasaParaTodos = null } = {}) => {
     setValidando(true)
     setError('')
     // Mismo motivo que en handlePlanilla: datos nuevos, elecciones nuevas.
@@ -127,6 +127,13 @@ export default function CargaMasivaPage() {
           if (fila.saldoActual) fila.saldoActual = parsearNumero(fila.saldoActual) * multiplicador
           if (fila.abonadoHasta) fila.abonadoHasta = parsearNumero(fila.abonadoHasta) * multiplicador
           if (fila.valorCuota) fila.valorCuota = parsearNumero(fila.valorCuota) * multiplicador
+        }
+      }
+
+      // La tasa que se puso una vez para los que no la traen (PasoMapear).
+      if (Number.isFinite(tasaParaTodos) && tasaParaTodos >= 0) {
+        for (const fila of filasNormalizadas) {
+          if (fila.tasaInteres == null || String(fila.tasaInteres).trim() === '') fila.tasaInteres = tasaParaTodos
         }
       }
 

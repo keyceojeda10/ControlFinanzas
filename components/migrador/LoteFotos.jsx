@@ -44,7 +44,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { BotonPrimario, Chip, EtiquetaCampo, Pastilla } from '@/components/cf/primitivos'
 import MoneyInput from '@/components/ui/MoneyInput'
 import { formatMoney } from '@/lib/i18n'
-import { montoConTasa } from '@/lib/cartulina-datos'
+import { montoConTasa, inicioPorLoAbonado } from '@/lib/cartulina-datos'
 import { MODOS_EN_ORDEN, etiquetaModo } from '@/lib/dinero/modos'
 
 const FRECUENCIAS = [
@@ -104,6 +104,14 @@ function efectivo(f, base) {
     modoInteres: f.modoInteres || base.modoInteres || 'fijo',
     plazoUnidades: num(f.plazoUnidades) ?? PLAZO_DEFAULT[frecuencia],
   }
+}
+
+const hoyBogota = () => new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 10)
+
+/* Sin fecha en el papel y con abonos, el préstamo no empezó hoy: ver
+   `inicioPorLoAbonado` (lib/cartulina-datos.js, DETALLES-CARTERA #2). */
+function inicioDeLaFila(f, base, hoy = hoyBogota()) {
+  return inicioPorLoAbonado({ ...efectivo(f, base), fechaInicio: f.fechaInicio, yaAbonado: f.yaAbonado, hoy })
 }
 
 /* El semáforo se recalcula EN EL NAVEGADOR cada vez que se edita una fila, no
@@ -303,6 +311,12 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
     for (let i = 0; i < creables.length; i += A_LA_VEZ) {
       const tanda = creables.slice(i, i + A_LA_VEZ)
       await Promise.all(tanda.map(async (f) => {
+        /* ⚠ EL CLIENTE QUE YA QUEDÓ GUARDADO NO SE VUELVE A CREAR (DETALLES-
+           CARTERA #1). Si el cliente entró y su préstamo no, la fila se queda
+           con `_clienteId`: el reintento crea SOLO el préstamo. Antes volvía a
+           crear el cliente —409 «ya existe» con cédula, o un duplicado sin
+           ella— y esa persona se quedaba sin préstamo y sin salida. */
+        let clienteId = f._clienteId || null
         try {
           /* ⚠ `modoInteres` sale de `efectivo`, que ya cae al de la tanda si la
              fila no tiene el suyo. Antes se cogía `base.modoInteres` a pelo, así
@@ -311,30 +325,35 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
           const { monto, tasa, frecuencia, plazoUnidades: plazo, modoInteres } = efectivo(f, base)
           const diasPlazo = plazo * (DIAS_POR_PERIODO[frecuencia] || 1)
 
-          const resC = await fetch('/api/clientes', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              nombre: f.nombre.trim(),
-              // Sin cédula el API la rechaza, y la cartulina casi nunca la
-              // trae: 1.683 clientes de producción ya viven con este marcador.
-              cedula: f.cedula?.trim() || `SIN-${Date.now()}${Math.floor(Math.random() * 1000)}`,
-              telefono: f.telefono?.trim() || '',
-              ...(f.direccion?.trim() && { direccion: f.direccion.trim() }),
-              ...(base.rutaId && { rutaId: base.rutaId }),
-            }),
-          })
-          const dataC = await resC.json()
-          if (!resC.ok) throw new Error(dataC.error || 'no se pudo crear el cliente')
+          if (!clienteId) {
+            const resC = await fetch('/api/clientes', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                nombre: f.nombre.trim(),
+                // Sin cédula el API la rechaza, y la cartulina casi nunca la
+                // trae: 1.683 clientes de producción ya viven con este marcador.
+                cedula: f.cedula?.trim() || `SIN-${Date.now()}${Math.floor(Math.random() * 1000)}`,
+                telefono: f.telefono?.trim() || '',
+                ...(f.direccion?.trim() && { direccion: f.direccion.trim() }),
+                ...(base.rutaId && { rutaId: base.rutaId }),
+              }),
+            })
+            const dataC = await resC.json()
+            if (!resC.ok) throw new Error(dataC.error || 'no se pudo crear el cliente')
+            clienteId = dataC.id
+          }
 
           const resP = await fetch('/api/prestamos', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              clienteId: dataC.id,
+              clienteId,
               montoPrestado: monto,
               tasaInteres: tasa,
               diasPlazo,
-              fechaInicio: f.fechaInicio || new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 10),
+              fechaInicio: inicioDeLaFila(f, base),
               frecuencia,
+              // Ya estaba en la calle: no es plata de hoy (DETALLES-CARTERA #2).
+              yaEstabaEnLaCalle: true,
               modoInteres,
               /* El día del mes en que cobra, cuando el papel solo traía eso.
                  `Prestamo.diaCobroMes` ya existe: sin pasarlo, el préstamo
@@ -344,7 +363,7 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
             }),
           })
           const dataP = await resP.json()
-          if (!resP.ok) throw new Error(dataP.error || 'cliente creado pero falló el préstamo')
+          if (!resP.ok) throw new Error(`${dataP.error || 'no se pudo crear el préstamo'}. ${f.nombre?.trim() || 'El cliente'} ya quedó guardado: al tocar «Crear» otra vez se guarda solo su préstamo`)
 
           /* Se devuelve la ficha ENTERA, no solo los ids: la pantalla de
              `/migrador` pinta un resumen de cartera con el capital y el total a
@@ -358,14 +377,14 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
             monto, tasa,
             frecuencia, plazoUnidades: plazo,
             modoInteres,
-            fechaInicio: f.fechaInicio || new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 10),
+            fechaInicio: inicioDeLaFila(f, base),
             diasSinCobro: [],
-            clienteId: dataC.id, prestamoId: dataP.id,
+            clienteId, prestamoId: dataP.id,
           })
         } catch (e) {
           // El motivo viaja PEGADO A LA FILA, no en una lista aparte: «1 no se
           // pudo crear» sin decir cuál ni por qué es un callejón sin salida.
-          fallos.push({ _id: f._id, nombre: f.nombre || '(sin nombre)', error: e.message })
+          fallos.push({ _id: f._id, nombre: f.nombre || '(sin nombre)', error: e.message, clienteId })
         }
         hechos++
         setCreando({ hechos, total: creables.length, fallos: [...fallos] })
@@ -402,10 +421,10 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
        duplicarlas— y las que fallaron se quedan con su motivo escrito, listas
        para corregir y volver a pulsar. */
     if (fallos.length) {
-      const conFallo = new Map(fallos.map((x) => [x._id, x.error]))
+      const conFallo = new Map(fallos.map((x) => [x._id, x]))
       setFilas((prev) => prev
         .filter((f) => conFallo.has(f._id))
-        .map((f) => ({ ...f, _error: conFallo.get(f._id) })))
+        .map((f) => ({ ...f, _error: conFallo.get(f._id).error, _clienteId: conFallo.get(f._id).clienteId || f._clienteId || null })))
       setError(creados.length
         ? `Se guardaron ${creados.length}. Estos ${fallos.length} no: revisa el motivo en cada uno.`
         : `No se pudo guardar ninguno. El motivo está en cada fila.`)
@@ -843,6 +862,21 @@ function Fila({ f, base, onAbrir, abierta, onEditar, onQuitar }) {
             <EtiquetaCampo>¿Ya te ha abonado algo?</EtiquetaCampo>
             <MoneyInput value={String(f.yaAbonado ?? '')} onChange={(e) => onEditar('yaAbonado', e.target.value)} />
           </label>
+
+          {/* Cuándo empezó: si el papel no lo dice y ya abonó, se calcula por lo
+              abonado (`inicioDeLaFila`) y se puede corregir aquí. */}
+          {(f.fechaInicio || Number(f.yaAbonado) > 0) && (
+            <label>
+              <EtiquetaCampo>¿Cuándo empezó?</EtiquetaCampo>
+              <input type="date" value={inicioDeLaFila(f, base)} max={hoyBogota()}
+                onChange={(e) => onEditar('fechaInicio', e.target.value)} style={campo} />
+              {!f.fechaInicio && (
+                <span style={{ display: 'block', marginTop: 4, fontSize: 12, color: 'var(--cf-ink-3)' }}>
+                  Calculado por lo que lleva abonado. Cámbialo si empezó otro día.
+                </span>
+              )}
+            </label>
+          )}
 
           <div style={{ display: 'flex', gap: 8 }}>
             <label style={{ flex: 1, minWidth: 0 }}>

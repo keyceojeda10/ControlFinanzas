@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/Button'
 import { ACCEPT_CARTERA, AVISO_HOJA_DE_GOOGLE, esPdf } from '@/lib/archivos-tabla'
+import { textoDelCsv } from '@/lib/carga-masiva'
 
 export default function PasoSubir({ onDatos, onPlanilla }) {
   const [modo, setModo] = useState('archivo')
@@ -39,7 +40,16 @@ export default function PasoSubir({ onDatos, onPlanilla }) {
       const xlsxMod = await import('xlsx')
       const XLSX = xlsxMod.default ?? xlsxMod
       const data = await file.arrayBuffer()
-      const wb = XLSX.read(data, { type: 'array' })
+      /* ⚠ UN CSV SE LEE COMO TEXTO (DETALLES-CARTERA #3 y #4). Como bytes, la
+         librería lo tomaba en Latin-1: «Martha Cecilia Vélez» salía «VÃ©lez»
+         con el CSV de Google Sheets (UTF-8). Y convertía lo que parecía fecha a
+         número de Excel con decimales («2026-10-06» → 46300,79). Se decodifica
+         en UTF-8 y, si no lo es, en Windows-1252 (el CSV de Excel en español);
+         `raw` deja cada celda como viene: fechas y cédulas con sus ceros. */
+      const esCsv = /\.(csv|txt)$/i.test(file.name || '') || /text\/(csv|plain)/i.test(file.type || '')
+      const wb = esCsv
+        ? XLSX.read(textoDelCsv(data), { type: 'string', raw: true })
+        : XLSX.read(data, { type: 'array' })
       const ws = wb.Sheets[wb.SheetNames[0]]
 
       let rows = XLSX.utils.sheet_to_json(ws, { defval: '' })
@@ -53,11 +63,11 @@ export default function PasoSubir({ onDatos, onPlanilla }) {
       }
 
       if (rows.length === 0) {
-        setError('El archivo esta vacio o no tiene datos')
+        setError('El archivo está vacío o no tiene datos')
         return
       }
       if (rows.length > 500) {
-        setError('Maximo 500 filas. Tu archivo tiene ' + rows.length)
+        setError('Máximo 500 filas. Tu archivo tiene ' + rows.length)
         return
       }
 
@@ -108,7 +118,7 @@ export default function PasoSubir({ onDatos, onPlanilla }) {
       return
     }
     if (filas.length > 500) {
-      setError('Maximo 500 filas. Tienes ' + filas.length)
+      setError('Máximo 500 filas. Tienes ' + filas.length)
       return
     }
 
@@ -128,7 +138,7 @@ export default function PasoSubir({ onDatos, onPlanilla }) {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-[var(--cf-ink)]">Sube cualquier Excel o CSV</p>
             <p className="text-[11px] text-[var(--cf-ink-3)] mt-0.5 leading-snug">
-              No necesitas una plantilla especial. Sube el archivo que ya tengas con tus clientes y el sistema detecta automaticamente las columnas.
+              No necesitas una plantilla especial. Sube el archivo que ya tengas con tus clientes y el sistema detecta automáticamente las columnas.
             </p>
           </div>
         </div>

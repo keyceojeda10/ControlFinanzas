@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
-import { registrarMovimientoManualCapital, registrarMovimientoCapital, getSaldosPorRuta } from '@/lib/capital'
+import { registrarMovimientoManualCapital, registrarMovimientoCapital, getSaldosPorRuta, asegurarCapital } from '@/lib/capital'
 import { calcularSaldoPendiente } from '@/lib/calculos'
 import { empezarCapitalPropio } from '@/lib/rutas/traslado'
 import { ultimasPuestasEnCero } from '@/lib/rutas/capital-propio'
@@ -169,6 +169,8 @@ export async function POST(request) {
     }
   }
 
+  // La fila del capital antes de la transacción: dentro, dos a la vez se traban (`asegurarCapital`).
+  await asegurarCapital(prisma, organizationId)
   const resultado = await prisma.$transaction(async (tx) => {
     /* La ruta que empieza su capital arranca en CERO, no en la cuenta interna
        de sus préstamos: meterle $500.000 a Ruta Centro la dejaba en −$149.933

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { detectarColumnas, corregirMapeoConDatos, CAMPOS_LABELS, parsearNumero } from '@/lib/carga-masiva'
 import { useCountry } from '@/hooks/useCountry'
 
@@ -15,6 +15,10 @@ export default function PasoMapear({ headers, filas, onConfirmar, onVolver }) {
 
   const [mapeo, setMapeo] = useState(() => ({ ...autoDeteccion.mapeo }))
   const [multiplicador, setMultiplicador] = useState(1)
+  /* LA TASA, UNA VEZ PARA TODOS (DETALLES-CARTERA #3). El Excel de un cobrador
+     casi nunca la trae y cada fila salía «Tasa de interés es requerida». Como
+     en las fotos: se pone una vez y vale para los que no la traen. */
+  const [tasaParaTodos, setTasaParaTodos] = useState('20')
 
   const camposAsignados = useMemo(() => {
     const set = new Set()
@@ -24,6 +28,7 @@ export default function PasoMapear({ headers, filas, onConfirmar, onVolver }) {
     return set
   }, [mapeo])
 
+  const pideTasa = camposAsignados.has('montoPrestado') && !camposAsignados.has('tasaInteres')
   const tieneNombre = camposAsignados.has('nombre')
   const tieneCedula = camposAsignados.has('cedula')
   const puedeAvanzar = tieneNombre || tieneCedula
@@ -46,11 +51,13 @@ export default function PasoMapear({ headers, filas, onConfirmar, onVolver }) {
     return { mediana, total: valores.length }
   }, [mapeo, filas])
 
-  // Auto-sugerir multiplicador al detectar escala baja
-  useMemo(() => {
+  // Auto-sugerir multiplicador al detectar escala baja. En un efecto, no en un
+  // `useMemo`: cambiar el estado mientras se pinta puede entrar en bucle.
+  useEffect(() => {
     if (analisisMontos && multiplicador === 1) {
       setMultiplicador(1000)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [analisisMontos])
 
   const handleCambiarMapeo = (header, nuevoCampo) => {
@@ -100,8 +107,8 @@ export default function PasoMapear({ headers, filas, onConfirmar, onVolver }) {
             </p>
             <p className="text-[11px] text-[var(--cf-ink-3)] mt-0.5 leading-snug">
               {detectadas >= 2
-                ? 'Revisa que cada columna de tu archivo este asignada al campo correcto. Puedes cambiar cualquiera.'
-                : 'No pudimos identificar las columnas automaticamente. Selecciona a que campo corresponde cada una.'}
+                ? 'Revisa que cada columna de tu archivo esté asignada al campo correcto. Puedes cambiar cualquiera.'
+                : 'No pudimos identificar las columnas automáticamente. Selecciona a qué campo corresponde cada una.'}
             </p>
           </div>
         </div>
@@ -251,14 +258,19 @@ export default function PasoMapear({ headers, filas, onConfirmar, onVolver }) {
                 {previewFilas.map((fila, i) => (
                   <tr key={i} className="border-t border-[var(--cf-border)]">
                     {Object.entries(mapeo).filter(([, c]) => c).map(([headerOrig, campo]) => {
-                      let val = String(fila[headerOrig] ?? '').slice(0, 25) || '—'
+                      const identifica = ['nombre', 'cedula', 'telefono', 'direccion'].includes(campo)
+                      let val = (identifica ? String(fila[headerOrig] ?? '') : String(fila[headerOrig] ?? '').slice(0, 25)) || '—'
                       const esMonetario = ['montoPrestado', 'saldoActual', 'abonadoHasta'].includes(campo)
                       if (esMonetario && multiplicador > 1 && val !== '—') {
                         const num = parsearNumero(fila[headerOrig])
                         if (num > 0) val = formatMoney(num * multiplicador)
                       }
                       return (
-                        <td key={headerOrig} className="px-2 py-1.5 text-[var(--cf-ink)] whitespace-nowrap max-w-[120px] truncate">
+                        /* Lo que identifica a la persona no se recorta: baja de renglón
+                           (regla de DESIGN.md). El resto, una línea. */
+                        <td key={headerOrig} className={identifica
+                          ? 'px-2 py-1.5 text-[var(--cf-ink)] min-w-[140px] break-words'
+                          : 'px-2 py-1.5 text-[var(--cf-ink)] whitespace-nowrap max-w-[120px] truncate'}>
                           {val}
                         </td>
                       )
@@ -271,13 +283,25 @@ export default function PasoMapear({ headers, filas, onConfirmar, onVolver }) {
         </div>
       )}
 
+      {pideTasa && (
+        <label className="block rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-card)] px-4 py-3">
+          <span className="block text-[12px] font-semibold text-[var(--cf-ink)]">Tasa de interés de estos préstamos (%)</span>
+          <span className="block text-[12px] text-[var(--cf-ink-3)] mt-0.5">Tu archivo no la trae: vale para todos. Si solo trae la cuota, con ella se cuentan las cuotas.</span>
+          <input
+            type="text" inputMode="decimal" value={tasaParaTodos}
+            onChange={(e) => setTasaParaTodos(e.target.value.replace(/[^\d.,]/g, ''))}
+            className="mt-2 w-28 h-10 rounded-[10px] border border-[var(--cf-border)] bg-[var(--cf-surface)] px-3 text-[16px] text-[var(--cf-ink)]"
+          />
+        </label>
+      )}
+
       {/* Alerta si falta nombre o cedula */}
       {!puedeAvanzar && (
         <div className="flex items-center gap-2 bg-[var(--cf-red-pill-bg)] border border-[color-mix(in_srgb,var(--cf-red-dark)_30%,transparent)] text-[var(--cf-red-dark)] text-[12px] rounded-[12px] px-4 py-3">
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
           </svg>
-          Asigna al menos la columna de Nombre o Cedula para poder continuar
+          Asigna al menos la columna de Nombre o Cédula para poder continuar
         </div>
       )}
 
@@ -290,7 +314,7 @@ export default function PasoMapear({ headers, filas, onConfirmar, onVolver }) {
           Volver
         </button>
         <button
-          onClick={() => onConfirmar(mapeo, multiplicador)}
+          onClick={() => onConfirmar(mapeo, multiplicador, pideTasa ? { tasaParaTodos: Number(String(tasaParaTodos).replace(',', '.')) } : {})}
           disabled={!puedeAvanzar}
           className="flex-1 h-11 rounded-[12px] bg-[var(--cf-gold)] hover:bg-[var(--cf-gold-dark)] text-[var(--cf-ink)] text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >

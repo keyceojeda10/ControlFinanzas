@@ -9,7 +9,7 @@ import {
   calcularPrestamo, calcularSaldoPendiente, minimoParaRenovar,
   prestamoDevuelveMenosDeLoPrestado, mensajePrestamoConPerdida,
 } from '@/lib/calculos'
-import { registrarMovimientoCapital } from '@/lib/capital'
+import { registrarMovimientoCapital, asegurarCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
 import { trackEvent }   from '@/lib/analytics'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
@@ -354,6 +354,8 @@ export async function POST(request, { params }) {
   let saldoCapitalActual = 0
 
   try {
+  // La fila del capital antes de la transacción: dentro, dos a la vez se traban (`asegurarCapital`).
+  await asegurarCapital(prisma, organizationId)
   const nuevoPrestamo = await prisma.$transaction(async (tx) => {
     // Lock del capital ANTES de cualquier modificacion
     const capRow = await tx.$queryRaw`

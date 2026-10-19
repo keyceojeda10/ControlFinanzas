@@ -111,7 +111,7 @@ export default function PasoConfirmar({ datosImportar, onVolver, onReiniciar }) 
             onClick={onReiniciar}
             className="flex-1 h-11 rounded-[12px] bg-[#1f1f1f] border border-[var(--cf-border)] text-[var(--cf-ink)] text-sm font-medium transition-colors hover:bg-[var(--cf-fill)]"
           >
-            Importar mas
+            Importar más
           </button>
           <Link
             href="/clientes"

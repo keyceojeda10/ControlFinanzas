@@ -20,7 +20,7 @@ import {
   mensajePrestamoConPerdida,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
-import { registrarMovimientoCapital } from '@/lib/capital'
+import { registrarMovimientoCapital, asegurarCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
 import { trackEvent } from '@/lib/analytics'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
@@ -898,6 +898,8 @@ export async function POST(request) {
   }
 
   // Crear préstamo y actualizar estado del cliente en transacción
+  // La fila del capital antes de la transacción: dentro, dos a la vez se traban (`asegurarCapital`).
+  if (!esPendiente) await asegurarCapital(prisma, organizationId)
   const prestamo = await prisma.$transaction(async (tx) => {
     if (!esPendiente) {
       // Lock + lectura del capital actual
@@ -1000,7 +1002,15 @@ export async function POST(request) {
         organizationId,
         tipo: 'desembolso',
         monto: Number(montoPrestado),
-        descripcion: `Desembolso préstamo a ${cliente.nombre}`,
+        /* ⚠ EL PRÉSTAMO QUE YA ESTABA EN LA CALLE LLEVA SU MARCA (DETALLES-CARTERA
+           #2). Pasar el cuaderno crea préstamos que no salieron hoy de la caja;
+           sin abono previo no había cómo reconocerlos y el Inicio decía «3
+           préstamos entregados $700.000». «(carga masiva)» es la marca que ya
+           leen `prestamosMigrados` y `esAsientoDeMigracion` (abono-previo.js),
+           la misma de la importación de Excel. */
+        descripcion: body.yaEstabaEnLaCalle === true
+          ? `Desembolso (carga masiva) - ${cliente.nombre}`
+          : `Desembolso préstamo a ${cliente.nombre}`,
         referenciaId: nuevo.id,
         referenciaTipo: 'prestamo',
         rutaId: rutaIdCapital,

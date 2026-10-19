@@ -33,7 +33,7 @@ import {
   periodoEnCursoAbierto,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
-import { registrarMovimientoCapital } from '@/lib/capital'
+import { registrarMovimientoCapital, asegurarCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
 import { notificar, plata } from '@/lib/notificar'
 import { eventoDelPago, textoDelEvento } from '@/lib/avisos-cartera'
@@ -460,6 +460,8 @@ export async function POST(request, { params }) {
    */
   let saldoAntesDelPagoId = null
   try {
+  // La fila del capital antes de la transacción: dentro, dos a la vez se traban (`asegurarCapital`).
+  await asegurarCapital(prisma, organizationId)
   resultado = await prisma.$transaction(async (tx) => {
     // 0. Lock del prestamo para evitar sobrepago por race condition.
     // Releemos totalAPagar y pagos DENTRO de la transaccion con FOR UPDATE.

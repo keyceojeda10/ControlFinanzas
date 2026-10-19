@@ -5,7 +5,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { registrarMovimientoCapital } from '@/lib/capital'
+import { registrarMovimientoCapital, asegurarCapital } from '@/lib/capital'
 import { abonoPrevioDe } from '@/lib/dinero/abono-previo'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { logActividad } from '@/lib/activity-log'
@@ -47,6 +47,8 @@ export async function POST(request, { params }) {
      `esAbonoPrevio` es el único sitio que decide esto — ver lib/dinero/abono-previo.js. */
   const abonoPrevio = abonoPrevioDe(prestamo)
 
+  // La fila del capital antes de la transacción: dentro, dos a la vez se traban (`asegurarCapital`).
+  await asegurarCapital(prisma, organizationId)
   const updated = await prisma.$transaction(async (tx) => {
     const capRow = await tx.$queryRaw`
       SELECT id, saldo FROM Capital WHERE organizationId = ${organizationId} FOR UPDATE

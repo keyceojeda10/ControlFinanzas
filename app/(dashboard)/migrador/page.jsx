@@ -265,7 +265,10 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
               con "La cédula es obligatoria". El usuario llenaba lo que le
               pedian, tocaba Guardar, y recibia un error que contradecia el
               texto que tenia tres centimetros arriba. */}
-          Nombre, cédula y teléfono son obligatorios. Si no tienes la cédula, marca la casilla de abajo.
+          {/* Solo el nombre, como al crear un cliente (T07-03): el servidor no
+              pide más y pedir datos en la calle es lo que frena la carga
+              (DETALLES-CARTERA #6). */}
+          Solo el nombre es obligatorio. La cédula y el teléfono, si los tienes.
         </p>
         <div className="space-y-2.5">
           <input ref={nombreRef} type="text" placeholder="Nombre completo *" autoFocus
@@ -274,12 +277,12 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
             style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} />
           <div className={`grid gap-2.5 ${sinCedula ? '' : 'grid-cols-2'}`}>
             {!sinCedula && (
-              <input type="text" placeholder="Cédula *" inputMode="numeric"
+              <input type="text" placeholder="Cédula" inputMode="numeric"
                 value={ficha.cedula} onChange={e => set('cedula', e.target.value)}
                 className="w-full h-11 rounded-[12px] border px-3 text-sm"
                 style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} />
             )}
-            <input type="tel" placeholder="Teléfono *"
+            <input type="tel" placeholder="Teléfono"
               value={ficha.telefono} onChange={e => set('telefono', e.target.value)}
               className="w-full h-11 rounded-[12px] border px-3 text-sm"
               style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} />
@@ -313,7 +316,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
           {/* Monto */}
           <div>
             <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-              style={{ color: 'var(--cf-ink-3)' }}>Cuanto le prestas?</label>
+              style={{ color: 'var(--cf-ink-3)' }}>¿Cuánto le prestas?</label>
             <MoneyInput
               value={ficha.monto}
               onChange={e => set('monto', e.target.value)}
@@ -371,12 +374,12 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
           {ficha.modoInteres === 'manual' && (
             <div>
               <MoneyInput
-                label="Cuota exacta por periodo"
+                label="Cuota exacta por período"
                 value={ficha.cuotaManual}
                 onChange={e => set('cuotaManual', e.target.value)}
                 placeholder="Ej: 60.000"
               />
-              <p className="text-[10px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>Tu defines la cuota. Total = cuota x número de cobros.</p>
+              <p className="text-[10px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>Tú defines la cuota. Total = cuota × número de cobros.</p>
             </div>
           )}
           {ficha.modoInteres === 'saldo' && (
@@ -404,7 +407,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
           <div>
             <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
               style={{ color: 'var(--cf-ink-3)' }}>Días sin cobro</label>
-            <p className="text-[10px] mb-2" style={{ color: 'var(--cf-ink-3)' }}>Dias de la semana en que NO se cobra a este cliente.</p>
+            <p className="text-[10px] mb-2" style={{ color: 'var(--cf-ink-3)' }}>Días de la semana en que NO se cobra a este cliente.</p>
             <DiasSinCobroSelector value={ficha.diasSinCobro} onChange={arr => set('diasSinCobro', arr)} compact />
           </div>
 
@@ -414,14 +417,14 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
               className="w-4 h-4 rounded accent-[var(--cf-gold)]" />
             <div>
               <span className="text-sm" style={{ color: 'var(--cf-ink-2)' }}>Este préstamo ya tiene abonos</span>
-              <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>Activalo si el cliente ya venia pagando y estás migrando un préstamo en curso</p>
+              <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>Actívalo si el cliente ya venía pagando y estás pasando un préstamo en curso.</p>
             </div>
           </label>
 
           {ficha.esEnCurso && (
             <div>
               <MoneyInput
-                label="Cuanto ha pagado hasta ahora?"
+                label="¿Cuánto ha pagado hasta ahora?"
                 value={ficha.yaAbonado}
                 onChange={e => set('yaAbonado', e.target.value)}
                 placeholder="Monto total ya abonado"
@@ -637,6 +640,8 @@ export default function MigradorPage() {
   const { esOwner, loading: authLoading } = useAuth()
   const nombreRef = useRef(null)
   const fotoRef = useRef(null)
+  // El cliente que se guardó y cuyo préstamo falló: el reintento lo reusa.
+  const clienteSinPrestamoRef = useRef(null)
 
   const [rutas, setRutas] = useState([])
 
@@ -798,8 +803,6 @@ export default function MigradorPage() {
   // ── Guardar (crear o editar) ──
   const guardar = async () => {
     if (!ficha.nombre.trim()) { setError('El nombre es obligatorio'); return }
-    if (!sinCedula && !ficha.cedula.trim()) { setError('La cédula es obligatoria'); return }
-    if (!ficha.telefono.trim()) { setError('El teléfono es obligatorio'); return }
     if (!ficha.monto || Number(ficha.monto) <= 0) { setError('El monto es obligatorio'); return }
     if (!calculo) { setError('Revisa los datos del préstamo'); return }
 
@@ -810,7 +813,7 @@ export default function MigradorPage() {
       const esEdicion = editandoIdx !== null
       const item = esEdicion ? creados[editandoIdx] : null
 
-      const cedulaFinal = sinCedula
+      const cedulaFinal = sinCedula || !ficha.cedula.trim()
         ? `SIN-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
         : ficha.cedula.trim()
 
@@ -882,13 +885,19 @@ export default function MigradorPage() {
           ...(ficha.rutaId && { rutaId: ficha.rutaId }),
           ...(ficha.diasSinCobro.length > 0 && { diasSinCobro: ficha.diasSinCobro }),
         }
-        const resCliente = await fetch('/api/clientes', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(clientePayload),
-        })
-        const dataCliente = await resCliente.json()
-        if (!resCliente.ok) { setError(dataCliente.error || 'Error al crear el cliente'); setSaving(false); return }
-        invalidarCachePorPrefijo('clientes:').catch(() => {})
+        /* ⚠ SI EL CLIENTE YA QUEDÓ GUARDADO Y FALLÓ SU PRÉSTAMO, NO SE VUELVE A
+           CREAR (DETALLES-CARTERA #1): el reintento chocaba con «ya existe» (o
+           duplicaba al que no tiene cédula) y esa persona quedaba sin préstamo. */
+        let dataCliente = clienteSinPrestamoRef.current?.nombre === ficha.nombre.trim() ? { id: clienteSinPrestamoRef.current.id } : null
+        if (!dataCliente) {
+          const resCliente = await fetch('/api/clientes', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(clientePayload),
+          })
+          dataCliente = await resCliente.json()
+          if (!resCliente.ok) { setError(dataCliente.error || 'Error al crear el cliente'); setSaving(false); return }
+          invalidarCachePorPrefijo('clientes:').catch(() => {})
+        }
 
         const prestamoPayload = {
           clienteId: dataCliente.id,
@@ -901,13 +910,23 @@ export default function MigradorPage() {
           ...(ficha.modoInteres === 'manual' && calculo?.cuotaDiaria > 0 && { cuotaManual: calculo.cuotaDiaria }),
           ...(ficha.modoInteres === 'saldo' && Number(ficha.cuotaManual) > 0 && { cuotaManual: Number(ficha.cuotaManual) }),
           ...(ficha.esEnCurso && Number(ficha.yaAbonado) > 0 && { yaAbonado: Number(ficha.yaAbonado) }),
+          /* Ya estaba en la calle: no es plata de hoy (DETALLES-CARTERA #2). Lo
+             es si venía pagando o si empezó antes de hoy; uno de hoy y sin abonos
+             es un préstamo nuevo de verdad. */
+          ...((ficha.esEnCurso || (ficha.fechaInicio && ficha.fechaInicio < hoyISO())) && { yaEstabaEnLaCalle: true }),
         }
         const resPrestamo = await fetch('/api/prestamos', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(prestamoPayload),
         })
         const dataPrestamo = await resPrestamo.json()
-        if (!resPrestamo.ok) { setError(dataPrestamo.error || 'Cliente creado, pero falló el préstamo'); setSaving(false); return }
+        if (!resPrestamo.ok) {
+          clienteSinPrestamoRef.current = { id: dataCliente.id, nombre: ficha.nombre.trim() }
+          setError(`${dataPrestamo.error || 'No se pudo crear el préstamo'}. ${ficha.nombre.trim()} ya quedó guardado: toca «Guardar» otra vez y se guarda solo su préstamo.`)
+          setSaving(false)
+          return
+        }
+        clienteSinPrestamoRef.current = null
 
         setCreados(prev => [...prev, {
           nombre: ficha.nombre.trim(),
@@ -999,7 +1018,7 @@ export default function MigradorPage() {
 
   const headerSub = {
     lista: `${creados.length} cliente${creados.length !== 1 ? 's' : ''} agregado${creados.length !== 1 ? 's' : ''}`,
-    selector: creados.length > 0 ? 'Como quieres registrar este cliente?' : 'Agrega tus clientes con foto o manual, uno a uno',
+    selector: creados.length > 0 ? '¿Cómo quieres registrar este cliente?' : 'Agrega tus clientes con foto o manual, uno a uno',
     formulario: editandoIdx !== null ? 'Modifica lo que necesites y guarda' : 'Completa los datos y su préstamo',
   }[vista]
 
@@ -1047,7 +1066,7 @@ export default function MigradorPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
               d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>
-          <span>Tienes un archivo Excel? <span className="font-semibold" style={{ color: 'var(--cf-green-dark)' }}>Importalo aqui</span></span>
+          <span>¿Tienes un archivo de Excel? <span className="font-semibold" style={{ color: 'var(--cf-green-dark)' }}>Impórtalo aquí</span></span>
         </Link>
       )}
 
@@ -1111,7 +1130,7 @@ export default function MigradorPage() {
           <button type="button" onClick={() => router.push('/prestamos')}
             className="w-full h-12 rounded-2xl text-sm font-semibold mt-3 border transition-all"
             style={{ borderColor: 'var(--cf-border)', color: 'var(--cf-ink-2)', background: 'var(--cf-surface)' }}>
-            Termine, ir a prestamos
+            Terminé, ir a préstamos
           </button>
         </>
       )}

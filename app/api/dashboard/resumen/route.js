@@ -11,6 +11,7 @@ import { fraccionInteres } from '@/lib/dinero/reparto'
 import { interesCobradoDeLosPrestamos, SELECT_PARA_INTERES } from '@/lib/dinero/interes-cobrado'
 import { PAGOS_DEL_CALCULO } from '@/lib/dinero/pagos-del-calculo'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
+import { SIN_ABONO_PREVIO, prestamosMigrados } from '@/lib/dinero/abono-previo'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -35,9 +36,14 @@ export async function GET(request) {
   const esCobrador = session.user.rol === 'cobrador'
   const rutaIdsCobrador = session.user.rutaIds ?? []
   const filtroRutaCliente = esCobrador ? { rutaId: { in: rutaIdsCobrador } } : {}
+  /* ⚠ SIN EL ABONO PREVIO: es lo que el cliente ya había pagado antes de pasar
+     al sistema, no un cobro del día (decisión de Carlos, 18 oct 2026, la misma
+     regla de la caja: lib/dinero/abono-previo.js). Al pasar el cuaderno, una
+     cuenta recién creada veía «Recaudado hoy $186.000» (DETALLES-CARTERA #2).
+     Va en el filtro común para que lo hereden todas las consultas de pagos. */
   const filtroRutaPagos = esCobrador
-    ? { prestamo: { estado: { not: 'cancelado' }, cliente: { rutaId: { in: rutaIdsCobrador } } } }
-    : { prestamo: { estado: { not: 'cancelado' } } }
+    ? { prestamo: { estado: { not: 'cancelado' }, cliente: { rutaId: { in: rutaIdsCobrador } } }, AND: [SIN_ABONO_PREVIO] }
+    : { prestamo: { estado: { not: 'cancelado' } }, AND: [SIN_ABONO_PREVIO] }
 
   // Rangos UTC que representan "hoy" y "este mes" en hora Colombia (UTC-5)
   // Colombia midnight = UTC 05:00. Fin del día Colombia = UTC 04:59:59 del día siguiente.
@@ -81,7 +87,7 @@ export async function GET(request) {
     pagosAyer,
     pagosAyerMismaHora,
     pagosHoyPorCobrador,
-    prestamosHoy,
+    prestamosCreadosHoy,
     gastosHoy,
     movimientosHoy,
     clientesSinRutaCount,
@@ -279,6 +285,7 @@ export async function GET(request) {
         fechaPago: { gte: inicioDiaUTC, lte: finDiaUTC },
         tipo: { notIn: ['recargo', 'descuento'] },
         prestamo: { estado: { not: 'cancelado' } },
+        AND: [SIN_ABONO_PREVIO],
       },
       _sum: { montoPagado: true },
       _count: true,
@@ -613,6 +620,10 @@ export async function GET(request) {
     .sort((a, b) => b.monto - a.monto)
 
   // Totales del dia para "lo que paso hoy"
+  /* Los préstamos que se pasaron hoy desde el cuaderno (o la carga masiva) ya
+     estaban en la calle: no salió plata hoy (DETALLES-CARTERA #2). */
+  const migradosHoy = await prestamosMigrados(prisma, prestamosCreadosHoy.map((p) => p.id))
+  const prestamosHoy = prestamosCreadosHoy.filter((p) => !migradosHoy.has(p.id))
   const prestamosHoyMontoTotal = prestamosHoy.reduce((acc, p) => acc + (p.montoPrestado ?? 0), 0)
   const retirosHoyMonto = (movimientosHoy || []).filter(m => m.tipo === 'retiro').reduce((a, m) => a + m.monto, 0)
   const inyeccionesHoyMonto = (movimientosHoy || []).filter(m => m.tipo === 'inyeccion').reduce((a, m) => a + m.monto, 0)

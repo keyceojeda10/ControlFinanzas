@@ -8,7 +8,7 @@ import { getCachedMutation, setCachedMutation, buildMutationKey } from '@/lib/mu
 import { getUtcOffset, getLocalDateStr } from '@/lib/i18n'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { notificar, plata } from '@/lib/notificar'
-import { registrarMovimientoCapital } from '@/lib/capital'
+import { registrarMovimientoCapital, asegurarCapital } from '@/lib/capital'
 import { rutaDelGasto } from '@/lib/dinero/gasto-ruta'
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -163,6 +163,8 @@ export async function POST(req) {
      de los cobradores siguen pidiendo aprobación. */
   const loAnotaElDueno = session.user.rol === 'owner'
   const fechaGasto = new Date(fechaSolicitada + 'T12:00:00-05:00')
+  // La fila del capital antes de la transacción: dentro, dos a la vez se traban (`asegurarCapital`).
+  await asegurarCapital(prisma, session.user.organizationId)
   const gasto = await prisma.$transaction(async (tx) => {
     const creado = await tx.gastoMenor.create({
       data: {

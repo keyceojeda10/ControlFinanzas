@@ -133,7 +133,7 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
         </div>
 
         <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-[var(--cf-ink-3)]">
-          <span>{conPrestamos} con prestamos</span>
+          <span>{conPrestamos} con préstamos</span>
           {sinPrestamos > 0 && <span>{sinPrestamos} solo datos</span>}
           {resumen.clientesNuevos > 0 && (
             <span className="text-[var(--cf-green-dark)]">{resumen.clientesNuevos} nuevos</span>
@@ -253,7 +253,7 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
                   <div className="flex items-center gap-2 mt-0.5">
                     {cliente.prestamos.length > 0 ? (
                       <span className="text-[10px] text-[var(--cf-ink-3)]">
-                        {cliente.prestamos.length} prestamo{cliente.prestamos.length !== 1 ? 's' : ''}
+                        {cliente.prestamos.length} préstamo{cliente.prestamos.length !== 1 ? 's' : ''}
                         {' • '}
                         {formatMoney(cliente.prestamos.reduce((s, p) => s + p.monto, 0))}
                       </span>
