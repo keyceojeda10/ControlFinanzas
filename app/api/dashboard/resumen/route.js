@@ -167,7 +167,7 @@ export async function GET(request) {
             nombre: true,
             telefono: true,
             diasSinCobro: true,
-            ruta: { select: { id: true, nombre: true, diasSinCobro: true } },
+            ruta: { select: { id: true, nombre: true, diasSinCobro: true, activo: true } },
           },
         },
       },
@@ -428,6 +428,11 @@ export async function GET(request) {
   const faltaPorCliente = new Map()
   /* Lo cobrado HOY a cada préstamo (sin el abono previo): con él se sabe quién
      pagó hoy y cuánto de su cuota ya adelantó antes (`loDeHoyDelPrestamo`). */
+  /* Lo de hoy de quien no está en una ruta activa: entra en el total de arriba
+     y en ninguna fila de «Por ruta hoy», y la suma de las filas no cuadraba con
+     el hero ($281.900 contra $296.400 en el negocio de la grabación). Va en su
+     propia fila, con su nombre. Solo para quien ve todo el negocio. */
+  const sinRutaHoy = { esperadoHoy: 0, faltaHoy: 0, recaudadoHoy: 0, clientes: new Set() }
   const pagadoHoyPorPrestamo = new Map((await prisma.pago.groupBy({
     by: ['prestamoId'],
     where: { organizationId: orgId, fechaPago: { gte: inicioDiaUTC, lte: finDiaUTC }, tipo: { notIn: ['recargo', 'descuento'] }, AND: [SIN_ABONO_PREVIO] },
@@ -519,10 +524,17 @@ export async function GET(request) {
        su abono a capital: «9 cobros · $191.300» aquí y «8 · $171.900» en Cobros
        de hoy. Y la cuota entera de quien ya adelantó. Ver `loDeHoyDelPrestamo`. */
     const hoyEste = loDeHoyDelPrestamo(p, { diasExcluidos: _diasExcl, festivos, pagadoHoy: pagadoHoyPorPrestamo.get(p.id) ?? 0 })
+    const sinRutaActiva = !esCobrador && !(p.cliente?.ruta?.id && p.cliente.ruta.activo !== false)
+    if (sinRutaActiva) sinRutaHoy.recaudadoHoy += pagadoHoyPorPrestamo.get(p.id) ?? 0
     if (hoyEste.cuenta) {
       esperadoHoy += hoyEste.toca
       faltaHoy += hoyEste.falta
       faltaPorCliente.set(p.clienteId, (faltaPorCliente.get(p.clienteId) ?? 0) + hoyEste.falta)
+      if (sinRutaActiva) {
+        sinRutaHoy.esperadoHoy += hoyEste.toca
+        sinRutaHoy.faltaHoy += hoyEste.falta
+        sinRutaHoy.clientes.add(p.clienteId)
+      }
       // A CUANTOS toca cobrarles hoy, con la MISMA regla que la plata.
       //
       // Esto faltaba, y era una carencia con consecuencia: el resumen daba
@@ -788,6 +800,14 @@ export async function GET(request) {
       esperadoHoy: Math.round(esperadoHoy),
       // Lo que le queda a cada uno de lo de hoy, sumado (la «Falta» de Rutas).
       faltaHoy: Math.round(faltaHoy),
+      // La parte de lo de hoy que no está en ninguna ruta activa: la fila «Sin
+      // ruta» de «Por ruta hoy», para que las filas sumen el total de arriba.
+      sinRutaHoy: {
+        esperadoHoy: Math.round(sinRutaHoy.esperadoHoy),
+        faltaHoy: Math.round(sinRutaHoy.faltaHoy),
+        recaudadoHoy: Math.round(sinRutaHoy.recaudadoHoy),
+        clientes: sinRutaHoy.clientes.size,
+      },
       // Cuantos clientes toca visitar hoy, con la MISMA regla que `esperadoHoy`.
       clientesConCobroHoy: clientesConCobroHoy.size,
       // «2 de 15»: de los que tocaban hoy, cuántos YA pagaron. Antes el inicio

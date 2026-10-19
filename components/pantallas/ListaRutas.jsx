@@ -168,7 +168,7 @@ function RutaTranquila({ nombre, subtitulo, onAbrir }) {
 
    La tarjeta abre; «Asignar» sigue haciendo lo suyo y NO deja que el clic suba
    a la tarjeta, o pulsarlo abriria la ruta en vez de asignar. */
-function RutaSinCobrador({ nombre, clientes = 0, onAsignar, onAbrir }) {
+function RutaSinCobrador({ nombre, clientes = 0, hoy = null, onAsignar, onAbrir }) {
   return (
     <div onClick={onAbrir} role="button" tabIndex={0}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onAbrir?.() } }}
@@ -184,7 +184,7 @@ function RutaSinCobrador({ nombre, clientes = 0, onAsignar, onAbrir }) {
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
         }}>{nombre}</span>
         <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>
-          {clientes} cliente{clientes === 1 ? '' : 's'} · Sin cobrador
+          {clientes} cliente{clientes === 1 ? '' : 's'} · Sin cobrador{hoy ? ` · ${hoy}` : ''}
         </span>
       </div>
       <button type="button" onClick={(e) => { e.stopPropagation(); onAsignar?.() }} style={{
@@ -362,6 +362,7 @@ export default function ListaRutas({
         <RutaSinCobrador
           nombre="Sin ruta"
           clientes={sinRuta.cantidad}
+          hoy={sinRuta.monto}
           onAsignar={() => onAsignar?.(null)}
         />
       )}

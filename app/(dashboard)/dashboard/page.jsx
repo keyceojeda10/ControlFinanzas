@@ -1808,7 +1808,7 @@ export default function DashboardPage() {
             fecha={new Date().toLocaleDateString('es-CO', {
               weekday: 'long', day: 'numeric', month: 'long',
             })}
-            porRuta={porRutaHoy(rutasData, session?.user?.country)}
+            porRuta={porRutaHoy(rutasData, session?.user?.country, data?.prestamos?.sinRutaHoy)}
             // Para que la barra dorada pueda decir cuánto fue cada día al
             // tocarla. El país sale de la sesión, que el componente no ve.
             fmt={(n) => formatMoney(n, session?.user?.country)}

@@ -5,6 +5,8 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
+import { loDeHoyDelPrestamo, pagadoEnElDia, selectPrestamoDelDia } from '@/lib/dinero/esperado'
 
 const STOPWORDS = new Set([
   'calle', 'cll', 'cl', 'carrera', 'cra', 'kr', 'avenida', 'av', 'avda',
@@ -64,12 +66,32 @@ export async function GET(_request) {
     select: {
       id: true, nombre: true, cedula: true, telefono: true,
       direccion: true, fotoUrl: true, createdAt: true,
+      // Lo que les toca hoy, con la cuenta de todas las pantallas
+      // (`loDeHoyDelPrestamo`, DETALLES-RUTAS #70).
+      diasSinCobro: true,
+      prestamos: { where: { estado: 'activo', esClavo: false }, select: selectPrestamoDelDia() },
     },
     orderBy: { createdAt: 'desc' },
     take: 500,
   })
 
   const totalSinRuta = clientesSinRuta.length
+
+  /* Lo que les toca cobrar hoy. Está en el total del Inicio y en ninguna ruta:
+     la ficha «Sin ruta» lo dice con su nombre para que la diferencia se vea. */
+  let tocaHoySinRuta = 0
+  if (totalSinRuta > 0) {
+    const [org, festivos] = await Promise.all([
+      prisma.organization.findUnique({ where: { id: organizationId }, select: { diasSinCobro: true } }),
+      prisma.festivo.findMany({ where: { organizationId }, select: { fecha: true } }),
+    ])
+    const ahora = new Date()
+    for (const c of clientesSinRuta) {
+      for (const p of c.prestamos) {
+        tocaHoySinRuta += loDeHoyDelPrestamo(p, { diasExcluidos: obtenerDiasSinCobro(c, null, org, p), festivos, pagadoHoy: pagadoEnElDia(p, ahora) }).toca
+      }
+    }
+  }
 
   // Early-return si no hay nada que sugerir.
   if (totalSinRuta === 0) {
@@ -209,6 +231,7 @@ export async function GET(_request) {
 
   return Response.json({
     totalSinRuta,
+    tocaHoySinRuta: Math.round(tocaHoySinRuta),
     gruposSugeridos,
     sugerenciasRutaExistente,
     sueltos,
