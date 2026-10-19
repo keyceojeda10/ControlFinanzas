@@ -8,6 +8,7 @@ import MoneyInput from '@/components/ui/MoneyInput'
 import { Input } from '@/components/ui/Input'
 import { encolarMutacion } from '@/lib/offline'
 import { useCountry } from '@/hooks/useCountry'
+import { useAuth } from '@/hooks/useAuth'
 import { conPantalla } from '@/components/cf/Procesando'
 
 const GASTO_ICONS = {
@@ -39,6 +40,15 @@ export default function ReportarGasto({ open, onClose, onSuccess, fecha, cobrado
   const [tipo, setTipo] = useState('gasolina')
 
   const { formatMoney } = useCountry()
+  /* ── EL DUEÑO ANOTA, EL COBRADOR REPORTA ──
+     La hoja decía «Reportar Gasto Menor» / «Reportar» también cuando Sofía, la
+     dueña, anotaba su propio gasto (QA, 19 oct 2026, #28). Reportar es pedirle
+     permiso a alguien: el gasto del dueño nace aprobado (`POST /api/gastos`,
+     `loAnotaElDueno`) y no le reporta a nadie. Lo decide el MISMO rol que usa el
+     API; la hoja se abre desde Gastos y desde la Caja y no pide prop. */
+  const { esOwner } = useAuth()
+  const titulo = esOwner ? 'Anotar gasto' : 'Reportar gasto menor'
+  const accion = esOwner ? 'Anotar' : 'Reportar'
   const [monto, setMonto] = useState('')
   const [descripcion, setDescripcion] = useState('')
   const [cobradorSeleccionado, setCobradorSeleccionado] = useState('')
@@ -120,7 +130,7 @@ export default function ReportarGasto({ open, onClose, onSuccess, fecha, cobrado
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title="Reportar Gasto Menor">
+    <Modal open={open} onClose={handleClose} title={titulo}>
       <div className="space-y-4">
         <div className="px-3 py-2 rounded-[10px] bg-[var(--cf-card)] border border-[var(--cf-border)]">
           <p className="text-[11px] text-[var(--cf-ink-3)]">Fecha del gasto</p>
@@ -204,7 +214,7 @@ export default function ReportarGasto({ open, onClose, onSuccess, fecha, cobrado
             Cancelar
           </Button>
           <Button onClick={handleSubmit} loading={loading} className="flex-1">
-            Reportar
+            {accion}
           </Button>
         </div>
       </div>

@@ -10,6 +10,8 @@ import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { notificar, plata } from '@/lib/notificar'
 import { registrarMovimientoCapital, asegurarCapital } from '@/lib/capital'
 import { rutaDelGasto } from '@/lib/dinero/gasto-ruta'
+import { rangoDePeriodo } from '@/lib/reportes/contador'
+import { anotadoEnDelId } from '@/lib/gastos'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -33,6 +35,7 @@ export async function GET(request) {
   const fechaParam = searchParams.get('fecha')
   const estadoParam = searchParams.get('estado')
   const cobradorParam = searchParams.get('cobrador')
+  const periodoParam = searchParams.get('periodo')
 
   const where = {
     organizationId,
@@ -49,8 +52,19 @@ export async function GET(request) {
     where.cobradorId = cobradorParam
   }
 
-  // Filtro fecha: default = hoy cuando no hay estado, si hay estado y no fecha → todas
-  if (fechaParam && FECHA_REGEX.test(fechaParam)) {
+  // Filtro fecha: default = hoy cuando no hay estado, si hay estado y no fecha → todas.
+  /* ── `periodo=mes`: EL MES EN CURSO, CORTADO EN LA HORA DEL PAÍS ──
+     Lo pide la cabecera de Gastos para «$X aprobados este mes». Antes esa cifra
+     sumaba la pestaña abierta —pendientes, aprobados o rechazados— y de todos
+     los tiempos: «$25.000 este mes» en Rechazados, plata que nunca salió (QA,
+     19 oct 2026, #27). `rangoDePeriodo` es el corte de los informes: el 1 a las
+     00:00 de Bogotá, con la aritmética en UTC para que el portátil y el servidor
+     digan lo mismo. Se filtra por `fecha`, el día al que pertenece el gasto,
+     igual que «gastos del mes» del Inicio (`/api/dashboard/resumen`). */
+  if (periodoParam === 'mes') {
+    const { desde, hasta } = rangoDePeriodo('mes', Math.abs(getUtcOffset(session.user.country ?? 'co')))
+    where.fecha = { gte: desde, lt: hasta }
+  } else if (fechaParam && FECHA_REGEX.test(fechaParam)) {
     const fecha = new Date(fechaParam + 'T00:00:00')
     const fechaInicio = new Date(fecha)
     fechaInicio.setHours(5, 0, 0, 0)
@@ -75,11 +89,16 @@ export async function GET(request) {
     orderBy: { fecha: 'desc' },
   })
 
+  const ahora = new Date()
   const resultado = gastos.map((g) => ({
     id: g.id,
     description: g.description,
     monto: g.monto,
+    // El DÍA del gasto (guardado al mediodía): no lleva hora que valga.
     fecha: g.fecha,
+    // CUÁNDO SE ANOTÓ, que es la hora que la lista enseña. La tabla no tiene
+    // `createdAt`; sale del id. Ver `anotadoEnDelId` (lib/gastos.js).
+    anotadoEn: anotadoEnDelId(g.id, g.fecha, ahora),
     estado: g.estado,
     cobradorId: g.cobradorId,
     cobradorNombre: g.cobrador?.nombre,

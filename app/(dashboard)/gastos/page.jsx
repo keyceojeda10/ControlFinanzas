@@ -29,6 +29,7 @@ import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useCountry } from '@/hooks/useCountry'
 import { formatMoney } from '@/lib/i18n'
+import { cuandoGasto, textoAprobadosMes } from '@/lib/gastos'
 import ReportarGasto from '@/components/gastos/ReportarGasto'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { Tarjeta, BloqueOscuro, Chip, EstadoVacio } from '@/components/cf/primitivos'
@@ -76,14 +77,6 @@ const VACIO_COBRADOR = {
 
 const hoyBogota = () => new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
-const cuando = (iso) => {
-  if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('es-CO', {
-    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
-    timeZone: 'America/Bogota',
-  })
-}
-
 export default function GastosPage() {
   const { esOwner, puedeReportarGastos, loading: authLoading } = useAuth()
   const { country } = useCountry()
@@ -130,6 +123,24 @@ export default function GastosPage() {
 
   useEffect(() => { traer() }, [traer])
 
+  // Lo aprobado del mes, aparte de la lista: no cambia con la pestaña ni con
+  // los filtros. Ver `textoAprobadosMes`.
+  const [aprobadosMes, setAprobadosMes] = useState(null)
+  const traerMes = useCallback(async () => {
+    try {
+      const res = await fetch('/api/gastos?estado=aprobado&periodo=mes', { cache: 'no-store' })
+      if (!res.ok) { setAprobadosMes(null); return }
+      const lista = (await res.json()) || []
+      setAprobadosMes(lista.reduce((a, g) => a + (g.monto || 0), 0))
+    } catch {
+      setAprobadosMes(null)
+    }
+  }, [])
+  useEffect(() => { traerMes() }, [traerMes])
+
+  // Aprobar, rechazar, borrar o anotar mueven las dos cosas.
+  const refrescar = useCallback(() => { traer(); traerMes() }, [traer, traerMes])
+
   const total = useMemo(() => gastos.reduce((a, g) => a + (g.monto || 0), 0), [gastos])
 
   const decidir = async (gasto, nuevo) => {
@@ -145,7 +156,7 @@ export default function GastosPage() {
         alert(d.error || 'No se pudo actualizar')
         return
       }
-      traer()
+      refrescar()
     } finally {
       setProcesando(null)
     }
@@ -161,7 +172,7 @@ export default function GastosPage() {
         alert(d.error || 'No se pudo eliminar')
         return
       }
-      traer()
+      refrescar()
     } finally {
       setProcesando(null)
     }
@@ -172,9 +183,7 @@ export default function GastosPage() {
      ⚠ VA ANTES DEL RETURN: es un hook. */
   useCabecera({
     titulo: 'Gastos',
-    subtitulo: total > 0
-      ? `${fmt(Math.round(total))} este mes`
-      : 'nada registrado este mes',
+    subtitulo: textoAprobadosMes(aprobadosMes, fmt),
   })
 
   if (authLoading) return <PilaEsqueletos cuantos={3} alto={96} />
@@ -228,7 +237,7 @@ export default function GastosPage() {
       <ReportarGasto
         open={abrirReportar}
         onClose={() => setAbrirReportar(false)}
-        onSuccess={() => { setAbrirReportar(false); traer() }}
+        onSuccess={() => { setAbrirReportar(false); refrescar() }}
         fecha={fecha || undefined}
         cobradores={cobradores}
       />
@@ -338,9 +347,12 @@ export default function GastosPage() {
                         fontSize: 15, fontWeight: 600, color: 'var(--cf-ink)',
                         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                       }}>{g.description}</span>
-                      {/* QUIÉN Y CUÁNDO. Sin el nombre, aprobar es firmar a ciegas. */}
+                      {/* QUIÉN Y CUÁNDO. Sin el nombre, aprobar es firmar a ciegas.
+                          El día es el del gasto (`fecha`); la hora, la de cuando se
+                          anotó (`anotadoEn`). `fecha` va al mediodía y su hora
+                          decía «12:00 p. m.» en todos (#26). */}
                       <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>
-                        {g.cobradorNombre || 'Tú'} · {cuando(g.fecha)}
+                        {g.cobradorNombre || 'Tú'} · {cuandoGasto(g)}
                       </span>
                     </div>
                     <span className="cf-fig" style={{ fontSize: 17, flex: 'none', color: 'var(--cf-ink)' }}>
