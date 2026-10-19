@@ -22,7 +22,10 @@ export async function PATCH(req, { params }) {
   const body = await req.json()
   const { estado } = body
 
-  if (!['aprobado', 'rechazado'].includes(estado)) {
+  /* `pendiente`: el «Volver a pendiente» de Gastos, que daba siempre 400 «Estado
+     inválido» (lo encontró la revisión del 19 oct 2026). Desde aprobado devuelve
+     su asiento, igual que rechazar; desde rechazado no hay asiento que tocar. */
+  if (!['aprobado', 'rechazado', 'pendiente'].includes(estado)) {
     return NextResponse.json({ error: 'Estado inválido' }, { status: 400 })
   }
 
@@ -76,7 +79,7 @@ export async function PATCH(req, { params }) {
     /* ⚠ SE LE PREGUNTA AL LIBRO, NO AL ESTADO. Ver `gastoAsentadoSinRevertir`:
        si el estado y el libro se separan, el movimiento se quedaba dentro para
        siempre y la caja de ese día no cuadraba nunca. */
-    const debeDevolverAlRechazar = estado === 'rechazado'
+    const debeDevolverAlRechazar = estado === 'rechazado' || estado === 'pendiente'
       ? await gastoAsentadoSinRevertir(tx, session.user.organizationId, id)
       : 0
     if (debeDevolverAlRechazar > 0) {
@@ -85,7 +88,9 @@ export async function PATCH(req, { params }) {
         tipo: 'ajuste',
         monto: debeDevolverAlRechazar,
         direccion: 'ingreso',
-        descripcion: `Reverso gasto rechazado: ${gastoExistente.description}`,
+        descripcion: estado === 'pendiente'
+          ? `Reverso gasto devuelto a pendiente: ${gastoExistente.description}`
+          : `Reverso gasto rechazado: ${gastoExistente.description}`,
         referenciaId: id,
         referenciaTipo: 'gasto',
         rutaId,
@@ -109,9 +114,10 @@ export async function PATCH(req, { params }) {
      (El booleano aparte: `acciones-con-nombre.test.js` lee las comillas de la
      línea `accion:` y tomaría 'rechazado' por una acción.) */
   const loRechazo = estado === 'rechazado'
+  const loDevolvio = estado === 'pendiente'
   logActividad({
     session,
-    accion: loRechazo ? 'rechazar_gasto' : 'aprobar_gasto',
+    accion: loDevolvio ? 'gasto_a_pendiente' : loRechazo ? 'rechazar_gasto' : 'aprobar_gasto',
     entidadTipo: 'gasto',
     entidadId: id,
     detalle: `Gasto${gastoExistente.cobrador?.nombre ? ` de ${gastoExistente.cobrador.nombre}` : ''}: $${gastoExistente.monto.toLocaleString('es-CO')} - ${gastoExistente.description}`,

@@ -7,7 +7,7 @@ import { calcularDiasMora } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
 import { exigeNivelReportes } from '@/lib/plan-servidor'
-import { esperadoDeCartera, selectPrestamoDelDia } from '@/lib/dinero/esperado'
+import { esperadoDelDia, selectPrestamoDelDia } from '@/lib/dinero/esperado'
 import { SIN_ABONO_PREVIO } from '@/lib/dinero/abono-previo'
 
 /* ══ EL RANKING SALE DE LOS COBROS, NO DE LOS CIERRES (DETALLES-COBRADORES #1, #2) ══
@@ -204,15 +204,21 @@ export async function GET(req) {
       const clientes = clientesPorRuta.get(ruta.id) ?? []
       let total = 0
       let cubierto = 0
+      // Los días sin cobro de cada préstamo, una vez (no treinta).
+      const prestamos = clientes.flatMap((c) => c.prestamos.map((p) => ({
+        p,
+        dias: obtenerDiasSinCobro(c, ruta, org, p),
+        desdeMs: new Date(p.fechaInicio).getTime(),
+        hastaMs: p.estado === 'activo' ? Infinity : (p.ultimoPagoAt ? new Date(p.ultimoPagoAt).getTime() : -Infinity),
+      })))
       for (let t = desde.getTime(); t < finHoy.getTime(); t += DAY_MS) {
         const dia = new Date(t)
-        const vivos = clientes.map((c) => ({
-          ...c,
-          ruta,
-          prestamos: c.prestamos.filter((p) => new Date(p.fechaInicio).getTime() < t + DAY_MS
-            && (p.estado === 'activo' || (p.ultimoPagoAt && new Date(p.ultimoPagoAt).getTime() >= t))),
-        }))
-        const tocaba = esperadoDeCartera({ clientes: vivos, org, festivos }, dia).esperado
+        const esHoy = t === hasta.getTime()
+        let tocaba = 0
+        for (const x of prestamos) {
+          if (x.desdeMs >= t + DAY_MS || x.hastaMs < t) continue
+          tocaba += esperadoDelDia(x.p, dia, x.dias, festivos, esHoy)
+        }
         total += tocaba
         cubierto += Math.min(tocaba, cobradoPorRutaDia.get(`${ruta.id}|${toLocalDateStr(dia, offset)}`) ?? 0)
       }
