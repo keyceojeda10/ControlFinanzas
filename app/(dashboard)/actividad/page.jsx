@@ -3,9 +3,20 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { ACCIONES } from '@/lib/activity-log-types'
-import { agruparRepetidos, textoDeFila, paraRevisar, resumenDelDia, quienTrabajo } from '@/lib/adaptadores/actividad'
-import { formatMoney } from '@/lib/i18n'
+import { agruparRepetidos, agruparPorDia, textoDeFila } from '@/lib/adaptadores/actividad'
+import { formatMoney, getUtcOffset } from '@/lib/i18n'
+import { useCountry } from '@/hooks/useCountry'
+import { Pastilla } from '@/components/cf/primitivos'
 import { leerDeCache, guardarEnCache } from '@/lib/offline'
+
+// Lo que el dueño decidió sobre un gasto DESPUÉS de anotarlo (`leerSuceso`). El
+// rechazado y el borrado no son plata que salió: van sin signo y tachados.
+const PASTILLA_DE_ESTADO = {
+  rechazado: { texto: 'Rechazado', tono: 'mora' },
+  eliminado: { texto: 'Eliminado', tono: 'neutro' },
+  pendiente: { texto: 'Pendiente', tono: 'atraso' },
+}
+const NO_CUENTA = ['rechazado', 'eliminado']
 
 const ICONOS = {
   banknotes: (color) => (
@@ -92,36 +103,10 @@ function getIcon(accion) {
   return renderIcon(config?.color || 'var(--cf-ink-3)')
 }
 
-function formatHora(fecha) {
-  return new Date(fecha).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit', hour12: true })
-}
-
-function labelFechaGrupo(dateStr) {
-  const hoy = new Date()
-  const fecha = new Date(dateStr + 'T12:00:00')
-  const hoyStr = hoy.toISOString().slice(0, 10)
-  const ayerDate = new Date(hoy)
-  ayerDate.setDate(ayerDate.getDate() - 1)
-  const ayerStr = ayerDate.toISOString().slice(0, 10)
-
-  if (dateStr === hoyStr) return 'Hoy'
-  if (dateStr === ayerStr) return 'Ayer'
-  return fecha.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })
-}
-
-function agruparPorDia(items) {
-  const grupos = []
-  let currentKey = null
-  for (const item of items) {
-    const key = new Date(item.createdAt).toISOString().slice(0, 10)
-    if (key !== currentKey) {
-      currentKey = key
-      grupos.push({ key, label: labelFechaGrupo(key), items: [] })
-    }
-    grupos[grupos.length - 1].items.push(item)
-  }
-  return grupos
-}
+// ⚠ LOS DÍAS SON LOS DEL NEGOCIO. Aquí se agrupaba con
+// `toISOString().slice(0, 10)` —el día en UTC—, y lo de anoche después de las 7
+// salía bajo «Hoy» (QA, 19 oct 2026). Ahora lo hace `agruparPorDia` del
+// adaptador, con la medianoche del país (`getUtcOffset`), la de la caja.
 
 const FILTROS_RAPIDOS = [
   { value: '', label: 'Todo' },
@@ -150,12 +135,15 @@ const FILTROS_COMPLETOS = [
   { value: 'cierre_caja', label: 'Cierres de caja' },
   { value: 'movimiento_capital', label: 'Movimientos de capital' },
   { value: 'registrar_gasto', label: 'Gastos registrados' },
+  { value: 'rechazar_gasto', label: 'Gastos rechazados' },
 ]
 
 export default function ActividadPage() {
   // «Historial», como en el menú y en el buscador. Decía «Actividad» mientras
   // el menú decía «Quién hizo qué»: tres nombres para una pantalla (2 sep 2026).
   useCabecera({ titulo: 'Historial', subtitulo: 'Todo lo que pasa en tu negocio, en orden' })
+  const { country } = useCountry()
+  const offsetHoras = getUtcOffset(country)
 
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -242,7 +230,7 @@ export default function ActividadPage() {
 
   const hayFiltrosAvanzados = filtroUsuario || desde || hasta
   const filtroActivoEnChips = FILTROS_RAPIDOS.some(f => f.value === filtroTipo)
-  const grupos = agruparPorDia(items)
+  const grupos = agruparPorDia(items, { offsetHoras })
 
   return (
     <div className="max-w-2xl lg:max-w-5xl mx-auto px-4 py-6">
@@ -400,7 +388,7 @@ export default function ActividadPage() {
                       pago» no informan de nada: lo que hay que saber es que se
                       registraron trece, y en cuanto tiempo. La lamina lo pone en
                       una linea: «Registro 4 pagos en un minuto». */}
-                  {agruparRepetidos(grupo.items).map((fila) => {
+                  {agruparRepetidos(grupo.items, undefined, { offsetHoras }).map((fila) => {
                     const item = fila.items[0]
                     const config = ACCIONES[item.accion] || FRASE_DE_RESERVA(item.accion)
                     const icon = getIcon(item.accion)
@@ -444,13 +432,23 @@ export default function ActividadPage() {
                                 ? `Suman ${formatMoney(fila.monto)}`
                                 : `${fila.cuantos} sucesos seguidos`}
                             </p>
-                          ) : item.detalle && (
+                          ) : fila.detalleTexto && (
+                            /* El renglón ya en palabras (`leerSuceso`), no el texto
+                               crudo de la base: «inyeccion entrada $500.000 - …»
+                               salía tal cual. */
                             <p
                               className="text-[11px] mt-0.5 leading-snug"
                               style={{ color: esDestructiva ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)' }}
                             >
-                              {item.detalle}
+                              {fila.detalleTexto}
                             </p>
+                          )}
+                          {PASTILLA_DE_ESTADO[fila.estado] && (
+                            <div className="mt-1">
+                              <Pastilla tono={PASTILLA_DE_ESTADO[fila.estado].tono}>
+                                {PASTILLA_DE_ESTADO[fila.estado].texto}
+                              </Pastilla>
+                            </div>
                           )}
                         </div>
 
@@ -468,9 +466,14 @@ export default function ActividadPage() {
                               salía «+$31.220» en verde. Verde solo lo que ENTRA; lo
                               que sale va con «−» y lo que ni entra ni sale (un cierre,
                               un borrado) va sin signo. */}
+                          {/* Un gasto rechazado o borrado no salió: su importe va
+                              sin signo y TACHADO, para que se vea cuál fue y que
+                              no cuenta. Antes decía «−$25.000» como cualquier gasto. */}
                           {fila.monto !== 0 && (
                             <span className="cf-fig text-[13px]" style={{
-                              color: fila.sentido === 'entra' ? 'var(--cf-green-dark)' : 'var(--cf-ink-2)',
+                              color: fila.sentido === 'entra' ? 'var(--cf-green-dark)'
+                                : NO_CUENTA.includes(fila.estado) ? 'var(--cf-ink-3)' : 'var(--cf-ink-2)',
+                              textDecoration: NO_CUENTA.includes(fila.estado) ? 'line-through' : 'none',
                             }}>
                               {fila.sentido === 'entra' ? '+' : fila.sentido === 'sale' ? '−' : ''}{formatMoney(Math.abs(fila.monto))}
                             </span>

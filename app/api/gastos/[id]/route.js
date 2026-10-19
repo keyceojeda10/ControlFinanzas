@@ -29,6 +29,8 @@ export async function PATCH(req, { params }) {
   // Verificar que el gasto pertenece a la organización del usuario
   const gastoExistente = await prisma.gastoMenor.findFirst({
     where: { id, organizationId: session.user.organizationId },
+    // El nombre, para el Historial: «Sofía rechazó el gasto de Camilo Ortiz».
+    include: { cobrador: { select: { nombre: true } } },
   })
   if (!gastoExistente) {
     return NextResponse.json({ error: 'Gasto no encontrado' }, { status: 404 })
@@ -96,6 +98,24 @@ export async function PATCH(req, { params }) {
     }
 
     return gastoActualizado
+  })
+
+  /* ── QUIÉN LO APROBÓ O LO RECHAZÓ ──
+     No se anotaba: en el Historial el gasto rechazado seguía saliendo como plata
+     que salió, y no había fila que dijera quién lo rechazó ni cuándo (QA, 19 oct
+     2026). El formato lo lee `leerSuceso` (lib/adaptadores/actividad.js):
+     «Gasto de Camilo Ortiz: $25.000 - Pinchazo/Llanta» → «rechazó el gasto de
+     Camilo Ortiz · $25.000 · Pinchazo/Llanta».
+     (El booleano aparte: `acciones-con-nombre.test.js` lee las comillas de la
+     línea `accion:` y tomaría 'rechazado' por una acción.) */
+  const loRechazo = estado === 'rechazado'
+  logActividad({
+    session,
+    accion: loRechazo ? 'rechazar_gasto' : 'aprobar_gasto',
+    entidadTipo: 'gasto',
+    entidadId: id,
+    detalle: `Gasto${gastoExistente.cobrador?.nombre ? ` de ${gastoExistente.cobrador.nombre}` : ''}: $${gastoExistente.monto.toLocaleString('es-CO')} - ${gastoExistente.description}`,
+    ip: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
   })
 
   return NextResponse.json(gasto)
