@@ -793,6 +793,31 @@ export async function GET(request, { params }) {
     },
   })
 
+  /* ⚠ DE QUIÉN ES ESE CIERRE (DETALLES-RUTAS #78). `CierreCaja` no tiene ruta:
+     es el fajo de UNA PERSONA en un día, con todas sus rutas activas dentro
+     (`getStatsDia` cuenta sus cobros y los de `rutaIdsDe`). Una ruta nueva de
+     Andrés enseñaba el cierre de Ruta Centro como si fuera el suyo. No se parte
+     por ruta —el fajo se cuenta una vez, el cuadre asienta un solo faltante—:
+     se dice de quién es y qué rutas junta. Ver `cierreYaHecho`. */
+  let cierreDe = null
+  if (cierre) {
+    const [persona, rutasDeLaCaja] = await Promise.all([
+      prisma.user.findFirst({ where: { id: quienCobra, organizationId }, select: { nombre: true, rol: true } }),
+      prisma.ruta.findMany({
+        where: { organizationId, cobradorId: quienCobra, activo: true },
+        select: { id: true, nombre: true },
+        orderBy: { nombre: 'asc' },
+      }),
+    ])
+    cierreDe = {
+      nombre: persona?.nombre ?? null,
+      propio: quienCobra === userId,
+      esCobrador: persona?.rol === 'cobrador',
+      rutas: rutasDeLaCaja.map((r) => r.nombre),
+      estaRuta: rutasDeLaCaja.some((r) => r.id === id),
+    }
+  }
+
   // Seguros de esta ruta: total de prestamos activos con seguro + los del dia.
   const baseSeguro = {
     organizationId,
@@ -895,6 +920,7 @@ export async function GET(request, { params }) {
     segurosHoy: Math.round(segHoy._sum.montoSeguro || 0),
     segurosHoyCount: segHoy._count,
     cierre,
+    cierreDe,
     // MVP geo: pines para el mapa de la ruta. Cada item es un cobro de hoy
     // con coords; el frontend pinta verde/naranja/rojo por distancia.
     cobrosGeoHoy,

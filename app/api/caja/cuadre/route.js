@@ -17,7 +17,7 @@ import { getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
 import { calcularDesembolsadoDia } from '@/lib/dinero/desembolsado'
 import { getStatsDia } from '@/lib/caja/stats-dia'
 import { enLaManoDelDia } from '@/lib/dinero/en-la-mano'
-import { diaDeCalendario } from '@/lib/notificacion-texto'
+import { descripcionDeCuadre, descripcionConNotaNueva } from '@/lib/adaptadores/movimientos-capital'
 
 /* Lo que el cobrador tiene en la mano ese día, con la MISMA cuenta de su caja
    (la referencia). Para cuadrar a quien todavía no ha entregado. */
@@ -354,8 +354,17 @@ export async function POST(request) {
     await prisma.$transaction(async (tx) => {
       const previos = await tx.movimientoCapital.findMany({
         where: { organizationId, referenciaTipo: 'cierre_cuadre', referenciaId: cierre.id },
-        select: { monto: true, saldoAnterior: true, saldoNuevo: true },
+        select: { id: true, monto: true, saldoAnterior: true, saldoNuevo: true, descripcion: true },
       })
+      /* La nota editada llega también a Capital (DETALLES-CAJA-Y-CAPITAL #47):
+         solo el texto de los asientos que ya había; el importe va abajo, con
+         la cuenta de siempre. */
+      for (const m of previos) {
+        const descripcion = descripcionConNotaNueva(m, { nombre: cobrador.nombre, fecha, nota: item.nota })
+        if (descripcion !== m.descripcion) {
+          await tx.movimientoCapital.update({ where: { id: m.id }, data: { descripcion } })
+        }
+      }
       const yaAsentado = Math.round(previos.reduce(
         (a, m) => a + (m.saldoNuevo >= m.saldoAnterior ? m.monto : -m.monto), 0,
       ))
@@ -368,7 +377,10 @@ export async function POST(request) {
         monto: Math.abs(falta),
         // «Faltante en el cuadre de Camilo Ortiz (19 oct) · Lo trae mañana»: era
         // «Cuadre de caja … (2026-10-19): faltante - …» (DETALLES-CAJA #45).
-        descripcion: `${yaAsentado !== 0 ? 'Corrección del cuadre' : (falta < 0 ? 'Faltante' : 'Sobrante')} en el cuadre de ${cobrador.nombre} (${diaDeCalendario(fecha)})${item.nota ? ` · ${item.nota}` : ''}`,
+        descripcion: descripcionDeCuadre({
+          titulo: yaAsentado !== 0 ? 'Corrección del cuadre' : (falta < 0 ? 'Faltante' : 'Sobrante'),
+          nombre: cobrador.nombre, fecha, nota: item.nota,
+        }),
         referenciaId: cierre.id,
         referenciaTipo: 'cierre_cuadre',
         rutaId: ruta?.id || null,

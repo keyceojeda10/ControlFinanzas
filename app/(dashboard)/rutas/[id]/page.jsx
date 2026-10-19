@@ -5,7 +5,7 @@ import { formatMoney, getLocalDateStr } from '@/lib/i18n'
 import { entraAlFajo } from '@/lib/dinero/cuentas'
 import { abreviaturaDocumento } from '@/lib/documento'
 import { LoPuestoAqui, LoDeHoy } from '@/components/pantallas/DetalleRuta'
-import { loPuestoAqui, loDeHoy, avanceDeHoy, aCobrarEnLaParada, cierreDeLaCaja, kmDeLaRuta, partirRecorrido, adaptarParadaActual, resumenDeCierre, tramosDelRecorrido, moverParada, moverParadaEnRuta, propuestaPorCercania, paradasDeRuta, gruposDeRuta } from '@/lib/adaptadores/ruta'
+import { loPuestoAqui, loDeHoy, avanceDeHoy, aCobrarEnLaParada, cierreDeLaCaja, cierreYaHecho, kmDeLaRuta, partirRecorrido, adaptarParadaActual, resumenDeCierre, tramosDelRecorrido, moverParada, moverParadaEnRuta, propuestaPorCercania, paradasDeRuta, gruposDeRuta } from '@/lib/adaptadores/ruta'
 import { DIAS_MORA } from '@/lib/adaptadores/clientes'
 // La tarjeta de parada es la MISMA que pinta /cobros-hoy. Ver la nota de
 // components/cf/ParadaDeCobro: aqui habia una segunda tarjeta para lo mismo.
@@ -2389,6 +2389,10 @@ export default function RutaDetallePage({ params }) {
 
   // `null` mientras llega la caja: mejor no enseñar una cifra que una falsa.
   const cierreHoyRuta = cajaDelDia ? cierreDeLaCaja(cajaDelDia, (n) => formatMoney(n)) : null
+  // El cierre YA hecho: lo que tenía que entregar contra lo que entregó, y de
+  // quién es esa caja (DETALLES-RUTAS #78). Ver `cierreYaHecho`.
+  const cierreHecho = cierreYaHecho(ruta?.cierre, ruta?.cierreDe ?? {}, (n) => formatMoney(n))
+  const tonoCierre = { cuadro: 'var(--cf-green-dark)', falta: 'var(--cf-red-dark)', sobra: 'var(--cf-gold-dark)' }
 
   // ── LA HOJA DE COBRO, FUERA DEL JSX PRINCIPAL ──
   // Vive en una variable porque hace falta en LAS DOS pantallas: la lista y
@@ -3056,8 +3060,8 @@ export default function RutaDetallePage({ params }) {
           { texto: 'Atraso acumulado', valor: formatMoney((ruta.clientes ?? []).reduce((n, c) => n + (c.montoParaPonerseAlDia ?? 0), 0)), tono: 'mora' },
           { texto: rotulo('clientesEnMora'), valor: `${ruta.enMora ?? 0} de ${ruta.clientes?.length ?? 0}`, tono: (ruta.enMora ?? 0) > 0 ? 'mora' : undefined },
         ]}
-        cierreTexto={ruta.cierre
-          ? 'El cierre de hoy ya está registrado.'
+        cierreTexto={cierreHecho
+          ? [`El cierre de hoy ya está registrado. ${cierreHecho.frase}.`, cierreHecho.deQuien].filter(Boolean).join(' ')
           : (ruta.recaudadoHoy ?? 0) > 0
             ? (!cierreHoyRuta ? 'Ya se puede registrar el cierre de hoy.'
               : cierreHoyRuta.aFavor ? `Hoy se le deben ${cierreHoyRuta.total} a quien cobra.`
@@ -3549,16 +3553,19 @@ export default function RutaDetallePage({ params }) {
                     </div>
                   </div>
 
-                  {/* Cuadre de caja del cobrador, si ya cerro hoy */}
-                  {ruta.cierre && (
-                    <div className="mt-2.5 pt-2.5 flex items-center justify-between text-[11px]" style={{ borderTop: '1px solid var(--cf-border)' }}>
+                  {/* Cuadre de caja del cobrador, si ya cerro hoy. ⚠ El rojo era
+                      `diferencia` —lo entregado contra lo que TOCABA COBRAR—:
+                      «−$98.400» el día que Andrés cuadró al peso (DETALLES-RUTAS
+                      #78). Ahora, lo que entregó contra lo que tenía que entregar. */}
+                  {cierreHecho && (
+                    <div className="mt-2.5 pt-2.5 flex items-center justify-between gap-2 text-[11px]" style={{ borderTop: '1px solid var(--cf-border)' }}>
                       <span className="font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>
-                        Cierre del cobrador: {formatMoney(ruta.cierre.totalRecogido)}
-                        {ruta.cierre.confirmadoEn ? ' · confirmado' : ' · sin confirmar'}
+                        Cierre{ruta.cierreDe?.nombre && !ruta.cierreDe.propio ? ` de ${ruta.cierreDe.nombre}` : ''}: {cierreHecho.corto}
+                        {ruta.cierreDe?.esCobrador === false ? '' : cierreHecho.confirmado ? ' · confirmado' : ' · sin confirmar'}
                       </span>
-                      {Math.abs(ruta.cierre.diferencia) > 0 && (
-                        <span className="font-mono-display font-semibold" style={{ color: 'var(--cf-red-dark)' }}>
-                          {ruta.cierre.diferencia >= 0 ? '+' : ''}{formatMoney(ruta.cierre.diferencia)}
+                      {cierreHecho.resultado && (
+                        <span className="shrink-0 font-mono-display font-semibold" style={{ color: tonoCierre[cierreHecho.resultado.tono] }}>
+                          {cierreHecho.resultado.texto}{cierreHecho.resultado.valor ? ` ${cierreHecho.resultado.valor}` : ''}
                         </span>
                       )}
                     </div>
@@ -3950,22 +3957,39 @@ export default function RutaDetallePage({ params }) {
         <p className="text-xs font-semibold text-[var(--cf-ink-3)] uppercase tracking-wide mb-4">
           Cierre de caja del día
         </p>
-        {ruta.cierre ? (
+        {/* ⚠ CONTRA LO QUE TENÍA QUE ENTREGAR, NO CONTRA LO QUE TOCABA COBRAR
+            (DETALLES-RUTAS #78). «Esperado $161.900 · Entregado $63.500 ·
+            Diferencia −$98.400» el día que Andrés cuadró al peso. «Tocaba
+            cobrar» no se pone aquí: es de toda su caja, no de esta ruta, y la
+            ruta ya dice arriba lo suyo («Cobrado hoy … / …»). */}
+        {cierreHecho ? (
           <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-[var(--cf-ink-3)]">Esperado</span>
-              <span className="text-[var(--cf-ink)] font-medium font-mono-display">{formatMoney(ruta.cierre.totalEsperado)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-[var(--cf-ink-3)]">Entregado</span>
-              <span className="text-[var(--cf-ink)] font-medium font-mono-display">{formatMoney(ruta.cierre.totalRecogido)}</span>
-            </div>
-            <div className="flex justify-between text-sm font-bold border-t border-[var(--cf-border)] pt-2 mt-2">
-              <span className="text-[var(--cf-ink-3)]">Diferencia</span>
-              <span className="font-mono-display" style={{ color: ruta.cierre.diferencia >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)' }}>
-                {ruta.cierre.diferencia >= 0 ? '+' : ''}{formatMoney(ruta.cierre.diferencia)}
-              </span>
-            </div>
+            {cierreHecho.deQuien && (
+              <p className="text-[12px] text-[var(--cf-ink-3)] leading-snug">{cierreHecho.deQuien}</p>
+            )}
+            {cierreHecho.lineas.map((l) => (
+              <div key={l.id} className="flex justify-between gap-3 text-sm">
+                <span className="text-[var(--cf-ink-3)]">{l.texto}</span>
+                <span className="text-[var(--cf-ink)] font-medium font-mono-display">{l.valor}</span>
+              </div>
+            ))}
+            {cierreHecho.resultado && (
+              <div className="flex justify-between gap-3 text-sm font-bold border-t border-[var(--cf-border)] pt-2 mt-2">
+                <span style={{ color: tonoCierre[cierreHecho.resultado.tono] }}>{cierreHecho.resultado.texto}</span>
+                {cierreHecho.resultado.valor && (
+                  <span className="font-mono-display" style={{ color: tonoCierre[cierreHecho.resultado.tono] }}>
+                    {cierreHecho.resultado.valor}
+                  </span>
+                )}
+              </div>
+            )}
+            {/* El cuadre es del dueño contando el fajo de un cobrador: la caja
+                del propio dueño no se cuadra. */}
+            {ruta.cierreDe?.esCobrador !== false && (
+              <p className="text-[11px] text-[var(--cf-ink-3)]">
+                {cierreHecho.confirmado ? 'Cuadre confirmado' : 'Cuadre sin confirmar'}
+              </p>
+            )}
           </div>
         ) : (
           <div className="text-center py-2">
