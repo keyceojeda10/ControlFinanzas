@@ -35,6 +35,7 @@ import PreferenciasAvisos from '@/components/avisos/PreferenciasAvisos'
 import TelefonosGuardados from '@/components/cuentas/TelefonosGuardados'
 import EntrarConHuella from '@/components/configuracion/EntrarConHuella'
 import AyudaProfe from '@/components/tutoriales/AyudaProfe'
+import { useProfe } from '@/components/tutoriales/ProfeProvider'
 
 const PAISES_LIST = getCountryList()
 const WHATSAPP_SOPORTE = '573011993001'
@@ -1307,6 +1308,8 @@ function ConfiguracionContent() {
   }, [tabParam])
 
   const rol = session?.user?.rol ?? 'cobrador'
+  // «Ayuda» solo donde están los videos del profe (`profeHabilitado`).
+  const profe = useProfe()
 
   // ── Nombres como piensa el dueño, no como se llama el módulo ──
   //
@@ -1427,7 +1430,7 @@ function ConfiguracionContent() {
     org, uso, cobradores, diasParaRenovar,
     pais: paisCfg ? { nombre: paisCfg.name, moneda: paisCfg.currency } : null,
   })
-  const filas = filasIndice({ rol, cobradores }, valores)
+  const filas = filasIndice({ rol, cobradores, ayuda: Boolean(profe?.activo) }, valores)
 
   // La nota del negocio: plan y consumo de clientes, los dos leídos del API.
   // Nunca escritos a mano — en el intento anterior puse «hasta 20 clientes»
@@ -1581,7 +1584,7 @@ function ConfiguracionContent() {
   // La sección abierta va en la URL (`?s=`), no en un estado: así el botón de
   // atrás del teléfono sale de la sección en vez de sacarte de configuración, y
   // un enlace a «Cómo prestas» abre «Cómo prestas».
-  const visibles = seccionesConfig({ rol, cobradores })
+  const visibles = seccionesConfig({ rol, cobradores, ayuda: Boolean(profe?.activo) })
   const abierta = visibles.find((s) => s.id === seccionParam) ?? null
 
   if (!anchaPantalla) {
@@ -1644,6 +1647,7 @@ function ConfiguracionContent() {
       <Configuracion
         rol={rol}
         cobradores={cobradores}
+        ayuda={Boolean(profe?.activo)}
         negocio={org?.nombre}
         plan={org?.plan ? PLAN_NAMES[org.plan] ?? org.plan : null}
         clientes={uso?.clientes?.usado}

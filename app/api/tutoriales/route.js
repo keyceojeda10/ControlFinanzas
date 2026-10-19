@@ -1,6 +1,6 @@
 // app/api/tutoriales/route.js — los videos del profe para ESTA persona.
 //
-// GET  → { vistos, guardados, botonVisible, paraCobradores }
+// GET  → { habilitado, vistos, guardados, botonVisible, paraCobradores }
 // POST → apunta lo que pasó en el reproductor o en la lengüeta.
 //
 // ⚠ «VISTO» VA EN EL SERVIDOR, POR PERSONA, como la bienvenida: guardado en el
@@ -10,7 +10,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { EVENTOS, HITOS_TUTO, videoPorId } from '@/lib/tutoriales/profe'
+import { EVENTOS, HITOS_TUTO, videoPorId, profeHabilitado } from '@/lib/tutoriales/profe'
 
 const leer = (m) => { try { return JSON.parse(m || '{}') } catch { return {} } }
 
@@ -26,6 +26,10 @@ export async function GET() {
   const session = await getServerSession(authOptions)
   const u = session?.user
   if (!u?.id || !u.organizationId) return Response.json({ error: 'No autorizado' }, { status: 401 })
+  // Sin habilitar, nada que leer: la app no pinta nada del profe.
+  if (!profeHabilitado(u.organizationId)) {
+    return Response.json({ habilitado: false, vistos: [], guardados: [], botonVisible: true, paraCobradores: true })
+  }
   const [marcas, botonVisible, paraCobradores] = await Promise.all([
     prisma.evento.findMany({
       where: { organizationId: u.organizationId, userId: u.id, evento: { in: [EVENTOS.visto, EVENTOS.guardado] } },
@@ -44,7 +48,7 @@ export async function GET() {
     if (m.evento === EVENTOS.visto) vistos.add(id)
     else guardados.add(id)
   }
-  return Response.json({ vistos: [...vistos], guardados: [...guardados], botonVisible, paraCobradores })
+  return Response.json({ habilitado: true, vistos: [...vistos], guardados: [...guardados], botonVisible, paraCobradores })
 }
 
 /* Lo que se puede apuntar. Todo lleva el id de un video del catálogo; las

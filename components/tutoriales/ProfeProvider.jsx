@@ -21,13 +21,15 @@ import { salirDeHojaHacia } from '@/components/cf/HojaInferior'
 import ReproductorProfe from './ReproductorProfe'
 
 const Contexto = createContext(null)
-const GUARDADO = 'cf:profe'
+// Por usuario: en un teléfono con «Cuentas guardadas» una cuenta no hereda lo de otra.
+const GUARDADO = (usuario) => `cf:profe:${usuario}`
 
-const INICIAL = { cargado: false, vistos: [], guardados: [], botonVisible: true, paraCobradores: true }
+// `habilitado` lo dice el servidor (`profeHabilitado`): mientras no conteste, nada.
+const INICIAL = { cargado: false, habilitado: false, vistos: [], guardados: [], botonVisible: true, paraCobradores: true }
 
-function leerGuardado() {
+function leerGuardado(usuario) {
   try {
-    const d = JSON.parse(localStorage.getItem(GUARDADO) || 'null')
+    const d = JSON.parse(localStorage.getItem(GUARDADO(usuario)) || 'null')
     return d && Array.isArray(d.vistos) ? { ...INICIAL, ...d, cargado: false } : INICIAL
   } catch { return INICIAL }
 }
@@ -39,32 +41,42 @@ const enviar = (cuerpo) => fetch('/api/tutoriales', {
   body: JSON.stringify(cuerpo),
 }).catch(() => {})
 
-export default function ProfeProvider({ rol, children }) {
-  const activo = Boolean(rol) && rol !== 'superadmin'
+export default function ProfeProvider({ rol, usuario, children }) {
+  const rolConVideos = Boolean(rol) && rol !== 'superadmin'
   const [estado, setEstado] = useState(INICIAL)
   const [abierto, setAbierto] = useState(null)
   const acciones = useAcciones()
   const router = useRouter()
   const pathname = usePathname()
 
+  const activo = rolConVideos && estado.habilitado
+
   useEffect(() => {
-    if (!activo) return undefined
-    setEstado(leerGuardado())
+    // Sin videos para este rol (superadmin): se sabe ya, no hay que esperar.
+    if (!rolConVideos) { setEstado({ ...INICIAL, cargado: true }); return undefined }
+    setEstado(leerGuardado(usuario))
     let vivo = true
+    // Sin respuesta (sin señal), queda lo guardado y se da por cargado: si no,
+    // /tutoriales se quedaría en blanco esperando.
+    const sinRespuesta = () => { if (vivo) setEstado((e) => ({ ...e, cargado: true })) }
     fetch('/api/tutoriales', { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (vivo && d && Array.isArray(d.vistos)) setEstado({ ...INICIAL, ...d, cargado: true }) })
-      .catch(() => {})
+      .then((d) => {
+        if (!vivo) return
+        if (d && Array.isArray(d.vistos)) setEstado({ ...INICIAL, ...d, cargado: true })
+        else sinRespuesta()
+      })
+      .catch(sinRespuesta)
     return () => { vivo = false }
-  }, [activo])
+  }, [rolConVideos, usuario])
 
   useEffect(() => {
     if (!estado.cargado) return
     try {
-      const { vistos, guardados, botonVisible, paraCobradores } = estado
-      localStorage.setItem(GUARDADO, JSON.stringify({ vistos, guardados, botonVisible, paraCobradores }))
+      const { habilitado, vistos, guardados, botonVisible, paraCobradores } = estado
+      localStorage.setItem(GUARDADO(usuario), JSON.stringify({ habilitado, vistos, guardados, botonVisible, paraCobradores }))
     } catch {}
-  }, [estado])
+  }, [estado, usuario])
 
   const visibles = useMemo(
     () => (activo ? videosPara({ rol, paraCobradores: estado.paraCobradores }) : []),

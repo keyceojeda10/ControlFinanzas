@@ -64,13 +64,13 @@ function Tarjeta({ nombre, cifra, activa, onIr }) {
 }
 
 export default function Configuracion({
-  rol = 'owner', cobradores = 0,
+  rol = 'owner', cobradores = 0, ayuda = true,
   negocio, plan, clientes, limiteClientes,
   activa,                 // id de la sección visible ahora
   onSeccion,              // (id) => void — la elige el que monta, va a la URL
   children,               // (id) => nodo, SOLO el de la sección visible
 }) {
-  const secciones = seccionesConfig({ rol, cobradores })
+  const secciones = seccionesConfig({ rol, cobradores, ayuda })
   const modo = modoDeTrabajo(cobradores)
   const actual = secciones.find((s) => s.id === activa) ?? secciones[0]
 

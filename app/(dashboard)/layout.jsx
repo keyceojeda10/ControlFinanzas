@@ -83,7 +83,7 @@ export default async function DashboardLayout({ children }) {
     <AccionesProvider>
     {/* Los videos del profe: dentro de las acciones, porque su botón de tarea
         ejecuta la que registró la pantalla abierta. */}
-    <ProfeProvider rol={session?.user?.rol ?? ''}>
+    <ProfeProvider rol={session?.user?.rol ?? ''} usuario={session?.user?.id ?? ''}>
     <Armazon nombre={nombre} rol={session?.user?.rol ?? ''} avatarId={avatarId}>
     {/* El país de la organización, para las 465 llamadas a `formatMoney` que no
         lo pasan. Ver el porqué en el propio componente. */}
