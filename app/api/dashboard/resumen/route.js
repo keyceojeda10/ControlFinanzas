@@ -4,8 +4,8 @@ import { NextResponse }     from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { calcularDiasMora, calcularSaldoPendiente, calcularPatrimonio, tienePeriodoEsperadoHoy, calcularCapitalRestante } from '@/lib/calculos'
-import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
+import { calcularDiasMora, calcularSaldoPendiente, calcularPatrimonio, calcularCapitalRestante } from '@/lib/calculos'
+import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
 import { fraccionInteres } from '@/lib/dinero/reparto'
 import { interesCobradoDeLosPrestamos, SELECT_PARA_INTERES } from '@/lib/dinero/interes-cobrado'
@@ -13,6 +13,7 @@ import { PAGOS_DEL_CALCULO } from '@/lib/dinero/pagos-del-calculo'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 import { SIN_ABONO_PREVIO, prestamosMigrados } from '@/lib/dinero/abono-previo'
 import { faltaLaPlataDeHoy, yaDijoSuPlata } from '@/lib/dinero/plata-de-hoy'
+import { loDeHoyDelPrestamo } from '@/lib/dinero/esperado'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -370,8 +371,7 @@ export async function GET(request) {
         tipo: { notIn: ['recargo', 'descuento'] },
         ...filtroRutaPagos,
       },
-      // `clienteId`: para saber QUIÉN pagó hoy (ver `clientesCobradosHoy`).
-      select: { montoPagado: true, fechaPago: true, prestamo: { select: { clienteId: true } } },
+      select: { montoPagado: true, fechaPago: true },
     }),
 
     /* Los PRÉSTAMOS que cobraron este mes, con su tabla y su historial de pagos.
@@ -422,6 +422,17 @@ export async function GET(request) {
   // $3.261.868 cuando lo que tocaba cobrar ese dia eran $647.867, y el donut
   // marcaba 1% en vez de 3%. Una meta inalcanzable enseña a ignorar la meta.
   let esperadoHoy = 0
+  /* Lo que le queda a cada uno de su cuota de hoy: el «Te faltan» del hero y la
+     barra, con la cuenta de Rutas y Cobros de hoy (DETALLES-RUTAS #70). */
+  let faltaHoy = 0
+  const faltaPorCliente = new Map()
+  /* Lo cobrado HOY a cada préstamo (sin el abono previo): con él se sabe quién
+     pagó hoy y cuánto de su cuota ya adelantó antes (`loDeHoyDelPrestamo`). */
+  const pagadoHoyPorPrestamo = new Map((await prisma.pago.groupBy({
+    by: ['prestamoId'],
+    where: { organizationId: orgId, fechaPago: { gte: inicioDiaUTC, lte: finDiaUTC }, tipo: { notIn: ['recargo', 'descuento'] }, AND: [SIN_ABONO_PREVIO] },
+    _sum: { montoPagado: true },
+  })).map((g) => [g.prestamoId, Number(g._sum?.montoPagado) || 0]))
   // Cuanta plata hay ATRAPADA en los prestamos en mora. T02-01 lo pide junto al
   // conteo: «20 de 25 · $3,1M expuestos».
   //
@@ -503,9 +514,15 @@ export async function GET(request) {
     const _diasExcl = p.diasSinCobro != null
       ? obtenerDiasSinCobro(p.cliente, p.cliente?.ruta, org, p)
       : getDiasExcluidos(p.cliente)
-    const _sinCobroHoy = esHoySinCobro(_diasExcl) || esHoyFestivo(festivos)
-    if (tienePeriodoEsperadoHoy(p, _sinCobroHoy, _diasExcl, festivos)) {
-      esperadoHoy += p.cuotaDiaria ?? 0
+    /* ⚠ LO QUE TOCA HOY, CON LA REGLA DE TODAS LAS PANTALLAS (DETALLES-RUTAS
+       #70). Por calendario contaba a Óscar, que tenía cubierto hasta el 27 con
+       su abono a capital: «9 cobros · $191.300» aquí y «8 · $171.900» en Cobros
+       de hoy. Y la cuota entera de quien ya adelantó. Ver `loDeHoyDelPrestamo`. */
+    const hoyEste = loDeHoyDelPrestamo(p, { diasExcluidos: _diasExcl, festivos, pagadoHoy: pagadoHoyPorPrestamo.get(p.id) ?? 0 })
+    if (hoyEste.cuenta) {
+      esperadoHoy += hoyEste.toca
+      faltaHoy += hoyEste.falta
+      faltaPorCliente.set(p.clienteId, (faltaPorCliente.get(p.clienteId) ?? 0) + hoyEste.falta)
       // A CUANTOS toca cobrarles hoy, con la MISMA regla que la plata.
       //
       // Esto faltaba, y era una carencia con consecuencia: el resumen daba
@@ -519,7 +536,7 @@ export async function GET(request) {
       clientesConCobroHoy.add(p.clienteId)
       if (detalle) {
         const v = tocabaHoy.get(p.clienteId) ?? { nombre: p.cliente?.nombre ?? 'Cliente', cuota: 0, diasMora: 0 }
-        v.cuota += p.cuotaDiaria ?? 0
+        v.cuota += hoyEste.toca
         tocabaHoy.set(p.clienteId, v)
       }
     }
@@ -601,12 +618,10 @@ export async function GET(request) {
   const patrimonio = esCobrador ? null : calcularPatrimonio({ saldoPorCobrar, cajaDisponible })
 
   // Mapear cobradorIds a nombres para el desglose de hoy
-  const pagaronHoy = new Set()
-  for (const pg of pagos7Dias || []) {
-    if (pg.prestamo?.clienteId && new Date(pg.fechaPago) >= inicioDiaUTC) pagaronHoy.add(pg.prestamo.clienteId)
-  }
+  /* Cobrado = ya no le queda nada de lo de hoy, la regla de Rutas (cf-v1166):
+     el abono parcial no es cobro. */
   let clientesCobradosHoy = 0
-  for (const id of clientesConCobroHoy) if (pagaronHoy.has(id)) clientesCobradosHoy += 1
+  for (const id of clientesConCobroHoy) if ((faltaPorCliente.get(id) ?? 0) <= 0) clientesCobradosHoy += 1
 
   const cobradorIds = (pagosHoyPorCobrador || []).map(g => g.cobradorId).filter(Boolean)
   const cobradores = cobradorIds.length > 0
@@ -694,8 +709,8 @@ export async function GET(request) {
   /* ── EL DETALLE DEL DÍA (solo con `?detalle=1`) ──────────────────────────
      Las listas que respaldan las cifras de «Tu resumen del día». Dos lecturas
      más —los pagos y los gastos de hoy, con nombre— y nada de plata recalculada:
-     «sin cobrar» son los de `clientesConCobroHoy` que no están en `pagaronHoy`,
-     los mismos dos conjuntos de los que sale «N de M cobrados». */
+     «sin cobrar» son los de `clientesConCobroHoy` a los que todavía les falta
+     algo de lo de hoy, la misma cuenta de la que sale «N de M cobrados». */
   let detalleDia = null
   if (detalle) {
     const [pagosLista, gastosLista] = await Promise.all([
@@ -729,9 +744,10 @@ export async function GET(request) {
       // nada es efectivo (ver `entraAlFajo`). Aquí solo se separa por medio; no
       // decide quién lleva la plata encima.
       medios: { efectivo: Math.round(enEfectivo), transferencia: Math.round(pagosLista.reduce((n, x) => n + x.montoPagado, 0) - enEfectivo) },
+      // Los que todavía deben algo de lo de hoy: la misma cuenta de «N de M cobrados».
       sinCobrar: [...tocabaHoy.entries()]
-        .filter(([id]) => !pagaronHoy.has(id))
-        .map(([clienteId, v]) => ({ clienteId, nombre: v.nombre, cuota: Math.round(v.cuota), diasMora: v.diasMora }))
+        .filter(([id]) => (faltaPorCliente.get(id) ?? 0) > 0)
+        .map(([clienteId, v]) => ({ clienteId, nombre: v.nombre, cuota: Math.round(faltaPorCliente.get(clienteId) ?? v.cuota), diasMora: v.diasMora }))
         .sort((a, b) => b.diasMora - a.diasMora || b.cuota - a.cuota),
       manana: {
         monto: Math.round(esperadoManana), clientes: tocaManana.size,
@@ -770,6 +786,8 @@ export async function GET(request) {
       // Lo que de verdad toca cobrar hoy. Es la meta del hero; cuotaDiariaTotal
       // se queda como "suma de cuotas de la cartera" en el bloque Operacion.
       esperadoHoy: Math.round(esperadoHoy),
+      // Lo que le queda a cada uno de lo de hoy, sumado (la «Falta» de Rutas).
+      faltaHoy: Math.round(faltaHoy),
       // Cuantos clientes toca visitar hoy, con la MISMA regla que `esperadoHoy`.
       clientesConCobroHoy: clientesConCobroHoy.size,
       // «2 de 15»: de los que tocaban hoy, cuántos YA pagaron. Antes el inicio

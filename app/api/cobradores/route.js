@@ -9,8 +9,8 @@ import { logActividad } from '@/lib/activity-log'
 import { PLAN_NAMES, PLANES_CONFIG, cuposDe, selectCupos, admiteAdicionales } from '@/lib/planes'
 import { getUtcOffset } from '@/lib/i18n'
 import { normalizarEmail, buscarUsuarioPorEmail } from '@/lib/normalizar-email'
-import { tienePeriodoEsperadoHoy } from '@/lib/calculos'
-import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
+import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
+import { loDeHoyDelPrestamo, pagadoEnElDia, selectPrestamoDelDia } from '@/lib/dinero/esperado'
 
 /* ⚠ LA MEDIANOCHE DEL PAÍS, NO LA DEL SERVIDOR (DETALLES-RUTAS #57). Restaba
    la hora del país y luego `setHours(0)` en la hora del servidor, que es UTC:
@@ -66,16 +66,8 @@ export async function GET(request) {
               diasSinCobro: true,
               prestamos: {
                 where: { estado: 'activo' },
-                select: {
-                  cuotaDiaria: true,
-                  frecuencia: true,
-                  fechaInicio: true,
-                  diasPlazo: true,
-                  diaCobroSemana: true,
-                  diaCobroMes: true,
-                  primerCobro: true,
-                  diaCobroMes2: true,
-                },
+                // Todo lo que lee `loDeHoyDelPrestamo` (DETALLES-RUTAS #70).
+                select: selectPrestamoDelDia(),
               },
             },
           },
@@ -93,10 +85,12 @@ export async function GET(request) {
     orderBy: [{ orden: 'asc' }, { nombre: 'asc' }],
   })
 
-  const orgCfg = await prisma.organization.findUnique({
-    where: { id: organizationId },
-    select: { diasSinCobro: true },
-  })
+  const [orgCfg, festivosRows] = await Promise.all([
+    prisma.organization.findUnique({ where: { id: organizationId }, select: { diasSinCobro: true } }),
+    prisma.festivo.findMany({ where: { organizationId }, select: { fecha: true } }),
+  ])
+  const festivos = festivosRows.map((f) => f.fecha)
+  const ahora = new Date()
 
   const resultado = cobradores.map((c) => {
     const pagosValidos = c.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo))
@@ -115,15 +109,19 @@ export async function GET(request) {
     // Esperado hoy: solo cuotas de prestamos cuyo ciclo de cobro toca HOY
     // (frecuencia diaria, semanal en el dia ancla, mensual en el dia configurado).
     // Antes sumaba todas las cuotas diarias activas, lo que inflaba la cifra.
+    // Desde DETALLES-RUTAS #70, con la regla de Rutas y del Inicio: sin quien
+    // tiene las cuotas cubiertas y sin lo que adelantaron ayer. Y con los
+    // festivos del negocio, que aquí se pasaban vacíos.
     let esperadoHoy = 0
+    let faltaHoy = 0
     for (const ruta of c.rutas) {
       for (const cliente of (ruta.clientes ?? [])) {
-        const diasExcluidos = obtenerDiasSinCobro(cliente, ruta, orgCfg)
-        const hoySinCobro = esHoySinCobro(diasExcluidos) || esHoyFestivo([])
         for (const p of (cliente.prestamos ?? [])) {
-          if (tienePeriodoEsperadoHoy(p, hoySinCobro, diasExcluidos, [])) {
-            esperadoHoy += p.cuotaDiaria ?? 0
-          }
+          const diasExcluidos = obtenerDiasSinCobro(cliente, ruta, orgCfg, p)
+          const hoyEste = loDeHoyDelPrestamo(p, { diasExcluidos, festivos, pagadoHoy: pagadoEnElDia(p, ahora) })
+          if (!hoyEste.cuenta) continue
+          esperadoHoy += hoyEste.toca
+          faltaHoy += hoyEste.falta
         }
       }
     }
@@ -154,7 +152,8 @@ export async function GET(request) {
       recaudadoHoy,
       recaudadoEfectivoHoy: Math.round(recaudadoEfectivoHoy),
       recaudadoDigitalHoy: Math.round(recaudadoDigitalHoy),
-      esperadoHoy,
+      esperadoHoy: Math.round(esperadoHoy),
+      faltaHoy: Math.round(faltaHoy),
       cantidadPagosHoy: cantidadPagos,
       ultimoPago,
     }

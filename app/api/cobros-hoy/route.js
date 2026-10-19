@@ -24,7 +24,7 @@ import {
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
-import { faltaDeHoy } from '@/lib/dinero/esperado'
+import { faltaDeHoy, tocaDeHoy, cuotaDelPeriodo } from '@/lib/dinero/esperado'
 import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
 
 function detectarCuotaExtra(prestamo, proximaCuota) {
@@ -353,9 +353,11 @@ export async function GET() {
         // el «Debe hoy» de la tarjeta.
         const alDia = calcularMontoParaPonerseAlDia(p, diasExcluidosPrestamo, festivos)
         if ((pendienteEste || montoPagadoHoy > 0) && tienePeriodoEsperadoHoy(p, _diasSinCobroDelPrestamo, diasExcluidosPrestamo, festivos)) {
-          esperadoHoyTotal += p.cuotaDiaria ?? 0
+          /* Su cuota sin lo que adelantó antes de hoy, y la del período: la misma
+             cuenta de Rutas y del Inicio (`tocaDeHoy`, DETALLES-RUTAS #70). */
+          esperadoHoyTotal += tocaDeHoy({ cuota: cuotaDelPeriodo(p), pagadoHoy: montoPagadoHoy, alDia })
           if (pendienteEste) {
-            const leFalta = faltaDeHoy({ cuota: p.cuotaDiaria ?? 0, pagadoHoy: montoPagadoHoy, alDia })
+            const leFalta = faltaDeHoy({ cuota: cuotaDelPeriodo(p), pagadoHoy: montoPagadoHoy, alDia })
             faltaHoyTotal += leFalta
             faltaHoyCliente += leFalta
           }

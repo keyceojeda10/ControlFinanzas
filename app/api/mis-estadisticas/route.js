@@ -4,9 +4,11 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { getUtcOffset } from '@/lib/i18n'
-import { calcularDiasMora, tienePeriodoEsperadoHoy } from '@/lib/calculos'
-import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
+import { calcularDiasMora } from '@/lib/calculos'
+import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
+import { loDeHoyDelPrestamo, pagadoEnElDia } from '@/lib/dinero/esperado'
+import { avanceDeHoy } from '@/lib/adaptadores/cobros'
 
 export const dynamic = 'force-dynamic'
 
@@ -119,9 +121,11 @@ export async function GET() {
             devengos: { select: { periodo: true, interes: true } },
             cuotasAmortizacion: {
               orderBy: { numeroPeriodo: 'asc' },
-              select: { numeroPeriodo: true, cuotaTotal: true, interes: true, pagado: true, interesPagado: true, fechaEsperada: true },
+              select: { numeroPeriodo: true, cuotaTotal: true, interes: true, pagado: true, interesPagado: true, capital: true, fechaEsperada: true },
             },
             estado: true,
+            esClavo: true,
+            tasaInteres: true,
             cuotaDiaria: true,
             totalAPagar: true,
             totalPagado: true, abonadoCapital: true,
@@ -165,17 +169,25 @@ export async function GET() {
      perdidos, y de UNA sola ruta aunque el cobrador lleve varias. El 19 sep 2026
      esta pantalla le decía a un cobrador «Meta $815.067» mientras su inicio decía
      «de $520.000 que toca cobrar». Ahora es la MISMA regla que el inicio, Rutas y
-     Cobros de hoy: lo que el calendario dice que toca cobrar hoy. */
-  const metaHoy = Math.round(clientesRuta.reduce((suma, c) => {
+     Cobros de hoy: lo que el calendario dice que toca cobrar hoy.
+     Y desde DETALLES-RUTAS #70, con `loDeHoyDelPrestamo`: sin el que tiene las
+     cuotas cubiertas por un abono a capital, y sin lo que el cliente adelantó
+     ayer. El avance es lo cubierto de esa meta, no lo cobrado entre la meta. */
+  let metaHoy = 0
+  let faltaHoy = 0
+  const ahora = new Date()
+  for (const c of clientesRuta) {
     for (const p of c.prestamos) {
-      const dias = obtenerDiasSinCobro(c, c.ruta, org, p)
-      const sinCobro = esHoySinCobro(dias) || esHoyFestivo(festivos)
-      if (tienePeriodoEsperadoHoy(p, sinCobro, dias, festivos)) suma += Number(p.cuotaDiaria) || 0
+      const hoyEste = loDeHoyDelPrestamo(p, { diasExcluidos: obtenerDiasSinCobro(c, c.ruta, org, p), festivos, pagadoHoy: pagadoEnElDia(p, ahora) })
+      if (!hoyEste.cuenta) continue
+      metaHoy += hoyEste.toca
+      faltaHoy += hoyEste.falta
     }
-    return suma
-  }, 0))
+  }
+  metaHoy = Math.round(metaHoy)
+  faltaHoy = Math.round(faltaHoy)
 
-  const pctMeta = metaHoy > 0 ? Math.round((recaudadoHoy / metaHoy) * 100) : 100
+  const pctMeta = metaHoy > 0 ? avanceDeHoy({ esperadoHoy: metaHoy, faltaHoy, recaudadoHoy }) : 100
 
   // Agrupar pagos semana por fecha Colombia
   const mapaFechas = {}
@@ -198,6 +210,7 @@ export async function GET() {
     data: {
       recaudadoHoy,
       metaHoy,
+      faltaHoy,
       pctMeta,
       semana,
       rutaNombre: ruta?.nombre ?? null,

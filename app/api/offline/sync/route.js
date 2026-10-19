@@ -3,7 +3,8 @@ import { PAGOS_DEL_CALCULO } from '@/lib/dinero/pagos-del-calculo'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, calcularProximoCobro, formatFechaCobro, pagoHoy, tieneCobroPendienteHoy, tienePeriodoEsperadoHoy, calcularCapitalRestante } from '@/lib/calculos'
+import { calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, calcularProximoCobro, formatFechaCobro, pagoHoy, tieneCobroPendienteHoy, calcularCapitalRestante } from '@/lib/calculos'
+import { loDeHoyDelPrestamo, pagadoEnElDia } from '@/lib/dinero/esperado'
 import { obtenerDiasSinCobro, esHoySinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
 import { numerarPorCliente, camposDeNumero } from '@/lib/prestamos/numero'
@@ -125,7 +126,14 @@ export async function GET() {
         prestamos: c.prestamos.map((p) => ({
           ...p,
           ...camposDeNumero(numeros, p.id),
-          totalPagado: p.pagos.filter(x => !['recargo', 'descuento'].includes(x.tipo)).reduce((a, x) => a + x.montoPagado, 0),
+          /* ⚠ EL DE LA BASE, NO LA SUMA DE LOS PAGOS QUE SE TRAJERON: aquí solo
+             vienen los de 90 días. Con la suma, un préstamo de seis meses decía
+             sin señal que debía casi todo, y el saldo tras cobrar (`efectoDelPago`)
+             salía inflado. `totalPagado` lo mantiene `refrescarTotalesPrestamo`
+             con la misma regla, sobre todos los pagos. */
+          totalPagado: typeof p.totalPagado === 'number'
+            ? p.totalPagado
+            : p.pagos.filter(x => !['recargo', 'descuento'].includes(x.tipo)).reduce((a, x) => a + x.montoPagado, 0),
           diasMora: calcularDiasMora(p, diasExcluidos, festivos),
           saldoPendiente: calcularSaldoPendiente(p),
           porcentajePagado: calcularPorcentajePagado(p),
@@ -166,7 +174,7 @@ export async function GET() {
   })
 
   const rutas = rutasRaw.map(r => {
-    let esperadoHoy = 0, recaudadoHoy = 0, pendientesHoy = 0
+    let esperadoHoy = 0, recaudadoHoy = 0, pendientesHoy = 0, faltaHoy = 0
     let enMora = 0, carteraTotal = 0, capitalTotal = 0
 
     const clientesEnriquecidos = r.clientes.map(rc => {
@@ -185,7 +193,10 @@ export async function GET() {
       // Cuota = suma de cuotas SOLO de prestamos cuyo ciclo toca hoy.
       // Esto reemplaza el calculo viejo `activos.reduce(...cuotaDiaria)` que
       // sumaba todas las cuotas sin filtrar por ciclo.
+      // Desde DETALLES-RUTAS #70, con `loDeHoyDelPrestamo`, como Rutas en línea:
+      // sin quien tiene las cuotas cubiertas y sin lo que adelantó ayer.
       let cuotaEsperadaHoy = 0
+      let faltaEsperadaHoy = 0
 
       for (const p of activos) {
         const pc = p.proximoCobro ? new Date(p.proximoCobro) : null
@@ -194,8 +205,10 @@ export async function GET() {
         if (!hoySinCobro && tieneCobroPendienteHoy(p, diasExcluidosCliente, festivos)) {
           cobroPendienteHoy = true
         }
-        if (tienePeriodoEsperadoHoy(p, hoySinCobro, diasExcluidosCliente, festivos)) {
-          cuotaEsperadaHoy += (p.cuotaDiaria || 0)
+        const hoyEste = loDeHoyDelPrestamo(p, { diasExcluidos: diasExcluidosCliente, festivos, pagadoHoy: pagadoEnElDia(p, inicioHoy) })
+        if (hoyEste.cuenta) {
+          cuotaEsperadaHoy += hoyEste.toca
+          faltaEsperadaHoy += hoyEste.falta
         }
       }
 
@@ -203,6 +216,7 @@ export async function GET() {
       const cuota = cuotaEsperadaHoy
 
       esperadoHoy += cuotaEsperadaHoy
+      faltaHoy += faltaEsperadaHoy
       if (pagadoHoy) {
         recaudadoHoy += activos.reduce((s, p) => {
           return s + p.pagos
@@ -259,6 +273,7 @@ export async function GET() {
       clientes: clientesEnriquecidos,
       cantidadClientes: r.clientes.length,
       esperadoHoy: Math.round(esperadoHoy),
+      faltaHoy: Math.round(faltaHoy),
       recaudadoHoy: Math.round(recaudadoHoy),
       pendientesHoy, enMora,
       carteraTotal: Math.round(carteraTotal),

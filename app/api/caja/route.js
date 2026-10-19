@@ -6,7 +6,7 @@ import { prisma }           from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
 import { notificar, plata } from '@/lib/notificar'
 import { calcularCapitalRestante } from '@/lib/calculos'
-import { esperadoDeCartera, SELECT_PRESTAMO } from '@/lib/dinero/esperado'
+import { esperadoDeCartera, selectPrestamoDelDia } from '@/lib/dinero/esperado'
 import { getUtcOffset, getLocalDateStr, formatFechaCorta } from '@/lib/i18n'
 // Una sola definición para los TRES sitios que cierran cajas. Ver el archivo:
 // estaba duplicada con los argumentos en orden distinto y el tercer sitio se
@@ -593,7 +593,7 @@ export async function GET(request) {
               prestamos: {
                 // El clavo no aporta cuota esperada al cobrador (es el lado negativo).
                 where: { estado: 'activo', esClavo: false },
-                select: SELECT_PRESTAMO,
+                select: selectPrestamoDelDia(),
               },
             },
           },

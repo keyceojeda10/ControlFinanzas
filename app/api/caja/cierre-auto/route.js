@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
 // (organizationId, inicio, fin, cobradorId).
 import { calcularDesembolsadoDia } from '@/lib/dinero/desembolsado'
 import { getUtcOffset, getLocalDayRange } from '@/lib/i18n'
-import { esperadoDeCartera, SELECT_PRESTAMO } from '@/lib/dinero/esperado'
+import { esperadoDeCartera, selectPrestamoDelDia } from '@/lib/dinero/esperado'
 import { SIN_ABONO_PREVIO } from '@/lib/dinero/abono-previo'
 
 const CRON_SECRET = process.env.CRON_SECRET
@@ -52,7 +52,7 @@ async function calcularEsperado(organizationId, cobradorId, fechaCierre) {
         ruta: { select: { diasSinCobro: true } },
         prestamos: {
           where: { estado: 'activo', esClavo: false },
-          select: SELECT_PRESTAMO,
+          select: selectPrestamoDelDia(),
         },
       },
     }),

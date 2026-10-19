@@ -24,7 +24,7 @@ import {
   tieneTablaAmortizacion,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo, validarDiasSinCobro } from '@/lib/dias-sin-cobro'
-import { tocaCobrarEn, cuotaDelPeriodo, inicioDia, faltaDeHoy } from '@/lib/dinero/esperado'
+import { tocaCobrarEn, cuotaDelPeriodo, inicioDia, faltaDeHoy, tocaDeHoy } from '@/lib/dinero/esperado'
 import { getUtcOffset, getLocalDayRange } from '@/lib/i18n'
 import { distanciaMetros } from '@/lib/geo'
 // Suma los tramos consecutivos de una lista de clientes con coordenadas. Ya la
@@ -567,14 +567,16 @@ export async function GET(request, { params }) {
       const pendienteEste = !_hoySinCobro && tieneCobroPendienteHoy(p, diasExcluidosPrestamo, festivos)
       const debeOPagoHoy = montoPagadoHoy > 0 || pendienteEste
       const tocaHoyEste = tocaCobrarEn(p, hoyLocal, diasExcluidosPrestamo, festivos)
-      esperadoHoy   += tocaHoyEste && debeOPagoHoy ? cuota : 0
+      // Lo que le falta para ponerse al día, una vez: lo usan lo que toca hoy
+      // (#70), «Falta» (#67) y la tarjeta («Debe hoy»).
+      const montoAlDiaPrestamo = calcularMontoParaPonerseAlDia(p, diasExcluidosPrestamo, festivos)
+      // Su cuota sin lo que adelantó antes de hoy: la misma cuenta de todas las
+      // pantallas (`tocaDeHoy`, DETALLES-RUTAS #70).
+      esperadoHoy   += tocaHoyEste && debeOPagoHoy ? tocaDeHoy({ cuota, pagadoHoy: montoPagadoHoy, alDia: montoAlDiaPrestamo }) : 0
       /* «FALTA» NO ES ESPERADO MENOS RECAUDADO (DETALLES-RUTAS #62). Un cliente
          que cerró su préstamo con $222.667 dejaba «Falta $0» con tres clientes
          sin cobrar: lo que pagó uno de más tapaba lo que deben los otros. Falta
          es lo que le queda a cada pendiente de su cuota de hoy. */
-      // Lo que le falta para ponerse al día, una vez: lo usa «Falta» (#67) y la
-      // tarjeta («Debe hoy»).
-      const montoAlDiaPrestamo = calcularMontoParaPonerseAlDia(p, diasExcluidosPrestamo, festivos)
       if (tocaHoyEste && pendienteEste) {
         // Nunca más de lo que le falta para ponerse al día (#67): ver `faltaDeHoy`.
         const leFalta = faltaDeHoy({ cuota, pagadoHoy: montoPagadoHoy, alDia: montoAlDiaPrestamo })

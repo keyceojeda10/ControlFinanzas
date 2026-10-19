@@ -1441,7 +1441,7 @@ const MOVIMIENTOS_MANUALES = [
             <p className="text-xs font-semibold text-[var(--cf-ink-3)] uppercase tracking-wide mb-4">
               {modoAjusteCierre
                 ? 'Corregir monto entregado'
-                : (esAyer ? 'Cierre pendiente de ayer' : 'Entregar caja del dia')}
+                : (esAyer ? 'Cierre pendiente de ayer' : 'Entregar caja del día')}
             </p>
             {exito && (
               <div className="mb-4 flex items-center gap-2 bg-[var(--cf-green-pill-bg)] border border-[color-mix(in_srgb,var(--cf-green-dark)_30%,transparent)] text-[var(--cf-green-dark)] text-sm rounded-[12px] px-4 py-3">
@@ -1455,7 +1455,7 @@ const MOVIMIENTOS_MANUALES = [
             )}
             {esAyer && (
               <p className="mb-3 text-[11px] text-[var(--cf-gold)] leading-snug">
-                Estas reportando lo de ayer. Anota cuanto efectivo recogiste para que quede registrado.
+                Estás reportando lo de ayer. Anota cuánto efectivo recogiste para que quede registrado.
               </p>
             )}
             <form id="cf-cierre-del-dia" onSubmit={registrarCierre} className="space-y-4">
@@ -1482,10 +1482,10 @@ const MOVIMIENTOS_MANUALES = [
               </div>
               <div className="rounded-[12px] px-3 py-2.5 space-y-2" style={{ background: 'var(--cf-gold-tint)', border: '1px solid color-mix(in srgb, var(--cf-gold-dark) 25%, transparent)' }}>
                 <p className="text-[11px] text-[var(--cf-gold)] leading-snug">
-                  Esto no cobra ni descuenta nada. Solo reportas cuanto dinero fisico tienes para entregar.
+                  Esto no cobra ni descuenta nada. Solo reportas cuánto dinero físico tienes para entregar.
                 </p>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] text-[var(--cf-ink-2)]">Segun los pagos registrados hoy</span>
+                  <span className="text-[11px] text-[var(--cf-ink-2)]">Según los pagos registrados hoy</span>
                   <button
                     type="button"
                     onClick={() => setTotalRecogido(String(recaudadoRegistrado))}
@@ -2853,7 +2853,7 @@ const MOVIMIENTOS_MANUALES = [
         fechaInicial={fechaSeleccionada}
       />
 
-      <Modal open={showUpgradeReporte} onClose={() => setShowUpgradeReporte(false)} title="Reporte del dia">
+      <Modal open={showUpgradeReporte} onClose={() => setShowUpgradeReporte(false)} title="Reporte del día">
         <div className="text-center py-4">
           <div className="w-12 h-12 rounded-[12px] mx-auto mb-3 flex items-center justify-center"
             style={{ background: 'color-mix(in srgb, var(--cf-gold) 15%, transparent)' }}>

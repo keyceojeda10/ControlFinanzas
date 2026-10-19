@@ -3,6 +3,7 @@
 // Card premium de cobrador con mood color por desempeño del dia.
 
 import { formatMoney } from '@/lib/i18n'
+import { avanceDeHoy } from '@/lib/adaptadores/cobros'
 import Link from 'next/link'
 import Avatar from '@/components/ui/Avatar'
 
@@ -43,9 +44,9 @@ function tiempoUltimaActividad(ultimoPago) {
 }
 
 export default function CobradorCard({ cobrador, onToggleActivo, toggling, suspendido }) {
-  const progreso = cobrador.esperadoHoy > 0
-    ? Math.min(100, Math.round((cobrador.recaudadoHoy / cobrador.esperadoHoy) * 100))
-    : 0
+  // Lo cubierto de lo que toca hoy, como Rutas (DETALLES-RUTAS #70): lo que un
+  // cliente adelantó ayer no cuenta como avance de hoy.
+  const progreso = avanceDeHoy(cobrador)
   const color = moodColor(progreso, cobrador.esperadoHoy, cobrador.activo)
   const label = moodLabel(progreso, cobrador.esperadoHoy, cobrador.activo)
   const actividad = tiempoUltimaActividad(cobrador.ultimoPago)

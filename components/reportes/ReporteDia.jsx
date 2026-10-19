@@ -108,7 +108,7 @@ export default function ReporteDia({ open, onClose, rutasDisponibles = [], fecha
     if (!el) return
     const win = window.open('', '_blank', 'width=800,height=600')
     if (!win) return
-    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Reporte del dia - ${fmtFechaDisplay(data?.fecha)}</title>
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Reporte del día - ${fmtFechaDisplay(data?.fecha)}</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: Arial, Helvetica, sans-serif; color: #111; padding: 16px; font-size: 12px; }
@@ -136,7 +136,7 @@ export default function ReporteDia({ open, onClose, rutasDisponibles = [], fecha
   @media print { body { padding: 0; } }
 </style></head><body>`)
 
-    win.document.write(`<h1>${data?.organizacion || 'Reporte del dia'}</h1>`)
+    win.document.write(`<h1>${data?.organizacion || 'Reporte del día'}</h1>`)
     win.document.write(`<p class="sub">${fmtFechaDisplay(data?.fecha)} &mdash; ${data?.rutas?.map(r => r.nombre).join(', ')}</p>`)
 
     const r = data?.resumen
@@ -158,7 +158,7 @@ export default function ReporteDia({ open, onClose, rutasDisponibles = [], fecha
       win.document.write(`</tbody></table>`)
     }
 
-    win.document.write(`<h2>Pagos del dia (${data?.pagos?.length || 0})</h2>`)
+    win.document.write(`<h2>Pagos del día (${data?.pagos?.length || 0})</h2>`)
     if (data?.pagos?.length > 0) {
       win.document.write(`<table><thead><tr><th>#</th><th>Cliente</th><th>Hora</th><th class="right">Monto</th><th>Tipo</th></tr></thead><tbody>`)
       data.pagos.forEach((p, i) => {
@@ -200,7 +200,7 @@ export default function ReporteDia({ open, onClose, rutasDisponibles = [], fecha
     setCompartiendo(true)
     try {
       const r = data.resumen
-      let texto = `*Reporte del dia*\n${fmtFechaDisplay(data.fecha)}\n`
+      let texto = `*Reporte del día*\n${fmtFechaDisplay(data.fecha)}\n`
       texto += `${data.rutas.map(rt => rt.nombre).join(', ')}\n\n`
       texto += `Recaudado: ${formatMoney(r.totalRecaudado)}\n`
       texto += `Esperado: ${formatMoney(r.totalEsperado)}\n`
@@ -237,7 +237,7 @@ export default function ReporteDia({ open, onClose, rutasDisponibles = [], fecha
       if (orgNombre) texto += `\n_${orgNombre}_`
 
       if (navigator.share) {
-        await navigator.share({ title: 'Reporte del dia', text: texto })
+        await navigator.share({ title: 'Reporte del día', text: texto })
       } else {
         await navigator.clipboard.writeText(texto)
         alert('Reporte copiado al portapapeles')
@@ -252,7 +252,7 @@ export default function ReporteDia({ open, onClose, rutasDisponibles = [], fecha
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Reporte del dia" size="lg">
+    <Modal open={open} onClose={onClose} title="Reporte del día" size="lg">
       <div className="space-y-3" ref={reporteRef}>
         {/* Selector de fecha */}
         <div className="flex items-center gap-2">
@@ -368,7 +368,7 @@ export default function ReporteDia({ open, onClose, rutasDisponibles = [], fecha
             {/* Pagos del día */}
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)] mb-1.5">
-                Pagos del dia ({data.pagos.length})
+                Pagos del día ({data.pagos.length})
               </p>
               {data.pagos.length > 0 ? (
                 <div className="space-y-0.5 max-h-[280px] overflow-y-auto">

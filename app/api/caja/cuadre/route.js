@@ -10,7 +10,7 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
 import { registrarMovimientoCapital } from '@/lib/capital'
-import { esperadoDeCartera, SELECT_PRESTAMO } from '@/lib/dinero/esperado'
+import { esperadoDeCartera, selectPrestamoDelDia } from '@/lib/dinero/esperado'
 import { getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
 // La MISMA función que usan el cierre normal y el automático. Este archivo no
 // la tenía —estaba duplicada y privada en los otros dos— y por eso escribía 0.
@@ -56,7 +56,7 @@ async function esperadoPorCobradorDia(organizationId, fecha) {
                 diasSinCobro: true,
                 prestamos: {
                   where: { estado: 'activo', esClavo: false },
-                  select: SELECT_PRESTAMO,
+                  select: selectPrestamoDelDia(),
                 },
               },
             },

@@ -11,7 +11,7 @@ import { getUtcOffset } from '@/lib/i18n'
 import { tienePeriodoEsperadoHoy, tieneCobroPendienteHoy, calcularDiasMora, calcularProximoCobro, calcularMontoParaPonerseAlDia } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
-import { faltaDeHoy, cuotaDelPeriodo } from '@/lib/dinero/esperado'
+import { faltaDeHoy, cuotaDelPeriodo, tocaDeHoy } from '@/lib/dinero/esperado'
 
 const hoy = (country = 'co') => {
   const now = new Date()
@@ -175,14 +175,14 @@ export async function GET(request) {
           alDia: calcularMontoParaPonerseAlDia(prestamo, diasDelPrestamo, festivos),
         }) > 0) pendienteCliente = true
         if (vivo && (pendienteEste || cobradoDeEste > 0) && tienePeriodoEsperadoHoy(prestamo, sinCobroDelPrestamo, diasDelPrestamo, festivos)) {
-          esperadoHoy += prestamo.cuotaDiaria
+          /* Su cuota sin lo que adelantó antes de hoy, y la cuota del período:
+             la misma cuenta de la ruta por dentro (`tocaDeHoy`, DETALLES-RUTAS #70). */
+          const cuotaEste = cuotaDelPeriodo(prestamo)
+          const alDiaEste = calcularMontoParaPonerseAlDia(prestamo, diasDelPrestamo, festivos)
+          esperadoHoy += tocaDeHoy({ cuota: cuotaEste, pagadoHoy: cobradoDeEste, alDia: alDiaEste })
           // Nunca más de lo que le falta para ponerse al día (#67).
           if (pendienteEste) {
-            faltaHoy += faltaDeHoy({
-              cuota: prestamo.cuotaDiaria,
-              pagadoHoy: cobradoDeEste,
-              alDia: calcularMontoParaPonerseAlDia(prestamo, diasDelPrestamo, festivos),
-            })
+            faltaHoy += faltaDeHoy({ cuota: cuotaEste, pagadoHoy: cobradoDeEste, alDia: alDiaEste })
           }
         }
 
