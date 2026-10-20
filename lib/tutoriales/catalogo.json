@@ -54,7 +54,7 @@
    "titulo": "El profe en toda la app",
    "estado": "listo",
    "destino": "/videos/inicio/novedad-profe.mp4",
-   "duracion": 47.5,
+   "duracion": 48.3,
    "capitulos": [
     {
      "t": 0,
@@ -66,10 +66,10 @@
     },
     {
      "t": 25.8,
-     "titulo": "Todos en Ayuda"
+     "titulo": "Todos juntos"
     },
     {
-     "t": 34.8,
+     "t": 35.6,
      "titulo": "Consejo del profe"
     }
    ],
@@ -84,7 +84,7 @@
     "cobrador"
    ],
    "tarea": null,
-   "nota": "Anuncia los videos (19 oct, cf-v1181). General a propósito: no dice dónde sale el profe en cada pantalla; solo que todos están en Configuración → «Ayuda».",
+   "nota": "Anuncia los videos (v3 del 19 oct en la noche, cf-v1187): se ve al profe dentro de la app (la pastilla ▶ en Clientes, Préstamos, Rutas y Caja, el reproductor con sus partes y la lista «Ayuda y tutoriales»). La voz es general a propósito: no dice dónde sale el profe en cada pantalla.",
    "src": "/videos/profe/inicio/novedad-profe.mp4",
    "poster": "/videos/profe/inicio/novedad-profe.jpg"
   },
@@ -92,9 +92,9 @@
    "id": "inicio-instalar",
    "serie": "inicio",
    "titulo": "Instalar la app",
-   "estado": "revisar",
+   "estado": "listo",
    "destino": "/videos/inicio/instalar.mp4",
-   "duracion": 88.6,
+   "duracion": 80,
    "capitulos": [
     {
      "t": 0,
@@ -105,19 +105,24 @@
      "titulo": "Dónde está"
     },
     {
-     "t": 28.5,
+     "t": 24.4,
      "titulo": "En Android"
     },
     {
-     "t": 47.1,
+     "t": 40.8,
      "titulo": "En iPhone"
     },
     {
-     "t": 66.5,
+     "t": 57.9,
      "titulo": "Consejo del profe"
     }
    ],
    "donde": [
+    {
+     "pantalla": "/mas",
+     "tipo": "E2",
+     "junto_a": "Instalar la app"
+    },
     {
      "pantalla": "/configuracion",
      "tipo": "E2",
@@ -129,7 +134,7 @@
     "cobrador"
    ],
    "tarea": "Instalar en este dispositivo",
-   "nota": "Nuevo del 19 oct (cf-v1181): Más → Configuración → «Instalar la app»; Android (aviso de Chrome o los pasos) e iPhone (Safari). El aviso de Chrome y las pantallas de Safari y del teléfono están dibujados (no se pueden capturar). Falta recapturar las dos hojas de pasos cuando arreglen DETALLES-CONFIGURACION #1 (tildes); su lugar y capítulos no cambian.",
+   "nota": "v3 del 19 oct en la noche (cf-v1187, instalar de un toque): Más → «Cuenta» → «Instalar la app». Android: la ventana del teléfono (dibujada, con la descripción y las capturas del manifiesto) → «Instalar»; desde Facebook o Instagram, «Abrir en Chrome». iPhone (Safari): la guía de la app con la flecha a «Compartir», «Agregar a inicio» y «Agregar».",
    "src": "/videos/profe/inicio/instalar.mp4",
    "poster": "/videos/profe/inicio/instalar.jpg"
   },
