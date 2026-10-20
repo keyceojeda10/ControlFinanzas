@@ -440,8 +440,10 @@ export default function HojaInferior({
           empujado hacia arriba.
 
           En movil no hay filete y la cabecera ya deja 14px, asi que basta un
-          poco menos. */}
-      <div style={{
+          poco menos.
+
+          ⚠ `cf-hoja-cuerpo`: ningún hijo se encoge (globals.css). Ver allí. */}
+      <div className="cf-hoja-cuerpo" style={{
         flex: 1, minHeight: 0, overflowY: 'auto',
         padding: escritorio ? '18px 22px 18px' : '4px 22px 18px',
         display: 'flex', flexDirection: 'column', gap: 12,

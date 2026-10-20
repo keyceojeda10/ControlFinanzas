@@ -68,7 +68,7 @@ export default function NovedadProfe({ profe, primeraVez, videoAbierto }) {
       >
         <button type="button" onClick={ver} aria-label={`Ver el video: ${video.titulo}`} style={{
           position: 'relative', display: 'block', width: '100%', height: 220, border: 0, padding: 0, cursor: 'pointer',
-          borderRadius: 'var(--cf-r-card)', overflow: 'hidden', background: '#22232A',
+          borderRadius: 'var(--cf-r-card)', overflow: 'hidden', background: '#22232A', flex: 'none',
         }}>
           {video.poster && <img src={video.poster} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
           <span aria-hidden style={{
@@ -79,7 +79,7 @@ export default function NovedadProfe({ profe, primeraVez, videoAbierto }) {
             <svg width="22" height="22" viewBox="0 0 24 24" fill="var(--cf-gold-ink)"><path d="M7 4.5v15l13-7.5z" /></svg>
           </span>
         </button>
-        <p style={{ margin: 0, fontSize: 15, lineHeight: 1.5, color: 'var(--cf-ink-2)' }}>{NOVEDAD_PROFE.porque}</p>
+        <p style={{ margin: 0, fontSize: 15, lineHeight: 1.5, color: 'var(--cf-ink-2)', flex: 'none' }}>{NOVEDAD_PROFE.porque}</p>
       </HojaInferior>
     </div>,
     document.body,

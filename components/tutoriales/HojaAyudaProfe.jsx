@@ -43,6 +43,7 @@ export default function HojaAyudaProfe({ ayuda, vistos, onAbrir, onBiblioteca, o
         <button type="button" onClick={() => onAbrir(general.id)} style={{
           display: 'flex', alignItems: 'stretch', gap: 0, padding: 0, textAlign: 'left', cursor: 'pointer', font: 'inherit',
           borderRadius: 'var(--cf-r-card)', overflow: 'hidden', background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+          flex: 'none',
         }}>
           <span aria-hidden style={{ position: 'relative', width: 96, minHeight: 104, flex: 'none', background: '#22232A' }}>
             {general.poster && <img src={general.poster} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.6 }} />}
@@ -66,8 +67,12 @@ export default function HojaAyudaProfe({ ayuda, vistos, onAbrir, onBiblioteca, o
 
       {funciones.length > 0 && (
         <>
-          <span style={{ ...rotulo, marginTop: general ? 6 : 0 }}>Lo que puedes hacer aquí</span>
-          <div style={{ borderRadius: 'var(--cf-r-card)', border: '1px solid var(--cf-border)', background: 'var(--cf-card)', overflow: 'hidden' }}>
+          <span style={{ ...rotulo, marginTop: general ? 6 : 0, flex: 'none' }}>Lo que puedes hacer aquí</span>
+          {/* ⚠ `flex: none`. El cuerpo de la hoja es una columna flex que se
+              desliza: sin esto la lista se ENCOGÍA para caber, su `overflow:
+              hidden` cortaba los últimos videos y no quedaba nada que deslizar
+              («el último sale medio cortado y no da scroll», 19 oct 2026). */}
+          <div style={{ borderRadius: 'var(--cf-r-card)', border: '1px solid var(--cf-border)', background: 'var(--cf-card)', overflow: 'hidden', flex: 'none' }}>
             {funciones.map((v, i) => {
               const visto = vistos.has(v.id)
               return (

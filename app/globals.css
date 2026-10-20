@@ -1483,6 +1483,20 @@ html[data-theme="light"] [class*="hover:border-[#4"]:hover { border-color: rgba(
   from { opacity: 0; transform: translate(-50%, -50%) scale(.965); }
   to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
+/* ══ DENTRO DE UNA HOJA NADA SE ENCOGE: SE DESLIZA ═════════════════════════
+ *
+ * El cuerpo de `HojaInferior` es una columna flex con scroll. Un hijo con
+ * `overflow: hidden` —toda tarjeta redondeada— pierde su alto mínimo y, si no
+ * cabe, se ENCOGE en vez de empujar el scroll: la lista sale cortada y no se
+ * puede bajar. Carlos, 19 oct 2026, en la ayuda de una ruta: «el último video
+ * sale medio cortado, no da scroll, no sé si hay más videos».
+ *
+ * ⚠ SIN `@layer`. Se probó en `@layer base` y el minificador de producción de
+ * Next se la comió: el CSS servido no la traía, aunque Tailwind sí la emitía.
+ * Un `flex` en línea le sigue ganando; un `flex-1` de Tailwind pierde solo el
+ * `shrink`, y con base 0 no cambia nada. */
+.cf-hoja-cuerpo > * { flex-shrink: 0; }
+
 .cf-velo-llega { animation: cf-velo-llega 200ms ease-out; }
 @keyframes cf-velo-llega { from { opacity: 0 } to { opacity: 1 } }
 @media (prefers-reduced-motion: reduce) {

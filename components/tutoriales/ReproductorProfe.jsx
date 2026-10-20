@@ -100,7 +100,8 @@ export default function ReproductorProfe({ video, desde = 0, volver = 'Volver', 
   const [pausa, setPausa] = useState(false)
   const [silencio, setSilencio] = useState(false)
   const [fallo, setFallo] = useState(false)
-  const [montado, setMontado] = useState(false)
+  // Solo para el render que coloca en su hueco el <video> recién creado.
+  const [, setMontado] = useState(false)
   const [completa, setCompleta] = useState(false)
   const [lista, setLista] = useState(false)
   // Los capítulos que ya pasaron enteros: check (no se guardan, son de esta vez).
@@ -258,7 +259,13 @@ export default function ReproductorProfe({ video, desde = 0, volver = 'Volver', 
     if (sig) irA(sig.t)
   }
 
-  if (!montado) return null
+  /* ⚠ LA HOJA NACE EN EL PRIMER CUADRO, sin esperar a `montado`. Se esperaba,
+     y eso abría un hueco: la hoja de ayuda (o la novedad) se cierra en el mismo
+     toque que abre el video, y al cerrarse retira su entrada del historial con
+     un `back()` diferido. Si el video registraba la suya un cuadro después, el
+     `popstate` de ese `back()` le llegaba a él y lo cerraba: «toco el video y
+     solo se sale del modal» (Carlos, 19 oct 2026, en un teléfono de verdad).
+     Registrándose en el mismo cuadro, la hoja nueva cancela ese `back()`. */
 
   const botonOscuro = {
     width: 44, height: 44, flex: 'none', borderRadius: 999, border: 0, cursor: 'pointer',
@@ -455,7 +462,7 @@ export default function ReproductorProfe({ video, desde = 0, volver = 'Volver', 
         }
       >
         {escritorio
-          ? <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start' }}>{videoBanda}{listaDePartes()}</div>
+          ? <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start', flex: 'none' }}>{videoBanda}{listaDePartes()}</div>
           : <>{videoBanda}{listaDePartes()}</>}
       </HojaInferior>
       {capaCompleta}
