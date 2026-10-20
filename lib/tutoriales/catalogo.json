@@ -49,6 +49,92 @@
    "poster": "/videos/bienvenida-portada.jpg"
   },
   {
+   "id": "inicio-inicio",
+   "serie": "inicio",
+   "titulo": "Tu Inicio",
+   "estado": "listo",
+   "destino": "/videos/inicio/inicio.mp4",
+   "duracion": 64.4,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 8.5,
+     "titulo": "Lo de hoy"
+    },
+    {
+     "t": 22.6,
+     "titulo": "Lo que hay que mirar"
+    },
+    {
+     "t": 37.1,
+     "titulo": "Tu negocio"
+    },
+    {
+     "t": 50.5,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/dashboard",
+     "tipo": "D1"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Nuevo del 19 oct en la noche (cf-v1187): lo de hoy (cobrado, cobros, falta, ayer y las barras de 7 días), En caja y En mora, «Necesita tu atención», «Por ruta hoy», «Tu plata puesta» y «Este mes».",
+   "src": "/videos/profe/inicio/inicio.mp4",
+   "poster": "/videos/profe/inicio/inicio.jpg"
+  },
+  {
+   "id": "inicio-cobrar-dia",
+   "serie": "inicio",
+   "titulo": "Cobrar el día",
+   "estado": "listo",
+   "destino": "/videos/inicio/cobrar-dia.mp4",
+   "duracion": 68.5,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 8.1,
+     "titulo": "Tu lista de hoy"
+    },
+    {
+     "t": 21.3,
+     "titulo": "Cobrar"
+    },
+    {
+     "t": 39.3,
+     "titulo": "Lo que te falta"
+    },
+    {
+     "t": 53.6,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/cobros-hoy",
+     "tipo": "D1"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": "Cobrar hoy",
+   "nota": "Nuevo del 19 oct en la noche (cf-v1187), para el dueño que cobra él mismo: ＋ → «Cobrar hoy», la hoja (cuota, todo u otro monto; efectivo o transferencia; deslizar), «Deshacer el cobro» y el filtro. En /cobros-hoy el cobrador sigue viendo «El día del cobrador».",
+   "src": "/videos/profe/inicio/cobrar-dia.mp4",
+   "poster": "/videos/profe/inicio/cobrar-dia.jpg"
+  },
+  {
    "id": "inicio-novedad-profe",
    "serie": "inicio",
    "titulo": "El profe en toda la app",
