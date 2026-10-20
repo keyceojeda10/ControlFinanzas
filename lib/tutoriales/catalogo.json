@@ -49,6 +49,91 @@
    "poster": "/videos/bienvenida-portada.jpg"
   },
   {
+   "id": "inicio-novedad-profe",
+   "serie": "inicio",
+   "titulo": "El profe en toda la app",
+   "estado": "listo",
+   "destino": "/videos/inicio/novedad-profe.mp4",
+   "duracion": 47.5,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 13.2,
+     "titulo": "En cada sección"
+    },
+    {
+     "t": 25.8,
+     "titulo": "Todos en Ayuda"
+    },
+    {
+     "t": 34.8,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "Modal de novedades (NovedadesModal), una vez, cuando se estrene el sistema de videos",
+     "tipo": "novedades"
+    }
+   ],
+   "para": [
+    "dueno",
+    "cobrador"
+   ],
+   "tarea": null,
+   "nota": "Anuncia los videos (19 oct, cf-v1181). General a propósito: no dice dónde sale el profe en cada pantalla; solo que todos están en Configuración → «Ayuda».",
+   "src": "/videos/profe/inicio/novedad-profe.mp4",
+   "poster": "/videos/profe/inicio/novedad-profe.jpg"
+  },
+  {
+   "id": "inicio-instalar",
+   "serie": "inicio",
+   "titulo": "Instalar la app",
+   "estado": "revisar",
+   "destino": "/videos/inicio/instalar.mp4",
+   "duracion": 88.6,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 14.8,
+     "titulo": "Dónde está"
+    },
+    {
+     "t": 28.5,
+     "titulo": "En Android"
+    },
+    {
+     "t": 47.1,
+     "titulo": "En iPhone"
+    },
+    {
+     "t": 66.5,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/configuracion",
+     "tipo": "E2",
+     "junto_a": "Instalar en este dispositivo"
+    }
+   ],
+   "para": [
+    "dueno",
+    "cobrador"
+   ],
+   "tarea": "Instalar en este dispositivo",
+   "nota": "Nuevo del 19 oct (cf-v1181): Más → Configuración → «Instalar la app»; Android (aviso de Chrome o los pasos) e iPhone (Safari). El aviso de Chrome y las pantallas de Safari y del teléfono están dibujados (no se pueden capturar). Falta recapturar las dos hojas de pasos cuando arreglen DETALLES-CONFIGURACION #1 (tildes); su lugar y capítulos no cambian.",
+   "src": "/videos/profe/inicio/instalar.mp4",
+   "poster": "/videos/profe/inicio/instalar.jpg"
+  },
+  {
    "id": "capital-capital",
    "serie": "capital",
    "titulo": "Capital",

@@ -26,6 +26,7 @@ import { videosPara, videoPorId, ayudaDeLaPantalla, PRIMERA_VEZ, volverDe } from
 import { salirDeHojaHacia } from '@/components/cf/HojaInferior'
 import ReproductorProfe from './ReproductorProfe'
 import HojaAyudaProfe from './HojaAyudaProfe'
+import NovedadProfe from './NovedadProfe'
 
 const Contexto = createContext(null)
 // Por usuario: en un teléfono con «Cuentas guardadas» una cuenta no hereda lo de otra.
@@ -154,6 +155,7 @@ export default function ProfeProvider({ rol, usuario, children }) {
     const accion = tarea.accion ? acciones.find((a) => a.id === tarea.accion && a.disponible !== false) : null
     // Después de cerrar la hoja: una acción que abre otra hoja no debe nacer debajo.
     if (accion) setTimeout(() => ejecutarAccion(accion), 120)
+    else if (tarea.evento) setTimeout(() => window.dispatchEvent(new Event(tarea.evento)), 120)
     // ⚠ No `router.push`: al cerrarse la hoja su `history.back()` aborta la
     // navegación (ver `salirDeHojaHacia`, components/cf/HojaInferior.jsx).
     else if (pathname !== tarea.href) salirDeHojaHacia(router, tarea.href)
@@ -173,6 +175,7 @@ export default function ProfeProvider({ rol, usuario, children }) {
   return (
     <Contexto.Provider value={valor}>
       {children}
+      <NovedadProfe profe={valor} primeraVez={estado.primeraVez} videoAbierto={Boolean(abierto)} />
       {ayudaAbierta && ayuda.todos.length > 1 && (
         <HojaAyudaProfe
           ayuda={ayuda}

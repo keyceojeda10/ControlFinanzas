@@ -11,7 +11,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { EVENTOS, HITOS_TUTO, videoPorId, profeHabilitado } from '@/lib/tutoriales/profe'
+import { EVENTOS, HITOS_TUTO, videoPorId, profeHabilitado, NOVEDAD_PROFE } from '@/lib/tutoriales/profe'
 
 const leer = (m) => { try { return JSON.parse(m || '{}') } catch { return {} } }
 
@@ -32,7 +32,7 @@ export async function GET() {
   // Sin habilitar, nada que leer: la app no pinta nada del profe.
   if (!profeHabilitado(u.organizationId)) return Response.json(APAGADO)
   const deMi = { organizationId: u.organizationId, userId: u.id }
-  const [marcas, botonVisible, paraCobradores, mostrarAvisos, reset, algunPrestamo, algunCierre] = await Promise.all([
+  const [marcas, botonVisible, paraCobradores, mostrarAvisos, reset, algunPrestamo, algunCierre, yo] = await Promise.all([
     prisma.evento.findMany({
       where: { ...deMi, evento: { in: [EVENTOS.visto, EVENTOS.guardado, EVENTOS.avisoNo] } },
       select: { evento: true, metadata: true, createdAt: true },
@@ -46,6 +46,7 @@ export async function GET() {
     // La primera vez solo cuenta si de verdad nunca pasó (Adenda 6, D).
     prisma.prestamo.findFirst({ where: { organizationId: u.organizationId }, select: { id: true } }),
     prisma.cierreCaja.findFirst({ where: { organizationId: u.organizationId, cobradorId: u.id }, select: { id: true } }),
+    prisma.user.findUnique({ where: { id: u.id }, select: { createdAt: true } }),
   ])
   const vistos = new Set()
   const guardados = new Set()
@@ -62,7 +63,8 @@ export async function GET() {
     habilitado: true,
     vistos: [...vistos], guardados: [...guardados], descartados: [...descartados],
     botonVisible, paraCobradores, mostrarAvisos,
-    primeraVez: { prestamo: !algunPrestamo, cierre: !algunCierre },
+    // `novedad`: ya usaba la app antes de que llegaran los videos.
+    primeraVez: { prestamo: !algunPrestamo, cierre: !algunCierre, novedad: Boolean(yo?.createdAt && yo.createdAt < new Date(NOVEDAD_PROFE.estreno)) },
   })
 }
 
@@ -75,6 +77,7 @@ const TIPOS = {
   visto: EVENTOS.visto,
   guardado: EVENTOS.guardado,
   tarea: EVENTOS.tarea,
+  completa: EVENTOS.completa,
   avisoNo: EVENTOS.avisoNo,
   ...Object.fromEntries(HITOS_TUTO.map((h) => [String(h), EVENTOS.hito(h)])),
 }

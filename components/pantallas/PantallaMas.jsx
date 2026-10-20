@@ -15,6 +15,10 @@
 
 import { ICONO_DE_RUTA } from '@/components/armazon/iconos'
 import { Tarjeta } from '@/components/cf/primitivos'
+import { useEffect, useState } from 'react'
+import { isStandalone } from '@/components/layout/InstallButton'
+import { EVENTO_INSTALAR } from '@/components/layout/PuertaInstalacion'
+import { BotonMinutoProfe } from '@/components/tutoriales/PiezasProfe'
 
 /* Los iconos son de trazo, 20px, en gris. No compiten con las cifras.
    NO SE DIBUJAN AQUÍ: son los del sistema, pedidos por el destino de cada fila.
@@ -28,6 +32,8 @@ const RUTA_DE = {
   tutoriales: '/tutoriales', cuaderno: '/migrador', excel: '/carga-masiva',
 }
 const I = Object.fromEntries(Object.entries(RUTA_DE).map(([k, ruta]) => [k, ICONO_DE_RUTA[ruta]]))
+// Instalar no es una ruta: es la guía, que se abre encima de donde estés.
+I.instalar = <><rect x="6.5" y="2.5" width="11" height="19" rx="2.5" /><path d="M12 7.5v6M9.5 11L12 13.5 14.5 11M10.5 18.5h3" /></>
 
 function Icono({ nombre, tam = 20 }) {
   return (
@@ -44,13 +50,14 @@ const TONOS = {
   ambar: 'var(--cf-gold-text-2)',
 }
 
-function Fila({ icono, nombre, cifra, tono, alto = 56, primera, onIr }) {
+/* `video`: el minuto del profe a la derecha (Adenda 6, C). */
+function Fila({ icono, nombre, cifra, tono, alto = 56, primera, onIr, video }) {
   return (
+    <div style={{ display: 'flex', alignItems: 'center', width: '100%', flex: 'none', borderTop: primera ? 0 : '1px solid var(--cf-hairline)' }}>
     <button type="button" onClick={onIr} style={{
-      display: 'flex', alignItems: 'center', gap: 13, width: '100%', flex: 'none',
+      display: 'flex', alignItems: 'center', gap: 13, flex: 1, minWidth: 0,
       minHeight: alto, padding: '0 16px', cursor: 'pointer', textAlign: 'left',
       background: 'none', border: 0,
-      borderTop: primera ? 0 : '1px solid var(--cf-hairline)',
     }}>
       <span style={{
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -81,6 +88,23 @@ function Fila({ icono, nombre, cifra, tono, alto = 56, primera, onIr }) {
         <path d="M9 5l7 7-7 7" />
       </svg>
     </button>
+    {video && <BotonMinutoProfe id={video} style={{ marginRight: 10 }} />}
+    </div>
+  )
+}
+
+/* ── INSTALAR LA APP, A LA VISTA ──
+   «La gente lo pregunta muchísimo por WhatsApp: cómo descarga la aplicación»
+   (Carlos, 19 oct 2026). La guía existía (PuertaInstalacion) pero solo se
+   llegaba por Configuración. Va aquí, con su video, y solo a quien todavía no
+   la tiene instalada: enseñarle a instalar a quien ya la instaló confunde. */
+function FilaInstalar() {
+  const [instalada, setInstalada] = useState(true)
+  useEffect(() => { setInstalada(isStandalone()) }, [])
+  if (instalada) return null
+  return (
+    <Fila icono="instalar" nombre="Instalar la app" cifra="En tu teléfono, como cualquier app" alto={54}
+      onIr={() => window.dispatchEvent(new Event(EVENTO_INSTALAR))} video="inicio-instalar" />
   )
 }
 
@@ -192,6 +216,7 @@ export default function PantallaMas({
           <Fila icono="config"     nombre="Configuración" alto={54} primera onIr={ir('/configuracion')} />
           <Fila icono="soporte"    nombre="Soporte"       alto={54} onIr={ir('/soporte')} />
           <Fila icono="tutoriales" nombre="Tutoriales"    alto={54} onIr={ir('/tutoriales')} />
+          <FilaInstalar />
         </Tarjeta>
         <span aria-hidden style={{ height: 96, flex: 'none' }} />
       </div>
@@ -258,6 +283,7 @@ export default function PantallaMas({
         <Fila icono="config"     nombre="Configuración" alto={54} primera onIr={ir('/configuracion')} />
         <Fila icono="soporte"    nombre="Soporte"       alto={54} onIr={ir('/soporte')} />
         <Fila icono="tutoriales" nombre="Tutoriales"    alto={54} onIr={ir('/tutoriales')} />
+        <FilaInstalar />
       </Tarjeta>
 
       {/* SITIO PARA LA PASTILLA. La regla 2 del armazón dice que ningún texto

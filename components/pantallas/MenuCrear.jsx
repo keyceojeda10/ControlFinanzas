@@ -2,6 +2,7 @@
 
 import { Fragment } from 'react'
 import { Icono as IconoDelSistema } from '@/components/armazon/iconos'
+import { BotonMinutoProfe } from '@/components/tutoriales/PiezasProfe'
 
 // components/pantallas/MenuCrear.jsx — turno 43·01, adenda 07 §4.
 //
@@ -105,12 +106,17 @@ function Rotulo({ children }) {
 }
 
 /* Una ACCIÓN: alta, ancho completo, con flecha. Hace algo. */
-function Accion({ icono, nombre, cifra, destacada, alto = 56, primera, onClick }) {
+/* `video`: el id del video del profe de esta acción. El minuto va a la derecha
+   con fondo propio (Adenda 6, C): tocar la fila hace la acción, tocar el
+   minuto abre el video. Así se ve cómo crear un cliente SIN tener que entrar
+   primero a crearlo (Carlos, 19 oct 2026). */
+function Accion({ icono, nombre, cifra, destacada, alto = 56, primera, onClick, video }) {
   return (
+    <div style={{ display: 'flex', alignItems: 'center', width: '100%', flex: 'none', borderTop: primera ? 0 : LINEA }}>
     <button type="button" onClick={onClick} style={{
-      display: 'flex', alignItems: 'center', gap: 13, width: '100%', flex: 'none',
+      display: 'flex', alignItems: 'center', gap: 13, flex: 1, minWidth: 0,
       minHeight: destacada ? 62 : alto, padding: '0 15px', cursor: 'pointer', textAlign: 'left',
-      background: 'none', border: 0, borderTop: primera ? 0 : LINEA,
+      background: 'none', border: 0,
     }}>
       <span style={{
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -135,6 +141,8 @@ function Accion({ icono, nombre, cifra, destacada, alto = 56, primera, onClick }
         <path d="M9 5l7 7-7 7" />
       </svg>
     </button>
+    {video && <BotonMinutoProfe id={video} oscuro style={{ marginRight: 9 }} />}
+    </div>
   )
 }
 
@@ -189,7 +197,7 @@ export default function MenuCrear({
         {/* `/cobrar` NO EXISTE, y era 404. Un pago se registra desde el
             prestamo o desde la lista de hoy, asi que se va a la lista: ahi
             esta a quien hay que cobrarle, que es lo que se venia a hacer. */}
-        <Accion icono="pago" nombre="Registrar un pago" cifra={cobrosPendientes} destacada primera onClick={ir('/cobros-hoy')} />
+        <Accion icono="pago" nombre="Registrar un pago" cifra={cobrosPendientes} destacada primera onClick={ir('/cobros-hoy')} video="prestamos-registrar-pago" />
         {/* El escaner NO ES UNA RUTA, es un modal. `/qr` daba 404. */}
         <Accion icono="qr" nombre="Escanear un QR" onClick={onEscanear} />
       </>,
@@ -197,16 +205,16 @@ export default function MenuCrear({
     {
       id: 'sale', rotulo: 'Sale plata',
       filas: <>
-        <Accion icono="prestar" nombre="Prestarle a alguien" cifra={plataLista} destacada primera onClick={ir('/prestamos/nuevo')} />
+        <Accion icono="prestar" nombre="Prestarle a alguien" cifra={plataLista} destacada primera onClick={ir('/prestamos/nuevo')} video="prestamos-crear" />
         {/* `/gastos/nuevo` tampoco existe: el gasto se anota en una hoja
             dentro de /gastos. */}
-        <Accion icono="gasto" nombre="Anotar un gasto" onClick={ir('/gastos?anotar=1')} />
+        <Accion icono="gasto" nombre="Anotar un gasto" onClick={ir('/gastos?anotar=1')} video="caja-gastos" />
       </>,
     },
     {
       id: 'crear', rotulo: 'Crear',
       filas: <>
-        <Accion icono="cliente" nombre="Un cliente nuevo" alto={54} primera onClick={ir('/clientes/nuevo')} />
+        <Accion icono="cliente" nombre="Un cliente nuevo" alto={54} primera onClick={ir('/clientes/nuevo')} video="clientes-crear-cliente" />
         {/* ── ⚠ PASAR LA CARTERA, AQUÍ Y NO SOLO EN «MÁS» ──────────────────
             Estaba únicamente en «Más herramientas», entre otras once entradas.
             Y es la acción que decide si el prestamista se queda: el 73 % se
@@ -219,7 +227,7 @@ export default function MenuCrear({
             aquí serían dos decisiones antes de empezar. */}
         <Accion icono="cartera" nombre="Pasar mi cartera"
           cifra="De una foto, del cuaderno o de un Excel"
-          alto={54} onClick={ir('/migrador')} />
+          alto={54} onClick={ir('/migrador')} video="cartera-cuaderno" />
       </>,
     },
   ]

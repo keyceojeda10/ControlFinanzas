@@ -36,6 +36,7 @@ import TelefonosGuardados from '@/components/cuentas/TelefonosGuardados'
 import EntrarConHuella from '@/components/configuracion/EntrarConHuella'
 import AyudaProfe from '@/components/tutoriales/AyudaProfe'
 import { useProfe } from '@/components/tutoriales/ProfeProvider'
+import { EnlaceProfe } from '@/components/tutoriales/PiezasProfe'
 
 const PAISES_LIST = getCountryList()
 const WHATSAPP_SOPORTE = '573011993001'
@@ -1753,6 +1754,10 @@ function InstallSection() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
+        )}
+        {/* El video del profe, por si los pasos no bastan (Adenda 6, B). */}
+        {!installed && (
+          <EnlaceProfe id="inicio-instalar" junto="Instalar en este dispositivo" pregunta="¿Cómo se instala?" style={{ margin: '4px 0 -10px -8px' }} />
         )}
       </div>
       {showGuide && <InstallGuideModal onClose={() => setShowGuide(false)} />}

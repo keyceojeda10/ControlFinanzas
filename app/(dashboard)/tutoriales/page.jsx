@@ -8,12 +8,14 @@
 // en vez de dibujarse una propia.
 
 import TutorialesList from '@/components/TutorialesList'
-import ListaVideosProfe from '@/components/tutoriales/ListaVideosProfe'
+import AyudaProfe from '@/components/tutoriales/AyudaProfe'
+import { useAuth } from '@/hooks/useAuth'
 import { useProfe } from '@/components/tutoriales/ProfeProvider'
 import { useCabecera } from '@/components/armazon/Armazon'
 
 export default function TutorialesPage() {
   const profe = useProfe()
+  const { esOwner } = useAuth()
   useCabecera({
     titulo: 'Tutoriales',
     subtitulo: profe?.activo ? 'Los videos del profe, por sección' : 'Aprende a usar cada función del sistema paso a paso',
@@ -23,12 +25,8 @@ export default function TutorialesPage() {
   if (!profe?.activo) return profe?.cargado ? <TutorialesList showCopyButton={false} /> : null
 
   /* LOS VIDEOS DEL PROFE, NO LAS GUÍAS ESCRITAS (19 oct 2026). Las guías de
-     `lib/tutorialesData.js` contradecían la pantalla (DETALLES-RUTAS #47); la
-     misma lista vive en Configuración → Ayuda. Las guías siguen para el
-     buscador y el panel de admin. */
-  return (
-    <div style={{ paddingBottom: 24 }}>
-      <ListaVideosProfe />
-    </div>
-  )
+     `lib/tutorialesData.js` contradecían la pantalla (DETALLES-RUTAS #47). Es
+     LA MISMA pantalla que Configuración → Ayuda y tutoriales, con el índice y
+     los interruptores. Las guías siguen para el buscador y el panel de admin. */
+  return <AyudaProfe esOwner={esOwner} />
 }

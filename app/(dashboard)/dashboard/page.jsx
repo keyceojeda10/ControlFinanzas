@@ -29,7 +29,6 @@ const DashboardAiTip      = dynamic(() => import('@/components/dashboard/Dashboa
 const BannerFotosDonadas  = dynamic(() => import('@/components/dashboard/BannerFotosDonadas'),   { ssr: false })
 const BannerSugerencias   = dynamic(() => import('@/components/dashboard/BannerSugerencias'),    { ssr: false })
 const MonedaCF            = dynamic(() => import('@/components/ui/MonedaCF'),                    { ssr: false })
-const InstallBanner       = dynamic(() => import('@/components/layout/InstallBanner'),            { ssr: false })
 
 function Skeleton({ className = '' }) {
   return <div className={`animate-pulse rounded-[12px] ${className}`} style={{ background: 'var(--cf-fill)' }} />

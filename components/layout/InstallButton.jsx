@@ -134,10 +134,10 @@ function getInstructions() {
       return {
         title: 'Instalar desde Safari',
         steps: [
-          { icon: 'share-ios', text: 'Toca el icono de **Compartir** en la barra inferior de Safari', sub: 'Es este icono, abajo en el centro de la pantalla' },
-          { icon: 'scroll', text: 'Desplaza hacia abajo en el menú que aparece', sub: 'Busca la opcion "Agregar a pantalla de inicio"' },
+          { icon: 'share-ios', text: 'Toca el icono de **Compartir** en la barra inferior de Safari', sub: 'Es este icono, abajo en el centro de la pantalla. Si no lo ves abajo, está en los tres puntos (···)' },
+          { icon: 'scroll', text: 'Desplaza hacia abajo en el menú que aparece', sub: 'Busca la opción "Agregar a pantalla de inicio"' },
           { icon: 'add', text: 'Toca **"Agregar a pantalla de inicio"**', sub: null },
-          { icon: 'check', text: 'Toca **"Agregar"** arriba a la derecha', sub: 'Listo! La app aparecera en tu pantalla de inicio' },
+          { icon: 'check', text: 'Toca **"Agregar"** arriba a la derecha', sub: '¡Listo! La app aparecerá en tu pantalla de inicio' },
         ]
       }
     }
@@ -145,10 +145,10 @@ function getInstructions() {
       return {
         title: 'Instalar desde Chrome',
         steps: [
-          { icon: 'share-ios', text: 'Toca el icono de **Compartir** en la barra de Chrome', sub: 'Es este icono, esta arriba al lado de la barra de direcciones' },
-          { icon: 'scroll', text: 'Desplaza hacia abajo en el menú que aparece', sub: 'Busca la opcion "Agregar a pantalla de inicio"' },
+          { icon: 'share-ios', text: 'Toca el icono de **Compartir** en la barra de Chrome', sub: 'Es este icono, está arriba al lado de la barra de direcciones' },
+          { icon: 'scroll', text: 'Desplaza hacia abajo en el menú que aparece', sub: 'Busca la opción "Agregar a pantalla de inicio"' },
           { icon: 'add', text: 'Toca **"Agregar a pantalla de inicio"**', sub: null },
-          { icon: 'check', text: 'Ponle nombre y toca **"Agregar"**', sub: 'Listo! La app queda instalada en tu celular' },
+          { icon: 'check', text: 'Ponle nombre y toca **"Agregar"**', sub: '¡Listo! La app queda instalada en tu celular' },
         ]
       }
     }
@@ -159,7 +159,7 @@ function getInstructions() {
           { icon: 'share-ios', text: 'Toca el icono de **Compartir** en la barra de Firefox', sub: 'Es este icono, junto a la barra de direcciones' },
           { icon: 'scroll', text: 'Desplaza hacia abajo en el menú', sub: 'Busca "Agregar a pantalla de inicio"' },
           { icon: 'add', text: 'Toca **"Agregar a pantalla de inicio"**', sub: null },
-          { icon: 'check', text: 'Toca **"Agregar"** y listo', sub: 'La app aparecera en tu pantalla de inicio' },
+          { icon: 'check', text: 'Toca **"Agregar"** y listo', sub: 'La app aparecerá en tu pantalla de inicio' },
         ]
       }
     }
@@ -170,7 +170,7 @@ function getInstructions() {
           { icon: 'share-ios', text: 'Toca el icono de **Compartir** en la barra de Edge', sub: 'Es este icono, junto a la barra de direcciones' },
           { icon: 'scroll', text: 'Desplaza hacia abajo en el menú', sub: 'Busca "Agregar a pantalla de inicio"' },
           { icon: 'add', text: 'Toca **"Agregar a pantalla de inicio"**', sub: null },
-          { icon: 'check', text: 'Toca **"Agregar"** y listo', sub: 'La app aparecera en tu pantalla de inicio' },
+          { icon: 'check', text: 'Toca **"Agregar"** y listo', sub: 'La app aparecerá en tu pantalla de inicio' },
         ]
       }
     }
@@ -191,9 +191,9 @@ function getInstructions() {
       return {
         title: 'Instalar desde Samsung Internet',
         steps: [
-          { icon: 'plus', text: 'Si ves un icono **+** en la barra de direcciones, tocalo', sub: 'Aparece cuando el sitio se puede instalar como app' },
+          { icon: 'plus', text: 'Si ves un icono **+** en la barra de direcciones, tócalo', sub: 'Aparece cuando el sitio se puede instalar como app' },
           { icon: 'add', text: 'Selecciona **"Pantalla de inicio"**', sub: 'Si no ves el +, toca los 3 puntos del menú y busca "Agregar a pantalla de inicio"' },
-          { icon: 'check', text: 'Confirma tocando **"Agregar"**', sub: 'Listo! La app aparecera en tu pantalla de inicio' },
+          { icon: 'check', text: 'Confirma tocando **"Agregar"**', sub: '¡Listo! La app aparecerá en tu pantalla de inicio' },
         ]
       }
     }
@@ -201,9 +201,9 @@ function getInstructions() {
       return {
         title: 'Instalar desde Edge',
         steps: [
-          { icon: 'dots-h', text: 'Toca los **3 puntos** del menú de Edge', sub: 'Estan abajo en el centro de la pantalla' },
+          { icon: 'dots-h', text: 'Toca los **3 puntos** del menú de Edge', sub: 'Están abajo en el centro de la pantalla' },
           { icon: 'add', text: 'Toca **"Agregar a pantalla de inicio"**', sub: null },
-          { icon: 'check', text: 'Confirma tocando **"Agregar"**', sub: 'Listo! La app aparecera en tu pantalla de inicio' },
+          { icon: 'check', text: 'Confirma tocando **"Agregar"**', sub: '¡Listo! La app aparecerá en tu pantalla de inicio' },
         ]
       }
     }
@@ -211,18 +211,18 @@ function getInstructions() {
       return {
         title: 'Instalar desde Firefox',
         steps: [
-          { icon: 'dots-v', text: 'Toca los **3 puntos** del menú de Firefox', sub: 'Estan abajo a la derecha de la pantalla' },
+          { icon: 'dots-v', text: 'Toca los **3 puntos** del menú de Firefox', sub: 'Están abajo a la derecha de la pantalla' },
           { icon: 'install', text: 'Toca **"Instalar"** o **"Agregar a pantalla de inicio"**', sub: null },
-          { icon: 'check', text: 'Confirma tocando **"Agregar"**', sub: 'Listo! La app aparecera en tu pantalla de inicio' },
+          { icon: 'check', text: 'Confirma tocando **"Agregar"**', sub: '¡Listo! La app aparecerá en tu pantalla de inicio' },
         ]
       }
     }
     return {
       title: 'Instalar desde Chrome',
       steps: [
-        { icon: 'dots-v', text: 'Toca los **3 puntos** del menú de Chrome', sub: 'Estan arriba a la derecha de la pantalla' },
+        { icon: 'dots-v', text: 'Toca los **3 puntos** del menú de Chrome', sub: 'Están arriba a la derecha de la pantalla' },
         { icon: 'install', text: 'Toca **"Instalar app"** o **"Agregar a pantalla de inicio"**', sub: null },
-        { icon: 'check', text: 'Confirma tocando **"Instalar"**', sub: 'Listo! La app aparecera en tu pantalla de inicio y en tus aplicaciones' },
+        { icon: 'check', text: 'Confirma tocando **"Instalar"**', sub: '¡Listo! La app aparecerá en tu pantalla de inicio y en tus aplicaciones' },
       ]
     }
   }
@@ -234,7 +234,7 @@ function getInstructions() {
       steps: [
         { icon: 'desktop', text: 'Busca el icono de **App disponible** en la barra de direcciones', sub: 'Es un icono con un + que aparece a la derecha de la URL' },
         { icon: 'install', text: 'Haz clic en **"Instalar"**', sub: 'Si no lo ves, haz clic en los 3 puntos del menú y busca "Instalar sitio como app"' },
-        { icon: 'check', text: 'Listo! La app se abrira como ventana independiente', sub: 'Puedes acceder desde el menú de inicio (Windows) o Launchpad (Mac)' },
+        { icon: 'check', text: '¡Listo! La app se abrirá como ventana independiente', sub: 'Puedes acceder desde el menú de inicio (Windows) o Launchpad (Mac)' },
       ]
     }
   }
@@ -243,8 +243,8 @@ function getInstructions() {
       title: 'Instalar desde Firefox',
       steps: [
         { icon: 'info', text: 'Firefox de escritorio no permite instalar apps web', sub: null },
-        { icon: 'desktop', text: 'Abre este sitio en **Chrome** o **Edge**', sub: 'Copia: app.control-finanzas.com y abrelo en Chrome o Edge' },
-        { icon: 'install', text: 'Ahi veras el icono de **instalar** en la barra de direcciones', sub: null },
+        { icon: 'desktop', text: 'Abre este sitio en **Chrome** o **Edge**', sub: 'Copia: app.control-finanzas.com y ábrelo en Chrome o Edge' },
+        { icon: 'install', text: 'Ahí verás el icono de **instalar** en la barra de direcciones', sub: null },
       ]
     }
   }
@@ -253,7 +253,7 @@ function getInstructions() {
     steps: [
       { icon: 'desktop', text: 'Busca el icono de **instalar** en la barra de direcciones', sub: 'Es un icono de monitor con una flecha, a la derecha de la URL' },
       { icon: 'install', text: 'Haz clic en **"Instalar"**', sub: 'Si no lo ves, haz clic en los 3 puntos del menú y busca "Instalar Control Finanzas"' },
-      { icon: 'check', text: 'Listo! La app se abrira como ventana independiente', sub: 'Puedes acceder desde el menú de inicio (Windows) o Launchpad (Mac)' },
+      { icon: 'check', text: '¡Listo! La app se abrirá como ventana independiente', sub: 'Puedes acceder desde el menú de inicio (Windows) o Launchpad (Mac)' },
     ]
   }
 }

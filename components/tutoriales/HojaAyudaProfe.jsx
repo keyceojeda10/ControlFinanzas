@@ -21,7 +21,9 @@ export default function HojaAyudaProfe({ ayuda, vistos, onAbrir, onBiblioteca, o
   const vistosAqui = todos.filter((v) => vistos.has(v.id)).length
   const rotulo = { fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }
 
+  // Encima del menú del + (z 90), como el reproductor.
   return createPortal(
+    <div style={{ position: 'relative', zIndex: 95 }}>
     <HojaInferior
       abierta
       onCerrar={onCerrar}
@@ -85,7 +87,8 @@ export default function HojaAyudaProfe({ ayuda, vistos, onAbrir, onBiblioteca, o
           </div>
         </>
       )}
-    </HojaInferior>,
+    </HojaInferior>
+    </div>,
     document.body,
   )
 }

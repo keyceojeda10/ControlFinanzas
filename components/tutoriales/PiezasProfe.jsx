@@ -23,6 +23,7 @@
  * +: se reconoce como algo que se toca, pero no es dorado relleno — el dorado
  * está reservado a la acción principal (DESIGN.md §1). */
 
+import { useEffect, useState } from 'react'
 import { desdeDe, duracionDe, reloj } from '@/lib/tutoriales/profe'
 import { useProfe } from './ProfeProvider'
 
@@ -53,24 +54,77 @@ export function IconoPlay({ tam = 28, radio = 8, visto = false, verde = false })
 
 const usaBotones = (profe) => Boolean(profe?.activo && profe.botonVisible)
 
+/* ── QUE SE NOTE QUE HAY VIDEOS (Carlos, 19 oct 2026) ──────────────────────
+ * «Puede pasar muy desapercibido.» Mientras haya videos sin ver en la
+ * pantalla, la pastilla lleva un punto dorado. Y la PRIMERA vez que se entra a
+ * una pantalla con videos por ver, la pastilla se mueve un instante y sale una
+ * burbuja «2 videos por ver» que se va sola. Una vez por pantalla (en este
+ * teléfono): avisar cada vez enseña a no mirar.
+ *
+ * Sin sonido: el navegador no deja sonar nada sin un toque, y un cobrador con
+ * el cliente al lado no quiere que el teléfono suene solo. Sin movimiento para
+ * quien pidió «reducir movimiento». */
+const AVISADAS = 'cf:profe:avisadas'
+function yaAvisada(clave) {
+  try { return JSON.parse(localStorage.getItem(AVISADAS) || '[]').includes(clave) } catch { return true }
+}
+function marcarAvisada(clave) {
+  try {
+    const lista = JSON.parse(localStorage.getItem(AVISADAS) || '[]').filter((c) => c !== clave)
+    localStorage.setItem(AVISADAS, JSON.stringify([...lista, clave].slice(-200)))
+  } catch {}
+}
+
+const ANIMACION = `
+@keyframes cfProfeLlama { 0%,60%,100% { transform: scale(1) } 15% { transform: scale(1.1) } 38% { transform: scale(1.06) } }
+@keyframes cfProfeAro { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--cf-gold) 50%, transparent) } 100% { box-shadow: 0 0 0 12px color-mix(in srgb, var(--cf-gold) 0%, transparent) } }
+@keyframes cfProfeBurbuja { from { opacity: 0; transform: translateY(-4px) } to { opacity: 1; transform: none } }
+.cf-profe-llama { animation: cfProfeLlama 1.4s cubic-bezier(.22,1,.36,1) 2, cfProfeAro 1.4s ease-out 3; }
+.cf-profe-burbuja { animation: cfProfeBurbuja .35s cubic-bezier(.22,1,.36,1) both; }
+@media (prefers-reduced-motion: reduce) { .cf-profe-llama, .cf-profe-burbuja { animation: none } }
+`
+
+const Punto = ({ style }) => (
+  <span aria-hidden style={{
+    position: 'absolute', width: 10, height: 10, borderRadius: 999, background: 'var(--cf-gold)',
+    border: '2px solid var(--cf-surface)', ...style,
+  }} />
+)
+
 /**
  * La pastilla de la pantalla. `lateral`: la versión de la barra de escritorio,
  * con su nombre al lado (allí sobra sitio y no hay cabecera).
  */
 export function PastillaProfe({ lateral = false }) {
   const profe = useProfe()
-  if (!usaBotones(profe)) return null
-  const { todos } = profe.ayuda
-  if (!todos.length) return null
+  const [llamando, setLlamando] = useState(false)
+  const todos = profe?.ayuda?.todos ?? []
+  const activa = usaBotones(profe) && todos.length > 0
+  const porVer = activa ? todos.filter((v) => !profe.vistos.has(v.id)).length : 0
+  const clave = todos.map((v) => v.id).join(',')
+  const cargado = Boolean(profe?.cargado)
+
+  // La primera vez en esta pantalla con videos por ver: se mueve y avisa.
+  // Espera a la respuesta del servidor: si no, avisaría de videos ya vistos.
+  useEffect(() => {
+    if (lateral || !activa || !porVer || !cargado || yaAvisada(clave)) return undefined
+    marcarAvisada(clave)
+    setLlamando(true)
+    const t = setTimeout(() => setLlamando(false), 6000)
+    return () => clearTimeout(t)
+  }, [lateral, activa, porVer, cargado, clave])
+
+  if (!activa) return null
   const uno = todos.length === 1
   const etiqueta = uno ? reloj(todos[0].duracion) : String(todos.length)
-  const todosVistos = todos.every((v) => profe.vistos.has(v.id))
+  const todosVistos = porVer === 0
   const titulo = uno ? `Ver el video: ${todos[0].titulo}` : `Ayuda de esta pantalla: ${todos.length} videos`
+  const abrir = () => { setLlamando(false); profe.abrirAyuda() }
 
   if (lateral) {
     return (
-      <button type="button" onClick={profe.abrirAyuda} aria-label={titulo} style={{
-        display: 'flex', alignItems: 'center', gap: 10, width: '100%', height: 44, padding: '0 12px 0 8px',
+      <button type="button" onClick={abrir} aria-label={porVer ? `${titulo}, ${porVer} por ver` : titulo} style={{
+        position: 'relative', display: 'flex', alignItems: 'center', gap: 10, width: '100%', height: 44, padding: '0 12px 0 8px',
         borderRadius: 12, border: '1px solid var(--cf-border)', background: 'var(--cf-card)',
         cursor: 'pointer', font: 'inherit', textAlign: 'left',
       }}>
@@ -79,6 +133,7 @@ export function PastillaProfe({ lateral = false }) {
         <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, color: 'var(--cf-ink)', whiteSpace: 'nowrap' }}>
           {uno ? 'Video de ayuda' : 'Videos de ayuda'}
         </span>
+        {porVer > 0 && <span aria-hidden style={{ width: 8, height: 8, borderRadius: 999, background: 'var(--cf-gold)', flex: 'none' }} />}
         <span className="cf-fig" style={{ fontSize: 12, fontWeight: 700, color: 'var(--cf-ink-2)', fontVariantNumeric: 'tabular-nums' }}>
           {etiqueta}
         </span>
@@ -86,20 +141,37 @@ export function PastillaProfe({ lateral = false }) {
     )
   }
   return (
-    <button type="button" onClick={profe.abrirAyuda} aria-label={titulo} title={titulo} style={{
-      display: 'inline-flex', alignItems: 'center', gap: 8, height: 44, padding: '0 14px 0 8px', flex: 'none',
-      borderRadius: 12, background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
-      cursor: 'pointer', font: 'inherit',
-    }}>
-      <IconoPlay visto={todosVistos} />
-      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--cf-ink)', fontVariantNumeric: 'tabular-nums' }}>{etiqueta}</span>
-    </button>
+    <span style={{ position: 'relative', display: 'inline-flex', flex: 'none' }}>
+      <style>{ANIMACION}</style>
+      <button type="button" onClick={abrir} aria-label={porVer ? `${titulo}, ${porVer} por ver` : titulo} title={titulo}
+        className={llamando ? 'cf-profe-llama' : undefined} style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8, height: 44, padding: '0 14px 0 8px', flex: 'none',
+          borderRadius: 12, background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+          cursor: 'pointer', font: 'inherit',
+        }}>
+        <IconoPlay visto={todosVistos} />
+        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--cf-ink)', fontVariantNumeric: 'tabular-nums' }}>{etiqueta}</span>
+      </button>
+      {porVer > 0 && <Punto style={{ top: -3, right: -3 }} />}
+      {llamando && (
+        <button type="button" onClick={abrir} className="cf-profe-burbuja" style={{
+          position: 'absolute', top: 'calc(100% + 10px)', right: 0, zIndex: 1,
+          display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2, padding: '9px 13px',
+          borderRadius: 12, border: 0, cursor: 'pointer', font: 'inherit', textAlign: 'left', whiteSpace: 'nowrap',
+          background: '#15161A', color: '#F3F3F6', boxShadow: 'var(--cf-sh-float)',
+        }}>
+          <span aria-hidden style={{ position: 'absolute', top: -5, right: 18, width: 10, height: 10, background: '#15161A', transform: 'rotate(45deg)', borderRadius: 2 }} />
+          <span style={{ fontSize: 14, fontWeight: 700 }}>{porVer} {porVer === 1 ? 'video por ver' : 'videos por ver'}</span>
+          <span style={{ fontSize: 12, color: '#A3A8B2' }}>El profe te explica esta pantalla</span>
+        </button>
+      )}
+    </span>
   )
 }
 
 /** El botón de minuto de una fila de menú: «▶ 1:20». Tocar la fila hace la
  *  acción; tocar este, abre el video en la parte de esa opción. */
-export function BotonMinutoProfe({ id, junto, style }) {
+export function BotonMinutoProfe({ id, junto, oscuro = false, style }) {
   const profe = useProfe()
   if (!usaBotones(profe)) return null
   const video = profe.visibles.find((v) => v.id === id)
@@ -113,8 +185,12 @@ export function BotonMinutoProfe({ id, junto, style }) {
       onClick={(e) => { e.preventDefault(); e.stopPropagation(); profe.abrir(id, { desde: desdeDe(video, junto), via: 'minuto' }) }}
       style={{
         display: 'inline-flex', alignItems: 'center', gap: 6, height: 44, padding: '0 11px', flex: 'none',
-        borderRadius: 12, background: 'var(--cf-fill)', border: '1px solid var(--cf-border-soft, var(--cf-border))',
-        cursor: 'pointer', font: 'inherit', color: 'var(--cf-ink-2)', ...style,
+        borderRadius: 12, cursor: 'pointer', font: 'inherit',
+        // Sobre el bloque oscuro (el menú del +): claro sobre carbón, 4,5:1 o más.
+        ...(oscuro
+          ? { background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.14)', color: '#D5D8DE' }
+          : { background: 'var(--cf-fill)', border: '1px solid var(--cf-border-soft, var(--cf-border))', color: 'var(--cf-ink-2)' }),
+        ...style,
       }}
     >
       {visto ? <Check tam={11} /> : <Triangulo tam={9} color="currentColor" />}
