@@ -49,6 +49,53 @@
    "poster": "/videos/bienvenida-portada.jpg"
   },
   {
+   "id": "inicio-moverte",
+   "serie": "inicio",
+   "titulo": "Cómo moverte en la app",
+   "estado": "listo",
+   "destino": "/videos/inicio/moverte.mp4",
+   "duracion": 64.6,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 8,
+     "titulo": "El menú de abajo"
+    },
+    {
+     "t": 24.3,
+     "titulo": "El botón más"
+    },
+    {
+     "t": 38.6,
+     "titulo": "La lupa y el profe"
+    },
+    {
+     "t": 51.1,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/mas",
+     "tipo": "D1"
+    },
+    {
+     "pantalla": "/dashboard",
+     "tipo": "D1"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Nuevo del 20 oct (cf-v1187): el menú de abajo y los cuadritos, el botón ＋ (lo de cada día e «Ir directo a»), la lupa, el botón ▶ del profe y, en el computador, el menú de la izquierda. Es el segundo video del Inicio (después de «Tu Inicio») y el general de Más. Solo dueño: el ＋ del cobrador tiene otras opciones.",
+   "src": "/videos/profe/inicio/moverte.mp4",
+   "poster": "/videos/profe/inicio/moverte.jpg"
+  },
+  {
    "id": "inicio-inicio",
    "serie": "inicio",
    "titulo": "Tu Inicio",
