@@ -1,12 +1,13 @@
 // app/api/tutoriales/route.js — los videos del profe para ESTA persona.
 //
-// GET  → { habilitado, vistos, guardados, botonVisible, paraCobradores }
-// POST → apunta lo que pasó en el reproductor o en la lengüeta.
+// GET  → { habilitado, vistos, guardados, botonVisible, paraCobradores,
+//          mostrarAvisos, descartados, primeraVez: { prestamo, cierre } }
+// POST → apunta lo que pasó en el reproductor, en la ayuda o en un aviso.
 //
 // ⚠ «VISTO» VA EN EL SERVIDOR, POR PERSONA, como la bienvenida: guardado en el
-// teléfono, la lengüeta volvería a nacer abierta en el otro aparato. Y sin
-// columna nueva: es la misma medición, en `Evento` (lib/tutoriales/profe.js).
-// Los dos interruptores de Ayuda van igual, y manda el último.
+// teléfono, en otro aparato saldría otra vez como nuevo. Y sin columna nueva:
+// es la misma medición, en `Evento` (lib/tutoriales/profe.js). Los
+// interruptores de Ayuda van igual, y manda el último.
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -22,33 +23,47 @@ async function ultimoValor(where, porDefecto) {
   return typeof v === 'boolean' ? v : porDefecto
 }
 
+const APAGADO = { habilitado: false, vistos: [], guardados: [], botonVisible: true, paraCobradores: true, mostrarAvisos: true, descartados: [], primeraVez: {} }
+
 export async function GET() {
   const session = await getServerSession(authOptions)
   const u = session?.user
   if (!u?.id || !u.organizationId) return Response.json({ error: 'No autorizado' }, { status: 401 })
   // Sin habilitar, nada que leer: la app no pinta nada del profe.
-  if (!profeHabilitado(u.organizationId)) {
-    return Response.json({ habilitado: false, vistos: [], guardados: [], botonVisible: true, paraCobradores: true })
-  }
-  const [marcas, botonVisible, paraCobradores] = await Promise.all([
+  if (!profeHabilitado(u.organizationId)) return Response.json(APAGADO)
+  const deMi = { organizationId: u.organizationId, userId: u.id }
+  const [marcas, botonVisible, paraCobradores, mostrarAvisos, reset, algunPrestamo, algunCierre] = await Promise.all([
     prisma.evento.findMany({
-      where: { organizationId: u.organizationId, userId: u.id, evento: { in: [EVENTOS.visto, EVENTOS.guardado] } },
-      select: { evento: true, metadata: true },
+      where: { ...deMi, evento: { in: [EVENTOS.visto, EVENTOS.guardado, EVENTOS.avisoNo] } },
+      select: { evento: true, metadata: true, createdAt: true },
     }),
-    ultimoValor({ organizationId: u.organizationId, userId: u.id, evento: EVENTOS.prefBoton }, true),
+    ultimoValor({ ...deMi, evento: EVENTOS.prefBoton }, true),
     // Del negocio: lo decide el dueño para todos sus cobradores. Prendido de
     // entrada (decisión 4: los cobradores entran a Caja más que los dueños).
     ultimoValor({ organizationId: u.organizationId, evento: EVENTOS.prefCobradores }, true),
+    ultimoValor({ ...deMi, evento: EVENTOS.prefAvisos }, true),
+    prisma.evento.findFirst({ where: { ...deMi, evento: EVENTOS.avisosReset }, orderBy: { createdAt: 'desc' }, select: { createdAt: true } }),
+    // La primera vez solo cuenta si de verdad nunca pasó (Adenda 6, D).
+    prisma.prestamo.findFirst({ where: { organizationId: u.organizationId }, select: { id: true } }),
+    prisma.cierreCaja.findFirst({ where: { organizationId: u.organizationId, cobradorId: u.id }, select: { id: true } }),
   ])
   const vistos = new Set()
   const guardados = new Set()
+  const descartados = new Set()
   for (const m of marcas) {
     const id = leer(m.metadata).id
     if (!id) continue
     if (m.evento === EVENTOS.visto) vistos.add(id)
-    else guardados.add(id)
+    else if (m.evento === EVENTOS.guardado) guardados.add(id)
+    // «Volver a mostrar los avisos» deja sin efecto los «Ya sé cómo» de antes.
+    else if (!reset || m.createdAt > reset.createdAt) descartados.add(id)
   }
-  return Response.json({ habilitado: true, vistos: [...vistos], guardados: [...guardados], botonVisible, paraCobradores })
+  return Response.json({
+    habilitado: true,
+    vistos: [...vistos], guardados: [...guardados], descartados: [...descartados],
+    botonVisible, paraCobradores, mostrarAvisos,
+    primeraVez: { prestamo: !algunPrestamo, cierre: !algunCierre },
+  })
 }
 
 /* Lo que se puede apuntar. Todo lleva el id de un video del catálogo; las
@@ -60,8 +75,10 @@ const TIPOS = {
   visto: EVENTOS.visto,
   guardado: EVENTOS.guardado,
   tarea: EVENTOS.tarea,
+  avisoNo: EVENTOS.avisoNo,
   ...Object.fromEntries(HITOS_TUTO.map((h) => [String(h), EVENTOS.hito(h)])),
 }
+const PREFERENCIAS = ['prefBoton', 'prefCobradores', 'prefAvisos']
 
 export async function POST(request) {
   const session = await getServerSession(authOptions)
@@ -70,13 +87,17 @@ export async function POST(request) {
   const body = await request.json().catch(() => ({}))
   const { tipo, id, segundo, origen, valor, via, termino } = body ?? {}
 
-  if (tipo === 'prefBoton' || tipo === 'prefCobradores') {
+  if (PREFERENCIAS.includes(tipo)) {
     if (typeof valor !== 'boolean') return Response.json({ error: 'Falta el valor' }, { status: 400 })
     // Lo de los cobradores es del negocio: solo el dueño lo cambia.
     if (tipo === 'prefCobradores' && u.rol !== 'owner') return Response.json({ error: 'Solo el dueño' }, { status: 403 })
     await prisma.evento.create({
       data: { organizationId: u.organizationId, userId: u.id, evento: EVENTOS[tipo], metadata: JSON.stringify({ valor }) },
     })
+    return Response.json({ ok: true })
+  }
+  if (tipo === 'avisosReset') {
+    await prisma.evento.create({ data: { organizationId: u.organizationId, userId: u.id, evento: EVENTOS.avisosReset, metadata: '{}' } })
     return Response.json({ ok: true })
   }
 
@@ -96,7 +117,7 @@ export async function POST(request) {
       userId: u.id,
       evento,
       pagina: typeof origen === 'string' ? origen.slice(0, 120) : null,
-      // `via`: de dónde se abrió (D1, E2, ayuda). `termino`: cerró al acabar.
+      // `via`: de dónde se abrió (pastilla, ayuda, minuto, enlace, aviso). `termino`: cerró al acabar.
       metadata: JSON.stringify({
         id,
         ...(segundo != null && Number.isFinite(Number(segundo)) ? { segundo: Math.round(Number(segundo)) } : {}),

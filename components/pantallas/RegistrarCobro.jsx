@@ -58,11 +58,11 @@
 import { PlataformaIcon } from '@/components/ui/LogoPlataforma'
 import DeslizarParaConfirmar from '@/components/cf/DeslizarParaConfirmar'
 import { useRef } from 'react'
-import BotonProfe from '@/components/tutoriales/BotonProfe'
 /* ⚠ «¿DEDO O RATÓN?» VIVE EN `lib/tactil.js`, no aquí. Estaba escrito en este
    fichero y privado, así que las otras pantallas de cobro no podían alcanzarlo
    y confirmaban el dinero de otra forma. */
 import { useTactil } from '@/lib/tactil'
+import { EnlaceProfe } from '@/components/tutoriales/PiezasProfe'
 //
 // ── LO QUE NO ESTÁ AQUÍ: «NO PAGÓ» ──────────────────────────────────────────
 //
@@ -258,7 +258,12 @@ export default function RegistrarCobro({
         border: `1.5px solid ${ORO}`, boxShadow: '0 0 0 3px rgba(231,164,0,.13)',
         padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 11,
       }}>
-        <Rotulo>Monto que recibiste</Rotulo>
+        {/* El enlace del profe va en la cabecera de la sección, con la pregunta
+            de quien duda (Adenda 6, B): el que más lo necesita es el cobrador. */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+          <Rotulo>Monto que recibiste</Rotulo>
+          <EnlaceProfe id="prestamos-registrar-pago" junto="el título de la hoja" pregunta="¿Cómo se cobra?" />
+        </div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
           <span style={{ fontSize: 23, fontWeight: 600, color: 'var(--cf-ink-3)', flex: 'none' }}>
             {moneda}
@@ -298,9 +303,6 @@ export default function RegistrarCobro({
               <path d="M16.9 3.6a2 2 0 012.8 2.8L8.5 17.6 4 19l1.4-4.5L16.9 3.6z" /><path d="M14.5 6l3.5 3.5" />
             </svg>
           </button>
-          {/* El profe del lápiz: más estrecho que sus 44 y con margen negativo,
-              para no quitarle ancho al monto (38px de cifra, 9 dígitos). */}
-          <BotonProfe id="prestamos-otro-monto" junto="el lápiz del monto" style={{ width: 36, marginLeft: -6, marginRight: -8, alignSelf: 'center' }} />
         </div>
         {notaCuota ? (
           <span role="status" style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
@@ -332,7 +334,15 @@ export default function RegistrarCobro({
           respuesta ya se sabe. */}
       {aplicaciones.length > 1 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 9, flex: 'none' }}>
-          <Rotulo>¿A qué se aplica?</Rotulo>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+            <Rotulo>¿A qué se aplica?</Rotulo>
+            {/* Abono a capital o solo interés: el video de lo que está eligiendo. */}
+            <EnlaceProfe
+              id={aplicacion === 'intereses' ? 'prestamos-intereses' : 'prestamos-abono-capital'}
+              junto={aplicacion === 'intereses' ? '«Interés» (en «¿A qué se aplica?»)' : '«Capital» (en «¿A qué se aplica?»)'}
+              pregunta="¿Cuál elijo?"
+            />
+          </div>
           <Opciones opciones={aplicaciones} activo={aplicacion} onElegir={onAplicacion} alto={44} marca="negro" />
         </div>
       )}
@@ -348,15 +358,9 @@ export default function RegistrarCobro({
           borderRadius: 'var(--cf-r-card)', padding: '13px 15px',
           display: 'flex', flexDirection: 'column', gap: 5,
         }}>
-          {/* «Capital» e «Interés» llevan su video: el de la opción elegida va
-              al final del título de lo que acaba de elegir. */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: 'var(--cf-ink)' }}>
-              {explicacion.titulo}
-            </span>
-            {aplicacion === 'capital' && <BotonProfe id="prestamos-abono-capital" junto="«Capital» (en «¿A qué se aplica?»)" />}
-            {aplicacion === 'intereses' && <BotonProfe id="prestamos-intereses" junto="«Interés» (en «¿A qué se aplica?»)" />}
-          </div>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--cf-ink)' }}>
+            {explicacion.titulo}
+          </span>
           <span style={{ fontSize: 12.5, lineHeight: 1.45, color: 'var(--cf-ink-3)' }}>
             {explicacion.texto}
           </span>

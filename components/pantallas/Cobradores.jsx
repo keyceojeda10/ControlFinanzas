@@ -17,7 +17,6 @@
 
 import { useState } from 'react'
 import { BarrasVerticales, FilaInterruptor } from '@/components/cf/primitivos2'
-import BotonProfe from '@/components/tutoriales/BotonProfe'
 
 const VERDE = '#12A150'
 
@@ -281,15 +280,12 @@ export function Cobradores({
             ? { position: 'absolute', left: 16, right: 16, bottom: 18 }
             : { flex: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
           {onCrear && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <button type="button" onClick={onCrear} style={{
-                flex: 1, minWidth: 0, height: 56, border: 'none', borderRadius: 999,
-                background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)', cursor: 'pointer',
-                font: 'inherit', fontSize: 16, fontWeight: 700,
-                boxShadow: '0 6px 20px rgba(231,164,0,.32)',
-              }}>{crearTexto}</button>
-              <BotonProfe id="cobradores-crear" junto="Crear cobrador" />
-            </div>
+            <button type="button" onClick={onCrear} style={{
+              width: '100%', height: 56, border: 'none', borderRadius: 999,
+              background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)', cursor: 'pointer',
+              font: 'inherit', fontSize: 16, fontWeight: 700,
+              boxShadow: '0 6px 20px rgba(231,164,0,.32)',
+            }}>{crearTexto}</button>
           )}
           {/* EL RANKING NO ES UN BOTON DE PAR A PAR CON «CREAR».
               Iban los dos arriba, uno al lado del otro y del mismo tamaño, y

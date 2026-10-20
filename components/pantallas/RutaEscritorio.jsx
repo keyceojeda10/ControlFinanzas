@@ -26,7 +26,6 @@
 // que mueve plata sigue en la página.
 
 import { formatMoney } from '@/lib/i18n'
-import BotonProfe from '@/components/tutoriales/BotonProfe'
 import { ConmutadorVista } from '@/components/pantallas/HojaFiltros'
 
 const COL = {
@@ -195,8 +194,8 @@ export default function RutaEscritorio({
         {/* Aquí arriba, no en una fila con scroll que se sale por la derecha. */}
         <div style={{ display: 'flex', gap: 9, flex: 'none' }}>
           {acciones.map((a) => (
-            <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <button
+              key={a.id}
               type="button"
               onClick={a.onClick}
               style={{
@@ -208,11 +207,6 @@ export default function RutaEscritorio({
                 fontSize: 13.5, fontWeight: 700, whiteSpace: 'nowrap',
               }}
             >{a.texto}</button>
-            {a.id === 'cobrador' && <BotonProfe id="rutas-asignar-cobrador" junto="el lápiz («Quién la cobra»)" style={{ margin: '-2px 0' }} />}
-            {a.id === 'imprimir' && <BotonProfe id="rutas-ordenar" junto="Imprimir hoja" style={{ margin: '-2px 0' }} />}
-            {a.id === 'agregar' && <BotonProfe id="rutas-clientes" junto="+ Agregar" style={{ margin: '-2px 0' }} />}
-            {a.id === 'recorrido' && <BotonProfe id="rutas-recorrido" junto="Empezar recorrido" style={{ margin: '-2px 0' }} />}
-            </div>
           ))}
         </div>
       </div>
@@ -245,10 +239,8 @@ export default function RutaEscritorio({
                   </button>
                 )
               })}
-              {chips.length > 0 && <BotonProfe id="rutas-lista-clientes" junto="«Hoy» y los botones de lista completa / agrupada" style={{ margin: '-5px 0 -5px -4px' }} />}
             </div>
             {onReordenar && (
-              <>
               <button
                 type="button"
                 onClick={onReordenar}
@@ -257,8 +249,6 @@ export default function RutaEscritorio({
                   font: 'inherit', fontSize: 13, fontWeight: 700, color: 'var(--cf-gold-dark)',
                 }}
               >Reordenar recorrido</button>
-              <BotonProfe id="rutas-clientes" junto="la pestaña «Ordenar»" style={{ margin: '-5px 0 -5px -8px' }} />
-              </>
             )}
             {/* El mismo conmutador de clientes y préstamos, no uno nuevo: tres
                 controles que hacen lo mismo con tres formas distintas es lo que

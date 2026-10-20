@@ -12,7 +12,6 @@ import OfflineBadge from '@/components/offline/OfflineBadge'
 import Avatar from '@/components/ui/Avatar'
 import { getPlataformaInfo, PlataformaIcon } from '@/components/ui/LogoPlataforma'
 import { Pastilla } from '@/components/cf/primitivos'
-import BotonProfe from '@/components/tutoriales/BotonProfe'
 import { comoFueElPago, textoDelPago } from '@/lib/dinero/cuota-de-referencia'
 
 // ─── Helpers de fecha ────────────────────────────────────────────
@@ -548,13 +547,13 @@ export function ChipsAccionesSecundarias({ acciones }) {
        tres en fila hasta en 320px. */
     <div className="cf-chips-acciones" data-n={acciones.length} style={{ '--cf-chips-n': acciones.length }}>
       {acciones.map((a, i) => (
-        <div key={i} style={{ position: 'relative', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
         <button
+          key={i}
           type="button"
           onClick={a.onClick}
           title={a.sublabel || a.label}
           style={{
-            minWidth: 0, width: '100%', height: 74, borderRadius: 16, cursor: 'pointer',
+            minWidth: 0, height: 74, borderRadius: 16, cursor: 'pointer',
             display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center', gap: 7,
             background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
@@ -583,12 +582,6 @@ export function ChipsAccionesSecundarias({ acciones }) {
             maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>{a.label}</span>
         </button>
-        {/* El profe de «Pagos» (lámina E2): en la esquina de arriba a la derecha
-            del chip, de 34 px para no tapar el icono ni el rótulo del centro. */}
-        {a.label === 'Pagos' && (
-          <BotonProfe id="prestamos-recibos" junto="Pagos" style={{ position: 'absolute', top: 0, right: 0, width: 34, height: 34 }} />
-        )}
-        </div>
       ))}
     </div>
   )

@@ -7,7 +7,6 @@ import { agruparRepetidos, agruparPorDia, textoDeFila } from '@/lib/adaptadores/
 import { formatMoney, getUtcOffset } from '@/lib/i18n'
 import { useCountry } from '@/hooks/useCountry'
 import { Pastilla } from '@/components/cf/primitivos'
-import BotonProfe from '@/components/tutoriales/BotonProfe'
 import { leerDeCache, guardarEnCache } from '@/lib/offline'
 
 // Lo que el dueño decidió sobre un gasto DESPUÉS de anotarlo (`leerSuceso`). El
@@ -142,13 +141,7 @@ const FILTROS_COMPLETOS = [
 export default function ActividadPage() {
   // «Historial», como en el menú y en el buscador. Decía «Actividad» mientras
   // el menú decía «Quién hizo qué»: tres nombres para una pantalla (2 sep 2026).
-  // El profe va junto al título: en el móvil, en la cabecera; en PC no hay
-  // cabecera, así que va a la derecha de los chips (más abajo).
-  useCabecera({
-    titulo: 'Historial',
-    subtitulo: 'Todo lo que pasa en tu negocio, en orden',
-    acciones: <BotonProfe id="cobradores-seguir" junto="Historial" />,
-  })
+  useCabecera({ titulo: 'Historial', subtitulo: 'Todo lo que pasa en tu negocio, en orden' })
   const { country } = useCountry()
   const offsetHoras = getUtcOffset(country)
 
@@ -245,8 +238,7 @@ export default function ActividadPage() {
           aqui salian OTRA VEZ, justo debajo de la cabecera que ya los dice. */}
 
       {/* Filtros rapidos — chips */}
-      <div className="flex items-center gap-1 mb-3">
-      <div className="flex gap-1.5 overflow-x-auto pb-2 -mx-1 px-1 flex-1 min-w-0" style={{ scrollbarWidth: 'none' }}>
+      <div className="flex gap-1.5 overflow-x-auto pb-2 -mx-1 px-1 mb-3" style={{ scrollbarWidth: 'none' }}>
         {FILTROS_RAPIDOS.map(f => (
           <button
             key={f.value}
@@ -277,10 +269,6 @@ export default function ActividadPage() {
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--cf-gold)' }} />
           )}
         </button>
-      </div>
-      <span className="hidden lg:inline-flex shrink-0">
-        <BotonProfe id="cobradores-seguir" junto="Historial" />
-      </span>
       </div>
 
       {/* Filtros avanzados — expandibles */}

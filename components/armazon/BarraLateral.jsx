@@ -22,6 +22,7 @@ import { getAvatarById } from '@/lib/avatars'
 import { useOnline } from '@/hooks/useOnline'
 import { useTheme } from '@/lib/theme/ThemeProvider'
 import { ICONO_DE_RUTA } from '@/components/armazon/iconos'
+import { PastillaProfe } from '@/components/tutoriales/PiezasProfe'
 
 const t = { fill: 'none', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }
 
@@ -339,6 +340,9 @@ export default function BarraLateral({
             fontFamily: 'ui-monospace, monospace', fontSize: 10, fontWeight: 600, color: 'var(--cf-ink-3)',
           }}>Ctrl+K</span>
         </button>
+        {/* La pastilla de los videos del profe en escritorio: sentado no hay
+            cabecera, así que va debajo del buscador, igual de fija (Adenda 6). */}
+        <PastillaProfe lateral />
       </div>
 
       {/* ── Navegación ── */}

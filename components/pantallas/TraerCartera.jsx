@@ -1,5 +1,7 @@
 'use client'
 
+import { EnlaceProfe } from '@/components/tutoriales/PiezasProfe'
+
 // components/pantallas/TraerCartera.jsx — T22-00 «Trae tus préstamos y empezamos».
 //
 // ══ LA PANTALLA QUE DECIDE SI UN CLIENTE PAGA ══════════════════════════════
@@ -29,8 +31,6 @@
 // «Cuando termines vas a ver» enseña el panel que va a tener, con las cifras en
 // gris y a cero. Es lo que convierte «sube tu cartera» en una razón: se ve para
 // qué sirve el trabajo que se está pidiendo.
-
-import BotonProfe from '@/components/tutoriales/BotonProfe'
 
 const CARBON = '#15161A'
 
@@ -176,6 +176,8 @@ export default function TraerCartera({
                 <p style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--cf-ink-3)', margin: '3px 0 0' }}>
                   La IA lee los datos. Si tienes 40 préstamos en una libreta, unos 20 minutos.
                 </p>
+                {/* El video de esta opción, con la pregunta de quien duda (Adenda 6, B). */}
+                <EnlaceProfe id="cartera-cuaderno" junto="«Subir fotos», en «Tómale foto a tu libreta»" pregunta="¿Cómo se hace?" style={{ margin: '0 0 -10px -8px' }} />
                 {onWhatsApp && (
                   <button type="button" onClick={onWhatsApp} style={{
                     background: 'none', border: 0, padding: 0, marginTop: 8, cursor: 'pointer',
@@ -188,7 +190,6 @@ export default function TraerCartera({
                 background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
                 font: 'inherit', fontSize: 14, fontWeight: 600, color: 'var(--cf-ink)',
               }}>Subir fotos</button>
-              <BotonProfe id="cartera-cuaderno" junto="«Subir fotos», en «Tómale foto a tu libreta»" style={{ marginLeft: -8 }} />
             </div>
           </Tarjeta>
 
@@ -200,13 +201,15 @@ export default function TraerCartera({
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: 16.5, fontWeight: 700, color: 'var(--cf-ink)', margin: 0 }}>{o.titulo}</p>
                   <p style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--cf-ink-3)', margin: '3px 0 0' }}>{o.ayuda}</p>
+                  {o.id === 'excel' && (
+                    <EnlaceProfe id="cartera-excel" junto="«Subir archivo», en «Ya lo tengo en Excel»" pregunta="¿Cómo se hace?" style={{ margin: '0 0 -10px -8px' }} />
+                  )}
                 </div>
                 <button type="button" onClick={o.on} style={{
                   height: 44, padding: '0 18px', borderRadius: 13, flex: 'none', cursor: 'pointer',
                   background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
                   font: 'inherit', fontSize: 14, fontWeight: 600, color: 'var(--cf-ink)',
                 }}>{o.accion}</button>
-                <BotonProfe id="cartera-excel" junto="«Subir archivo», en «Ya lo tengo en Excel»" style={{ marginLeft: -8 }} />
               </div>
             </Tarjeta>
           ))}

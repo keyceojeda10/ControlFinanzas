@@ -166,7 +166,7 @@ const base = {
 }
 
 /* ── Variante de navegación ── */
-function Navegacion({ iniciales, avatarId, nombre, hayAvisos, onBuscar, onAvisos, onCuenta }) {
+function Navegacion({ iniciales, avatarId, nombre, hayAvisos, onBuscar, onAvisos, onCuenta, profe = null }) {
   return (
     // `0 18px 0 20px` y `gap: 6`, literal de T40-00-a. Yo tenía 16 de derecha y
     // 12 de hueco: con los botones de 40px, esos 6 de más por hueco separaban
@@ -177,6 +177,9 @@ function Navegacion({ iniciales, avatarId, nombre, hayAvisos, onBuscar, onAvisos
       <Glifo />
       {/* El ÚNICO encogible de la fila (regla global 2), y va vacío a propósito. */}
       <span style={{ flex: 1 }} />
+      {/* La pastilla de los videos del profe (Adenda 6): una por pantalla, junto
+          a la lupa. Sin videos en esta pantalla no se pinta y la fila no cambia. */}
+      {profe}
       <BotonIcono etiqueta="Buscar" onClick={onBuscar ?? abrirBuscador}><IconoBuscar /></BotonIcono>
       <BotonIcono etiqueta="Avisos" onClick={onAvisos ?? abrirAvisos} badge={hayAvisos}><IconoCampana /></BotonIcono>
       <Avatar iniciales={iniciales} avatarId={avatarId} nombre={nombre} onClick={onCuenta} />
@@ -186,7 +189,7 @@ function Navegacion({ iniciales, avatarId, nombre, hayAvisos, onBuscar, onAvisos
 
 /* ── Variante de detalle ──
    A la derecha van las acciones DE ESE OBJETO, no las de la app. */
-function Detalle({ titulo, subtitulo, onVolver, acciones = null }) {
+function Detalle({ titulo, subtitulo, onVolver, acciones = null, profe = null }) {
   return (
     <header className="flex lg:hidden cf-no-print" style={{ ...base, padding: '0 12px 0 8px' }}>
       <button type="button" onClick={onVolver} aria-label="Volver"
@@ -211,6 +214,9 @@ function Detalle({ titulo, subtitulo, onVolver, acciones = null }) {
         )}
       </span>
 
+      {/* En una ficha el título es el nombre del cliente: la pastilla va entre
+          el título y las acciones (Adenda 6, A). */}
+      {profe}
       {acciones && <span style={{ display: 'flex', alignItems: 'center', gap: 2, flex: 'none' }}>{acciones}</span>}
     </header>
   )
@@ -219,7 +225,7 @@ function Detalle({ titulo, subtitulo, onVolver, acciones = null }) {
 /* ── Variante de tarea ──
    Cerrar arriba a la izquierda, LEJOS DEL PULGAR: salir de una tarea a medias
    pierde datos, así que el botón no puede quedar donde cae el dedo. */
-function Tarea({ titulo, paso = 0, total = 0, onCerrar }) {
+function Tarea({ titulo, paso = 0, total = 0, onCerrar, profe = null }) {
   return (
     // LA CUENTA DE LOS 56px, que es facil de romper sin notarlo:
     //
@@ -257,6 +263,9 @@ function Tarea({ titulo, paso = 0, total = 0, onCerrar }) {
             fontSize: 17, fontWeight: 600, letterSpacing: '-.015em', color: 'var(--cf-ink)',
           }}>{titulo}</span>
         )}
+        {/* La pastilla mide 44 y la fila 36: el margen negativo la deja salir
+            sin romper la cuenta de los 56px de arriba. */}
+        {profe && <span style={{ margin: '-4px 0 -4px auto', display: 'inline-flex' }}>{profe}</span>}
       </div>
 
       {/* Si no hay espina, el hueco de abajo se devuelve al centrado. */}

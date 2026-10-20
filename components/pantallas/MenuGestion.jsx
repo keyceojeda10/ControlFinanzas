@@ -22,10 +22,32 @@
 // Las hojas que abre cada fila ya existen en `Gestion.jsx` (turnos 13 y 19). Esto
 // es lo que faltaba: la puerta.
 
-import BotonProfe from '@/components/tutoriales/BotonProfe'
-import { useProfe } from '@/components/tutoriales/ProfeProvider'
+import { BotonMinutoProfe } from '@/components/tutoriales/PiezasProfe'
 
 const ROJO = 'var(--cf-red-dark)'
+
+/* ── EL MINUTO DEL PROFE EN CADA OPCIÓN (Adenda 6, C) ──
+   Tocar la fila hace la acción; tocar el botón del minuto abre el video en la
+   parte de esa opción. Va con fondo propio para que nadie lo toque queriendo
+   hacer la acción. `junto` es el texto del catálogo, tal cual, aunque la fila
+   diga otra cosa («Anular» es la fila «Anular el préstamo»). Las filas que no
+   están aquí no llevan minuto. */
+const MINUTO_DE_FILA = {
+  renovar: ['prestamos-renovar', 'Renovar el préstamo'],
+  financiar: ['prestamos-financiar', 'Financiar el saldo'],
+  recargo: ['prestamos-recargo', 'Recargo por mora'],
+  descuento: ['prestamos-recargo', 'Descuento'],
+  dia: ['prestamos-cuando', 'Día de cobro'],
+  proximo: ['prestamos-cuando', 'Próximo cobro'],
+  sincobro: ['prestamos-cuando', 'Días sin cobro'],
+  plazo: ['prestamos-plazo', 'Modificar el plazo'],
+  anticipado: ['prestamos-paga-todo', 'Cerrar anticipado'],
+  'cambiar-modo': ['prestamos-cambiar-modo', 'Cambiar el modo de cobro'],
+  perdidos: ['prestamos-cerrar', 'Marcar como clavo'],
+  recuperar: ['prestamos-cerrar', 'Marcar como clavo'],
+  cancelar: ['prestamos-cerrar', 'Anular'],
+  eliminar: ['prestamos-cerrar', 'Eliminar'],
+}
 
 function Rotulo({ children }) {
   return (
@@ -36,32 +58,8 @@ function Rotulo({ children }) {
   )
 }
 
-/* El botón del profe de cada fila (lámina E2). Cada fila de «Gestión» se
-   identifica por su `id`; los textos de `junto` son los del catálogo, tal cual,
-   aunque la fila diga otra cosa («Anular» es la fila «Anular el préstamo»).
-   Las filas que no están aquí no llevan botón. */
-const PROFE_DE_FILA = {
-  renovar: <BotonProfe id="prestamos-renovar" junto="Renovar el préstamo" />,
-  financiar: <BotonProfe id="prestamos-financiar" junto="Financiar el saldo" />,
-  recargo: <BotonProfe id="prestamos-recargo" junto="Recargo por mora" />,
-  descuento: <BotonProfe id="prestamos-recargo" junto="Descuento" />,
-  dia: <BotonProfe id="prestamos-cuando" junto="Día de cobro" />,
-  proximo: <BotonProfe id="prestamos-cuando" junto="Próximo cobro" />,
-  sincobro: <BotonProfe id="prestamos-cuando" junto="Días sin cobro" />,
-  plazo: <BotonProfe id="prestamos-plazo" junto="Modificar el plazo" />,
-  anticipado: <BotonProfe id="prestamos-paga-todo" junto="Cerrar anticipado" />,
-  'cambiar-modo': <BotonProfe id="prestamos-cambiar-modo" junto="Cambiar el modo de cobro" />,
-  perdidos: <BotonProfe id="prestamos-cerrar" junto="Marcar como clavo" />,
-  cancelar: <BotonProfe id="prestamos-cerrar" junto="Anular" />,
-  eliminar: <BotonProfe id="prestamos-cerrar" junto="Eliminar" />,
-}
-
 function Fila({ id, nombre, valor, peligro, onIr, primera }) {
-  const profe = useProfe()
-  const boton = PROFE_DE_FILA[id]
-  // La rayita que separa el botón del profe solo va si el botón se va a ver.
-  const conProfe = Boolean(boton && profe?.activo && profe.botonVisible
-    && profe.visibles.some((v) => v.id === boton.props.id))
+  const minuto = MINUTO_DE_FILA[id]
   return (
     <div style={{
       display: 'flex', alignItems: 'center', width: '100%',
@@ -72,7 +70,7 @@ function Fila({ id, nombre, valor, peligro, onIr, primera }) {
       onClick={onIr}
       style={{
         display: 'flex', alignItems: 'center', gap: 13, flex: 1, minWidth: 0,
-        height: 52, padding: conProfe ? '0 4px 0 16px' : '0 16px', background: 'none', border: 0,
+        height: 52, padding: '0 16px', background: 'none', border: 0,
         cursor: 'pointer', textAlign: 'left', font: 'inherit',
         // El rojo NO es un aviso de peligro genérico: es que esta acción reconoce
         // una pérdida. Ninguna otra fila lleva color.
@@ -92,12 +90,7 @@ function Fila({ id, nombre, valor, peligro, onIr, primera }) {
         <path d="M9 5l7 7-7 7" />
       </svg>
     </button>
-    {conProfe && (
-      <>
-        <span aria-hidden style={{ width: 1, height: 26, flex: 'none', background: 'var(--cf-border)' }} />
-        <span style={{ flex: 'none', marginRight: 4, display: 'inline-flex' }}>{boton}</span>
-      </>
-    )}
+    {minuto && <BotonMinutoProfe id={minuto[0]} junto={minuto[1]} style={{ marginRight: 6 }} />}
     </div>
   )
 }

@@ -27,6 +27,7 @@ import { salirDeHojaHacia } from '@/components/cf/HojaInferior'
 import MenuCrear from '@/components/pantallas/MenuCrear'
 import QrScanner from '@/components/qr/QrScanner'
 import { olvidarCompartido } from '@/lib/pedir-compartido'
+import { PastillaProfe } from '@/components/tutoriales/PiezasProfe'
 
 const ArmazonContext = createContext(null)
 
@@ -261,6 +262,7 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
           total={dePantalla?.total}
           onVolver={dePantalla?.onVolver ?? volver}
           onCerrar={dePantalla?.onCerrar ?? volver}
+          profe={<PastillaProfe />}
         />
       )}
 

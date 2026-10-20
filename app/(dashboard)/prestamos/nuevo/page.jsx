@@ -23,7 +23,7 @@ import { SelectorPorcentajePesos, CampoCuotaEnPesos, rotuloCuotaEnPesos } from '
 import { formatearTasa } from '@/lib/adaptadores/prestamos'
 import { GrupoSegmentado } from '@/components/cf/primitivos2'
 import { EtiquetaClavo } from '@/components/cf/primitivos'
-import BotonProfe from '@/components/tutoriales/BotonProfe'
+import { EnlaceProfe, AvisoPrimeraVez } from '@/components/tutoriales/PiezasProfe'
 import AvisoUltimaCuota                            from '@/components/prestamos/AvisoUltimaCuota'
 import ModoInteresSelector, { AvisoPorCobro, avisoDelPorcentaje } from '@/components/prestamos/ModoInteresSelector'
 import TablaAmortizacion                           from '@/components/prestamos/TablaAmortizacion'
@@ -1188,6 +1188,9 @@ function NuevoPrestamo() {
         </div>
       )}
 
+      {/* El primer préstamo del negocio: el video antes de prestar (Adenda 6, D). */}
+      {paso === 0 && <AvisoPrimeraVez nombre="prestamo" style={{ marginBottom: 16 }} />}
+
       {/* PASO 1 — Cliente */}
       {paso === 0 && (() => {
         const buscando = buscadorCliente.trim().length > 0
@@ -1960,9 +1963,11 @@ function NuevoPrestamo() {
           {modo === 'prestamo' && (
             <div className="space-y-6">
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                {/* La decisión que más se equivoca: el enlace con la pregunta, a la
+                    derecha del título de la sección (Adenda 6, B). */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                   <h2 className="text-xl font-bold" style={{ color: 'var(--cf-ink)' }}>¿Cómo cobra el interés?</h2>
-                  <BotonProfe id="prestamos-modos" junto="¿Cómo cobra el interés?" />
+                  <EnlaceProfe id="prestamos-modos" junto="¿Cómo cobra el interés?" pregunta="¿Cuál elijo?" />
                 </div>
                 <p className="text-sm mt-1" style={{ color: 'var(--cf-ink-3)' }}>La mayoría usa el Clásico. Si no estás seguro, déjalo así.</p>
               </div>

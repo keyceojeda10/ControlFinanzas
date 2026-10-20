@@ -18,7 +18,6 @@ import { formatearTelefono, abrirWhatsApp } from '@/lib/whatsapp'
 import MoneyInput           from '@/components/ui/MoneyInput'
 import MetodoPagoSelector   from '@/components/pagos/MetodoPagoSelector'
 import HojaInferior        from '@/components/cf/HojaInferior'
-import BotonProfe          from '@/components/tutoriales/BotonProfe'
 import RegistrarCobro, { PieRegistrarCobro } from '@/components/pantallas/RegistrarCobro'
 import AbonoPorDias from '@/components/pantallas/AbonoPorDias'
 // El comprobante del rediseño, el mismo que ya salía en el cobro desde la ruta.
@@ -1442,13 +1441,7 @@ export default function RegistrarPago({
         // El título lo decide el tipo, que ya lo sabía `tituloModal`: con
         // «Registrar pago» fijo, elegir «Capital» dejaba la hoja diciendo lo
         // mismo que antes de elegir y no había forma de saber qué se iba a hacer.
-        titulo={(
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span>{tituloModal}</span>
-            {/* Su alto (44) no empuja el encabezado: el título mide 25. */}
-            <BotonProfe id="prestamos-registrar-pago" junto="el título de la hoja" style={{ margin: '-10px 0' }} />
-          </span>
-        )}
+        titulo={tituloModal}
         subtitulo={[cliente?.nombre, contextoCuota].filter(Boolean).join(' · ') || null}
         accion={
           <PieRegistrarCobro

@@ -81,6 +81,11 @@ const suscribirAncho = (alCambiar) => {
 const anchoAhora     = () => !!mqAncha?.matches
 const anchoServidor  = () => false
 
+/** ¿Escritorio? El mismo corte que decide si la hoja es modal (1024px). */
+export function useEscritorio() {
+  return useSyncExternalStore(suscribirAncho, anchoAhora, anchoServidor)
+}
+
 /* ══ UNA SOLA ENTRADA DE HISTORIA PARA TODAS LAS HOJAS ══════════════════════
  *
  * Cada hoja metía SU entrada al abrirse y no la retiraba al cerrar. Retirarla
@@ -191,6 +196,9 @@ export default function HojaInferior({
      `100vh` es más alto que lo que se ve, así que una hoja larga se sale por
      arriba justo por donde está el título. El token trae el `@supports`. */
   alturaMaxima = 'var(--cf-alto-hoja)',
+  /* El ancho del modal en escritorio. 520 para todas; el video del profe pide
+     720 para poner los capítulos al lado (Adenda 6, §5). */
+  anchoEscritorio = 520,
 }) {
   const anchaPantalla = useSyncExternalStore(suscribirAncho, anchoAhora, anchoServidor)
   const escritorio = escritorioProp ?? anchaPantalla
@@ -463,7 +471,7 @@ export default function HojaInferior({
         className={escritorio ? 'cf-modal-llega' : undefined}
         style={escritorio ? {
         position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)',
-        width: 520, maxHeight: alturaMaxima,
+        width: anchoEscritorio, maxWidth: 'calc(100vw - 48px)', maxHeight: alturaMaxima,
         background: 'var(--cf-surface)',
         borderRadius: 'var(--cf-r-sheet)',
         boxShadow: 'var(--cf-sh-modal)',

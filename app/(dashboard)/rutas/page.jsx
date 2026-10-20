@@ -22,7 +22,6 @@ import RutaCard                from '@/components/rutas/RutaCard'
 import ModalSugerenciasRutas   from '@/components/rutas/ModalSugerenciasRutas'
 import { useCountry } from '@/hooks/useCountry'
 import { useMontado } from '@/hooks/useMontado'
-import BotonProfe from '@/components/tutoriales/BotonProfe'
 
 /** El «+» dorado. Círculo, como en clientes y préstamos. */
 function BotonNuevaRuta({ onClick }) {
@@ -440,19 +439,16 @@ export default function RutasPage() {
         }}>Ordenar</button>
       )}
       {montado && esOwner && (
-        <>
-          <button type="button" onClick={() => setShowForm(true)} aria-label="Nueva ruta" style={{
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none',
-            width: 34, height: 34, borderRadius: 999,
-            background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
-            color: 'var(--cf-ink)', cursor: 'pointer',
-          }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-          </button>
-          <BotonProfe id="rutas-crear" junto="el «+» de crear ruta" style={{ margin: '-5px -6px -5px -4px' }} />
-        </>
+        <button type="button" onClick={() => setShowForm(true)} aria-label="Nueva ruta" style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none',
+          width: 34, height: 34, borderRadius: 999,
+          background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+          color: 'var(--cf-ink)', cursor: 'pointer',
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
       )}
     </>
   )
