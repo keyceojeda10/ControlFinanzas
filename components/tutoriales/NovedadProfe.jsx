@@ -13,7 +13,7 @@
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { createPortal } from 'react-dom'
-import HojaInferior from '@/components/cf/HojaInferior'
+import HojaInferior, { useEscritorio } from '@/components/cf/HojaInferior'
 import { NOVEDADES, NOVEDADES_VERSION, novedadVigente } from '@/lib/novedades'
 import { NOVEDAD_PROFE, reloj } from '@/lib/tutoriales/profe'
 
@@ -30,6 +30,7 @@ function saleLaOtra() {
 export default function NovedadProfe({ profe, primeraVez, videoAbierto }) {
   const ruta = usePathname() || '/'
   const [abierta, setAbierta] = useState(false)
+  const escritorio = useEscritorio()
   const video = profe.visibles.find((v) => v.id === NOVEDAD_PROFE.video)
   const toca = Boolean(
     profe.activo && profe.cargado && primeraVez?.novedad && video
@@ -79,7 +80,7 @@ export default function NovedadProfe({ profe, primeraVez, videoAbierto }) {
             <svg width="22" height="22" viewBox="0 0 24 24" fill="var(--cf-gold-ink)"><path d="M7 4.5v15l13-7.5z" /></svg>
           </span>
         </button>
-        <p style={{ margin: 0, fontSize: 15, lineHeight: 1.5, color: 'var(--cf-ink-2)', flex: 'none' }}>{NOVEDAD_PROFE.porque}</p>
+        <p style={{ margin: 0, fontSize: 15, lineHeight: 1.5, color: 'var(--cf-ink-2)', flex: 'none' }}>{escritorio ? NOVEDAD_PROFE.porqueEscritorio : NOVEDAD_PROFE.porque}</p>
       </HojaInferior>
     </div>,
     document.body,
