@@ -11,6 +11,7 @@ import { alDiaTrasCobro } from '@/lib/adaptadores/cobros'
 // La tarjeta de parada es la MISMA que pinta /cobros-hoy. Ver la nota de
 // components/cf/ParadaDeCobro: aqui habia una segunda tarjeta para lo mismo.
 import { Carril, FilaCobro } from '@/components/cf/ParadaDeCobro'
+import BuscarPorVoz from '@/components/cf/BuscarPorVoz'
 import { desplazamientoActual, volverAlSitio, MS_RESALTADO } from '@/lib/sitio-de-la-lista'
 import { useArrastreLargo } from '@/hooks/useArrastreLargo'
 
@@ -455,6 +456,12 @@ export default function RutaDetallePage({ params }) {
   const [guardandoFestivo, setGuardandoFestivo] = useState(false)
   const [estadoFiltro,   setEstadoFiltro]   = useState(null) // 'pendientes' | 'mora' | 'pagados' | null
   const [busquedaRuta,   setBusquedaRuta]   = useState('')
+  /* El cliente que se encontró DICIENDO su nombre (Carlos, 20 oct 2026: «que el
+     cobrador o el administrador pueda buscar por voz a un cliente dentro de la
+     ruta»). Mientras el buscador diga su nombre, la lista lo enseña a él aunque
+     lo escondan «Solo hoy» o un filtro: se le pidió a ESA persona. No se tocan
+     los filtros, que «Solo hoy» se recuerda en el teléfono. */
+  const [vozCliente,     setVozCliente]     = useState(null)
   // «Ver solo estos» del bloque «De dónde vienen sus clientes»: una ruta de
   // origen, 'propios' o null. Ver components/rutas/ProcedenciaRuta.jsx.
   const [procedenciaFiltro, setProcedenciaFiltro] = useState(null)
@@ -1915,6 +1922,9 @@ export default function RutaDetallePage({ params }) {
     || (procedenciaFiltro === 'propios' ? !c.vieneDe : c.vieneDe?.rutaId === procedenciaFiltro)
 
   const clientesFiltrados = (() => {
+    if (vozCliente && busquedaRuta === vozCliente.nombre) {
+      return (ruta?.clientes ?? []).filter((c) => c.id === vozCliente.id)
+    }
     let list = (ruta?.clientes ?? []).filter(enProcedencia)
     if (estadoFiltro === 'pendientes') list = list.filter(c => c.cobroPendienteHoy)
     else if (estadoFiltro === 'mora') list = list.filter(c => c.diasMora > 0)
@@ -3279,9 +3289,11 @@ export default function RutaDetallePage({ params }) {
           </span>
         </div>
 
-        {/* Buscador de clientes */}
+        {/* Buscador de clientes, y al lado el micrófono: decir el nombre busca
+            solo entre los de ESTA ruta. */}
         {(ruta.clientes?.length ?? 0) > 5 && (
-          <div className="relative mb-2">
+          <div className="flex items-center gap-2 mb-2">
+          <div className="relative flex-1 min-w-0">
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--cf-ink-3)] pointer-events-none" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
             </svg>
@@ -3294,7 +3306,7 @@ export default function RutaDetallePage({ params }) {
             />
             {busquedaRuta && (
               <button
-                onClick={() => setBusquedaRuta('')}
+                onClick={() => { setBusquedaRuta(''); setVozCliente(null) }}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] transition-colors"
               >
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -3302,6 +3314,13 @@ export default function RutaDetallePage({ params }) {
                 </svg>
               </button>
             )}
+          </div>
+          <BuscarPorVoz
+            variante="icono"
+            clientes={ruta.clientes}
+            rutaId={ruta.id}
+            onAbrir={(c) => { setVozCliente(c); setBusquedaRuta(c.nombre) }}
+          />
           </div>
         )}
 

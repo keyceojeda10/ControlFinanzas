@@ -3,7 +3,7 @@ import { authOptions } from '@/lib/auth'
 import { NextResponse } from 'next/server'
 import { transcribirAudio } from '@/lib/transcribir'
 import { prisma } from '@/lib/prisma'
-import { palabrasParaDictado } from '@/lib/busqueda-voz'
+import { palabrasParaDictado, alcanceDeVoz } from '@/lib/busqueda-voz'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -30,9 +30,8 @@ export async function POST(req) {
      «Jeison»). Mismo alcance que la búsqueda: el cobrador, solo sus rutas. */
   let prompt = null
   if (formData.get('para') === 'buscar_cliente' && session.user?.organizationId) {
-    const { organizationId, rol, rutaIds = [] } = session.user
     const clientes = await prisma.cliente.findMany({
-      where: { organizationId, estado: { notIn: ['eliminado'] }, ...(rol === 'cobrador' ? { rutaId: { in: rutaIds } } : {}) },
+      where: alcanceDeVoz(session.user, formData.get('rutaId') || null),
       select: { nombre: true },
       take: 2000,
     }).catch(() => [])

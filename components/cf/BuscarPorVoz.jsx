@@ -23,7 +23,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Toggle } from '@/components/ui/Toggle'
-import { resumenHablado, avisoHablado } from '@/lib/busqueda-voz'
+import { resumenHablado, avisoHablado, buscarPorVoz, limpiarDictado } from '@/lib/busqueda-voz'
 
 const CLAVE_LEER = 'cf-voz-leer'
 
@@ -81,7 +81,10 @@ const Micro = ({ size = 20 }) => (
 
 /** `variante`: 'icono' (dentro del campo de búsqueda) o 'boton' (la pastilla
  *  grande «Decir el nombre»). `onAbrir(cliente)` lleva a su ficha. */
-export default function BuscarPorVoz({ variante = 'icono', onAbrir }) {
+/* `clientes` + `rutaId` (20 oct 2026): buscar DENTRO de una ruta. Se puntúa
+ * contra los clientes que la pantalla ya tiene —los mismos que enseña la
+ * lista— y la pista del transcriptor va con los nombres de esa ruta. */
+export default function BuscarPorVoz({ variante = 'icono', onAbrir, clientes = null, rutaId = null }) {
   const [modo, setModo] = useState(null)
   const [abierta, setAbierta] = useState(false)
   // escuchando | pensando | resultados | error
@@ -124,10 +127,17 @@ export default function BuscarPorVoz({ variante = 'icono', onAbrir }) {
     setOido(texto)
     setFase('pensando')
     try {
-      const r = await fetch(`/api/buscar/voz?q=${encodeURIComponent(texto)}`)
-      const d = r.ok ? await r.json() : null
+      let d
+      if (clientes) {
+        const limpio = limpiarDictado(texto)
+        const r = limpio.length < 2 ? { resultados: [], unico: false } : buscarPorVoz(limpio, clientes)
+        d = { unico: r.unico, resultados: r.resultados.map(({ puntaje, ...c }) => c) }
+      } else {
+        const r = await fetch(`/api/buscar/voz?q=${encodeURIComponent(texto)}`)
+        d = r.ok ? await r.json() : null
+      }
       if (!d) throw new Error()
-      marcar('busqueda_voz', { resultados: d.resultados.length, unico: d.unico })
+      marcar('busqueda_voz', { resultados: d.resultados.length, unico: d.unico, ...(rutaId ? { donde: 'ruta' } : {}) })
       if (!vivo.current) return
       if (d.unico) { abrirCliente(d.resultados[0], 'solo'); return }
       setResultados(d.resultados)
@@ -212,6 +222,7 @@ export default function BuscarPorVoz({ variante = 'icono', onAbrir }) {
         const fd = new FormData()
         fd.append('audio', blob, `voz.${mime.includes('mp4') ? 'm4a' : 'webm'}`)
         fd.append('para', 'buscar_cliente')
+        if (rutaId) fd.append('rutaId', rutaId)
         const r = await fetch('/api/voz/transcribir', { method: 'POST', body: fd })
         // ⚠ Si falla el SERVIDOR no es que no se oyera: decir «No te escuché»
         // culpaba a la persona de algo que era nuestro (19 oct 2026).

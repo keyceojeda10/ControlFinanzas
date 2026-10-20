@@ -11,7 +11,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { buscarLimiter, getClientIp } from '@/lib/rate-limit'
-import { buscarPorVoz, limpiarDictado } from '@/lib/busqueda-voz'
+import { buscarPorVoz, limpiarDictado, alcanceDeVoz } from '@/lib/busqueda-voz'
 
 export async function GET(request) {
   const rl = buscarLimiter(getClientIp(request))
@@ -23,13 +23,8 @@ export async function GET(request) {
   const texto = limpiarDictado(dicho)
   if (texto.length < 2) return Response.json({ texto, resultados: [], unico: false })
 
-  const { organizationId, rol, rutaIds = [] } = session.user
   const clientes = await prisma.cliente.findMany({
-    where: {
-      organizationId,
-      estado: { notIn: ['eliminado'] },
-      ...(rol === 'cobrador' ? { rutaId: { in: rutaIds } } : {}),
-    },
+    where: alcanceDeVoz(session.user, new URL(request.url).searchParams.get('rutaId') || null),
     select: { id: true, nombre: true, cedula: true, telefono: true, direccion: true },
   })
   const { resultados, unico } = buscarPorVoz(texto, clientes)
