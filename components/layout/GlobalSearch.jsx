@@ -40,6 +40,7 @@ import { buscarGuias } from '@/lib/tutoriales/guias'
 import ModalGuia from '@/components/tutoriales/ModalGuia'
 import { IconoDeRuta } from '@/components/armazon/iconos'
 import BuscarPorVoz from '@/components/cf/BuscarPorVoz'
+import { EnlaceProfe } from '@/components/tutoriales/PiezasProfe'
 
 /* Los cinco saltos de la lamina. No son «todos los destinos» —para eso esta el
    menu—: son los que se repiten a diario. `soloDueno` marca los que un cobrador
@@ -354,6 +355,8 @@ export default function GlobalSearch() {
           pie={recientes.length === 0 ? 'Escribe un nombre, una cédula o un teléfono' : null}
           voz={<BuscarPorVoz variante="icono" onAbrir={(c) => ir(`/clientes/${c.id}`)} />}
           vozGrande={<BuscarPorVoz variante="boton" onAbrir={(c) => ir(`/clientes/${c.id}`)} />}
+          // El video sale encima del buscador (z 95 sobre z 50): al cerrarlo, sigue la búsqueda.
+          ayuda={<EnlaceProfe id="inicio-lupa" junto="la lupa" pregunta="¿Cómo se busca?" style={{ margin: '-6px 0 -6px -8px' }} />}
         />
       </div>
     </div>

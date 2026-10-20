@@ -7,6 +7,7 @@ import { abreviaturaDocumento } from '@/lib/documento'
 import { LoPuestoAqui, LoDeHoy } from '@/components/pantallas/DetalleRuta'
 import { loPuestoAqui, loDeHoy, avanceDeHoy, aCobrarEnLaParada, cierreDeLaCaja, cierreYaHecho, kmDeLaRuta, partirRecorrido, adaptarParadaActual, resumenDeCierre, tramosDelRecorrido, moverParada, moverParadaEnRuta, propuestaPorCercania, paradasDeRuta, gruposDeRuta } from '@/lib/adaptadores/ruta'
 import { DIAS_MORA } from '@/lib/adaptadores/clientes'
+import { alDiaTrasCobro } from '@/lib/adaptadores/cobros'
 // La tarjeta de parada es la MISMA que pinta /cobros-hoy. Ver la nota de
 // components/cf/ParadaDeCobro: aqui habia una segunda tarjeta para lo mismo.
 import { Carril, FilaCobro } from '@/components/cf/ParadaDeCobro'
@@ -1111,7 +1112,8 @@ export default function RutaDetallePage({ params }) {
       clientes: prev.clientes.map(c => {
         if (c.id !== clienteId) return c
         const pide = Math.max(0, (Number(c.pideHoy ?? (c.cobroPendienteHoy ? c.cuota : 0)) || 0) - cuota)
-        return { ...c, pagoHoy: true, montoPagadoHoy: (Number(c.montoPagadoHoy) || 0) + cuota, pideHoy: pide, cobroPendienteHoy: pide > 0 }
+        // Y baja «para ponerse al día»: sin señal no hay recarga (DETALLES-COBRADORES #10).
+        return { ...c, pagoHoy: true, montoPagadoHoy: (Number(c.montoPagadoHoy) || 0) + cuota, pideHoy: pide, cobroPendienteHoy: pide > 0, ...alDiaTrasCobro(c, cuota, prestamoActivo) }
       })
     } : prev)
     // La pantalla de «estoy en eso» sale EN EL ACTO tras el gesto y cubre todo

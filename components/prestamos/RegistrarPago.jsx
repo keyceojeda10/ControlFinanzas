@@ -27,6 +27,7 @@ import HojaReciboPrevio from '@/components/recibos/HojaReciboPrevio'
 import { dibujarRecibo } from '@/components/ui/BotonCompartirRecibo'
 import { saldoAntesDeEstePago } from '@/lib/recibo-derivados'
 import { entraAlFajo } from '@/lib/dinero/cuentas'
+import { alDiaTrasCobro } from '@/lib/adaptadores/cobros'
 import { interesQueAhorraUnAbono } from '@/lib/dinero/abono-capital'
 import { efectoDelPago } from '@/lib/dinero/saldo-tras-cada-pago'
 import { cargarDiaCobrado } from '@/lib/dia-cobrado'
@@ -502,6 +503,8 @@ export default function RegistrarPago({
           totalPagado: totalPagadoNuevo,
           porcentajePagado: porcentajeNuevo,
           pagoHoy: true,
+          // «Ponerse al día · $X» no se queda ofreciendo lo que acaba de pagar (DETALLES-COBRADORES #10).
+          ...alDiaTrasCobro(prestamo, m),
           /* ⚠ EL PAGO ENTRA EN LA LISTA, no solo en los totales. Se ponía
              `pagoHoy: true` y `pagos` se quedaba como estaba, así que la
              pastilla «Cobrado hoy» aparecía —porque pagoHoy era cierto— con la

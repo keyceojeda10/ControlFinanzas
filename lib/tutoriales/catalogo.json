@@ -135,6 +135,139 @@
    "poster": "/videos/profe/inicio/cobrar-dia.jpg"
   },
   {
+   "id": "inicio-plan",
+   "serie": "inicio",
+   "titulo": "Pagar tu plan",
+   "estado": "listo",
+   "destino": "/videos/inicio/plan.mp4",
+   "duracion": 61.5,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 7.5,
+     "titulo": "Tu plan"
+    },
+    {
+     "t": 17.4,
+     "titulo": "Pagar"
+    },
+    {
+     "t": 34.5,
+     "titulo": "Cambiar de plan"
+    },
+    {
+     "t": 47.5,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/configuracion/plan",
+     "tipo": "D1"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Nuevo del 20 oct (cf-v1187): ＋ → «Mi plan», los días de prueba, «Se cobra solo» o «Pago yo», el botón amarillo (sin pagar), los planes, cobradores y rutas adicionales, «Soporte». Pantalla de la cuenta en prueba El Roble.",
+   "src": "/videos/profe/inicio/plan.mp4",
+   "poster": "/videos/profe/inicio/plan.jpg"
+  },
+  {
+   "id": "inicio-sin-senal",
+   "serie": "inicio",
+   "titulo": "Cobrar sin señal",
+   "estado": "listo",
+   "destino": "/videos/inicio/sin-senal.mp4",
+   "duracion": 56.2,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 7.1,
+     "titulo": "Sin señal"
+    },
+    {
+     "t": 17.8,
+     "titulo": "Cobrar igual"
+    },
+    {
+     "t": 29.9,
+     "titulo": "Cuando vuelve"
+    },
+    {
+     "t": 41.9,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/cobros-hoy",
+     "tipo": "E2",
+     "junto_a": "la franja «Sin señal»"
+    }
+   ],
+   "para": [
+    "dueno",
+    "cobrador"
+   ],
+   "tarea": null,
+   "nota": "Nuevo del 20 oct (cf-v1187): «Sin señal · trabajando en el teléfono», cobrar igual, «1 cobro guardado en el teléfono» y la subida sola al volver la señal.",
+   "src": "/videos/profe/inicio/sin-senal.mp4",
+   "poster": "/videos/profe/inicio/sin-senal.jpg"
+  },
+  {
+   "id": "inicio-lupa",
+   "serie": "inicio",
+   "titulo": "La lupa y la búsqueda por voz",
+   "estado": "listo",
+   "destino": "/videos/inicio/lupa.mp4",
+   "duracion": 54.3,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 9.4,
+     "titulo": "Buscar escribiendo"
+    },
+    {
+     "t": 19,
+     "titulo": "Por voz"
+    },
+    {
+     "t": 30.5,
+     "titulo": "No solo clientes"
+    },
+    {
+     "t": 41.3,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "Cabecera",
+     "tipo": "E2",
+     "junto_a": "la lupa"
+    }
+   ],
+   "para": [
+    "dueno",
+    "cobrador"
+   ],
+   "tarea": null,
+   "nota": "Nuevo del 20 oct (cf-v1187): buscar escribiendo, por voz («Di el nombre del cliente»; la lista si hay varios) y pantallas o ajustes («cobrar»).",
+   "src": "/videos/profe/inicio/lupa.mp4",
+   "poster": "/videos/profe/inicio/lupa.jpg"
+  },
+  {
    "id": "inicio-novedad-profe",
    "serie": "inicio",
    "titulo": "El profe en toda la app",
@@ -634,6 +767,49 @@
    "nota": "Revisado el 18 oct contra cf-v1170: la pantalla no cambió.",
    "src": "/videos/profe/clientes/whatsapp.mp4",
    "poster": "/videos/profe/clientes/whatsapp.jpg"
+  },
+  {
+   "id": "prestamos-simulador",
+   "serie": "prestamos",
+   "titulo": "El simulador",
+   "estado": "listo",
+   "destino": "/videos/prestamos/simulador.mp4",
+   "duracion": 55.5,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 9.2,
+     "titulo": "Cómo llegar"
+    },
+    {
+     "t": 16,
+     "titulo": "La cuota"
+    },
+    {
+     "t": 29.3,
+     "titulo": "Mostrársela"
+    },
+    {
+     "t": 39.6,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/prestamos/simulador",
+     "tipo": "D1"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": "Crear este préstamo",
+   "nota": "Nuevo del 20 oct (cf-v1187): menú ⊞ → «Simulador», la cuota al escribir, WhatsApp, la tabla y «Crear este préstamo».",
+   "src": "/videos/profe/prestamos/simulador.mp4",
+   "poster": "/videos/profe/prestamos/simulador.jpg"
   },
   {
    "id": "prestamos-lista",

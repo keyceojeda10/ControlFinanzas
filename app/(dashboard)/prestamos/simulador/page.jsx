@@ -35,6 +35,7 @@ import { useCabecera } from '@/components/armazon/Armazon'
 import { calcularPrestamo } from '@/lib/calculos'
 import { formatMoney, soloDecimal } from '@/lib/i18n'
 import { useAuth } from '@/hooks/useAuth'
+import { useRegistrarAcciones } from '@/components/acciones/AccionesProvider'
 import { montoCrudo, montoCrudoConModo, montoParaMostrarConModo } from '@/lib/adaptadores/pago'
 import { compartirSimulacionImagen } from '@/lib/simulacion-imagen'
 import { MODOS_CUOTA_PAREJA } from '@/lib/dinero/interes-en-pesos'
@@ -168,6 +169,14 @@ export default function SimuladorPage() {
     })
     router.push(`/prestamos/nuevo?${p}`)
   }
+  /* «Crear este préstamo» para el buscador y para el botón dorado del video del
+     profe («El simulador»): con lo simulado en pantalla, lo mismo que el botón. */
+  useRegistrarAcciones('simulador', [
+    { id: 'simulador-crear', label: 'Crear este préstamo', pista: 'Con lo que acabas de simular',
+      sinonimos: ['crear el préstamo', 'prestar esto', 'hacer el préstamo'],
+      disponible: Boolean(calculo),
+      ejecutar: crear },
+  ])
 
   /* ── LA TABLA, COMO SE VE ────────────────────────────────────────────
      «Cuando se comparte la simulación normalmente se comparte en texto; sería

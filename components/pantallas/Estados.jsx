@@ -217,6 +217,8 @@ export function BusquedaGlobal({
      campo y `vozGrande` la pastilla «Decir el nombre del cliente» de arriba,
      para quien no escribe. Los pone quien monta la lupa. */
   voz = null, vozGrande = null,
+  /* El video de la lupa (20 oct 2026): «¿Cómo se busca?», donde nace la duda. */
+  ayuda = null,
 }) {
   const buscando = String(texto ?? '').trim().length > 0
 
@@ -291,6 +293,7 @@ export function BusquedaGlobal({
         ) : (
           <>
             {vozGrande && <div style={{ flex: 'none' }}>{vozGrande}</div>}
+            {ayuda && <div style={{ flex: 'none', marginTop: -6 }}>{ayuda}</div>}
             {recientes.length > 0 && (
               <div style={{ flex: 'none', display: 'flex', flexDirection: 'column', gap: 9 }}>
                 <Rotulo>{recientesTitulo}</Rotulo>

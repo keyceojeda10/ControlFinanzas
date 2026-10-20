@@ -18,7 +18,7 @@ import { nuevaClaveCobro } from '@/lib/pagos-sin-senal'
 import CobrarHoy from '@/components/pantallas/CobrarHoy'
 import HojaWhatsApp from '@/components/whatsapp/HojaWhatsApp'
 import {
-  adaptarCobrosHoy, ORDENES, RANGOS_ATRASO, conteosAtraso, resumenSeleccion, inicialesDe,
+  adaptarCobrosHoy, ORDENES, RANGOS_ATRASO, conteosAtraso, resumenSeleccion, inicialesDe, alDiaTrasCobro,
 } from '@/lib/adaptadores/cobros'
 import HojaFiltros from '@/components/pantallas/HojaFiltros'
 import { useSitioDeLaLista } from '@/hooks/useSitioDeLaLista'
@@ -288,7 +288,8 @@ export default function CobrosHoyPage() {
         // Hecho solo si cubre lo que la parada le pedía hoy (#69).
         c.id === clienteId ? (() => {
           const pide = Math.max(0, (Number(c.pideHoy ?? (c.cobroPendienteHoy ? c.cuota : 0)) || 0) - montoFinal)
-          return { ...c, pagoHoy: true, montoCobradoHoy: (Number(c.montoCobradoHoy) || 0) + montoFinal, pideHoy: pide, cobroPendienteHoy: pide > 0 }
+          // Y baja «para ponerse al día»: sin señal no hay recarga (DETALLES-COBRADORES #10).
+          return { ...c, pagoHoy: true, montoCobradoHoy: (Number(c.montoCobradoHoy) || 0) + montoFinal, pideHoy: pide, cobroPendienteHoy: pide > 0, ...alDiaTrasCobro(c, montoFinal, prestamoActivo) }
         })() : c
       ),
       resumen: {
