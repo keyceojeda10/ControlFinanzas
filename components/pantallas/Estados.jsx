@@ -204,7 +204,9 @@ export function BusquedaGlobal({
      guías. El dueño: «no dice que se puede buscar cualquier cosa dentro del
      sistema». Se nombra lo que la gente teclea —una persona— y se dice que hay
      más, sin convertir el campo en una lista. */
-  texto, onTexto, marcador = 'Busca un cliente, una pantalla o un ajuste',
+  /* Corto (19 oct 2026): con el micrófono y «Cerrar» al lado, a 390px se leía
+     «Busca un cliente, una pant». Dice lo mismo en lo que cabe. */
+  texto, onTexto, marcador = 'Cliente, pantalla o ajuste',
   onCerrar,
   recientesTitulo = 'Últimos que abriste', recientes = [],
   atajosTitulo = 'Ir directo a', atajos = [],

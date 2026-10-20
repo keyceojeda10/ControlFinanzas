@@ -28,7 +28,6 @@ import ThemeToggle             from '@/components/ui/ThemeToggle'
 import { Toggle }              from '@/components/ui/Toggle'
 import { useTheme }             from '@/lib/theme/ThemeProvider'
 import { getCountryList, COUNTRIES } from '@/lib/countries'
-import { InstallGuideModal } from '@/components/layout/InstallButton'
 import { ChecklistCamposRecibo } from '@/components/recibos/CamposReciboEditor'
 import { puedeRetroceder } from '@/lib/armazon'
 import PreferenciasAvisos from '@/components/avisos/PreferenciasAvisos'
@@ -37,6 +36,7 @@ import EntrarConHuella from '@/components/configuracion/EntrarConHuella'
 import AyudaProfe from '@/components/tutoriales/AyudaProfe'
 import { useProfe } from '@/components/tutoriales/ProfeProvider'
 import { EnlaceProfe } from '@/components/tutoriales/PiezasProfe'
+import { pedirInstalar } from '@/components/layout/PuertaInstalacion'
 
 const PAISES_LIST = getCountryList()
 const WHATSAPP_SOPORTE = '573011993001'
@@ -1686,28 +1686,20 @@ function Remite({ nombre, nota, destino, accion }) {
 
 function InstallSection() {
   const [installed, setInstalled] = useState(true)
-  const [showGuide, setShowGuide] = useState(false)
-  const [deferredPrompt, setDeferredPrompt] = useState(null)
 
   useEffect(() => {
     const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true
-    if (standalone) { setInstalled(true); return }
-    setInstalled(false)
-    const handler = (e) => { e.preventDefault(); setDeferredPrompt(e) }
-    window.addEventListener('beforeinstallprompt', handler)
-    return () => window.removeEventListener('beforeinstallprompt', handler)
+    setInstalled(standalone)
+    // Si la instala desde aquí, la tarjeta se va sin recargar.
+    const instalada = () => setInstalled(true)
+    window.addEventListener('cf:instalada', instalada)
+    return () => window.removeEventListener('cf:instalada', instalada)
   }, [])
 
-  const handleInstall = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt()
-      const { outcome } = await deferredPrompt.userChoice
-      setDeferredPrompt(null)
-      if (outcome === 'accepted') setInstalled(true)
-      return
-    }
-    setShowGuide(true)
-  }
+  // Por el timbre único (PuertaInstalacion): de un toque si el navegador ya
+  // avisó al cargar —este componente llegaba tarde a oírlo y caía siempre en
+  // los pasos—; si no, la guía del camino que toque.
+  const handleInstall = () => pedirInstalar('configuracion')
 
   return (
     <Card>
@@ -1760,7 +1752,6 @@ function InstallSection() {
           <EnlaceProfe id="inicio-instalar" junto="Instalar en este dispositivo" pregunta="¿Cómo se instala?" style={{ margin: '4px 0 -10px -8px' }} />
         )}
       </div>
-      {showGuide && <InstallGuideModal onClose={() => setShowGuide(false)} />}
     </Card>
   )
 }

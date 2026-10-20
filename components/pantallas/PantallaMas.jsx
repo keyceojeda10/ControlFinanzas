@@ -17,7 +17,7 @@ import { ICONO_DE_RUTA } from '@/components/armazon/iconos'
 import { Tarjeta } from '@/components/cf/primitivos'
 import { useEffect, useState } from 'react'
 import { isStandalone } from '@/components/layout/InstallButton'
-import { EVENTO_INSTALAR } from '@/components/layout/PuertaInstalacion'
+import { pedirInstalar } from '@/components/layout/PuertaInstalacion'
 import { BotonMinutoProfe } from '@/components/tutoriales/PiezasProfe'
 
 /* Los iconos son de trazo, 20px, en gris. No compiten con las cifras.
@@ -104,7 +104,7 @@ function FilaInstalar() {
   if (instalada) return null
   return (
     <Fila icono="instalar" nombre="Instalar la app" cifra="En tu teléfono, como cualquier app" alto={54}
-      onIr={() => window.dispatchEvent(new Event(EVENTO_INSTALAR))} video="inicio-instalar" />
+      onIr={() => pedirInstalar('mas')} video="inicio-instalar" />
   )
 }
 

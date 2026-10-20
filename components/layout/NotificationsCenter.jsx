@@ -8,6 +8,7 @@ import { pedirCompartido, olvidarCompartido } from '@/lib/pedir-compartido'
 import { destinoDeNotificacion } from '@/lib/notificacion-destino'
 import { cuandoNotificacion, mensajeLegible } from '@/lib/notificacion-texto'
 import { useCountry } from '@/hooks/useCountry'
+import { pedirInstalar } from '@/components/layout/PuertaInstalacion'
 
 function isStandalone() {
   if (typeof window === 'undefined') return false
@@ -210,15 +211,11 @@ export default function NotificationsCenter({ size = 'md' }) {
   }
 
   // ─── Install / Push actions ───
-  const handleInstall = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt()
-      const { outcome } = await deferredPrompt.userChoice
-      setDeferredPrompt(null)
-      if (outcome === 'accepted') { setInstallable(false); setOpen(false) }
-      return
-    }
-    setShowInstallGuide(true)
+  // Por el timbre único (PuertaInstalacion): de un toque si el navegador ya
+  // avisó; si no, la guía del camino que toque (Chrome, flecha del iPhone…).
+  const handleInstall = () => {
+    setOpen(false)
+    pedirInstalar('campana')
   }
 
   const dismissInstall = () => {

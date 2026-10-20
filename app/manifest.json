@@ -1,12 +1,14 @@
 {
+  "id": "/dashboard",
   "name": "Control Finanzas",
   "short_name": "CtrlFinanzas",
-  "description": "Gestión de cartera de crédito informal",
+  "description": "Tus préstamos, tus cobros y tu caja en el teléfono. Cobra en la calle aunque no haya señal.",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#f5f7fb",
   "theme_color": "#f5f7fb",
   "orientation": "portrait",
+  "categories": ["business", "finance", "productivity"],
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -25,6 +27,29 @@
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/capturas-app/inicio.jpg",
+      "sizes": "780x1688",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Lo que cobraste hoy y lo que te falta"
+    },
+    {
+      "src": "/capturas-app/ruta.jpg",
+      "sizes": "780x1688",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Tu ruta de cobro, cliente por cliente"
+    },
+    {
+      "src": "/capturas-app/prestamo.jpg",
+      "sizes": "780x1688",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Cada préstamo con lo que debe y sus pagos"
     }
   ]
 }

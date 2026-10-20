@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import OfflineProvider from "@/components/providers/OfflineProvider";
 import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 import Script from "next/script";
+import { SCRIPT_CAPTURA_INSTALAR } from '@/lib/instalar'
 
 // Script anti-FOUC: corre antes de cualquier render y setea data-theme + background
 // inline para que incluso cuando el HTML viene cacheado por SW con el data-theme
@@ -106,6 +107,10 @@ export default async function RootLayout({ children }) {
     <html lang="es" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {/* El aviso «se puede instalar» de Chrome llega al cargar y no se repite:
+            se oye aquí, antes que React, para que «Instalar» sea de un toque
+            en cualquier pantalla (lib/instalar.js). */}
+        <script dangerouslySetInnerHTML={{ __html: SCRIPT_CAPTURA_INSTALAR }} />
         <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18050279366" />
         <script dangerouslySetInnerHTML={{ __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','AW-18050279366');` }} />
       </head>

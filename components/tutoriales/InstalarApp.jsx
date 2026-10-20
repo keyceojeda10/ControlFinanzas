@@ -10,7 +10,9 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { videoPorId, partesDe, capituloEn, reloj } from '@/lib/tutoriales/profe'
-import { InstallGuideModal, isStandalone } from '@/components/layout/InstallButton'
+import { isStandalone } from '@/components/layout/InstallButton'
+import PuertaInstalacion, { pedirInstalar } from '@/components/layout/PuertaInstalacion'
+import { detectar, caminoInstalar, enlaceAChrome } from '@/lib/instalar'
 
 const VIDEO = videoPorId('inicio-instalar')
 const LISTO = Boolean(VIDEO && (VIDEO.estado === 'listo' || VIDEO.estado === 'montado'))
@@ -18,9 +20,24 @@ const LISTO = Boolean(VIDEO && (VIDEO.estado === 'listo' || VIDEO.estado === 'mo
 export default function InstalarApp() {
   const ref = useRef(null)
   const [t, setT] = useState(0)
-  const [pasos, setPasos] = useState(false)
   const [instalada, setInstalada] = useState(false)
-  useEffect(() => { setInstalada(isStandalone()) }, [])
+  // El camino de ESTE teléfono; cambia a «un toque» si el navegador avisa tarde.
+  const [camino, setCamino] = useState(null)
+  useEffect(() => {
+    setInstalada(isStandalone())
+    const decidir = () => setCamino(caminoInstalar(detectar(navigator.userAgent), { hayToque: Boolean(window.__cfInstalar) }))
+    decidir()
+    const yaEsta = () => setInstalada(true)
+    window.addEventListener('cf:instalable', decidir)
+    window.addEventListener('cf:instalada', yaEsta)
+    return () => { window.removeEventListener('cf:instalable', decidir); window.removeEventListener('cf:instalada', yaEsta) }
+  }, [])
+  const textoBoton = {
+    'un-toque': 'Instalar ahora',
+    'ios-safari': 'Cómo instalarla en tu iPhone',
+    'ios-chrome': 'Cómo instalarla en tu iPhone',
+    'ios-dentro': 'Cómo instalarla en tu iPhone',
+  }[camino] ?? 'Ver los pasos en este teléfono'
   const partes = LISTO ? partesDe(VIDEO) : []
   const actual = LISTO ? capituloEn(VIDEO, t) : -1
 
@@ -79,17 +96,25 @@ export default function InstalarApp() {
           </>
         )}
 
-        {!instalada && (
-          <button type="button" onClick={() => setPasos(true)} style={{
+        {/* Dentro de Facebook o Instagram (Android) no se puede instalar: lo
+            primero es salir a Chrome, y ahí ya es de un toque. */}
+        {!instalada && camino === 'abrir-en-chrome' && (
+          <a href={enlaceAChrome(window.location.href)} style={{
+            height: 52, borderRadius: 'var(--cf-r-control)', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none',
+            fontSize: 16, fontWeight: 700, background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
+          }}>Abrir en Chrome para instalarla</a>
+        )}
+        {!instalada && camino && camino !== 'abrir-en-chrome' && (
+          <button type="button" onClick={() => pedirInstalar('pagina-instalar')} style={{
             height: 52, borderRadius: 'var(--cf-r-control)', border: 0, cursor: 'pointer', font: 'inherit',
             fontSize: 16, fontWeight: 700, background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
-          }}>Ver los pasos en este teléfono</button>
+          }}>{textoBoton}</button>
         )}
         <Link href="/login" style={{ textAlign: 'center', fontSize: 14, fontWeight: 600, color: 'var(--cf-gold-dark)' }}>
           Entrar a la app
         </Link>
       </div>
-      {pasos && <InstallGuideModal onClose={() => setPasos(false)} />}
+      <PuertaInstalacion />
     </main>
   )
 }

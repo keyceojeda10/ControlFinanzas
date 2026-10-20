@@ -213,12 +213,15 @@ export default function BuscarPorVoz({ variante = 'icono', onAbrir }) {
         fd.append('audio', blob, `voz.${mime.includes('mp4') ? 'm4a' : 'webm'}`)
         fd.append('para', 'buscar_cliente')
         const r = await fetch('/api/voz/transcribir', { method: 'POST', body: fd })
-        const d = r.ok ? await r.json() : null
+        // ⚠ Si falla el SERVIDOR no es que no se oyera: decir «No te escuché»
+        // culpaba a la persona de algo que era nuestro (19 oct 2026).
+        if (!r.ok) throw new Error('transcribir')
+        const d = await r.json()
         const texto = String(d?.texto ?? '').trim()
         if (texto) buscar(texto); else sinOir()
       } catch {
         if (!vivo.current) return
-        setMensaje('No pude oír la grabación. Revisa la conexión e inténtalo otra vez.')
+        setMensaje('No pude procesar el audio. Toca el micrófono e inténtalo otra vez.')
         setFase('error')
       }
     }
@@ -315,7 +318,9 @@ export default function BuscarPorVoz({ variante = 'icono', onAbrir }) {
             }}>Cerrar</button>
           </div>
 
-          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, paddingTop: 8 }}>
+          {/* ⚠ El halo del micrófono crece hasta 30px con la voz, y esta caja
+              recorta (se desliza): con 8px arriba salía cortado en plano. */}
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, paddingTop: 34 }}>
             <button type="button" onClick={fase === 'escuchando' ? undefined : empezar}
               aria-label={escuchando ? 'Escuchando' : 'Decirlo otra vez'} style={{
                 position: 'relative', width: 120, height: 120, flex: 'none', borderRadius: 999, border: 0,
