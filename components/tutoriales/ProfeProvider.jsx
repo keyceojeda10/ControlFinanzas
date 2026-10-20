@@ -22,7 +22,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAcciones, ejecutarAccion } from '@/components/acciones/AccionesProvider'
-import { videosPara, videoPorId, ayudaDeLaPantalla, PRIMERA_VEZ, volverDe } from '@/lib/tutoriales/profe'
+import { videosPara, videoPorId, ayudaDeLaPantalla, PRIMERA_VEZ, volverDe, VIDEO_INSTALAR } from '@/lib/tutoriales/profe'
+import { isStandalone } from '@/components/layout/InstallButton'
 import { salirDeHojaHacia } from '@/components/cf/HojaInferior'
 import ReproductorProfe from './ReproductorProfe'
 import HojaAyudaProfe from './HojaAyudaProfe'
@@ -101,9 +102,18 @@ export default function ProfeProvider({ rol, usuario, children }) {
   )
   const vistos = useMemo(() => new Set(estado.vistos), [estado.vistos])
   const guardados = useMemo(() => new Set(estado.guardados), [estado.guardados])
+  // Con la app ya instalada no se ofrece el video de instalarla: «enseñarle a
+  // instalar a quien ya la instaló confunde» (la misma regla que `FilaInstalar`).
+  const [instalada, setInstalada] = useState(false)
+  useEffect(() => {
+    setInstalada(isStandalone())
+    const alInstalar = () => setInstalada(true)
+    window.addEventListener('cf:instalada', alInstalar)
+    return () => window.removeEventListener('cf:instalada', alInstalar)
+  }, [])
   const ayuda = useMemo(
-    () => ayudaDeLaPantalla(pathname, pestana, visibles, { rol }),
-    [pathname, pestana, visibles, rol],
+    () => ayudaDeLaPantalla(pathname, pestana, instalada ? visibles.filter((v) => v.id !== VIDEO_INSTALAR) : visibles, { rol }),
+    [pathname, pestana, visibles, rol, instalada],
   )
 
   /** Abre un video. `via`: de dónde se tocó (pastilla, ayuda, minuto, enlace, aviso). */
@@ -139,6 +149,15 @@ export default function ProfeProvider({ rol, usuario, children }) {
     setEstado((e) => ({ ...e, [campo]: valor }))
     enviar({ tipo, valor })
   }, [])
+
+  /** «Ocultar todos los tutoriales», desde la ayuda del Inicio (Carlos, 20 oct
+   *  2026): apaga lo que está a la vista —pastillas, enlaces, minutos— y los
+   *  avisos de primera vez. No borra nada: la biblioteca sigue en Tutoriales,
+   *  con los dos interruptores para volver a prenderlos. */
+  const ocultarTodo = useCallback(() => {
+    cambiarPreferencia('prefBoton', false)
+    cambiarPreferencia('prefAvisos', false)
+  }, [cambiarPreferencia])
 
   /** ¿Sale la tarjeta de primera vez? Solo si de verdad es la primera, si no la
    *  cerró con «Ya sé cómo», si no vio ya el video y con los avisos prendidos. */
@@ -183,6 +202,8 @@ export default function ProfeProvider({ rol, usuario, children }) {
           onAbrir={(id) => abrir(id, { via: 'ayuda' })}
           onBiblioteca={() => { setAyudaAbierta(false); salirDeHojaHacia(router, '/tutoriales') }}
           onCerrar={() => setAyudaAbierta(false)}
+          // Solo en el Inicio, donde lo pidió Carlos.
+          onOcultarTodo={pathname === '/dashboard' ? ocultarTodo : undefined}
         />
       )}
       {video && (
