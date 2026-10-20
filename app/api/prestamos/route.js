@@ -1,6 +1,7 @@
 // app/api/prestamos/route.js
 
 import { PAGOS_DEL_CALCULO } from '@/lib/dinero/pagos-del-calculo'
+import { renovacionesDe } from '@/lib/prestamos/renovaciones'
 import { getServerSession }    from 'next-auth'
 import { authOptions }         from '@/lib/auth'
 import { prisma }              from '@/lib/prisma'
@@ -355,6 +356,10 @@ export async function GET(request) {
       pagosCalculoDe.get(x.prestamoId).push(x)
     }
   }
+  // Los cerrados por una renovación: su tarjeta dice «Renovado» y cuándo.
+  const renovadoEl = await renovacionesDe(prisma, {
+    organizationId, ids: prestamos.filter((p) => p.estado === 'completado').map((p) => p.id),
+  })
   const resultado = prestamos.map((p) => {
     const diasExcluidos = getDiasExcluidos(p.cliente)
     return {
@@ -364,6 +369,7 @@ export async function GET(request) {
     creadoPorId:      p.creadoPorId,
     creadoPorNombre:  creadoresMap.get(p.creadoPorId) || null,
     renovadoDeId:     p.renovadoDeId,
+    renovadoEl:       renovadoEl.get(p.id) ?? null,
     // La marca de «saldo financiado» (lib/financiar.js `esFinanciacion`). Esta
     // respuesta es una lista blanca: sin la línea, la tarjeta no la ve.
     interesFinanciado: p.interesFinanciado,

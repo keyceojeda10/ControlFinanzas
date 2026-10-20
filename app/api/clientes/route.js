@@ -1,6 +1,7 @@
 // app/api/clientes/route.js
 
 import { PAGOS_DEL_CALCULO } from '@/lib/dinero/pagos-del-calculo'
+import { renovacionesDe } from '@/lib/prestamos/renovaciones'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
@@ -268,6 +269,11 @@ export async function GET(request) {
   // Recalcular estado real del cliente y enriquecer con datos para la card.
   // El número de cada crédito dentro de su cliente (plantillas y comprobante).
   const numeros = await numerosDeClientes(prisma, { organizationId, clienteIds: clientes.map((c) => c.id) })
+  // Los cerrados por una renovación: su fila dice «Renovado» y cuándo.
+  const renovadoEl = await renovacionesDe(prisma, {
+    organizationId,
+    ids: clientes.flatMap((c) => (c.prestamos ?? []).filter((p) => p.estado === 'completado').map((p) => p.id)),
+  })
   const resultado = clientes.map((c) => {
     const diasExcluidos = getDiasExcluidos(c)
     let saldoTotal = 0
@@ -353,6 +359,7 @@ export async function GET(request) {
       desglose.push({
         id:               p.id,
         estado:           p.estado,
+        renovadoEl:       renovadoEl.get(p.id) ?? null,
         fechaInicio:      p.fechaInicio,
         fechaFin:         p.fechaFin,
         createdAt:        p.createdAt,

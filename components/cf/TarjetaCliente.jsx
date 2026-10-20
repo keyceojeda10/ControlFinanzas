@@ -465,7 +465,7 @@ export default function TarjetaCliente({
           <Dato trazo={TRAZO.ruta}>{piezas.ruta}</Dato>
           <CreadoPor nombre={piezas.autor} />
           <Dato trazo={TRAZO.fecha}>
-            {piezas.terminado ? `terminado ${piezas.terminado}` : null}
+            {piezas.terminado ? `${piezas.cierre ?? 'terminado'} ${piezas.terminado}` : null}
           </Dato>
         </Metadatos>
       )}
