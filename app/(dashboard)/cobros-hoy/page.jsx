@@ -43,6 +43,8 @@ export default function CobrosHoyPage() {
   const [pagando, setPagando]             = useState(null)
   const [pagoOk, setPagoOk]               = useState(null)
   const [undoPago, setUndoPago]           = useState(null)
+  // «Cobro deshecho · nombre · monto», unos segundos: confirma que se deshizo.
+  const [deshecho, setDeshecho]           = useState(null)
   /* ── DESHACER EL COBRO SIN CARRERA CONTRA EL RELOJ ────────────────────────
      El toast de arriba dura 10 segundos. PRESTA MIL lo echó de menos al rato
      de cobrar: «la vez pasada, ahí donde se coloca el abono, aparecía un
@@ -326,14 +328,16 @@ export default function CobrosHoyPage() {
 
       if (res.ok) {
         const d = await res.json()
-        const pagoId = d.pagos?.[0]?.id
-        if (!coords) completarUbicacionDelPago(d.saldoAntesDelPagoId ?? pagoId)
+        // El id EXACTO del pago recién hecho, como la ficha del préstamo; la
+        // lista de pagos va por fecha y no garantiza que sea el primero.
+        const pagoId = d.saldoAntesDelPagoId ?? d.pagos?.[0]?.id
+        if (!coords) completarUbicacionDelPago(pagoId)
         setPagoOk(clienteId)
         setTimeout(() => setPagoOk(null), 1200)
         fetchCobros()
         if (pagoId) {
           if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
-          setUndoPago({ pagoId, prestamoId: prestamoActivo, clienteNombre: nombre })
+          setUndoPago({ pagoId, prestamoId: prestamoActivo, clienteNombre: nombre, monto: montoFinal })
           setFotoSubida(false)
           undoTimerRef.current = setTimeout(() => setUndoPago(null), 10000)
         }
@@ -408,6 +412,9 @@ export default function CobrosHoyPage() {
       if (!res.ok) {
         const d = await res.json().catch(() => ({}))
         alert(`No se deshizo: el cobro sigue registrado. ${d.error || ''}`.trim())
+      } else {
+        setDeshecho({ nombre: undoPago.clienteNombre, monto: undoPago.monto })
+        setTimeout(() => setDeshecho(null), 4000)
       }
     } catch {
       alert('No se deshizo: el cobro sigue registrado. Revisa la conexión.')
@@ -861,6 +868,24 @@ export default function CobrosHoyPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
+          </div>
+        </div>
+      )}
+      {/* ⚠ DESHACER TIENE QUE DECIR QUE SE DESHIZO. El aviso se iba sin más, y
+          en un cliente con otro abono del día la tarjeta casi no cambia: Carlos
+          deshizo dos cobros de $4.000 a Carmencita (que ya había abonado
+          $40.000) y creyó que no se habían deshecho (21 oct 2026). */}
+      {deshecho && (
+        <div className="fixed bottom-24 left-3 right-3 sm:left-auto sm:right-4 sm:bottom-6 sm:w-auto z-50 animate-slide-up" role="status">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-[12px] border sm:min-w-[320px]"
+            style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)', boxShadow: '0 8px 32px rgba(0,0,0,0.25)' }}>
+            <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--cf-ink-2)' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+            </svg>
+            <span className="flex-1 min-w-0 leading-snug">
+              <span className="block text-xs" style={{ color: 'var(--cf-ink-2)' }}>Cobro deshecho{deshecho.monto ? ` · ${formatMoney(deshecho.monto)}` : ''}</span>
+              <span className="block text-sm font-semibold" style={{ color: 'var(--cf-ink)', overflowWrap: 'anywhere' }}>{deshecho.nombre}</span>
+            </span>
           </div>
         </div>
       )}

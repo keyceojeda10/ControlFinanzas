@@ -445,7 +445,9 @@ export default function RutaDetallePage({ params }) {
   // cobro sale igual que antes.
   const [metodoRapido, setMetodoRapido] = useState({ metodoPago: 'efectivo', metodoPagoId: null }) // { id, nombre, cuota, prestamoActivo }
   const [modalSeleccionPrestamo, setModalSeleccionPrestamo] = useState(null) // { clienteId, clienteNombre, idxRuta, prestamos }
-  const [undoPago,       setUndoPago]       = useState(null)  // { pagoId, prestamoId, clienteNombre, timer }
+  const [undoPago,       setUndoPago]       = useState(null)  // { pagoId, prestamoId, clienteNombre, monto }
+  // «Cobro deshecho · nombre · monto», unos segundos: confirma que se deshizo.
+  const [deshecho,       setDeshecho]       = useState(null)
   const undoTimerRef = useRef(null)
   const [metodosPago,   setMetodosPago]   = useState([])
   const [modalWA,        setModalWA]        = useState(null) // { cliente, prestamo }
@@ -1146,8 +1148,9 @@ export default function RutaDetallePage({ params }) {
       })
       if (res.ok) {
         const data = await res.json()
-        // El pago más reciente es pagos[0] (ordenados desc)
-        const pagoId = data.pagos?.[0]?.id
+        // El id EXACTO del pago recién hecho, como la ficha del préstamo; la
+        // lista de pagos va por fecha y no garantiza que sea el primero.
+        const pagoId = data.saldoAntesDelPagoId ?? data.pagos?.[0]?.id
         // El cobro salió sin esperar al GPS: si no llevaba ubicación, se le pone
         // cuando el GPS conteste.
         if (!coords) {
@@ -1224,7 +1227,7 @@ export default function RutaDetallePage({ params }) {
         // Mostrar undo por 10 segundos
         if (pagoId) {
           if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
-          setUndoPago({ pagoId, prestamoId: prestamoActivo, clienteNombre: nombre })
+          setUndoPago({ pagoId, prestamoId: prestamoActivo, clienteNombre: nombre, monto: cuota })
           undoTimerRef.current = setTimeout(() => setUndoPago(null), 10000)
         }
       } else if (res.status === 409) {
@@ -1282,7 +1285,7 @@ export default function RutaDetallePage({ params }) {
 
   const deshacerPago = async () => {
     if (!undoPago) return
-    const { pagoId } = undoPago
+    const { pagoId, clienteNombre, monto } = undoPago
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
     setUndoPago(null)
     // Si el servidor no lo deja, el cobro sigue: se dice (#36).
@@ -1291,6 +1294,9 @@ export default function RutaDetallePage({ params }) {
       if (!res.ok) {
         const d = await res.json().catch(() => ({}))
         alert(`No se deshizo: el cobro sigue registrado. ${d.error || ''}`.trim())
+      } else {
+        setDeshecho({ nombre: clienteNombre, monto })
+        setTimeout(() => setDeshecho(null), 4000)
       }
     } catch {
       alert('No se deshizo: el cobro sigue registrado. Revisa la conexión.')
@@ -2675,6 +2681,24 @@ export default function RutaDetallePage({ params }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
+          </div>
+        </div>
+      )}
+      {/* ⚠ DESHACER TIENE QUE DECIR QUE SE DESHIZO. El aviso se iba sin más, y
+          en un cliente con otro abono del día la tarjeta casi no cambia: Carlos
+          deshizo dos cobros de $4.000 a Carmencita (que ya había abonado
+          $40.000) y creyó que no se habían deshecho (21 oct 2026). */}
+      {deshecho && (
+        <div className="fixed bottom-24 left-3 right-3 sm:left-auto sm:right-4 sm:bottom-6 sm:w-auto z-50 animate-slide-up" role="status">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-[12px] border sm:min-w-[320px]"
+            style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)', boxShadow: '0 8px 32px rgba(0,0,0,0.25)' }}>
+            <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--cf-ink-2)' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+            </svg>
+            <span className="flex-1 min-w-0 leading-snug">
+              <span className="block text-xs" style={{ color: 'var(--cf-ink-2)' }}>Cobro deshecho{deshecho.monto ? ` · ${formatMoney(deshecho.monto)}` : ''}</span>
+              <span className="block text-sm font-semibold" style={{ color: 'var(--cf-ink)', overflowWrap: 'anywhere' }}>{deshecho.nombre}</span>
+            </span>
           </div>
         </div>
       )}
