@@ -984,7 +984,10 @@ export async function POST(request, { params }) {
     // tabla de amortizacion (cuota mas antigua primero). La liquidacion ya
     // marca todas las filas como pagadas arriba, no hace falta repetir aqui.
     // Pagos tipo intereses ya se distribuyeron a interesPagado, no a pagado.
-    if (tipo !== 'liquidacion' && tipo !== 'intereses' && tieneTablaAmortizacion(prestamoActualizado) && prestamoActualizado.modoInteres !== 'lineal_dinamico') {
+    // ⚠ En el Globo también tras un pago de solo interés: su cascada cuenta ese
+    // dinero (ver `regenerarTablaAmortizacion`), y sin esto la próxima cuota se
+    // quedaba un pago atrás de la deuda.
+    if (tipo !== 'liquidacion' && (tipo !== 'intereses' || prestamoActualizado.modoInteres === 'solo_interes') && tieneTablaAmortizacion(prestamoActualizado) && prestamoActualizado.modoInteres !== 'lineal_dinamico') {
       const actualizaciones = regenerarTablaAmortizacion(prestamoActualizado)
       for (const fila of actualizaciones) {
         await tx.cuotaAmortizacion.update({
