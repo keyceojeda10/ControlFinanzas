@@ -289,7 +289,16 @@ export default function TablaAmortizacion({
                     fontSize: 10, fontWeight: 700, letterSpacing: '.02em', flex: 'none', order: 1,
                   }}>SIGUIENTE</span>
                 )}
+                {/* Apagada sola no se entendía como pagada (Crediya, 21 oct 2026). */}
+                {c.pagada && <Pastilla style={{ order: 1 }}>Pagada</Pastilla>}
               </div>
+
+              {/* La cuota a medias dice cuánto entró y cuánto falta. */}
+              {c.abonado && (
+                <span className="cf-num" style={{ fontSize: 13, color: 'var(--cf-ink-2)' }}>
+                  Pagó <strong style={{ color: 'var(--cf-ink)' }}>{c.abonado}</strong> · faltan <strong style={{ color: 'var(--cf-ink)' }}>{c.falta}</strong>
+                </span>
+              )}
 
               <Barra capital={c.capitalNum} ganancia={c.gananciaNum} />
 
