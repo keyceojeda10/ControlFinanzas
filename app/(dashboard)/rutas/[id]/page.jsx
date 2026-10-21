@@ -2648,22 +2648,28 @@ export default function RutaDetallePage({ params }) {
     <>
       {undoPago && (
         <div className="fixed bottom-24 left-3 right-3 sm:left-auto sm:right-4 sm:bottom-6 sm:w-auto z-50 animate-slide-up">
-          <div className="flex items-center gap-3 px-4 py-3 rounded-[12px] border border-[var(--cf-green)] bg-[var(--cf-card)] sm:min-w-[320px]"
-            style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
+          <div className="flex items-center gap-2 pl-4 pr-1 py-1 rounded-[12px] border border-[var(--cf-green)] bg-[var(--cf-card)] sm:min-w-[320px]"
+            style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.25)' }}
           >
             <svg className="w-4 h-4 text-[var(--cf-green-dark)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
-            <span className="text-sm text-[var(--cf-ink)] flex-1 truncate">Pago registrado — {undoPago.clienteNombre}</span>
+            <span className="flex-1 min-w-0 py-2 leading-snug">
+              {/* El nombre ENTERO: es lo que dice qué cobro se deshace. Iba en una
+                  línea con puntos suspensivos («Pago registrado — …»). */}
+              <span className="block text-xs" style={{ color: 'var(--cf-ink-2)' }}>Pago registrado</span>
+              <span className="block text-sm font-semibold" style={{ color: 'var(--cf-ink)', overflowWrap: 'anywhere' }}>{undoPago.clienteNombre}</span>
+            </span>
             <button
               onClick={deshacerPago}
-              className="text-sm font-bold text-[var(--cf-gold)] hover:text-[var(--cf-gold)]/80 transition-colors shrink-0"
+              className="text-sm font-bold h-11 px-2 text-[var(--cf-gold-dark)] hover:opacity-80 transition-opacity shrink-0"
             >
               Deshacer
             </button>
             <button
               onClick={() => { if (undoTimerRef.current) clearTimeout(undoTimerRef.current); setUndoPago(null) }}
-              className="text-[var(--cf-ink-2)] hover:text-[var(--cf-ink)] transition-colors shrink-0"
+              aria-label="Cerrar"
+              className="w-11 h-11 flex items-center justify-center text-[var(--cf-ink-2)] hover:text-[var(--cf-ink)] transition-colors shrink-0"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
