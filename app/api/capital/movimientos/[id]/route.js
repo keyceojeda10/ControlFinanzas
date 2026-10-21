@@ -29,6 +29,25 @@ export async function DELETE(request, { params }) {
     return Response.json({ error: 'Movimiento no encontrado' }, { status: 404 })
   }
 
+  /* Pasar plata entre cuentas son DOS asientos (sale y entra) y se deshacen
+     juntos: quitar uno solo inventaría o borraría plata en una cuenta. No
+     tocan el capital, así que no hay saldo que recalcular. */
+  if (movimiento.tipo === 'traslado') {
+    const { count } = await prisma.movimientoCapital.deleteMany({
+      where: { organizationId, tipo: 'traslado', referenciaId: movimiento.referenciaId ?? '__sin_pareja__' },
+    })
+    if (!count) await prisma.movimientoCapital.deleteMany({ where: { id, organizationId } })
+    logActividad({
+      session,
+      accion: 'eliminar_movimiento_capital',
+      entidadTipo: 'capital',
+      entidadId: id,
+      detalle: `Deshizo el paso de $${movimiento.monto.toLocaleString('es-CO')} entre cuentas${movimiento.descripcion ? ` (${movimiento.descripcion})` : ''}`,
+      ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+    })
+    return Response.json({ eliminado: true })
+  }
+
   if (!TIPOS_MANUALES.includes(movimiento.tipo)) {
     return Response.json({
       error: `No se puede eliminar un movimiento de tipo "${movimiento.tipo}". Gestiona la entidad original (préstamo, pago o gasto).`,

@@ -124,6 +124,8 @@ export async function GET(req) {
       { clave: 'prestado', titulo: 'Prestado', ancho: 1.8, fuente: 'cifra' },
       { clave: 'gastos', titulo: 'Gastos', ancho: 1.6, fuente: 'cifra' },
       { clave: 'retirado', titulo: 'Sacado', ancho: 1.6, fuente: 'cifra' },
+      // Lo pasado de una cuenta a otra, con su signo; solo si lo hubo.
+      ...(movidas.some((c) => c.trasladado) ? [{ clave: 'trasladado', titulo: 'Entre cuentas', ancho: 1.8, fuente: 'cifra' }] : []),
     ],
     filas: movidas.map((c) => ({
       cuenta: c.nombre,
@@ -132,6 +134,7 @@ export async function GET(req) {
       prestado: fmt(c.prestado),
       gastos: fmt(c.gastos),
       retirado: fmt(c.retirado),
+      trasladado: c.trasladado ? `${c.trasladado > 0 ? '+' : '−'}${fmt(Math.abs(c.trasladado))}` : fmt(0),
     })),
   }, y)
 

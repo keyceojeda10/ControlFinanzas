@@ -815,6 +815,7 @@ enum TipoMovimiento {
   recaudo
   gasto
   ajuste
+  traslado // de una cuenta a otra (Nequi → Bancolombia): no mueve el capital
 }
 
 model Capital {

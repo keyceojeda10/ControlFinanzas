@@ -2601,6 +2601,13 @@ function NuevoPrestamo() {
                 value={{ metodoPago: cuentaDesembolso.metodoPago, metodoPagoId: cuentaDesembolso.metodoPagoId }}
                 onSelect={(sel) => setCuentaDesembolso(sel)}
               />
+              {/* Sale de UNA cuenta. Con la plata repartida (Quintero Esteves,
+                  21 oct 2026: «400 en Nequi y 600 en Bancolombia») se junta antes. */}
+              {esOwner && metodosPago.length > 0 && (
+                <p className="text-[11px] mt-2.5" style={{ color: 'var(--cf-ink-3)' }}>
+                  ¿La plata está en dos cuentas? Pásala primero a una en Caja → Cuentas → «Pasar plata entre cuentas».
+                </p>
+              )}
             </SectionCard>
 
             <SectionCard

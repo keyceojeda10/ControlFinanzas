@@ -9,6 +9,8 @@ import { adaptarCuentas } from '@/lib/adaptadores/cuentas'
 import { useState, useEffect } from 'react'
 import { useCountry } from '@/hooks/useCountry'
 import { getPlataformaInfo, PlataformaIcon } from '@/components/ui/LogoPlataforma'
+import { BotonSecundario } from '@/components/cf/primitivos'
+import PasarEntreCuentas from '@/components/caja/PasarEntreCuentas'
 
 /* `total`: lo que dice la cifra grande. Con «Todo» ES el saldo —desde
    DETALLES-CAJA #31 cuenta también los ajustes y suma lo mismo que «Saldo en
@@ -31,6 +33,9 @@ export default function DesglosePorCuenta() {
   const [cuentas, setCuentas] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [pasando, setPasando] = useState(false)
+  const [hecho, setHecho] = useState('')
+  const [recarga, setRecarga] = useState(0)
 
   useEffect(() => {
     let cancelado = false
@@ -42,7 +47,7 @@ export default function DesglosePorCuenta() {
       .catch(() => { if (!cancelado) setError('No se pudo cargar el desglose por cuenta.') })
       .finally(() => { if (!cancelado) setLoading(false) })
     return () => { cancelado = true }
-  }, [periodo])
+  }, [periodo, recarga])
 
   return (
     <div className="space-y-4">
@@ -133,6 +138,24 @@ export default function DesglosePorCuenta() {
       {!loading && !error && cuentas && cuentas.length > 0 && (
         <Cuentas {...adaptarCuentas(cuentas, formatMoney)} rotuloTotal={PERIODOS.find((p) => p.key === periodo)?.total} />
       )}
+
+      {/* Préstamos Quintero Esteves, 21 oct 2026: un préstamo sale de UNA
+          cuenta, y con la plata repartida entre Nequi y Bancolombia la caja
+          quedaba al revés de la del banco. Primero se pasa, luego se presta. */}
+      {hecho && (
+        <p role="status" className="cf-num" style={{ fontSize: 13, textAlign: 'center', color: 'var(--cf-ink-2)', margin: 0 }}>{hecho}</p>
+      )}
+      <BotonSecundario onClick={() => setPasando(true)}>
+        <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" aria-hidden>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+        </svg>
+        Pasar plata entre cuentas
+      </BotonSecundario>
+      <PasarEntreCuentas
+        abierta={pasando}
+        onCerrar={() => setPasando(false)}
+        onHecho={(texto) => { setHecho(texto); setRecarga((n) => n + 1); setTimeout(() => setHecho(''), 6000) }}
+      />
     </div>
   )
 }

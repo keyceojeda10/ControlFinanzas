@@ -19,6 +19,7 @@ const TIPO_LABELS = {
   recaudo: 'Cobrado',
   gasto: 'Gasto',
   ajuste: 'Ajuste',
+  traslado: 'Entre cuentas',
 }
 
 const TIPO_COLORS = {
@@ -29,6 +30,7 @@ const TIPO_COLORS = {
   recaudo: 'var(--cf-ink-2)',
   gasto: 'var(--cf-red-dark)',
   ajuste: 'var(--cf-ink-2)',
+  traslado: 'var(--cf-ink-2)',
 }
 
 function esIngreso(tipo) {
@@ -158,7 +160,9 @@ export default function CapitalTab() {
 
   const handleEliminar = async (m) => {
     const label = TIPO_LABELS[m.tipo] || m.tipo
-    const msg = `Eliminar ${label.toLowerCase()} de ${formatMoney(m.monto)}? Se revertirá el efecto en el saldo.`
+    const msg = m.tipo === 'traslado'
+      ? `¿Deshacer el paso de ${formatMoney(m.monto)} (${m.descripcion})? Las dos cuentas vuelven como estaban.`
+      : `Eliminar ${label.toLowerCase()} de ${formatMoney(m.monto)}? Se revertirá el efecto en el saldo.`
     if (!confirm(msg)) return
     setEliminando(m.id)
     try {
@@ -830,6 +834,7 @@ export default function CapitalTab() {
             <option value="recaudo">Cobrados</option>
             <option value="gasto">Gastos</option>
             <option value="ajuste">Ajustes</option>
+            <option value="traslado">Entre cuentas</option>
           </select>
         </div>
 
@@ -857,20 +862,22 @@ export default function CapitalTab() {
                   <div className="text-right">
                     {/* La pareja de una puesta en cero va en una sola fila, sin
                         signo: no cambia el capital del negocio (#45). */}
-                    <p className={`text-sm font-bold ${m.enCero ? 'text-[var(--cf-ink-3)]' : esMovimientoIngreso(m) ? 'text-[var(--cf-green-dark)]' : 'text-[var(--cf-red-dark)]'}`}>
-                      {m.enCero ? formatMoney(0) : `${esMovimientoIngreso(m) ? '+' : '-'}${formatMoney(m.monto)}`}
+                    {/* Entre cuentas tampoco lleva signo: la plata cambia de cuenta,
+                        no de dueño. */}
+                    <p className={`text-sm font-bold ${m.enCero || m.entreCuentas ? 'text-[var(--cf-ink-3)]' : esMovimientoIngreso(m) ? 'text-[var(--cf-green-dark)]' : 'text-[var(--cf-red-dark)]'}`}>
+                      {m.enCero ? formatMoney(0) : m.entreCuentas ? formatMoney(m.monto) : `${esMovimientoIngreso(m) ? '+' : '-'}${formatMoney(m.monto)}`}
                     </p>
                     <p className="text-[10px] text-[var(--cf-ink-3)]">Saldo: {formatMoney(m.saldoNuevo)}</p>
                   </div>
-                  {TIPOS_MANUALES.includes(m.tipo) && !m.enCero && (
+                  {(TIPOS_MANUALES.includes(m.tipo) || m.entreCuentas) && !m.enCero && (
                     <>
-                      <button type="button" onClick={() => abrirEditar(m)} title="Editar movimiento"
+                      {!m.entreCuentas && <button type="button" onClick={() => abrirEditar(m)} title="Editar movimiento"
                         className="w-7 h-7 flex items-center justify-center rounded-[8px] text-[var(--cf-gold)] hover:bg-[var(--cf-fill)] transition-colors">
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
                         </svg>
-                      </button>
-                      <button type="button" onClick={() => handleEliminar(m)} disabled={eliminando === m.id} title="Eliminar movimiento"
+                      </button>}
+                      <button type="button" onClick={() => handleEliminar(m)} disabled={eliminando === m.id} title={m.entreCuentas ? 'Deshacer el paso entre cuentas' : 'Eliminar movimiento'}
                         className="w-7 h-7 flex items-center justify-center rounded-[8px] text-[var(--cf-red-dark)] hover:bg-[var(--cf-red-pill-bg)] disabled:opacity-50 transition-colors">
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
