@@ -46,7 +46,7 @@ import { referenciaDelPago } from '@/lib/dinero/cuota-de-referencia'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { sanitizarCoords } from '@/lib/geo'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
-import { partirFilasParaAbono, capitalParaFuturas } from '@/lib/dinero/abono-capital'
+import { partirFilasParaAbono, capitalParaFuturas, capitalQueSigueEnLaTabla } from '@/lib/dinero/abono-capital'
 import { elInteresSubeLaDeuda } from '@/lib/dinero/modos'
 import { interesQueAhorraUnAbono } from '@/lib/dinero/abono-capital'
 import { repartoDeUnPago } from '@/lib/dinero/interes-cobrado'
@@ -698,7 +698,15 @@ export async function POST(request, { params }) {
         // este. Con `calcularCapitalRestante` —que es la cifra de reporte, con
         // los abonos ya descontados— se restarian DOS VECES y el globo se
         // encogeria de mas: deuda perdonada sin que nadie lo decida.
-        const capitalAntesDelAbono = capitalVivoSegunTabla(prestamoActualizado)
+        /* ⚠ EN EL GLOBO, EL CAPITAL QUE SIGUE EN LA TABLA. El «vivo» resta lo
+           que los pagos cubrieron de más, y ese dinero sigue contado como
+           pagado: se restaba dos veces (José Bernal, Crediya, 20 oct 2026).
+           Solo Globo: los demás modos quedan como estaban. Ver
+           `capitalQueSigueEnLaTabla` en lib/dinero/abono-capital.js. */
+        const esGlobo = prestamoActualizado.modoInteres === 'solo_interes'
+        const capitalAntesDelAbono = esGlobo
+          ? capitalQueSigueEnLaTabla({ vencidas: filasVencidas, futuras: filasFuturas })
+          : capitalVivoSegunTabla(prestamoActualizado)
         // ⚠ AQUÍ ESTABA LA TRAMPA de G6, y es de las que no fallan: hay que
         // RESTAR el capital que se quedan las vencidas. Si no, ese capital
         // queda a la vez en su fila y repartido otra vez entre las futuras
