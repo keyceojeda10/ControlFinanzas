@@ -57,7 +57,13 @@ export default function SessionProvider({ children, session }) {
   return (
     <NextAuthSessionProvider
       session={cachedSession}
-      refetchInterval={0}
+      /* ⚠ LA SESIÓN SE RENUEVA MIENTRAS SE USA (22 oct 2026). Con 0 nunca se
+         pedía `/api/auth/session`, que es lo único que reescribe la cookie, así
+         que vencía a las 8 h de ENTRAR aunque llevara el día entero cobrando:
+         PRESTA MIL se quedó a media tarde con «No autorizado» en el teléfono y
+         el computador encerrado. Cada 10 min con red: las 8 h pasan a ser 8 h
+         sin usarla. Sin red no se pide (`refetchWhenOffline`). */
+      refetchInterval={10 * 60}
       refetchOnWindowFocus={false}
       refetchWhenOffline={false}
     >

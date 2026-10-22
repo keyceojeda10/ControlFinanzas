@@ -1,5 +1,5 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v1203'
+const CACHE_NAME   = 'cf-v1205'
 // API_CACHE solo sube cuando cambian las CIFRAS que devuelve el servidor.
 //
 // Este release SÍ las cambia, en `/api/cobros-hoy` (Adenda 5):
@@ -72,6 +72,7 @@ const OFFLINE_FALLBACK_HTML = `<!DOCTYPE html>
     <p>Vuelve a intentarlo cuando recuperes la red. Puedes seguir usando las partes principales de la app mientras tanto.</p>
     <button class="primary" onclick="location.href='/dashboard'">Volver al Dashboard</button>
     <button class="secondary" onclick="location.reload()">Reintentar</button>
+    <button class="secondary" onclick="location.href='/login'">Entrar de nuevo</button>
   </div>
 </div>
 </body>
