@@ -32,6 +32,7 @@ import { esDelDiaAbierto } from '@/lib/dinero/reverso-del-dia'
 import { getLocalDayRange, getLocalDateStr } from '@/lib/i18n'
 import { getCachedMutation, setCachedMutation, buildMutationKey } from '@/lib/mutation-idempotency'
 import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
+import { cuentaDelDesembolso } from '@/lib/dinero/cuenta-del-desembolso'
 
 const REF_REVERSO_CANCELACION_DESEMBOLSO = 'prestamo_cancelado_reverso_desembolso'
 const REF_REVERSO_CANCELACION_RECAUDO = 'prestamo_cancelado_reverso_recaudo'
@@ -443,6 +444,8 @@ export async function PATCH(request, { params }) {
              cancelación de $4.000.000 (TATIANA SERPA, 6 ago) entró así. */
           rutaId: p.cliente?.rutaId || null,
           creadoPorId: session.user.id,
+          // Y a la CUENTA de la que salió (cuenta-del-desembolso.js).
+          ...(await cuentaDelDesembolso(tx, { organizationId: session.user.organizationId, prestamoId: id })),
         })
         aplicoReverso = true
       }
@@ -1185,6 +1188,10 @@ export async function PATCH(request, { params }) {
     })
     // Si los billetes no cambian (bajar una renovación sin efectivo), no hay asiento.
     const parejaMueve = montoCambia && Math.round(pareja.devuelve) !== Math.round(pareja.sale)
+    // Los dos asientos de la pareja, por la cuenta del préstamo: sin ella el
+    // «Desembolso actualizado» salía sin cuenta y un préstamo por Nequi pasaba
+    // a contarse como efectivo (cuenta-del-desembolso.js).
+    const cuentaPareja = parejaMueve ? await cuentaDelDesembolso(prisma, { organizationId: orgId, prestamoId: id }) : null
 
     const actualizado = await prisma.$transaction(async (tx) => {
       if (parejaMueve) {
@@ -1199,6 +1206,7 @@ export async function PATCH(request, { params }) {
           referenciaTipo: 'prestamo',
           rutaId,
           creadoPorId: session.user.id,
+          ...cuentaPareja,
         })
         // Registrar nuevo desembolso.
         await registrarMovimientoCapital(tx, {
@@ -1210,6 +1218,7 @@ export async function PATCH(request, { params }) {
           referenciaTipo: 'prestamo',
           rutaId,
           creadoPorId: session.user.id,
+          ...cuentaPareja,
         })
       }
       const updated = await tx.prestamo.update({ where: { id }, data: dataUpdate })
@@ -1345,6 +1354,8 @@ export async function DELETE(request, { params }) {
         referenciaTipo: 'prestamo',
         rutaId: rutaDelCliente,
         creadoPorId: session.user.id,
+        // A la cuenta de la que salió (cuenta-del-desembolso.js).
+        ...(await cuentaDelDesembolso(tx, { organizationId, prestamoId: id })),
       })
     }
 
@@ -1371,6 +1382,9 @@ export async function DELETE(request, { params }) {
         referenciaTipo: 'pago',
         rutaId: rutaDelCliente,
         creadoPorId: session.user.id,
+        // Sale de la cuenta por la que entró, como al anular un cobro.
+        metodoPago: pg.metodoPago ?? null,
+        metodoPagoId: pg.metodoPagoId ?? null,
       })
     }
 
