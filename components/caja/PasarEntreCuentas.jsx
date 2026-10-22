@@ -28,7 +28,9 @@ function Elegir({ etiqueta, cuentas, valor, onElegir, quitar, formatMoney }) {
   )
 }
 
-export default function PasarEntreCuentas({ abierta, onCerrar, onHecho }) {
+/* `haciaInicial` y `montoInicial`: desde el formulario del préstamo llega ya
+   dicho a qué cuenta le falta y cuánto; solo queda elegir de dónde sale. */
+export default function PasarEntreCuentas({ abierta, onCerrar, onHecho, haciaInicial = '', montoInicial = 0 }) {
   const { formatMoney } = useCountry()
   const [cuentas, setCuentas] = useState(null)
   const [desde, setDesde] = useState('')
@@ -42,13 +44,13 @@ export default function PasarEntreCuentas({ abierta, onCerrar, onHecho }) {
   useEffect(() => {
     if (!abierta) return
     let vivo = true
-    setDesde(''); setHacia(''); setMonto(''); setNota(''); setError(''); setCuentas(null)
+    setDesde(''); setHacia(haciaInicial || ''); setMonto(montoInicial > 0 ? String(Math.round(montoInicial)) : ''); setNota(''); setError(''); setCuentas(null)
     fetch('/api/caja/cuentas?periodo=todo', { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error('error'))))
       .then((d) => { if (vivo) setCuentas(cuentasElegibles(d.cuentas)) })
       .catch(() => { if (vivo) setError('No pude cargar tus cuentas.') })
     return () => { vivo = false }
-  }, [abierta])
+  }, [abierta]) // eslint-disable-line react-hooks/exhaustive-deps -- lo inicial se lee al abrir
 
   const n = Math.round(Number(String(monto).replace(/[^0-9]/g, '')) || 0)
   const de = cuentas?.find((c) => c.key === desde)
@@ -100,6 +102,7 @@ export default function PasarEntreCuentas({ abierta, onCerrar, onHecho }) {
         {cuentas && cuentas.length >= 2 && (
           <>
             <Elegir etiqueta="De dónde sale" cuentas={cuentas} valor={desde} formatMoney={formatMoney}
+              quitar={haciaInicial ? hacia : undefined}
               onElegir={(k) => { setDesde(k); if (k === hacia) setHacia('') }} />
             <Elegir etiqueta="A dónde entra" cuentas={cuentas} valor={hacia} quitar={desde} formatMoney={formatMoney}
               onElegir={setHacia} />

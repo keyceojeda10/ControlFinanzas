@@ -32,6 +32,7 @@ import Stepper                                     from '@/components/ui/Stepper
 import DiasSinCobroSelector                        from '@/components/ui/DiasSinCobroSelector'
 import { Toggle }                                  from '@/components/ui/Toggle'
 import MetodoPagoSelector                          from '@/components/pagos/MetodoPagoSelector'
+import PasarEntreCuentas                           from '@/components/caja/PasarEntreCuentas'
 import { guardarPrestamoPendiente, obtenerClientesOffline } from '@/lib/offline'
 import DeslizarParaConfirmar                       from '@/components/cf/DeslizarParaConfirmar'
 import PrestamoEntregado                           from '@/components/cf/PrestamoEntregado'
@@ -338,6 +339,27 @@ function NuevoPrestamo() {
       .then((d) => { if (d?.capital?.saldo != null) setSaldoCaja(Number(d.capital.saldo)) })
       .catch(() => {})
   }, [esOwner])
+
+  /* ── CUÁNTO HAY EN LA CUENTA DE LA QUE SALE (22 oct 2026) ──
+     Préstamos Quintero Esteves: prestar $500.000 por Nequi con $400.000 en
+     Nequi dejaba la cuenta en −$100.000 sin decir nada. Ahora el formulario
+     dice cuánto hay y, si no alcanza, ofrece pasar lo que falta desde otra
+     cuenta ahí mismo. No bloquea: puede haber plata que la app no ve. Mismo
+     dato que Caja → Cuentas («Todo»), solo para el dueño. */
+  const [saldosCuentas, setSaldosCuentas] = useState(null)
+  const [pasarAbierto, setPasarAbierto] = useState(null) // { hacia, monto }
+  const [pasoHecho, setPasoHecho] = useState('')
+  // Mientras se relee el saldo tras un paso, el botón no se ofrece: con el
+  // saldo viejo en pantalla, dos toques pasaban la plata dos veces.
+  const [releyendoSaldos, setReleyendoSaldos] = useState(false)
+  const cargarSaldosCuentas = useCallback(() => {
+    if (!esOwner) return Promise.resolve()
+    return fetch('/api/caja/cuentas?periodo=todo', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (Array.isArray(d?.cuentas)) setSaldosCuentas(d.cuentas) })
+      .catch(() => {})
+  }, [esOwner])
+  useEffect(() => { cargarSaldosCuentas() }, [cargarSaldosCuentas])
   const [cuotaManual, setCuotaManual] = useState('')
   const cuotaManualActiva = modoInteres === 'manual'
   const saldoCuotaPersonalizada = modoInteres === 'saldo' && cuotaManual !== '' && Number(cuotaManual) > 0
@@ -2602,12 +2624,51 @@ function NuevoPrestamo() {
                 onSelect={(sel) => setCuentaDesembolso(sel)}
               />
               {/* Sale de UNA cuenta. Con la plata repartida (Quintero Esteves,
-                  21 oct 2026: «400 en Nequi y 600 en Bancolombia») se junta antes. */}
-              {esOwner && metodosPago.length > 0 && (
-                <p className="text-[11px] mt-2.5" style={{ color: 'var(--cf-ink-3)' }}>
-                  ¿La plata está en dos cuentas? Pásala primero a una en Caja → Cuentas → «Pasar plata entre cuentas».
-                </p>
-              )}
+                  21 oct 2026: «400 en Nequi y 600 en Bancolombia») se junta antes,
+                  y aquí mismo: cuánto hay en la elegida y, si no alcanza, el paso. */}
+              {esOwner && (() => {
+                const clave = cuentaDesembolso.metodoPago === 'efectivo' ? 'efectivo' : cuentaDesembolso.metodoPagoId
+                const cuenta = clave ? saldosCuentas?.find((c) => c.key === clave) : null
+                const n = Math.round(Number(monto) || 0)
+                if (!cuenta || !(n > 0)) return null
+                const falta = Math.round(n - Number(cuenta.neto || 0))
+                /* Pasar solo sirve si OTRA cuenta tiene lo que falta. Si no, el
+                   botón ofrecería dejar otra cuenta en negativo, y con el modo
+                   estricto el préstamo se rechazaría igual: mover plata no la
+                   crea. Ahí lo que falta es capital, y lo dice la línea de
+                   «Te quedarías en …» de arriba. */
+                const enOtras = Math.round((saldosCuentas ?? [])
+                  .filter((c) => c.key !== clave && (c.key === 'efectivo' || (c.tipoCuenta === 'transferencia' && c.key !== 'transferencia')))
+                  .reduce((a, c) => a + Math.max(0, Number(c.neto) || 0), 0))
+                const sePuedePasar = falta > 0 && enOtras >= falta && !releyendoSaldos
+                return (
+                  <div className="mt-2.5 flex flex-col gap-2">
+                    <p className="text-[12px]" style={{ color: falta > 0 ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)' }}>
+                      {falta > 0
+                        ? `En ${cuenta.nombre} hay ${formatMoney(Math.round(cuenta.neto || 0))}: faltan ${formatMoney(falta)} para este préstamo.`
+                        : `En ${cuenta.nombre} hay ${formatMoney(Math.round(cuenta.neto || 0))}; alcanza.`}
+                    </p>
+                    {falta > 0 && !sePuedePasar && !releyendoSaldos && (
+                      <p className="text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>
+                        {enOtras > 0
+                          ? `En tus otras cuentas hay ${formatMoney(enOtras)}: no alcanza para pasarle lo que falta.`
+                          : 'Tus otras cuentas no tienen plata para pasarle lo que falta.'}
+                      </p>
+                    )}
+                    {sePuedePasar && (
+                      <button type="button" onClick={() => setPasarAbierto({ hacia: clave, monto: falta })}
+                        className="self-start h-11 px-4 rounded-[12px] text-[13px] font-semibold inline-flex items-center gap-2"
+                        style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)', color: 'var(--cf-ink)' }}>
+                        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                        </svg>
+                        Pasar {formatMoney(falta)} a {cuenta.nombre}
+                      </button>
+                    )}
+                    {pasoHecho && <p role="status" className="text-[12px]" style={{ color: 'var(--cf-ink-2)' }}>{pasoHecho}</p>}
+                  </div>
+                )
+              })()}
             </SectionCard>
 
             <SectionCard
@@ -2862,6 +2923,21 @@ function NuevoPrestamo() {
             centro de la pantalla: la caja de fuera mide ahora 1076px por las dos
             columnas, y un `mx-auto` a secas dejaba «Revisar préstamo» flotando
             bajo el panel de la cuenta, que no es lo que se está rellenando. */}
+        {/* La hoja de pasar plata, al lado de los demás diálogos y no dentro
+            de la tarjeta de la cuenta. */}
+        {esOwner && (
+          <PasarEntreCuentas
+            abierta={!!pasarAbierto}
+            onCerrar={() => setPasarAbierto(null)}
+            haciaInicial={pasarAbierto?.hacia ?? ''}
+            montoInicial={pasarAbierto?.monto ?? 0}
+            onHecho={(texto) => {
+              setPasoHecho(texto); setReleyendoSaldos(true)
+              cargarSaldosCuentas().finally(() => setReleyendoSaldos(false))
+              setTimeout(() => setPasoHecho(''), 6000)
+            }}
+          />
+        )}
         <div className="max-w-2xl xl:max-w-[1076px] mx-auto flex items-center gap-3 xl:pr-[404px]">
           <ConfirmModal
             open={confirmarSalir}
