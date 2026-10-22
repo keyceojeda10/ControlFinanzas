@@ -21,6 +21,7 @@ import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { NOVEDADES, NOVEDADES_VERSION, novedadVigente } from '@/lib/novedades'
 import { Novedades } from '@/components/pantallas/Cargando'
+import { useAuth } from '@/hooks/useAuth'
 
 const LS_KEY = 'cf:novedades:visto'
 
@@ -35,12 +36,21 @@ export default function NovedadesModal() {
   const [abierto, setAbierto] = useState(false)
   const [destacada, setDestacada] = useState(0)
   const ruta = usePathname()
+  const { esOwner, loading: cargandoSesion } = useAuth()
 
   useEffect(() => {
     if (RUTAS_SIN_MODAL.some((r) => ruta?.startsWith(r))) return
+    if (cargandoSesion) return
     try {
       const visto = Number(localStorage.getItem(LS_KEY) || 0)
       if (NOVEDADES_VERSION <= visto) return
+
+      /* Una novedad del dueño no se le abre al cobrador: no puede usarla. Se
+         da por vista, igual que una caducada. */
+      if (NOVEDADES[0]?.soloDueno && !esOwner) {
+        localStorage.setItem(LS_KEY, String(NOVEDADES_VERSION))
+        return
+      }
 
       /* ⚠ Y QUE LA NOVEDAD SIGA SIENDO NUEVA.
          Antes bastaba con que la versión fuera mayor que la vista, así que la
@@ -58,7 +68,7 @@ export default function NovedadesModal() {
       const t = setTimeout(() => setAbierto(true), 600)
       return () => clearTimeout(t)
     } catch {}
-  }, [ruta])
+  }, [ruta, esOwner, cargandoSesion])
 
   const cerrar = () => {
     try { localStorage.setItem(LS_KEY, String(NOVEDADES_VERSION)) } catch {}
@@ -120,7 +130,8 @@ export default function NovedadesModal() {
             : 'Esto es lo nuevo en Control Finanzas'}
           onCerrar={cerrar}
           destacada={{
-            etiqueta: 'Lo más útil',
+            // «Lo más útil» compara con otras; sola, es lo nuevo y ya.
+            etiqueta: entrada.items.length === 1 ? 'Nuevo' : 'Lo más útil',
             titulo: primera.titulo,
             texto: primera.texto,
             // No hay un sitio al que llevar desde aquí: las novedades del
