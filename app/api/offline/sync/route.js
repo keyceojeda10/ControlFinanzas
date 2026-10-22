@@ -8,6 +8,7 @@ import { loDeHoyDelPrestamo, pagadoEnElDia } from '@/lib/dinero/esperado'
 import { obtenerDiasSinCobro, esHoySinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
 import { numerarPorCliente, camposDeNumero } from '@/lib/prestamos/numero'
+import { jsonComprimido } from '@/lib/http/json-comprimido'
 
 // Rate limit: 1 sync completo cada 2 minutos por usuario
 const syncTimestamps = new Map()
@@ -20,7 +21,7 @@ function hoyLocalUTC(country = 'co', now = new Date()) {
   return new Date(Date.UTC(y, m, d, absOffset, 0, 0, 0))
 }
 
-export async function GET() {
+export async function GET(request) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.organizationId) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
@@ -364,7 +365,8 @@ export async function GET() {
     } catch {}
   }
 
-  return Response.json({
+  // Comprimido: el de un negocio grande pesaba 14,6 MB (ver json-comprimido).
+  return jsonComprimido(request, {
     syncedAt: new Date().toISOString(),
     clientes,
     rutas,

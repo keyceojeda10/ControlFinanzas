@@ -14,6 +14,14 @@ export { useOffline }
 
 const MUTATION_SYNC_DELAY  = 3000  // 3s after a mutation
 const MIN_AUTO_SYNC_GAP_MS = 60_000 // gap mínimo entre syncs completos (era 20s, subido a 60s)
+/* ⚠ LA COPIA ENTERA, COMO MUCHO CADA 5 MINUTOS (22 oct 2026). Se bajaba cada
+   90 s, 3 s después de CADA cobro y al «volver la señal»: para PRESTA MIL eran
+   14,6 MB cada vez, 1,9 GB al día desde una sola oficina, y esa descarga era
+   la que hacía caer el ping y salir «Sin señal». Lo que se cobró sin señal se
+   sigue subiendo al instante (paso 1); lo que espera es bajar la copia. Las
+   pantallas abiertas piden sus datos al servidor, no a esta copia. El botón
+   «Sincronizar ahora» y los reintentos la fuerzan. */
+const MIN_DESCARGA_COMPLETA_MS = 5 * 60_000
 
 export default function OfflineProvider({ children }) {
   const [isOnline, setIsOnline]         = useState(true)
@@ -35,6 +43,7 @@ export default function OfflineProvider({ children }) {
   // Counter that increments after every successful sync — pages watch this to refetch
   const [lastSyncedAt, setLastSyncedAt] = useState(0)
   const syncingRef = useRef(false)
+  const ultimaDescargaRef = useRef(0) // cuándo se bajó la copia entera por última vez
   const syncingStartedAtRef = useRef(0)
   const lastAutoSyncAtRef = useRef(0)
   const swReloadPendienteRef = useRef(false)
@@ -90,7 +99,7 @@ export default function OfflineProvider({ children }) {
 
   // Sync pending payments FIRST, then download fresh data.
   // By default we also notify pages so visible data stays up to date.
-  const syncPendingThenFull = useCallback(async ({ silent = true, signalPages = true } = {}) => {
+  const syncPendingThenFull = useCallback(async ({ silent = true, signalPages = true, forzar = !silent } = {}) => {
     if (!navigator.onLine) return
     // Declarado fuera del try para que el STEP 2 pueda leerlo (const tiene scope
     // de bloque: si se declara dentro del primer try, el segundo try no lo ve).
@@ -116,29 +125,37 @@ export default function OfflineProvider({ children }) {
     // STEP 2: Now download fresh data from server (includes synced payments)
     checkStaleLock()
     if (syncingRef.current) return
-    syncingRef.current = true
-    syncingStartedAtRef.current = Date.now()
-    if (!silent) setBulkSyncing(true)
-    try {
-      const result = await sincronizarTodo(silent ? () => {} : (p) => setBulkProgress(p))
-      setSyncMeta({
-        syncedAt: result.syncedAt,
-        totalClientes: result.clientes,
-        totalPrestamos: result.prestamos,
-        totalRutas: result.rutas,
-      })
-      if (signalPages || totalSynced > 0) {
-        setLastSyncedAt(Date.now())
+    const reciente = Date.now() - ultimaDescargaRef.current < MIN_DESCARGA_COMPLETA_MS
+    if (!forzar && reciente) {
+      // Sin bajar la copia. Las pantallas se refrescan igual (piden lo suyo al
+      // servidor) y el paso 3 (lo pendiente) corre igual.
+      if (signalPages || totalSynced > 0) setLastSyncedAt(Date.now())
+    } else {
+      syncingRef.current = true
+      syncingStartedAtRef.current = Date.now()
+      if (!silent) setBulkSyncing(true)
+      try {
+        const result = await sincronizarTodo(silent ? () => {} : (p) => setBulkProgress(p))
+        ultimaDescargaRef.current = Date.now()
+        setSyncMeta({
+          syncedAt: result.syncedAt,
+          totalClientes: result.clientes,
+          totalPrestamos: result.prestamos,
+          totalRutas: result.rutas,
+        })
+        if (signalPages || totalSynced > 0) {
+          setLastSyncedAt(Date.now())
+        }
+        if (!silent) {
+          setBulkProgress({ step: 'done', message: `${result.clientes} clientes sincronizados` })
+          setTimeout(() => setBulkProgress(null), 3000)
+        }
+      } catch { /* silent */ }
+      finally {
+        syncingRef.current = false
+        syncingStartedAtRef.current = 0
+        if (!silent) setBulkSyncing(false)
       }
-      if (!silent) {
-        setBulkProgress({ step: 'done', message: `${result.clientes} clientes sincronizados` })
-        setTimeout(() => setBulkProgress(null), 3000)
-      }
-    } catch { /* silent */ }
-    finally {
-      syncingRef.current = false
-      syncingStartedAtRef.current = 0
-      if (!silent) setBulkSyncing(false)
     }
 
     // STEP 3: Refresh pending count + failed items
@@ -278,7 +295,8 @@ export default function OfflineProvider({ children }) {
       setIsOnline((prev) => {
         // Si pasamos de offline -> online real, disparar sync.
         if (real && !prev && syncSiVuelve) {
-          setTimeout(() => syncPendingThenFull({ silent: false, signalPages: true }), 1500)
+          // Sube lo pendiente ya; la copia entera, si toca (no forzada: era el bucle).
+          setTimeout(() => syncPendingThenFull({ silent: false, signalPages: true, forzar: false }), 1500)
         }
         return real
       })
