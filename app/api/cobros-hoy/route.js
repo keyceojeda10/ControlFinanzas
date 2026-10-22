@@ -26,6 +26,7 @@ import { getUtcOffset } from '@/lib/i18n'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 import { faltaDeHoy, tocaDeHoy, cuotaDelPeriodo } from '@/lib/dinero/esperado'
 import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
+import { jsonComprimido } from '@/lib/http/json-comprimido'
 
 function detectarCuotaExtra(prestamo, proximaCuota) {
   if (!proximaCuota || !Array.isArray(prestamo.capitalExtra) || !prestamo.capitalExtra.length) {
@@ -49,7 +50,7 @@ const manana = (country = 'co') => {
   return new Date(h.getTime() + 24 * 60 * 60 * 1000)
 }
 
-export async function GET() {
+export async function GET(request) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.organizationId) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
@@ -518,7 +519,7 @@ export async function GET() {
     return a.nombre.localeCompare(b.nombre)
   })
 
-  return Response.json({
+  return jsonComprimido(request, {
     clientes: clientesAgregados,
     resumen: {
       total: totalClientes,

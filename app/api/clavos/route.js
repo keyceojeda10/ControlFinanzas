@@ -7,6 +7,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { calcularSaldoPendiente } from '@/lib/calculos'
+import { jsonComprimido } from '@/lib/http/json-comprimido'
 
 export async function GET(request) {
   const session = await getServerSession(authOptions)
@@ -62,7 +63,7 @@ export async function GET(request) {
   })
   const rutas = Array.from(rutasMap, ([id, nombre]) => ({ id, nombre }))
 
-  return Response.json({
+  return jsonComprimido(request, {
     items,
     rutas,
     total: items.length,

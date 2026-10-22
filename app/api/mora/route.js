@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { calcularDiasMora, calcularSaldoPendiente } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
+import { jsonComprimido } from '@/lib/http/json-comprimido'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -117,7 +118,7 @@ export async function GET(request) {
     mora31plus: clientesEnMora.filter((c) => c.diasMora > 30),
   }
 
-  return Response.json({
+  return jsonComprimido(request, {
     total: clientesEnMora.length,
     agrupado,
     lista: clientesEnMora.sort((a, b) => b.diasMora - a.diasMora),

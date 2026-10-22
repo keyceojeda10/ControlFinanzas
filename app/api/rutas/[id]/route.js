@@ -34,6 +34,7 @@ import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 import { esFinanciacion } from '@/lib/financiar'
 import { vieneDePorCliente, compararProcedencias } from '@/lib/rutas/procedencia'
 import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
+import { jsonComprimido } from '@/lib/http/json-comprimido'
 
 const hoy = (country = 'co') => {
   const now = new Date()
@@ -850,7 +851,7 @@ export async function GET(request, { params }) {
 
   const puedeVerCapital = rol === 'owner' || session.user.permisos?.verCapitalRuta
 
-  return Response.json({
+  return jsonComprimido(request, {
     id:          ruta.id,
     nombre:      ruta.nombre,
     /* Archivada = unida con otra (lib/rutas/fusionar.js): la pantalla no la

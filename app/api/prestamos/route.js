@@ -35,6 +35,7 @@ import { rutaPermitida } from '@/lib/limites-plan'
 import { notificar, plata } from '@/lib/notificar'
 import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
 import { perdidosDelCliente, textoClienteEnPerdidos } from '@/lib/dinero/cliente-en-perdidos'
+import { jsonComprimido } from '@/lib/http/json-comprimido'
 
 // ─── GET /api/prestamos ─────────────────────────────────────────
 export async function GET(request) {
@@ -533,14 +534,14 @@ export async function GET(request) {
     }
     if (page != null) {
       const desde = (page - 1) * limit
-      return Response.json({
+      return jsonComprimido(request, {
         prestamos: filtrados.slice(desde, desde + limit),
         total: filtrados.length,
         page,
         totalPages: Math.max(1, Math.ceil(filtrados.length / limit)),
       })
     }
-    return Response.json(filtrados)
+    return jsonComprimido(request, filtrados)
   }
 
   // If paginated, return object with total; otherwise array for backward compat
@@ -553,9 +554,9 @@ export async function GET(request) {
       prisma.prestamo.count({ where }),
       soloNuevos ? prisma.prestamo.count({ where: { ...where, interesFinanciado: { not: null } } }) : null,
     ])
-    return Response.json({ prestamos: resultado, total, page, totalPages: Math.ceil(total / limit), ...(financiados != null && { financiados }) })
+    return jsonComprimido(request, { prestamos: resultado, total, page, totalPages: Math.ceil(total / limit), ...(financiados != null && { financiados }) })
   }
-  return Response.json(resultado)
+  return jsonComprimido(request, resultado)
   } catch (err) {
     console.error('[GET /api/prestamos]', err)
     return Response.json({ error: 'Error interno del servidor' }, { status: 500 })

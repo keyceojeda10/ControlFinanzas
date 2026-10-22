@@ -26,6 +26,7 @@ import { dispararTrasCrear } from '@/lib/capi-activacion'
 import { notificar } from '@/lib/notificar'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
+import { jsonComprimido } from '@/lib/http/json-comprimido'
 
 // ─── GET /api/clientes ──────────────────────────────────────────
 export async function GET(request) {
@@ -577,15 +578,15 @@ export async function GET(request) {
       // enseña 3, el usuario cree que se perdieron 197.
       const total = filtrado.length
       const desde = (page - 1) * limit
-      return Response.json({
+      return jsonComprimido(request, {
         clientes: filtrado.slice(desde, desde + limit),
         total, page, totalPages: Math.ceil(total / limit),
       })
     }
     const total = await prisma.cliente.count({ where: whereClause })
-    return Response.json({ clientes: filtrado, total, page, totalPages: Math.ceil(total / limit) })
+    return jsonComprimido(request, { clientes: filtrado, total, page, totalPages: Math.ceil(total / limit) })
   }
-  return Response.json(filtrado)
+  return jsonComprimido(request, filtrado)
   } catch (err) {
     console.error('[GET /api/clientes]', err)
     return Response.json({ error: 'Error interno del servidor' }, { status: 500 })
