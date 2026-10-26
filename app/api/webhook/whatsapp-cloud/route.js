@@ -180,6 +180,12 @@ async function procesarStatus(status) {
     where: { wamid },
     data,
   })
+  /* Los avisos de la app también se enteran del rechazo: sin esto quedaban
+     como enviados y no se repetían nunca (lib/seguimiento/corte.js). */
+  if (estado === 'fallido') {
+    await marcarEnvioFallido(prisma, wamid, errorEntrega).catch((e) =>
+      console.error('[WA Cloud] Error apuntando el rechazo en el aviso:', e.message))
+  }
 
   if (res.count === 0) {
     console.log(`[WA Cloud] Status '${estado}' para wamid desconocido: ${wamid}`)
@@ -352,6 +358,7 @@ async function devolverIntentoSiThrottle(wamid, errorEntrega) {
 import { readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
+import { marcarEnvioFallido } from '@/lib/seguimiento/corte'
 
 const marcaDe = (nombre) => join(tmpdir(), `cf-alerta-${nombre}.txt`)
 
