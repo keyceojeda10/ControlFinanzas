@@ -53,6 +53,8 @@ export async function GET(request) {
   const frecuencia = ['diario', 'semanal', 'quincenal', 'mensual'].includes(frecuenciaRaw) ? frecuenciaRaw : null
   const buscar    = searchParams.get('buscar')?.trim()
   const rutaId    = searchParams.get('rutaId')
+  // Los de clientes sin ruta (no son de ningún cobrador). Al cobrador no aplica.
+  const sinRuta   = searchParams.get('sinRuta') === '1'
   const creadoPorId = searchParams.get('creadoPorId')
   const renovacion = searchParams.get('renovacion') // 'si' | 'no' | null
   const modoInteres = searchParams.get('modoInteres')
@@ -232,6 +234,7 @@ export async function GET(request) {
   const clienteWhere = {
     ...(rol === 'cobrador' && { rutaId: { in: rutaIds } }),
     ...(rutaId && { rutaId }),
+    ...(sinRuta && rol !== 'cobrador' && { rutaId: null }),
     ...(buscar && {
       OR: [
         { nombre: { contains: buscar } },

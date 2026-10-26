@@ -584,7 +584,9 @@ export default function PrestamosPage() {
       opciones: MODOS_INTERES.map(({ value, label }) => ({ valor: value, nombre: label })) },
     { id: 'ruta', titulo: 'Ruta', valor: rutaId,
       onCambiar: (v) => { setRutaId(v); setPage(1) },
+      // «Sin ruta»: los préstamos de clientes que no son de ningún cobrador.
       opciones: [{ valor: '', nombre: 'Todas las rutas' },
+        ...(esOwner ? [{ valor: 'sin', nombre: 'Sin ruta' }] : []),
         ...rutas.map((r) => ({ valor: String(r.id), nombre: r.nombre }))] },
     /* ── LOS RÓTULOS, EN CASTELLANO Y SIN ADIVINANZAS ────────────────────
        «Hay filtros que se entienden muy bien, pero hay otros que no se entienden
@@ -754,7 +756,8 @@ export default function PrestamosPage() {
       if (hasta) params.set('cobraHasta', hasta)
       if ((desde || hasta) && !params.get('estado')) params.set('estado', 'activo')
       if (frec) params.set('frecuencia', frec)
-      if (ruta) params.set('rutaId', ruta)
+      if (ruta === 'sin') params.set('sinRuta', '1')
+      else if (ruta) params.set('rutaId', ruta)
       if (creador) params.set('creadoPorId', creador)
       if (renov) params.set('renovacion', renov)
       if (modo) params.set('modoInteres', modo)

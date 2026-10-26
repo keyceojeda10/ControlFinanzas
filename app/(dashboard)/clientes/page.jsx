@@ -216,6 +216,9 @@ const COLORES_GRUPO = [
 // Los filtros que llegan por la URL desde un aviso de otra pantalla. No están
 // en la hoja de filtros ni en las pastillas, así que sin este cartel la lista
 // sale recortada y nada dice por qué.
+// El valor de «Sin ruta» en el filtro de ruta (no es el id de ninguna).
+const SIN_RUTA = 'sin'
+
 const FILTROS_URL = {
   sinRuta: 'Viendo solo los que no tienen ruta asignada',
   sinTelefono: 'Viendo solo los que no tienen número guardado',
@@ -444,7 +447,11 @@ export default function ClientesPage() {
   const gruposFiltro = [
     { id: 'ruta', titulo: 'Ruta', valor: rutaIdFiltro,
       onCambiar: (v) => { setRutaIdFiltro(v); setPage(1) },
+      /* «Sin ruta»: los clientes que no son de ningún cobrador. Solo se llegaba
+         desde el aviso del Inicio; Héctor (HCANOCOMERCIALIZADORA, 26 oct 2026)
+         preguntó «¿en dónde encuentro los créditos sin ruta?». */
       opciones: [{ valor: '', nombre: 'Todas las rutas' },
+        ...(esOwner ? [{ valor: SIN_RUTA, nombre: 'Sin ruta' }] : []),
         ...rutas.map((r) => ({ valor: String(r.id), nombre: r.nombre }))] },
     { id: 'pagaHoy', titulo: 'A quién le toca', valor: pagaHoy ? 'hoy' : '',
       onCambiar: (v) => { setPagaHoy(v === 'hoy'); setPage(1) },
@@ -543,7 +550,8 @@ export default function ClientesPage() {
        es donde está. */
     const params = new URLSearchParams()
     if (q) params.set('buscar', q)
-    if (rutaId) params.set('rutaId', rutaId)
+    if (rutaId === SIN_RUTA) params.set('sinRuta', '1')
+    else if (rutaId) params.set('rutaId', rutaId)
     // Viene de la alerta "N clientes sin ruta asignada" del dashboard.
     // Se lee de window.location y NO del hook: este loader es un useCallback
     // con dependencias vacias, asi que un searchParams capturado aqui se
