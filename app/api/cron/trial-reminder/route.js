@@ -32,18 +32,43 @@ export async function POST(req) {
           take: 1,
         },
         _count: { select: { clientes: true, prestamos: true } },
+        suscripciones: {
+          orderBy: { fechaVencimiento: 'desc' }, take: 1,
+          select: { montoCOP: true, estado: true, fechaVencimiento: true },
+        },
       },
     })
 
     for (const org of orgs) {
-      const diasDesdeRegistro = Math.floor(
-        (ahora.getTime() - org.createdAt.getTime()) / 86400000
-      )
       const owner = org.users[0]
       if (!owner?.email) continue
 
-      // Day 12 = 2 days left
-      if (diasDesdeRegistro >= 12 && diasDesdeRegistro < 14) {
+      /* ⚠ QUIEN YA PAGÓ NO RECIBE «SE ACABA TU PRUEBA» (26 oct 2026).
+         Oscar (CREDITOS E y M) pagó el 25 y el 26 le llegó «último día de
+         prueba»: esto contaba días desde el registro y no miraba el pago. Se
+         da por avisado y no se le escribe más. */
+      const sub = org.suscripciones[0]
+      if (sub && sub.montoCOP > 0 && sub.estado === 'activa') {
+        await prisma.organization.update({ where: { id: org.id }, data: { trialReminderSent: true } }).catch(() => {})
+        continue
+      }
+      /* Y los días se cuentan hasta el VENCIMIENTO real, no desde el registro:
+         una prueba extendida (premio, o los 3 días devueltos tras el corte de
+         Meta del 23-26 oct) recibía «último día» con días por delante. Sin
+         suscripción, los 14 de siempre desde el registro. */
+      const diasParaVencer = sub
+        ? (new Date(sub.fechaVencimiento).getTime() - ahora.getTime()) / 86400000
+        : 14 - (ahora.getTime() - org.createdAt.getTime()) / 86400000
+
+      // Vencida hace más de 2 días: el aviso ya no es noticia. Se da por
+      // avisado sin escribir (había 29 así el 26 oct; les habría llegado tarde).
+      if (diasParaVencer <= -2) {
+        await prisma.organization.update({ where: { id: org.id }, data: { trialReminderSent: true } }).catch(() => {})
+        continue
+      }
+
+      // Quedan 2 días (era el día 12 de 14)
+      if (diasParaVencer > 0 && diasParaVencer <= 2) {
         try {
           const { subject, html } = emailOnboardingDia12({ nombre: owner.nombre })
           await enviarEmail({ to: owner.email, subject, html })
@@ -53,8 +78,8 @@ export async function POST(req) {
         }
       }
 
-      // Day 14 = last day
-      if (diasDesdeRegistro >= 14) {
+      // Se acabó (era el día 14)
+      if (diasParaVencer <= 0) {
         try {
           const { subject, html } = emailOnboardingDia14({ nombre: owner.nombre })
           await enviarEmail({ to: owner.email, subject, html })
