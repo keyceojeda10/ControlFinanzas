@@ -3,6 +3,19 @@
 
 import { useSession } from 'next-auth/react'
 
+/* ⚠ EL MODO ABREVIADO NO SE PIERDE CON LA SESIÓN (26 oct 2026).
+   Desde cf-v1205 la sesión se renueva cada 10 min. Si esa renovación falla
+   (mala señal en la calle, un reinicio del servidor), next-auth deja la sesión
+   en `null` y ya no vuelve a pedirla; el cobrador sigue cobrando porque la
+   cookie sigue buena. Con `?? false`, el modo se APAGABA en silencio: tecleaba
+   «50» y se guardaban $50. INVERSIONESJYM y Distribuidora BM, cinco abonos
+   entre el 22 y el 26 de octubre. Sin sesión a mano, manda la última de este
+   teléfono (la misma que guarda el SessionProvider). */
+function modoAbreviadoGuardado() {
+  if (typeof window === 'undefined') return false
+  try { return !!JSON.parse(localStorage.getItem('cf-session-cache') || 'null')?.user?.modoAbreviado } catch { return false }
+}
+
 export function useAuth() {
   const { data: session, status, update } = useSession()
   const loading = status === 'loading'
@@ -20,7 +33,7 @@ export function useAuth() {
     country: session?.user?.country ?? 'co',
     timezone: session?.user?.timezone ?? null,
     orgNombre: session?.user?.orgNombre ?? null,
-    modoAbreviado: session?.user?.modoAbreviado ?? false,
+    modoAbreviado: session?.user ? !!session.user.modoAbreviado : modoAbreviadoGuardado(),
     ocultarSaldoWA: session?.user?.ocultarSaldoWA ?? false,
     camposRecibo: session?.user?.camposRecibo ?? null,
     rutaId: session?.user?.rutaId ?? null,

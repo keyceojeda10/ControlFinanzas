@@ -168,7 +168,7 @@ export async function POST(request, { params }) {
   const [org, festivos] = await Promise.all([
     prisma.organization.findUnique({
       where: { id: organizationId },
-      select: { diasSinCobro: true },
+      select: { diasSinCobro: true, modoAbreviado: true },
     }),
     prisma.festivo.findMany({
       where: { organizationId },
@@ -215,6 +215,18 @@ export async function POST(request, { params }) {
   }
   if (!['completo', 'parcial', 'capital', 'recargo', 'descuento', 'liquidacion', 'intereses'].includes(tipo)) {
     return Response.json({ error: 'El tipo de pago no es válido' }, { status: 400 })
+  }
+
+  /* ⚠ CON EL MODO ABREVIADO, MENOS DE MIL ES UN DEDAZO (26 oct 2026).
+     En ese modo lo mínimo que se puede teclear es «1» = $1.000. Un monto menor
+     solo llega si la pantalla perdió el modo (ver hooks/useAuth.js): así se
+     guardaron $50 por $50.000 y $432 por $432.000. Se frena aquí para que
+     ninguna vía —pantalla vieja, cola sin señal— lo vuelva a meter. */
+  if (org?.modoAbreviado && montoFinal > 0 && montoFinal < 1000) {
+    const mil = new Intl.NumberFormat('es-CO').format(montoFinal * 1000)
+    return Response.json({
+      error: `$${montoFinal} parece un error: con el modo abreviado se escribe en miles. Si recibiste $${mil}, escribe ${montoFinal}. Si la pantalla sigue igual, ciérrala y vuelve a entrar.`,
+    }, { status: 400 })
   }
 
   // ── PAGO DE SOLO INTERÉS · DOS CAMINOS QUE NO SE PUEDEN MEZCLAR ───────────

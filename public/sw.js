@@ -1,5 +1,5 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v1212'
+const CACHE_NAME   = 'cf-v1213'
 // API_CACHE solo sube cuando cambian las CIFRAS que devuelve el servidor.
 //
 // Este release SÍ las cambia, en `/api/cobros-hoy` (Adenda 5):
@@ -179,7 +179,7 @@ self.addEventListener('fetch', (e) => {
   // /api/auth/session — cachear para que useSession() resuelva offline
   // Sin esto, NextAuth queda en status:'loading' y toda la app muestra skeleton
   if (url.pathname === '/api/auth/session') {
-    e.respondWith(networkFirstAPI(request))
+    e.respondWith(sesionConRespaldo(request))
     return
   }
 
@@ -250,6 +250,34 @@ self.addEventListener('fetch', (e) => {
 })
 
 // ─── Strategies ─────────────────────────────────────────────
+
+/* ⚠ LA SESIÓN: UN 502 NO ES «SIN SESIÓN» (26 oct 2026).
+   La app renueva la sesión cada 10 min. Si el servidor contesta con un error
+   (un reinicio, el proxy con un 502 en HTML), next-auth lo toma como «no hay
+   sesión», la deja en null y no la vuelve a pedir. La pantalla seguía cobrando
+   —la cookie estaba buena— pero sin el modo abreviado: «50» se guardaba como
+   $50. Un error del servidor devuelve la última sesión buena; solo una
+   respuesta buena (con usuario o vacía, que es la sesión vencida de verdad)
+   cambia lo que sabe el teléfono. */
+async function sesionConRespaldo(request) {
+  try {
+    const response = await fetch(request)
+    if (response.ok && !response.redirected) {
+      const cache = await caches.open(API_CACHE)
+      cache.put(request, response.clone())
+      return response
+    }
+    const cached = await caches.match(request)
+    return cached || response
+  } catch {
+    const cached = await caches.match(request)
+    if (cached) return cached
+    return new Response(JSON.stringify({ error: 'Sin conexión', offline: true }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+}
 
 async function networkFirstAPI(request) {
   const url = new URL(request.url)
