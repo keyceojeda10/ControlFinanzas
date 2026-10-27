@@ -84,6 +84,15 @@ export async function GET(req) {
       select: {
         clienteId: true, montoPrestado: true, ...CAMPOS_DEL_REPARTO, totalAPagar: true,
         fechaInicio: true, diasPlazo: true, cuotaDiaria: true, frecuencia: true, estado: true,
+        /* Lo mismo que pide el resumen en pantalla, que es este mismo informe:
+           sin `modoInteres` ni la tabla, la mora del PDF salía por otra rama, y
+           sin `devengos` el préstamo abierto salía al día debiendo el mes. */
+        modoInteres: true, totalPagado: true, abonadoCapital: true,
+        devengos: { select: { periodo: true, interes: true } },
+        cuotasAmortizacion: {
+          orderBy: { numeroPeriodo: 'asc' },
+          select: { numeroPeriodo: true, cuotaTotal: true, capital: true, interes: true, pagado: true, fechaEsperada: true },
+        },
         pagos: { select: { montoPagado: true, tipo: true } },
         cliente: {
           select: { id: true, diasSinCobro: true, ruta: { select: { diasSinCobro: true } } },

@@ -24,6 +24,7 @@ import {
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
+import { pagosDelCalculoPorPrestamo } from '@/lib/dinero/pagos-del-calculo'
 import { faltaDeHoy, tocaDeHoy, cuotaDelPeriodo } from '@/lib/dinero/esperado'
 import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
 import { jsonComprimido } from '@/lib/http/json-comprimido'
@@ -177,6 +178,15 @@ export async function GET(request) {
     },
   })
 
+  /* ⚠ `p.pagos` TRAE SOLO LOS DE HOY, y el cálculo lo leía igual. Los pagos de
+     hoy pasan a `p.pagosHoy`; `p.pagos` queda con lo que lee el cálculo, como
+     en el Inicio. Sin esto, un préstamo abierto que pagó el interés ayer salía
+     hoy debiéndolo. Ver lib/dinero/pagos-del-calculo.js. */
+  const delCalculo = await pagosDelCalculoPorPrestamo(prisma, clientes.flatMap((c) => c.prestamos.map((p) => p.id)))
+  for (const c of clientes) {
+    for (const p of c.prestamos) { p.pagosHoy = p.pagos; p.pagos = delCalculo.get(p.id) ?? [] }
+  }
+
   let totalClientes = 0
   let totalPendientes = 0
   let totalPagados = 0
@@ -272,8 +282,8 @@ export async function GET(request) {
       let pideHoyCliente = 0
 
       for (const p of c.prestamos) {
-        // p.pagos ya viene filtrado por hoy desde la query (where fechaPago gte/lt)
-        const pagosHoy = p.pagos
+        // Los de hoy, filtrados en la consulta (where fechaPago gte/lt).
+        const pagosHoy = p.pagosHoy
         const montoPagadoHoy = pagosHoy
           .filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
           .reduce((a, pg) => a + pg.montoPagado, 0)

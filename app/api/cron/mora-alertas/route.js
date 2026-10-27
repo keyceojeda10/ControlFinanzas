@@ -51,6 +51,7 @@ import { quiere } from '@/lib/avisos-preferencias'
 import { calcularDiasMora, calcularProximoCobro, calcularMontoEnMora } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
+import { PAGOS_DEL_CALCULO } from '@/lib/dinero/pagos-del-calculo'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
@@ -99,6 +100,9 @@ export async function POST(req) {
            interés devengado sin pagar, y un campo que no se pide vale `undefined`
            —no da error, decide en silencio—. Ver lib/dinero/devengar.js. */
         devengos: { select: { periodo: true, interes: true } },
+        /* Y los pagos contra lo devengado: sin ellos el interés ya cobrado del
+           abierto se lee como debido y se avisa de un cliente al día. */
+        pagos: PAGOS_DEL_CALCULO,
         cuotasAmortizacion: {
           orderBy: { numeroPeriodo: 'asc' },
           select: {

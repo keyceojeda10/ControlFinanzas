@@ -6,6 +6,7 @@ import { prisma }           from '@/lib/prisma'
 import { calcularDiasMora } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { scoreLimiter, getClientIp } from '@/lib/rate-limit'
+import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
 export async function GET(req) {
   const session = await getServerSession(authOptions)
@@ -54,6 +55,11 @@ export async function GET(req) {
             cuotaDiaria:  true,
             frecuencia:   true,
             totalAPagar:  true,
+            /* Sin `sinPlazo`, `modoInteres` y lo devengado, un préstamo abierto
+               que paga su interés a tiempo se leía vencido entero en su primer
+               corte, y le bajaba el puntaje a quien cumple (27 oct 2026). */
+            modoInteres: true, ...CAMPOS_DEL_REPARTO,
+            devengos: { select: { periodo: true, interes: true } },
             pagos: {
               select: { montoPagado: true, tipo: true },
             },

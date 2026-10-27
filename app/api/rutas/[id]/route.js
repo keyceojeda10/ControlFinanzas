@@ -31,6 +31,7 @@ import { distanciaMetros } from '@/lib/geo'
 // usa el optimizador de orden; aquí da el «3,4 km» de la cabecera (T27-02).
 import { totalDistance } from '@/lib/routeOptimizer'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
+import { pagosDelCalculoPorPrestamo } from '@/lib/dinero/pagos-del-calculo'
 import { esFinanciacion } from '@/lib/financiar'
 import { vieneDePorCliente, compararProcedencias } from '@/lib/rutas/procedencia'
 import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
@@ -154,6 +155,16 @@ export async function GET(request, { params }) {
   })
 
   if (!ruta) return Response.json({ error: 'Ruta no encontrada' }, { status: 404 })
+
+  /* ⚠ `p.pagos` TRAE SOLO LOS DE HOY, y el cálculo lo leía igual. Los pagos de
+     hoy pasan a `p.pagosHoy`; `p.pagos` queda con lo que lee el cálculo, como
+     en el Inicio. Sin esto, un préstamo abierto que pagó el interés ayer salía
+     hoy debiéndolo, y el capital de la ruta no veía los abonos a capital de
+     otros días. Ver lib/dinero/pagos-del-calculo.js. */
+  const delCalculo = await pagosDelCalculoPorPrestamo(prisma, ruta.clientes.flatMap((c) => c.prestamos.map((p) => p.id)))
+  for (const c of ruta.clientes) {
+    for (const p of c.prestamos) { p.pagosHoy = p.pagos; p.pagos = delCalculo.get(p.id) ?? [] }
+  }
 
   /* ── CUÁNDO TERMINÓ DE PAGAR CADA PRÉSTAMO LIQUIDADO (Adenda 5 · E09) ──
      La fila de «sin deuda» dice «Terminó de pagar el 4 de julio», y esa fecha
@@ -392,8 +403,8 @@ export async function GET(request, { params }) {
 
     for (const p of c.prestamos) {
       prestamoIdsRuta.push(p.id)
-      // p.pagos ya viene filtrado por hoy desde la query (where fechaPago gte/lt)
-      const pagosHoy = p.pagos
+      // Los de hoy, filtrados en la consulta (where fechaPago gte/lt).
+      const pagosHoy = p.pagosHoy
       for (const pg of pagosHoy) pagoIdsRuta.push(pg.id)
       const cobrosReales = pagosHoy.filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
       const montoPagadoHoy = cobrosReales.reduce((a, pg) => a + pg.montoPagado, 0)
