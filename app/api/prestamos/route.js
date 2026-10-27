@@ -35,6 +35,7 @@ import { rutaPermitida } from '@/lib/limites-plan'
 import { notificar, plata } from '@/lib/notificar'
 import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
 import { perdidosDelCliente, textoClienteEnPerdidos } from '@/lib/dinero/cliente-en-perdidos'
+import { situacionParaPrestar, textoNecesitaPermiso } from '@/lib/dinero/permiso-prestamo'
 import { jsonComprimido } from '@/lib/http/json-comprimido'
 
 // ─── GET /api/prestamos ─────────────────────────────────────────
@@ -704,6 +705,27 @@ export async function POST(request) {
     }
   }
 
+  /* ⚠ OTRA CARTULINA A QUIEN YA DEBE, CON PERMISO (27 oct 2026). Al cobrador
+     con `puedePrestarConPrestamoActivo` apagado no se le deja sin un permiso
+     aprobado hoy por el dueño, y ese permiso sirve para UN préstamo: se gasta
+     dentro de la transacción. La pantalla lo dice antes de llenar nada; esto
+     es para la app vieja y la cola sin señal. Ver lib/dinero/permiso-prestamo.js. */
+  let permisoAUsar = null
+  if (rol === 'cobrador') {
+    const situacion = await situacionParaPrestar(prisma, {
+      organizationId, clienteId, userId: session.user.id, rol, country: session.user.country,
+    })
+    if (situacion.necesita) {
+      if (situacion.permiso?.estado !== 'aprobado') {
+        return Response.json({
+          error: textoNecesitaPermiso(situacion),
+          necesitaPermiso: { cantidad: situacion.cantidad, saldo: situacion.saldo, estado: situacion.permiso?.estado ?? null },
+        }, { status: 403 })
+      }
+      permisoAUsar = situacion.permiso.id
+    }
+  }
+
   if (cliente.montoMaximoPrestamo && Number(montoPrestado) > cliente.montoMaximoPrestamo) {
     return Response.json({
       error: `El monto supera el tope de este cliente (${Math.round(cliente.montoMaximoPrestamo).toLocaleString('es-CO')})`,
@@ -998,6 +1020,16 @@ export async function POST(request) {
       },
     })
 
+    // El permiso se gasta con el préstamo, o no se gasta: dos guardados a la
+    // vez con el mismo permiso no hacen dos cartulinas.
+    if (permisoAUsar) {
+      const { count } = await tx.permisoPrestamo.updateMany({
+        where: { id: permisoAUsar, estado: 'aprobado' },
+        data: { estado: 'usado', usadoEn: new Date(), prestamoId: nuevo.id },
+      })
+      if (count === 0) throw new Error('PERMISO_USADO')
+    }
+
     if (Array.isArray(calc.tablaAmortizacion) && calc.tablaAmortizacion.length > 0) {
       await tx.cuotaAmortizacion.createMany({
         data: calc.tablaAmortizacion.map((p) => ({
@@ -1176,6 +1208,12 @@ export async function POST(request) {
         faltante: Math.round(faltanteCapital),
         saldoActual: Math.round(saldoCapitalActual),
       }, { status: 400 })
+    }
+    if (err?.message === 'PERMISO_USADO') {
+      return Response.json({
+        error: 'Ese permiso ya se usó en otro préstamo. Pídele otro al administrador.',
+        necesitaPermiso: { estado: 'usado' },
+      }, { status: 403 })
     }
     console.error('[POST /api/prestamos]', err)
     return Response.json({ error: 'Error interno del servidor' }, { status: 500 })

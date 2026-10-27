@@ -248,6 +248,7 @@ export default function PilaAvisos({ children, onVerTodos }) {
       return !(clavesPendientes.has(`prestamo:${d.prestamoId}`) && n.tipo === 'solicitud_prestamo')
         && !(clavesPendientes.has(`reapertura:${d.cierreId}`) && n.tipo === 'solicitud_reapertura')
         && !(clavesPendientes.has(`gasto:${d.gastoId}`) && n.tipo === 'gasto_por_aprobar')
+        && !(clavesPendientes.has(`permiso:${d.permisoId}`) && n.tipo === 'permiso_prestamo')
     } catch { return true }
   })
   const sinLeer = guardadosVisibles.filter((n) => !n.leida).length
@@ -310,6 +311,7 @@ export default function PilaAvisos({ children, onVerTodos }) {
               const suya = (p.clase === 'prestamo' && d.prestamoId === p.id)
                 || (p.clase === 'reapertura' && d.cierreId === p.id)
                 || (p.clase === 'gasto' && d.gastoId === p.id)
+                || (p.clase === 'permiso' && d.permisoId === p.id)
               if (suya) marcarLeida(n.id)
             } catch {}
           }

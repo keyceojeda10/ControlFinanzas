@@ -294,6 +294,7 @@ model User {
   puedeAplicarDescuentos  Boolean   @default(false) // aplicar descuentos y liquidaciones (riesgo: reduce saldo)
   puedeDesembolsarLinea Boolean @default(false)
   puedeReabrirCajaSinAprobacion Boolean @default(false) // reabrir su propia caja cerrada sin esperar aprobacion del owner
+  puedePrestarConPrestamoActivo Boolean @default(true) // prestarle a un cliente que ya debe un préstamo; apagado, pide permiso (PermisoPrestamo)
   orden                   Int       @default(0) // orden manual del cobrador (drag-and-drop en la lista)
   emailsMarketing         Boolean   @default(true)
   theme                   String?   @default("system")
@@ -1217,6 +1218,29 @@ model BotLeccion {
   telegramMsgId Int?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+/// PERMISO PARA PRESTARLE A QUIEN YA DEBE (27 oct 2026). Con
+/// `User.puedePrestarConPrestamoActivo` apagado, el cobrador no puede hacerle
+/// otra cartulina a un cliente con un préstamo activo: la pide aquí y el dueño
+/// la aprueba o la rechaza desde «Esperan tu decisión». Un permiso aprobado
+/// sirve para UN préstamo de ese cliente, ese cobrador y ese día. Sin llaves
+/// foráneas, como `CambioRuta`: es un rastro, no una parte del préstamo.
+model PermisoPrestamo {
+  id             String    @id @default(cuid())
+  organizationId String
+  clienteId      String
+  cobradorId     String
+  monto          Float?
+  estado         String    @default("pendiente") @db.VarChar(16) // pendiente, aprobado, rechazado, usado
+  resueltoPorId  String?
+  resueltoEn     DateTime?
+  usadoEn        DateTime?
+  prestamoId     String?
+  createdAt      DateTime  @default(now())
+
+  @@index([organizationId, estado])
+  @@index([clienteId, cobradorId])
 }
 
 /// DE QUÉ RUTA LLEGÓ CADA CLIENTE (3 oct 2026). Lo escriben la unión de rutas,

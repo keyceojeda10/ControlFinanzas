@@ -54,6 +54,7 @@ export async function GET(request) {
       puedeGestionarRutas: true,
       puedeAplicarDescuentos: true,
       puedeReabrirCajaSinAprobacion: true,
+      puedePrestarConPrestamoActivo: true,
       rutas:     {
         where:  { activo: true },
         select: {
@@ -143,6 +144,7 @@ export async function GET(request) {
         aplicarDescuentos: c.puedeAplicarDescuentos ?? false,
         desembolsarLinea: c.puedeDesembolsarLinea ?? false,
         reabrirCajaSinAprobacion: c.puedeReabrirCajaSinAprobacion ?? false,
+        prestarConPrestamoActivo: c.puedePrestarConPrestamoActivo ?? true,
       },
       ruta:            c.rutas[0] ? { id: c.rutas[0].id, nombre: c.rutas[0].nombre } : null,
       // TODAS sus rutas: «Ya cobra en …» nombraba solo la primera (DETALLES-RUTAS #61).
@@ -249,6 +251,8 @@ export async function POST(request) {
   const aplicarDescuentos = Boolean(permisos?.aplicarDescuentos)
   const desembolsarLinea = Boolean(permisos?.desembolsarLinea)
   const reabrirCajaSinAprobacion = Boolean(permisos?.reabrirCajaSinAprobacion)
+  // Encendido salvo que lo apaguen a propósito: es como funcionaba antes.
+  const prestarConPrestamoActivo = permisos?.prestarConPrestamoActivo !== false
 
   const cobrador = await prisma.user.create({
     data: {
@@ -270,9 +274,10 @@ export async function POST(request) {
       puedeAplicarDescuentos: aplicarDescuentos,
       puedeDesembolsarLinea: desembolsarLinea,
       puedeReabrirCajaSinAprobacion: reabrirCajaSinAprobacion,
+      puedePrestarConPrestamoActivo: prestarConPrestamoActivo,
     },
     select: { id: true, nombre: true, email: true, telefono: true, activo: true, rol: true,
-      puedeCrearPrestamos: true, puedeGestionarPrestamos: true, puedeCrearClientes: true, puedeEditarClientes: true, puedeReportarGastos: true, puedeVerCapital: true, puedeVerSaldoCaja: true, puedeGestionarRutas: true, puedeAplicarDescuentos: true, puedeDesembolsarLinea: true, puedeReabrirCajaSinAprobacion: true },
+      puedeCrearPrestamos: true, puedeGestionarPrestamos: true, puedeCrearClientes: true, puedeEditarClientes: true, puedeReportarGastos: true, puedeVerCapital: true, puedeVerSaldoCaja: true, puedeGestionarRutas: true, puedeAplicarDescuentos: true, puedeDesembolsarLinea: true, puedeReabrirCajaSinAprobacion: true, puedePrestarConPrestamoActivo: true },
   })
 
   logActividad({ session, accion: 'crear_cobrador', entidadTipo: 'usuario', entidadId: cobrador.id, detalle: `Cobrador ${cobrador.nombre} creado`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })

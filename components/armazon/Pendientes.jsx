@@ -3,7 +3,8 @@
 // components/armazon/Pendientes.jsx — LO QUE ESPERA TU DECISIÓN.
 //
 // Va ARRIBA de la campana. Un préstamo que un cobrador no puede entregar hasta
-// que se lo aprueben, una caja que pide reabrirse, un gasto por aprobar: eso no
+// que se lo aprueben, una caja que pide reabrirse, un gasto por aprobar, el
+// permiso para hacerle otra cartulina a quien ya debe: eso no
 // es «algo que pasó», es alguien parado en la calle esperando. Hasta el 19 sep
 // 2026 llegaba solo por push (lo tiene encendido el 14 % de los dueños) y para
 // resolverlo había que ir a tres pantallas distintas.
@@ -38,12 +39,16 @@ const ICONO = {
   prestamo: <><rect x="3" y="6" width="18" height="12" rx="2" /><circle cx="12" cy="12" r="2.5" /><path d="M6.5 9.5v.01M17.5 14.5v.01" /></>,
   reapertura: <><rect x="4" y="10" width="16" height="10" rx="2" /><path d="M8 10V7a4 4 0 017.5-2" /></>,
   gasto: <><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z" /><path d="M9 8h6M9 12h6" /></>,
+  permiso: <><rect x="4" y="5" width="12" height="15" rx="2" /><path d="M8 3h12v15" /><path d="M7.5 12.5l2 2 3.5-4" /></>,
 }
 
 async function resolver(p, accion) {
   const json = { method: 'POST', headers: { 'Content-Type': 'application/json' } }
   if (p.clase === 'prestamo') {
     return fetch(`/api/prestamos/${p.id}/${accion === 'aprobar' ? 'aprobar' : 'rechazar'}`, { ...json, body: '{}' })
+  }
+  if (p.clase === 'permiso') {
+    return fetch(`/api/prestamos/permiso/${p.id}`, { ...json, body: JSON.stringify({ decision: accion }) })
   }
   if (p.clase === 'reapertura') {
     return fetch(`/api/caja/reabrir/${accion === 'aprobar' ? 'aprobar' : 'rechazar'}`, { ...json, body: JSON.stringify({ cierreId: p.id }) })
@@ -63,9 +68,11 @@ function Fila({ p, onResuelto, onAbrir }) {
   useEffect(() => () => clearTimeout(reloj.current), [])
 
   const titulo = p.clase === 'prestamo' ? `${p.quien} quiere prestar ${formatMoney(p.monto)}`
+    : p.clase === 'permiso' ? (p.monto ? `${p.quien} pide permiso para prestar ${formatMoney(p.monto)}` : `${p.quien} pide permiso para otra cartulina`)
     : p.clase === 'reapertura' ? `${p.quien} pide reabrir su caja`
     : `${p.quien} anotó un gasto de ${formatMoney(p.monto)}`
   const detalle = p.clase === 'prestamo' ? (p.para ? `a ${p.para}` : null)
+    : p.clase === 'permiso' ? (p.para ? `a ${p.para}, que ya tiene un préstamo` : 'a un cliente que ya tiene un préstamo')
     : p.clase === 'reapertura' ? (p.fechaCaja ? `la del ${formatFecha(p.fechaCaja)}` : null)
     : p.concepto
 
@@ -95,7 +102,7 @@ function Fila({ p, onResuelto, onAbrir }) {
   }
 
   const textoAprobar = armado === 'aprobar'
-    ? (p.monto ? `Confirmar ${formatMoney(p.monto)}` : 'Confirmar')
+    ? (p.monto && p.clase !== 'permiso' ? `Confirmar ${formatMoney(p.monto)}` : 'Confirmar')
     : 'Aprobar'
 
   return (

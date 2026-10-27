@@ -2,7 +2,8 @@
 //
 // La campana solo sabía contar lo que PASÓ. Lo que de verdad necesita al dueño
 // —un préstamo que un cobrador no puede entregar hasta que se lo aprueben, una
-// caja que pide reabrirse, un gasto por aprobar— llegaba solo por push (el 14 %
+// caja que pide reabrirse, un gasto por aprobar, el permiso para hacerle otra
+// cartulina a quien ya debe— llegaba solo por push (el 14 %
 // de los dueños lo tiene encendido) o había que ir a buscarlo a tres pantallas
 // distintas. Aquí se juntan las tres colas en una lista, con lo justo para
 // decidir sin abrir nada: quién, cuánto, para quién y desde cuándo.
@@ -25,7 +26,7 @@ export async function GET() {
 
   const { organizationId } = session.user
 
-  const [prestamos, reaperturas, gastos] = await Promise.all([
+  const [prestamos, reaperturas, gastos, permisos] = await Promise.all([
     prisma.prestamo.findMany({
       where: { organizationId, estado: 'pendiente_aprobacion' },
       select: {
@@ -53,15 +54,27 @@ export async function GET() {
       orderBy: { fecha: 'asc' },
       take: 30,
     }),
+    // Otra cartulina a quien ya debe (lib/dinero/permiso-prestamo.js). Solo las
+    // de hoy y ayer: una de hace una semana ya no tiene a nadie esperando.
+    prisma.permisoPrestamo.findMany({
+      where: { organizationId, estado: 'pendiente', createdAt: { gte: new Date(Date.now() - 2 * 86400000) } },
+      orderBy: { createdAt: 'asc' },
+      take: 30,
+    }),
   ])
 
   // `Prestamo.creadoPorId` es un id suelto, sin relación: los nombres se traen
   // aparte y de una vez.
-  const ids = [...new Set(prestamos.map((p) => p.creadoPorId).filter(Boolean))]
+  const ids = [...new Set([...prestamos.map((p) => p.creadoPorId), ...permisos.map((p) => p.cobradorId)].filter(Boolean))]
   const autores = ids.length
     ? await prisma.user.findMany({ where: { id: { in: ids }, organizationId }, select: { id: true, nombre: true } })
     : []
   const nombreDe = new Map(autores.map((u) => [u.id, u.nombre]))
+  const idsClientes = [...new Set(permisos.map((p) => p.clienteId))]
+  const clientesDePermisos = idsClientes.length
+    ? await prisma.cliente.findMany({ where: { id: { in: idsClientes }, organizationId }, select: { id: true, nombre: true } })
+    : []
+  const clienteDe = new Map(clientesDePermisos.map((c) => [c.id, c.nombre]))
 
   const pendientes = [
     ...prestamos.map((p) => ({
@@ -78,6 +91,14 @@ export async function GET() {
       fechaCaja: c.fecha,
       desde: c.solicitudReaperturaEn,
       href: '/caja',
+    })),
+    ...permisos.map((p) => ({
+      clave: `permiso:${p.id}`, clase: 'permiso', id: p.id,
+      quien: nombreDe.get(p.cobradorId) ?? 'Un cobrador',
+      para: clienteDe.get(p.clienteId) ?? null,
+      monto: Number(p.monto) || 0,
+      desde: p.createdAt,
+      href: `/clientes/${p.clienteId}`,
     })),
     ...gastos.map((g) => ({
       clave: `gasto:${g.id}`, clase: 'gasto', id: g.id,

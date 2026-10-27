@@ -205,7 +205,7 @@ export default function NuevoPrestamoPage() {
 function NuevoPrestamo() {
   const router       = useRouter()
   const searchParams = useSearchParams()
-  const { puedeCrearPrestamos, esOwner, loading: authLoading } = useAuth()
+  const { puedeCrearPrestamos, esOwner, esCobrador, puedePrestarConPrestamoActivo, loading: authLoading } = useAuth()
 
   const clienteIdParam = searchParams.get('clienteId') ?? ''
 
@@ -238,6 +238,52 @@ function NuevoPrestamo() {
     return { saldo: Math.round(vivos.reduce((a, x) => a + Math.max(0, Number(x.saldoPendiente) || 0), 0)), cantidad: vivos.length || 1 }
   }
   const perdidosDelElegido = perdidosDe(clientes.find((c) => c.id === clienteId))
+
+  /* ⚠ OTRA CARTULINA A QUIEN YA DEBE (27 oct 2026). Con el permiso
+     «Prestarle a quien ya debe» apagado, el cobrador pide permiso aquí y el
+     dueño lo aprueba desde «Esperan tu decisión». Se dice al elegir el
+     cliente, antes de llenar nada; el servidor lo frena igual
+     (lib/dinero/permiso-prestamo.js). Sin señal se decide con lo que sabe el
+     teléfono: sin servidor no hay a quién pedirle el permiso. */
+  const [permisoPrestar, setPermisoPrestar] = useState(null)
+  const [pidiendoPermiso, setPidiendoPermiso] = useState(false)
+  const consultarPermiso = useCallback(async (id) => {
+    if (!id || !esCobrador) { setPermisoPrestar(null); return }
+    try {
+      const r = await fetch(`/api/prestamos/permiso?clienteId=${encodeURIComponent(id)}`, { cache: 'no-store' })
+      if (!r.ok) throw new Error()
+      setPermisoPrestar(await r.json())
+    } catch {
+      const c = clientes.find((x) => x.id === id)
+      const vivos = (c?.prestamos || []).filter((x) => ['activo', 'pendiente_aprobacion'].includes(x.estado ?? 'activo'))
+      setPermisoPrestar(!puedePrestarConPrestamoActivo && vivos.length > 0
+        ? { necesita: true, cantidad: vivos.length, saldo: Math.round(vivos.reduce((a, x) => a + Math.max(0, Number(x.saldoPendiente) || 0), 0)), estado: null, sinSenal: true }
+        : null)
+    }
+  }, [esCobrador, puedePrestarConPrestamoActivo, clientes])
+  useEffect(() => { consultarPermiso(clienteId) }, [clienteId, consultarPermiso])
+  // Mientras espera al dueño, se vuelve a mirar solo: el aviso de la campana
+  // puede no llegarle, y así el botón se enciende sin salir de la pantalla.
+  useEffect(() => {
+    if (permisoPrestar?.estado !== 'pendiente') return
+    const t = setInterval(() => consultarPermiso(clienteId), 15000)
+    return () => clearInterval(t)
+  }, [permisoPrestar?.estado, clienteId, consultarPermiso])
+  const faltaPermiso = !!permisoPrestar?.necesita && permisoPrestar.estado !== 'aprobado'
+  async function pedirPermiso() {
+    setPidiendoPermiso(true)
+    try {
+      const r = await fetch('/api/prestamos/permiso', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clienteId, ...(Number(monto) > 0 && { monto: Number(monto) }) }),
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok) { setError(d.error || 'No se pudo pedir el permiso.'); return }
+      setPermisoPrestar(d)
+    } catch {
+      setError('Sin conexión. Pide el permiso cuando vuelva la señal.')
+    } finally { setPidiendoPermiso(false) }
+  }
   // Declaración de función (se eleva): la usa `useCabecera`, más arriba en el
   // orden de lectura que cualquier `const` de aquí abajo.
   function salirDeCrear() {
@@ -929,6 +975,8 @@ function NuevoPrestamo() {
     // Al cobrador no le deja seguir con un cliente en perdidos (#17).
     if (!esOwner && perdidosDelElegido) return false
     if (cuotaInsuficiente) return false
+    // Ni con cliente que ya debe y sin el permiso del dueño.
+    if (faltaPermiso) return false
     // Una cuota en pesos que no devuelve el capital: la de abajo es la anterior.
     if (pesos.imposible) return false
     /* ⚠ EN PC EL PASO 0 LLEVA LAS DOS COSAS. Con el `return !!clienteId` de
@@ -1025,6 +1073,9 @@ function NuevoPrestamo() {
           })
           return
         }
+        // El permiso se gastó o se lo quitaron mientras llenaba: el aviso de
+        // arriba vuelve a decir en qué va.
+        if (data?.necesitaPermiso) consultarPermiso(clienteId)
         setError(data?.error ?? 'Error al crear el préstamo')
         return
       }
@@ -1288,6 +1339,50 @@ function NuevoPrestamo() {
                 </span>
               </div>
             )}
+
+            {/* Cliente que ya debe y cobrador sin el permiso (lib/dinero/permiso-prestamo.js). */}
+            {permisoPrestar?.necesita && (() => {
+              const aprobado = permisoPrestar.estado === 'aprobado'
+              const rechazado = permisoPrestar.estado === 'rechazado'
+              const esperando = permisoPrestar.estado === 'pendiente'
+              const tono = aprobado
+                ? { fondo: 'var(--cf-green-pill-bg)', borde: 'var(--cf-green-pill-border)', texto: 'var(--cf-green-dark)' }
+                : rechazado
+                  ? { fondo: 'var(--cf-red-pill-bg)', borde: 'var(--cf-red-pill-border)', texto: 'var(--cf-red-dark)' }
+                  : { fondo: 'var(--cf-fill)', borde: 'var(--cf-border-strong)', texto: 'var(--cf-ink)' }
+              const tiene = permisoPrestar.cantidad === 1 ? 'ya tiene un préstamo activo' : `ya tiene ${permisoPrestar.cantidad} préstamos activos`
+              return (
+                <div role="status" data-permiso-prestar={permisoPrestar.estado ?? 'sin-pedir'}
+                  className="mt-4 rounded-[12px] px-4 py-3 flex flex-col gap-2.5"
+                  style={{ background: tono.fondo, border: `1px solid ${tono.borde}` }}>
+                  <div className="flex items-start gap-2.5">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={tono.texto} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5" aria-hidden="true">
+                      {aprobado
+                        ? <path d="M20 6L9 17l-5-5" />
+                        : <><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 018 0v4" /></>}
+                    </svg>
+                    <span className="text-sm" style={{ color: tono.texto }}>
+                      {aprobado
+                        ? <><strong>Tienes permiso.</strong> El administrador autorizó otra cartulina para este cliente. Sirve para un préstamo, hoy.</>
+                        : <>
+                            <strong>Este cliente {tiene}</strong> y debe {formatMoney(permisoPrestar.saldo)}.{' '}
+                            {rechazado ? 'El administrador no autorizó otra cartulina.'
+                              : esperando ? 'Le pedimos permiso al administrador. Cuando lo apruebe, esto se enciende solo.'
+                              : permisoPrestar.sinSenal ? 'Para hacerle otro necesitas el permiso del administrador, y sin señal no se puede pedir.'
+                              : 'Para hacerle otro necesitas el permiso del administrador.'}
+                          </>}
+                    </span>
+                  </div>
+                  {!aprobado && !esperando && !permisoPrestar.sinSenal && (
+                    <button type="button" onClick={pedirPermiso} disabled={pidiendoPermiso}
+                      className="self-start h-9 px-4 rounded-[10px] text-sm font-bold"
+                      style={{ background: 'var(--cf-ink)', color: 'var(--cf-surface)', opacity: pidiendoPermiso ? 0.6 : 1 }}>
+                      {pidiendoPermiso ? 'Pidiendo…' : rechazado ? 'Pedir otra vez' : 'Pedir permiso'}
+                    </button>
+                  )}
+                </div>
+              )
+            })()}
 
             {/* Cliente ya seleccionado: card grande en lugar de fila pequena */}
             {clienteSeleccionado && !buscando && (

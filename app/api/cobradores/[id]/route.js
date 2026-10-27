@@ -112,6 +112,7 @@ export async function GET(request, { params }) {
       aplicarDescuentos: cobrador.puedeAplicarDescuentos ?? false,
       desembolsarLinea: cobrador.puedeDesembolsarLinea ?? false,
       reabrirCajaSinAprobacion: cobrador.puedeReabrirCajaSinAprobacion ?? false,
+      prestarConPrestamoActivo: cobrador.puedePrestarConPrestamoActivo ?? true,
     },
     ruta,
     rutas,
@@ -211,6 +212,7 @@ export async function PATCH(request, { params }) {
     if (p.aplicarDescuentos !== undefined) data.puedeAplicarDescuentos = Boolean(p.aplicarDescuentos)
     if (p.desembolsarLinea !== undefined) data.puedeDesembolsarLinea = Boolean(p.desembolsarLinea)
     if (p.reabrirCajaSinAprobacion !== undefined) data.puedeReabrirCajaSinAprobacion = Boolean(p.reabrirCajaSinAprobacion)
+    if (p.prestarConPrestamoActivo !== undefined) data.puedePrestarConPrestamoActivo = Boolean(p.prestarConPrestamoActivo)
 
     if (p.crearPrestamos !== undefined && p.gestionarPrestamos === undefined) {
       data.puedeGestionarPrestamos = Boolean(p.crearPrestamos)

@@ -54,5 +54,7 @@ export function useAuth() {
     puedeAplicarDescuentos: esOwner || Boolean(permisos.aplicarDescuentos),
     puedeDesembolsarLinea: esOwner || Boolean(permisos.desembolsarLinea),
     puedeReabrirCajaSinAprobacion: esOwner || Boolean(permisos.reabrirCajaSinAprobacion),
+    // Encendido salvo que el dueño lo apague; el servidor decide igual.
+    puedePrestarConPrestamoActivo: esOwner || permisos.prestarConPrestamoActivo !== false,
   }
 }
