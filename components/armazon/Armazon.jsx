@@ -225,6 +225,16 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
   // avatar en cada carga. La sesión de cliente queda solo como respaldo.
   const nombre = nombreServidor || session?.user?.nombre || session?.user?.name || ''
   const rol = rolServidor || session?.user?.rol || ''
+  /* Lo del dueño (Capital, Mi plan, Pasar mi cartera) no va en el + del
+     cobrador, y lo que pide permiso tampoco si no lo tiene: las mismas reglas
+     de `useAuth`. El rol viene del servidor; los permisos, de la sesión. Sin
+     sesión (la renovación puede fallar en la calle) se deja lo que pide
+     permiso, como antes: decide su pantalla, no un menú a ciegas. */
+  const esCobrador = rol === 'cobrador'
+  const permisos = session?.user?.permisos
+  const puedeEnElMenu = esCobrador && permisos
+    ? { prestar: !!permisos.crearPrestamos, clienteNuevo: !!permisos.crearClientes, gasto: !!(permisos.reportarGastos ?? true) }
+    : {}
   /* El avatar elegido en configuración. Mismo camino que el nombre —del layout
      servidor— por la misma razón: leerlo solo del cliente parpadea en cada
      carga. La sesión de cliente queda de respaldo, y así el cambio se ve sin
@@ -331,7 +341,8 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
            navegación antes de que Next llegara a empezarla. Ver la nota en
            `components/cf/HojaInferior.jsx`. */
         onConfiguracion={() => { setCuenta(false); salirDeHojaHacia(router, '/configuracion') }}
-        onPlan={() => { setCuenta(false); salirDeHojaHacia(router, '/configuracion/plan') }}
+        // El plan lo paga el dueño: al cobrador no se le ofrece (la misma regla del +).
+        onPlan={esCobrador ? undefined : () => { setCuenta(false); salirDeHojaHacia(router, '/configuracion/plan') }}
         onSoporte={() => { setCuenta(false); salirDeHojaHacia(router, '/soporte') }}
         onCerrarSesion={() => {
           /* ── AL SALIR SE BORRA LO LEÍDO, NO LO PENDIENTE ──────────────────
@@ -365,6 +376,8 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
             onIr={(destino) => { setMenuCrear(false); router.push(destino) }}
             onEscanear={() => { setMenuCrear(false); setEscaner(true) }}
             onCerrar={() => setMenuCrear(false)}
+            esCobrador={esCobrador}
+            puede={puedeEnElMenu}
           />
         </div>
       )}

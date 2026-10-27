@@ -663,9 +663,9 @@ function TabOrganizacion({ bloques, tema, onTema }) {
       <Card>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em]">Aprobar prestamos del cobrador</p>
+            <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em]">Aprobar préstamos del cobrador</p>
             <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug mt-1">
-              Cuando un cobrador crea un prestamo, queda pendiente hasta que lo apruebes. Sin esta opcion, los prestamos se activan de inmediato.
+              Cuando un cobrador crea un préstamo, queda pendiente hasta que lo apruebes. Sin esta opción, los préstamos se activan de inmediato.
             </p>
           </div>
           <Toggle
@@ -691,7 +691,7 @@ function TabOrganizacion({ bloques, tema, onTema }) {
           <div className="min-w-0">
             <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em]">Portal: mostrar datos completos</p>
             <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug mt-1">
-              Cuando el cliente ingresa al portal, ve monto prestado, total a pagar, tasa de interes y demas detalles financieros. Si desactivas esto, solo vera saldo, cuota y fecha de pago.
+              Cuando el cliente ingresa al portal, ve monto prestado, total a pagar, tasa de interés y demás detalles financieros. Si desactivas esto, solo verá saldo, cuota y fecha de pago.
             </p>
           </div>
           <Toggle
@@ -724,7 +724,7 @@ function TabOrganizacion({ bloques, tema, onTema }) {
         </p>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-[var(--cf-ink-3)]">Tasa moratorio mensual (%)</label>
+            <label className="block text-xs font-medium text-[var(--cf-ink-3)]">Tasa moratoria mensual (%)</label>
             <input
               type="text"
               inputMode="decimal"
@@ -876,7 +876,7 @@ function TabOrganizacion({ bloques, tema, onTema }) {
           <h3 className="font-medium text-white text-sm">Mensajes de WhatsApp</h3>
         </div>
         <p className="text-xs text-[var(--cf-ink-3)] mb-4">
-          Configura que informacion se incluye en los mensajes que se envian a los clientes por WhatsApp.
+          Configura qué información se incluye en los mensajes que se envían a los clientes por WhatsApp.
         </p>
         <Toggle
           checked={ocultarSaldoWA}
@@ -979,7 +979,7 @@ function TabOrganizacion({ bloques, tema, onTema }) {
             <div className="min-w-0">
               <p className="text-[13px] font-medium" style={{ color: 'var(--cf-ink)' }}>Descargar respaldo</p>
               <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
-                Descarga toda la informacion de tu cuenta en un archivo JSON.
+                Descarga toda la información de tu cuenta en un archivo JSON.
               </p>
             </div>
             <Button
@@ -1018,7 +1018,7 @@ function TabOrganizacion({ bloques, tema, onTema }) {
             <div className="min-w-0">
               <p className="text-[13px] font-medium" style={{ color: 'var(--cf-red-dark)' }}>Reiniciar mi cuenta</p>
               <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
-                Elimina todos los clientes, prestamos, pagos, rutas, socios y cobradores. Tu cuenta y suscripcion se mantienen.
+                Elimina todos los clientes, préstamos, pagos, rutas, socios y cobradores. Tu cuenta y suscripción se mantienen.
               </p>
             </div>
             <Button

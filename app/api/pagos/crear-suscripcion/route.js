@@ -12,6 +12,11 @@ export async function POST(req) {
 
   const orgId = session.user.organizationId
   if (!orgId) return NextResponse.json({ error: 'Sin organización asociada' }, { status: 400 })
+  /* Solo el dueño (27 oct 2026): dejar un cobro que se repite es decisión de
+     quien paga el plan, como guardar el Nequi o la tarjeta en Wompi. */
+  if (session.user.rol !== 'owner') {
+    return NextResponse.json({ error: 'Solo el dueño de la cuenta puede suscribir el plan' }, { status: 403 })
+  }
 
   const { plan, periodo = 'mensual' } = await req.json()
 

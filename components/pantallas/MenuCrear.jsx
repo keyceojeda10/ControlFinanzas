@@ -185,8 +185,20 @@ export default function MenuCrear({
   // Clientes, 'sale' en Préstamos. El armazón es el único que sabe dónde
   // estamos, así que lo manda él.
   aqui = null,
+  /* ── EL COBRADOR NO VE LO DEL DUEÑO (DETALLES-COBRADORES #11, 27 oct 2026) ──
+     El menú no miraba el rol. Al cobrador le salían «Capital» («No tienes
+     acceso a esta sección»), «Pasar mi cartera» (lo devolvía al Inicio sin
+     decir nada) y «Mi plan», donde podía llegar a pagar o suscribir el plan
+     del dueño. Las tres son del dueño. Lo que pide permiso (`puede`) se
+     esconde sin él, como en el resto de la app: tocarlo para leer «No tienes
+     permiso» no enseña nada. Sin estas props (la galería de /estilo) sale todo. */
+  esCobrador = false,
+  puede = {},
 }) {
   const ir = (d) => () => onIr?.(d)
+  const prestar = puede.prestar !== false
+  const gasto = puede.gasto !== false
+  const clienteNuevo = puede.clienteNuevo !== false
 
   // Agrupadas por lo que le pasa a la plata, no por tipo de objeto: el dueño
   // piensa «entra» o «sale», no «entidad Pago» o «entidad Gasto».
@@ -204,17 +216,17 @@ export default function MenuCrear({
     },
     {
       id: 'sale', rotulo: 'Sale plata',
-      filas: <>
-        <Accion icono="prestar" nombre="Prestarle a alguien" cifra={plataLista} destacada primera onClick={ir('/prestamos/nuevo')} video="prestamos-crear" />
+      filas: (prestar || gasto) && <>
+        {prestar && <Accion icono="prestar" nombre="Prestarle a alguien" cifra={plataLista} destacada primera onClick={ir('/prestamos/nuevo')} video="prestamos-crear" />}
         {/* `/gastos/nuevo` tampoco existe: el gasto se anota en una hoja
             dentro de /gastos. */}
-        <Accion icono="gasto" nombre="Anotar un gasto" onClick={ir('/gastos?anotar=1')} video="caja-gastos" />
+        {gasto && <Accion icono="gasto" nombre="Anotar un gasto" primera={!prestar} onClick={ir('/gastos?anotar=1')} video="caja-gastos" />}
       </>,
     },
     {
       id: 'crear', rotulo: 'Crear',
-      filas: <>
-        <Accion icono="cliente" nombre="Un cliente nuevo" alto={54} primera onClick={ir('/clientes/nuevo')} video="clientes-crear-cliente" />
+      filas: (clienteNuevo || !esCobrador) && <>
+        {clienteNuevo && <Accion icono="cliente" nombre="Un cliente nuevo" alto={54} primera onClick={ir('/clientes/nuevo')} video="clientes-crear-cliente" />}
         {/* ── ⚠ PASAR LA CARTERA, AQUÍ Y NO SOLO EN «MÁS» ──────────────────
             Estaba únicamente en «Más herramientas», entre otras once entradas.
             Y es la acción que decide si el prestamista se queda: el 73 % se
@@ -225,12 +237,14 @@ export default function MenuCrear({
             clientes, solo que de treinta en treinta. Una sola entrada y no dos
             —foto y Excel— porque el migrador ya pregunta por cuál entras: dos
             aquí serían dos decisiones antes de empezar. */}
-        <Accion icono="cartera" nombre="Pasar mi cartera"
-          cifra="De una foto, del cuaderno o de un Excel"
-          alto={54} onClick={ir('/migrador')} video="cartera-cuaderno" />
+        {!esCobrador && (
+          <Accion icono="cartera" nombre="Pasar mi cartera"
+            cifra="De una foto, del cuaderno o de un Excel"
+            alto={54} primera={!clienteNuevo} onClick={ir('/migrador')} video="cartera-cuaderno" />
+        )}
       </>,
     },
-  ]
+  ].filter((g) => g.filas)
 
   // El grupo de la pantalla en la que se esta, primero. `aqui` lo manda el
   // armazon, que es el unico que sabe donde estamos.
@@ -329,9 +343,9 @@ export default function MenuCrear({
         <div className="cf-menu-sube" style={{ display: 'flex', flexWrap: 'wrap', gap: 10, flex: 'none', animationDelay: '200ms' }}>
           <Destino icono="cobrar"  nombre="Cobrar hoy" cifra={cobrosCorto} onClick={ir('/cobros-hoy')} />
           <Destino icono="caja"    nombre="La caja"    cifra={cajaEstado} onClick={ir('/caja')} />
-          <Destino icono="miplata" nombre="Capital"    cifra={plataCorto} onClick={ir('/capital')} />
+          {!esCobrador && <Destino icono="miplata" nombre="Capital"    cifra={plataCorto} onClick={ir('/capital')} />}
           {/* Era `/plan` — 404. La pantalla vive bajo configuracion. */}
-          <Destino icono="plan"    nombre="Mi plan"    cifra={diasPlan} onClick={ir('/configuracion/plan')} />
+          {!esCobrador && <Destino icono="plan"    nombre="Mi plan"    cifra={diasPlan} onClick={ir('/configuracion/plan')} />}
         </div>
 
       </div>

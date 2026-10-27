@@ -146,15 +146,18 @@ export default function HojaCuenta({
       {/* 3 · Accesos */}
       <Tarjeta plana>
         <FilaAcceso primera nombre="Configuración" onClick={onConfiguracion} />
-        <FilaAcceso
-          nombre="Plan y pagos"
-          onClick={onPlan}
-          pastilla={diasRestantesPlan != null && (
-            <Pastilla tono={diasRestantesPlan <= 7 ? 'atraso' : 'neutro'} numerica>
-              {diasRestantesPlan}d
-            </Pastilla>
-          )}
-        />
+        {/* Sin `onPlan` (el cobrador) no hay fila: el plan lo paga el dueño. */}
+        {onPlan && (
+          <FilaAcceso
+            nombre="Plan y pagos"
+            onClick={onPlan}
+            pastilla={diasRestantesPlan != null && (
+              <Pastilla tono={diasRestantesPlan <= 7 ? 'atraso' : 'neutro'} numerica>
+                {diasRestantesPlan}d
+              </Pastilla>
+            )}
+          />
+        )}
         <FilaAcceso nombre="Soporte" onClick={onSoporte} />
       </Tarjeta>
 

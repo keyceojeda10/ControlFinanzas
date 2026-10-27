@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useReintentarCobro } from '@/components/pagos/useReintentarCobro'
+import EnlaceProfeSuelto from '@/components/tutoriales/EnlaceProfeSuelto'
 import { PLANES_CONFIG } from '@/lib/planes'
 
 const WHATSAPP_SOPORTE = '573011993001'
@@ -302,6 +303,10 @@ export default function SuscripcionVencida() {
               </span>
             </Link>
             )}
+
+            {/* «Cómo pagar tu plan», junto a lo que se toca para pagar (catálogo
+                del profe, 27 oct 2026). Aquí no hay armazón ni pastilla. */}
+            {cargado && <EnlaceProfeSuelto id="inicio-plan" junto="Renovar mi plan" pregunta="¿Cómo se paga?" origen="/suscripcion-vencida" />}
 
             <a
               href={`https://wa.me/${WHATSAPP_SOPORTE}?text=${waMsg}`}

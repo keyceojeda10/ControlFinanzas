@@ -182,37 +182,37 @@
    "poster": "/videos/profe/inicio/cobrar-dia.jpg"
   },
   {
-   "id": "inicio-plan",
+   "id": "inicio-configuracion",
    "serie": "inicio",
-   "titulo": "Pagar tu plan",
+   "titulo": "Configuración",
    "estado": "listo",
-   "destino": "/videos/inicio/plan.mp4",
-   "duracion": 61.5,
+   "destino": "/videos/inicio/configuracion.mp4",
+   "duracion": 83.8,
    "capitulos": [
     {
      "t": 0,
      "titulo": "Presentación"
     },
     {
-     "t": 7.5,
-     "titulo": "Tu plan"
+     "t": 8.6,
+     "titulo": "Tu negocio"
     },
     {
-     "t": 17.4,
-     "titulo": "Pagar"
+     "t": 30.8,
+     "titulo": "Tus clientes y tus avisos"
     },
     {
-     "t": 34.5,
-     "titulo": "Cambiar de plan"
+     "t": 46.8,
+     "titulo": "Tu cuenta"
     },
     {
-     "t": 47.5,
+     "t": 68.9,
      "titulo": "Consejo del profe"
     }
    ],
    "donde": [
     {
-     "pantalla": "/configuracion/plan",
+     "pantalla": "/configuracion",
      "tipo": "D1"
     }
    ],
@@ -220,7 +220,59 @@
     "dueno"
    ],
    "tarea": null,
-   "nota": "Nuevo del 20 oct (cf-v1187): ＋ → «Mi plan», los días de prueba, «Se cobra solo» o «Pago yo», el botón amarillo (sin pagar), los planes, cobradores y rutas adicionales, «Soporte». Pantalla de la cuenta en prueba El Roble.",
+   "nota": "Nuevo del 27 oct (cf-v1214): recorrido por Configuración — Tu negocio, Cómo prestas, Avisos por WhatsApp, Notificaciones, Tus datos, Seguridad, Plan y pagos (referidos). Cuando arreglen DETALLES-CONFIGURACION #4 (tildes) se vuelven a tomar Tu negocio, Avisos por WhatsApp y Seguridad.",
+   "src": "/videos/profe/inicio/configuracion.mp4",
+   "poster": "/videos/profe/inicio/configuracion.jpg"
+  },
+  {
+   "id": "inicio-plan",
+   "serie": "inicio",
+   "titulo": "Cómo pagar tu plan",
+   "estado": "listo",
+   "destino": "/videos/inicio/plan.mp4",
+   "duracion": 102.7,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 7.4,
+     "titulo": "Cuándo pagar"
+    },
+    {
+     "t": 21.8,
+     "titulo": "Pagar en Wompi"
+    },
+    {
+     "t": 53.8,
+     "titulo": "Que se cobre solo"
+    },
+    {
+     "t": 68.8,
+     "titulo": "Si algo falla"
+    },
+    {
+     "t": 90.4,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/configuracion/plan",
+     "tipo": "D1"
+    },
+    {
+     "pantalla": "/suscripcion-vencida",
+     "tipo": "E2",
+     "junto_a": "Renovar mi plan"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Rehecho el 27 oct (cf-v1215), reemplaza «Pagar tu plan» (mismo id y mismo archivo): el aviso del último día y el ＋ → «Mi plan»; «Pago yo» → la página de Wompi (medios, datos, tarjeta, «¡Pago aprobado!», vuelta con «Pago procesado» y el plan activo); «Se cobra solo» con Nequi o tarjeta; «No pudimos cobrar tu plan» → reintentar o cambiar medio; la pantalla de vencida; «Soporte». Grabado con Wompi de prueba en el espejo (cuenta El Roble).",
    "src": "/videos/profe/inicio/plan.mp4",
    "poster": "/videos/profe/inicio/plan.jpg"
   },
@@ -1952,6 +2004,53 @@
    "nota": "Grabado el 19 oct con cf-v1179 (Andrés, Ruta Centro): lo que le toca hoy, la lista, la hoja de cobro nueva y entregar la caja.",
    "src": "/videos/profe/cobradores/dia.mp4",
    "poster": "/videos/profe/cobradores/dia.jpg"
+  },
+  {
+   "id": "cobradores-moverte",
+   "serie": "cobradores",
+   "titulo": "Cómo moverte en la app (cobrador)",
+   "estado": "listo",
+   "destino": "/videos/cobradores/moverte.mp4",
+   "duracion": 68.2,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 9.1,
+     "titulo": "El menú de abajo"
+    },
+    {
+     "t": 28.1,
+     "titulo": "El botón más"
+    },
+    {
+     "t": 41.3,
+     "titulo": "La lupa y el profe"
+    },
+    {
+     "t": 56.7,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/dashboard",
+     "tipo": "D1"
+    },
+    {
+     "pantalla": "/mas",
+     "tipo": "D1"
+    }
+   ],
+   "para": [
+    "cobrador"
+   ],
+   "tarea": null,
+   "nota": "Nuevo del 27 oct (cf-v1215, Andrés): la versión del cobrador de «Cómo moverte en la app». El menú de abajo (Inicio, Clientes, Préstamos, Rutas → «Salir a cobrar») y los cuadritos (caja, gastos, reportes, clavos); el botón ＋ (registrar un pago, prestar, anotar un gasto; «Ir a» cobrar hoy y la caja); la lupa (escribir o dictar el nombre) y el botón ▶ del profe; consejo: «No tienes permiso» se le pide al dueño. Va de primero en el Inicio y en Más del cobrador; el del dueño (inicio-moverte) sigue solo para dueños.",
+   "src": "/videos/profe/cobradores/moverte.mp4",
+   "poster": "/videos/profe/cobradores/moverte.jpg"
   },
   {
    "id": "cobradores-seguir",

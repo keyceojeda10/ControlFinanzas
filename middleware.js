@@ -69,7 +69,10 @@ export async function middleware(request) {
 
     const EXENTAS = ['/api/auth/', '/api/pagos/', '/api/plan/', '/api/webhook/',
       '/api/cron/', '/api/admin/', '/api/health', '/api/ping', '/api/analytics/',
-      '/api/unsubscribe', '/api/logo', '/api/telegram/', '/api/uploads/', '/api/portal/']
+      '/api/unsubscribe', '/api/logo', '/api/telegram/', '/api/uploads/', '/api/portal/',
+      // «Cómo pagar tu plan» sale en la pantalla de vencida: apuntar que se vio
+      // no toca nada del negocio (solo `Evento`).
+      '/api/tutoriales']
     const exenta = EXENTAS.some((p) => pathname.startsWith(p))
     if (!exenta && token && token.rol !== 'superadmin' && token.suscripcionVencimiento) {
       if (new Date(token.suscripcionVencimiento) < new Date()) {

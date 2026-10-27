@@ -110,7 +110,7 @@ export default function MetodoPagoAdmin() {
         <h3 className="font-medium text-sm" style={{ color: 'var(--cf-ink)' }}>Medios de transferencia</h3>
       </div>
       <p className="text-xs mb-4" style={{ color: 'var(--cf-ink-3)' }}>
-        Cuando un cobrador registra un pago por transferencia, puede elegir el medio. Estos aparecen para toda tu organizacion.
+        Cuando un cobrador registra un pago por transferencia, puede elegir el medio. Estos aparecen para toda tu organización.
       </p>
 
       <div className="space-y-2 mb-4">

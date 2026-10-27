@@ -11,6 +11,12 @@ export async function POST(req) {
 
   const orgId = session.user.organizationId
   if (!orgId) return NextResponse.json({ error: 'Sin organización asociada' }, { status: 400 })
+  /* Solo el dueño (27 oct 2026). No miraba el rol: un cobrador que llegara a
+     «Mi plan» podía cancelar la suscripción del negocio. Es la misma regla de
+     guardar o quitar el medio de pago de Wompi (`wompi/fuente`, `wompi/nequi`). */
+  if (session.user.rol !== 'owner') {
+    return NextResponse.json({ error: 'Solo el dueño de la cuenta puede cancelar la suscripción' }, { status: 403 })
+  }
 
   const { motivo } = await req.json().catch(() => ({}))
 

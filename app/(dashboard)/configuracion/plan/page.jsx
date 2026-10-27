@@ -384,10 +384,10 @@ export default function PlanPage() {
           </div>
           <div>
             <p className="text-[14px] font-semibold" style={{ color: 'var(--cf-ink)' }}>
-              Prueba gratuita · {estado.diasTrial} {estado.diasTrial === 1 ? 'dia' : 'dias'} restantes
+              Prueba gratuita · {estado.diasTrial} {estado.diasTrial === 1 ? 'día restante' : 'días restantes'}
             </p>
             <p className="text-[12px] mt-0.5 leading-relaxed" style={{ color: 'var(--cf-ink-3)' }}>
-              Tienes acceso completo al plan Empresarial. Al terminar la prueba, tu cuenta pasara al plan {PLANES_CONFIG[estado.planAlTerminar]?.nombre || 'Inicial'}.
+              Tienes acceso completo al plan Empresarial. Al terminar la prueba, tu cuenta pasará al plan {PLANES_CONFIG[estado.planAlTerminar]?.nombre || 'Inicial'}.
             </p>
           </div>
         </div>
@@ -617,9 +617,15 @@ export default function PlanPage() {
                 <span className="text-[12px] font-mono-display font-semibold" style={{ color: urgente ? 'var(--cf-gold-dark)' : 'var(--cf-ink)' }}>
                   {dias} {dias === 1 ? 'día restante' : 'días restantes'}
                 </span>
-                <span className="text-[11px] font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>
-                  de {totalDias} días
-                </span>
+                {/* Pagar antes de vencer suma: con la prueba por delante quedan
+                    35 y decía «de 30 días» (DETALLES-PLAN #7, 27 oct 2026). Con
+                    más de un ciclo por delante no hay «de cuántos» que decir; la
+                    fecha ya está arriba y la barra va llena. */}
+                {dias <= totalDias && (
+                  <span className="text-[11px] font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>
+                    de {totalDias} días
+                  </span>
+                )}
               </div>
             )}
           </div>
@@ -983,7 +989,7 @@ export default function PlanPage() {
       {/* ── Support ── */}
       <div className="rounded-[20px] cf-card-shadow p-4 flex items-center gap-3" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
         <div className="flex-1">
-          <p className="text-[12px] font-semibold" style={{ color: 'var(--cf-ink)' }}>Necesitas ayuda?</p>
+          <p className="text-[12px] font-semibold" style={{ color: 'var(--cf-ink)' }}>¿Necesitas ayuda?</p>
           <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Te ayudamos por WhatsApp con pagos y planes.</p>
         </div>
         <a
