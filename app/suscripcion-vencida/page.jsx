@@ -76,7 +76,7 @@ export default function SuscripcionVencida() {
 
   const waMsg = encodeURIComponent(rechazo
     ? 'Hola, no pasó el cobro automático de mi plan de Control Finanzas y se cerró el acceso. Necesito ayuda.'
-    : 'Hola, mi suscripción de Control Finanzas vencio. Necesito ayuda para renovar.')
+    : 'Hola, mi suscripción de Control Finanzas venció. Necesito ayuda para renovar.')
 
   return (
     <div className="cf-expired-page relative min-h-dvh flex flex-col items-center justify-center px-4 py-8 overflow-hidden"
@@ -146,7 +146,7 @@ export default function SuscripcionVencida() {
                 ? <>Venció el <strong style={{ color: 'var(--color-text-primary)' }}>{fechaVencimiento}</strong>
                     {diasVencida > 0 && <> · hace {diasVencida} día{diasVencida !== 1 ? 's' : ''}</>}
                   </>
-                : 'Tu plan ya no esta activo.'}
+                : 'Tu plan ya no está activo.'}
             </p>
           </div>
 

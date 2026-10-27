@@ -183,7 +183,7 @@ export default function SuscripcionBanner() {
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-semibold leading-tight" style={{ color: 'var(--cf-red-dark)' }}>Tu plan vencio</p>
+            <p className="text-[13px] font-semibold leading-tight" style={{ color: 'var(--cf-red-dark)' }}>Tu plan venció</p>
             <p className="text-[11px] mt-0.5 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>Renueva para no perder acceso</p>
           </div>
           <Link
@@ -227,10 +227,10 @@ export default function SuscripcionBanner() {
             </svg>
           </div>
           <h2 className="text-lg font-bold" style={{ color: 'var(--cf-ink)' }}>
-            Tu plan esta por vencer
+            Tu plan está por vencer
           </h2>
           <p className="text-sm mt-1" style={{ color: 'var(--cf-ink-3)' }}>
-            El acceso al sistema se suspendera cuando el tiempo llegue a cero. Renueva ahora para no perder el acceso.
+            El acceso al sistema se suspenderá cuando el tiempo llegue a cero. Renueva ahora para no perder el acceso.
           </p>
           {/* La oferta del 35 % también aquí: este aviso tapa la pila, y es
               justo el momento en que más sirve (AvisoOfertaNequi.jsx). */}

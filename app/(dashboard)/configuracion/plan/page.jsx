@@ -568,6 +568,10 @@ export default function PlanPage() {
         const diasTranscurridos = Math.max(0, totalDias - dias)
         const pctUsado = Math.min((diasTranscurridos / totalDias) * 100, 100)
         const urgente = dias <= 5
+        /* `diasRestantes` es el techo de lo que falta: con la fecha ya pasada da
+           0 o menos. Ahí no se dice «vence» ni «0 días restantes» (DETALLES-PLAN
+           #6, 27 oct 2026): ya venció. */
+        const vencido = !!fechaVenc && dias <= 0
         const barColor = urgente ? 'var(--cf-gold-dark)' : 'var(--cf-gold)'
 
         return (
@@ -594,7 +598,9 @@ export default function PlanPage() {
                 ? `Cancelada · acceso hasta el ${formatFecha(fechaVenc)}`
                 : fechaVenc
                 // «Se renueva» solo con cobro automático: pagando a mano, vence.
-                ? (esTrial ? `Tu prueba vence el ${formatFecha(fechaVenc)}` : `Tu plan ${!tieneRecurrente ? 'vence' : 'se renueva'} el ${formatFecha(fechaVenc)}`)
+                ? (vencido
+                  ? `Tu ${esTrial ? 'prueba' : 'plan'} venció el ${formatFecha(fechaVenc)}`
+                  : esTrial ? `Tu prueba vence el ${formatFecha(fechaVenc)}` : `Tu plan ${!tieneRecurrente ? 'vence' : 'se renueva'} el ${formatFecha(fechaVenc)}`)
                 : 'Sin fecha de vencimiento'}
             </p>
 
@@ -606,14 +612,16 @@ export default function PlanPage() {
               />
             </div>
 
-            <div className="flex items-center justify-between">
-              <span className="text-[12px] font-mono-display font-semibold" style={{ color: urgente ? 'var(--cf-gold-dark)' : 'var(--cf-ink)' }}>
-                {dias} días restantes
-              </span>
-              <span className="text-[11px] font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>
-                de {totalDias} días
-              </span>
-            </div>
+            {!vencido && (
+              <div className="flex items-center justify-between">
+                <span className="text-[12px] font-mono-display font-semibold" style={{ color: urgente ? 'var(--cf-gold-dark)' : 'var(--cf-ink)' }}>
+                  {dias} {dias === 1 ? 'día restante' : 'días restantes'}
+                </span>
+                <span className="text-[11px] font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>
+                  de {totalDias} días
+                </span>
+              </div>
+            )}
           </div>
         )
       })()}
