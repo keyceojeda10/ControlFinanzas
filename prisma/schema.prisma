@@ -519,6 +519,10 @@ model Prestamo {
   abonadoCapital Float          @default(0)
   ultimoPagoAt   DateTime?
   creadoPorId    String? // id del User que creo el prestamo (auditoria)
+  /// La cuenta de la que sale el desembolso, SOLO mientras espera aprobación:
+  /// al aprobarlo el asiento sale por ella y no por «efectivo» a ciegas.
+  cuentaDesembolso   String? @db.VarChar(16)
+  cuentaDesembolsoId String?
   renovadoDeId   String? // id del prestamo del que proviene (si fue una renovacion)
   // Lo que este prestamo debia ANTES de que una renovacion lo absorbiera.
   // Renovar pisa totalAPagar con lo ya pagado para dejar el saldo en cero, y ese

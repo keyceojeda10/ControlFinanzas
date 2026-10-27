@@ -33,12 +33,13 @@ export async function POST(request, { params }) {
 
   /* ⚠ SIN CUENTA, LA PLATA CAE EN «SIN REGISTRAR». `resolverKey` (lib/capital.js)
      manda a ese cubo todo movimiento con `metodoPago` en NULL, y aquí no lo
-     pasaba NINGUNO de los dos —ni el desembolso—. La cuenta que eligió el
-     cobrador al pedir el préstamo no se guarda en ninguna columna de `Prestamo`,
-     así que al aprobar ya no se puede recuperar: se usa el mismo defecto que el
-     resto del sistema. Medido en el espejo: cero préstamos han pasado por
-     aprobación hasta hoy, así que esto no reescribe historia, la evita. */
-  const CUENTA_AL_APROBAR = 'efectivo'
+     pasaba NINGUNO de los dos —ni el desembolso—. Desde el 27 oct 2026 la
+     cuenta que eligió el cobrador se guarda con la solicitud
+     (`Prestamo.cuentaDesembolso`) y sale por ella; la pendiente de antes, sin
+     cuenta, va en efectivo, el defecto del resto del sistema. Medido en
+     producción: cero préstamos han pasado por aprobación hasta hoy. */
+  const CUENTA_AL_APROBAR = prestamo.cuentaDesembolso || 'efectivo'
+  const CUENTA_ID_AL_APROBAR = CUENTA_AL_APROBAR === 'transferencia' ? (prestamo.cuentaDesembolsoId || null) : null
 
   const rutaIdCapital = prestamo.cliente?.rutaId || null
   /* ⚠ POR LA NOTA, NO POR EL TIPO. Buscarlo por `tipo === 'completo'` cogía el
@@ -58,9 +59,20 @@ export async function POST(request, { params }) {
     /* Si el abono previo ya cubre el total, se aprueba COMPLETADO, igual que al
        crearlo sin aprobación (DETALLES-PRESTAMOS #70). */
     const saldoAlAprobar = Math.round((Number(prestamo.totalAPagar) || 0) - (Number(prestamo.totalPagado) || 0))
+    /* ⚠ EL PRÉSTAMO NACE EL DÍA QUE SE APRUEBA (27 oct 2026). Mientras espera
+       no cuenta en ninguna caja ni informe (todos dejan fuera
+       `pendiente_aprobacion`), y la plata sale de la mano del cobrador cuando
+       se lo aprueban. Con el `createdAt` de la solicitud, uno pedido ayer y
+       aprobado hoy salía en la caja de AYER por su monto (sin asiento ese día)
+       y en la de HOY por su asiento: dos veces. */
     await tx.prestamo.update({
       where: { id: prestamoId },
-      data: { estado: abonoPrevio && saldoAlAprobar <= 0 ? 'completado' : 'activo' },
+      data: {
+        estado: abonoPrevio && saldoAlAprobar <= 0 ? 'completado' : 'activo',
+        createdAt: new Date(),
+        cuentaDesembolso: null,
+        cuentaDesembolsoId: null,
+      },
     })
 
     await tx.cliente.update({
@@ -79,6 +91,7 @@ export async function POST(request, { params }) {
       rutaId: rutaIdCapital,
       creadoPorId: session.user.id,
       metodoPago: CUENTA_AL_APROBAR,
+      metodoPagoId: CUENTA_ID_AL_APROBAR,
     })
 
     if (abonoPrevio && Number(abonoPrevio.montoPagado) > 0) {
@@ -94,6 +107,7 @@ export async function POST(request, { params }) {
         rutaId: rutaIdCapital,
         creadoPorId: session.user.id,
         metodoPago: CUENTA_AL_APROBAR,
+        metodoPagoId: CUENTA_ID_AL_APROBAR,
       })
     }
 

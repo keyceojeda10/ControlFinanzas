@@ -180,7 +180,7 @@ export async function GET(req) {
   else if (tipo === 'pagos') {
     const rows = await prisma.pago.findMany({
       where: {
-        prestamo: { organizationId: orgId, estado: { not: 'cancelado' } },
+        prestamo: { organizationId: orgId, estado: { notIn: ['cancelado', 'pendiente_aprobacion'] } },
         fechaPago: { gte: fechaDesde, lte: fechaHasta },
       },
       include: {

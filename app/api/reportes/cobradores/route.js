@@ -65,7 +65,7 @@ export async function GET(req) {
       organizationId: orgId,
       fechaPago: { gte: fechaDesde, lte: fechaHasta },
       tipo: { notIn: ['recargo', 'descuento'] },
-      prestamo: { estado: { not: 'cancelado' } },
+      prestamo: { estado: { notIn: ['cancelado', 'pendiente_aprobacion'] } },
     },
     _sum: { montoPagado: true },
   })

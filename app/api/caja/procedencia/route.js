@@ -75,7 +75,7 @@ export async function GET(request) {
           ...(soloRecargos ? { tipo: 'recargo' } : { tipo: { notIn: ['recargo', 'descuento'] } }),
           ...(cifra === 'recaudoDigital' ? { metodoPago: 'transferencia' } : {}),
           ...(cifra === 'recaudoEfectivo' ? { NOT: { metodoPago: 'transferencia' } } : {}),
-          prestamo: { estado: { not: 'cancelado' } },
+          prestamo: { estado: { notIn: ['cancelado', 'pendiente_aprobacion'] } },
           // Igual que la cifra que explica: sin el abono previo de los migrados.
           AND: [SIN_ABONO_PREVIO],
           ...suyo,
@@ -113,7 +113,7 @@ export async function GET(request) {
         where: {
           organizationId,
           createdAt: { gte: inicio, lt: fin },
-          estado: { not: 'cancelado' },
+          estado: { notIn: ['cancelado', 'pendiente_aprobacion'] },
           ...(soloRenovaciones ? { NOT: { renovadoDeId: null }, interesFinanciado: null } : {}),
           ...(soloNuevos ? { renovadoDeId: null, interesFinanciado: null } : {}),
           ...(soloFinanciados ? { NOT: { interesFinanciado: null } } : {}),

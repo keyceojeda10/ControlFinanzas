@@ -108,7 +108,7 @@ export async function GET(req) {
     // Pagos en el período (excluir ajustes)
     prisma.pago.aggregate({
       where: {
-        prestamo: { organizationId: orgId, estado: { not: 'cancelado' } },
+        prestamo: { organizationId: orgId, estado: { notIn: ['cancelado', 'pendiente_aprobacion'] } },
         fechaPago: { gte: fechaDesde, lt: fechaHasta },
         tipo: { notIn: ['recargo', 'descuento'] },
       },
@@ -121,7 +121,7 @@ export async function GET(req) {
     // calcular el interes ganado de forma proporcional.
     prisma.pago.findMany({
       where: {
-        prestamo: { organizationId: orgId, estado: { not: 'cancelado' } },
+        prestamo: { organizationId: orgId, estado: { notIn: ['cancelado', 'pendiente_aprobacion'] } },
         fechaPago: { gte: fechaDesde, lt: fechaHasta },
         tipo: { notIn: ['recargo', 'descuento'] },
       },

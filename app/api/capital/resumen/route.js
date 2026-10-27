@@ -88,7 +88,7 @@ export async function GET() {
       select: { monto: true, saldoAnterior: true, saldoNuevo: true, descripcion: true },
     }),
     prisma.prestamo.aggregate({
-      where: { organizationId, estado: { not: 'cancelado' } },
+      where: { organizationId, estado: { notIn: ['cancelado', 'pendiente_aprobacion'] } },
       _sum: { montoPrestado: true },
       _count: true,
     }),

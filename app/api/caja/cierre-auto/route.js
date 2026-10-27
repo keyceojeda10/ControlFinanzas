@@ -74,7 +74,7 @@ async function calcularRecogido(organizationId, cobradorId, fechaInicio, fechaFi
       cobradorId,
       fechaPago: { gte: fechaInicio, lte: fechaFin },
       tipo: { notIn: ['recargo', 'descuento'] },
-      prestamo: { estado: { not: 'cancelado' } },
+      prestamo: { estado: { notIn: ['cancelado', 'pendiente_aprobacion'] } },
       // El abono previo de un migrado no se cobró ese día (abono-previo.js).
       AND: [SIN_ABONO_PREVIO],
     },

@@ -54,7 +54,7 @@ export async function GET(req) {
     prisma.prestamo.findMany({
       where: {
         organizationId: orgId,
-        estado: { not: 'cancelado' },
+        estado: { notIn: ['cancelado', 'pendiente_aprobacion'] },
         pagos: { some: { fechaPago: { gte: desde, lt: hasta }, tipo: { notIn: ['recargo', 'descuento'] } } },
       },
       select: SELECT_PARA_INTERES,

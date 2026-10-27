@@ -55,7 +55,7 @@ export async function GET() {
         organizationId: orgId,
         cobradorId: { in: cobradorIds },
         fechaPago: { gte: inicioDiaUTC, lte: finDiaUTC },
-        prestamo: { estado: { not: 'cancelado' } },
+        prestamo: { estado: { notIn: ['cancelado', 'pendiente_aprobacion'] } },
       },
       _sum: { montoPagado: true },
       _count: { id: true },

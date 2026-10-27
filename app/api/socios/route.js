@@ -24,7 +24,7 @@ export async function GET(request) {
       include: {
         aportes: { orderBy: { fecha: 'desc' } },
         prestamos: {
-          where: { estado: { not: 'cancelado' }, organizationId: orgId },
+          where: { estado: { notIn: ['cancelado', 'pendiente_aprobacion'] }, organizationId: orgId },
           select: {
             id: true,
             montoPrestado: true, ...CAMPOS_DEL_REPARTO,

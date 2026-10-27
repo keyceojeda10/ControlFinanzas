@@ -44,8 +44,8 @@ export async function GET(request) {
      cuenta recién creada veía «Recaudado hoy $186.000» (DETALLES-CARTERA #2).
      Va en el filtro común para que lo hereden todas las consultas de pagos. */
   const filtroRutaPagos = esCobrador
-    ? { prestamo: { estado: { not: 'cancelado' }, cliente: { rutaId: { in: rutaIdsCobrador } } }, AND: [SIN_ABONO_PREVIO] }
-    : { prestamo: { estado: { not: 'cancelado' } }, AND: [SIN_ABONO_PREVIO] }
+    ? { prestamo: { estado: { notIn: ['cancelado', 'pendiente_aprobacion'] }, cliente: { rutaId: { in: rutaIdsCobrador } } }, AND: [SIN_ABONO_PREVIO] }
+    : { prestamo: { estado: { notIn: ['cancelado', 'pendiente_aprobacion'] } }, AND: [SIN_ABONO_PREVIO] }
 
   // Rangos UTC que representan "hoy" y "este mes" en hora Colombia (UTC-5)
   // Colombia midnight = UTC 05:00. Fin del día Colombia = UTC 04:59:59 del día siguiente.
@@ -286,7 +286,7 @@ export async function GET(request) {
         organizationId: orgId,
         fechaPago: { gte: inicioDiaUTC, lte: finDiaUTC },
         tipo: { notIn: ['recargo', 'descuento'] },
-        prestamo: { estado: { not: 'cancelado' } },
+        prestamo: { estado: { notIn: ['cancelado', 'pendiente_aprobacion'] } },
         AND: [SIN_ABONO_PREVIO],
       },
       _sum: { montoPagado: true },
@@ -390,7 +390,7 @@ export async function GET(request) {
     esCobrador ? Promise.resolve([]) : prisma.prestamo.findMany({
       where: {
         organizationId: orgId,
-        estado: { not: 'cancelado' },
+        estado: { notIn: ['cancelado', 'pendiente_aprobacion'] },
         pagos: {
           some: {
             fechaPago: { gte: inicioMes, lte: finMes },

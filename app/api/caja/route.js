@@ -183,7 +183,7 @@ async function calcularPrestadoPorRutaDia(organizationId, inicio, fin) {
     where: {
       organizationId,
       createdAt: { gte: inicio, lt: fin },
-      estado: { not: 'cancelado' },
+      estado: { notIn: ['cancelado', 'pendiente_aprobacion'] },
     },
     select: {
       id: true,
@@ -437,7 +437,7 @@ export async function GET(request) {
     organizationId,
     fechaPago: { gte: inicio, lt: fin },
     tipo: { notIn: ['recargo', 'descuento'] },
-    prestamo: { estado: { not: 'cancelado' } },
+    prestamo: { estado: { notIn: ['cancelado', 'pendiente_aprobacion'] } },
     // El abono previo de un migrado no se cobró ese día (abono-previo.js).
     AND: [SIN_ABONO_PREVIO],
   }
@@ -571,7 +571,7 @@ export async function GET(request) {
           organizationId,
           fechaPago: { gte: inicio, lt: fin },
           tipo: { notIn: ['recargo', 'descuento'] },
-          prestamo: { estado: { not: 'cancelado' } },
+          prestamo: { estado: { notIn: ['cancelado', 'pendiente_aprobacion'] } },
           AND: [SIN_ABONO_PREVIO],
         },
         select: {
@@ -605,7 +605,7 @@ export async function GET(request) {
         where: {
           organizationId,
           createdAt: { gte: inicio, lt: fin },
-          estado: { not: 'cancelado' },
+          estado: { notIn: ['cancelado', 'pendiente_aprobacion'] },
           renovadoDeId: { not: null },
         },
         select: { renovadoDeId: true },
@@ -865,7 +865,7 @@ export async function GET(request) {
       organizationId,
       fechaPago: { gte: inicioRango, lt: finRango },
       tipo: { notIn: ['recargo', 'descuento'] },
-      prestamo: { estado: { not: 'cancelado' } },
+      prestamo: { estado: { notIn: ['cancelado', 'pendiente_aprobacion'] } },
       AND: [SIN_ABONO_PREVIO],
     }
     if (cobradorRango) wherePagosRango.cobradorId = cobradorRango

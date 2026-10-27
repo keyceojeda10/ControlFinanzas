@@ -134,7 +134,7 @@ export async function GET(req) {
           cobradorId: { in: cobradores.map((c) => c.id) },
           fechaPago: { gte: desde, lt: finHoy },
           tipo: { notIn: TIPOS_AJUSTE },
-          prestamo: { estado: { not: 'cancelado' } },
+          prestamo: { estado: { notIn: ['cancelado', 'pendiente_aprobacion'] } },
           AND: [SIN_ABONO_PREVIO],
         },
         select: {
@@ -174,7 +174,7 @@ export async function GET(req) {
               organizationId: orgId,
               fechaPago: { gte: desde, lt: finHoy },
               tipo: { notIn: TIPOS_AJUSTE },
-              prestamo: { estado: { not: 'cancelado' }, cliente: { rutaId: { in: rutaIds } } },
+              prestamo: { estado: { notIn: ['cancelado', 'pendiente_aprobacion'] }, cliente: { rutaId: { in: rutaIds } } },
               AND: [SIN_ABONO_PREVIO],
             },
             select: { montoPagado: true, fechaPago: true, prestamo: { select: { cliente: { select: { rutaId: true } } } } },

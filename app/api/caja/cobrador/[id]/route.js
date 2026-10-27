@@ -34,7 +34,7 @@ async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId
     where: {
       organizationId,
       createdAt: { gte: inicio, lt: fin },
-      estado: { not: 'cancelado' },
+      estado: { notIn: ['cancelado', 'pendiente_aprobacion'] },
       cliente: { ruta: { cobradorId } },
     },
     select: {
@@ -95,7 +95,7 @@ async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId
   let prestamosExtra = []
   if (idsExtraConMovimiento.length > 0) {
     prestamosExtra = await prisma.prestamo.findMany({
-      where: { organizationId, id: { in: idsExtraConMovimiento }, estado: { not: 'cancelado' } },
+      where: { organizationId, id: { in: idsExtraConMovimiento }, estado: { notIn: ['cancelado', 'pendiente_aprobacion'] } },
       select: {
         id: true,
         montoPrestado: true,
@@ -230,7 +230,7 @@ export async function GET(request, { params }) {
   // clientes de sus rutas.
   const wherePagoCaja = {
     fechaPago: { gte: inicio, lt: fin },
-    prestamo: { organizationId, estado: { not: 'cancelado' } },
+    prestamo: { organizationId, estado: { notIn: ['cancelado', 'pendiente_aprobacion'] } },
     // El abono previo de un migrado no se cobró ese día (abono-previo.js).
     AND: [SIN_ABONO_PREVIO],
     OR: [
@@ -637,7 +637,7 @@ export async function GET(request, { params }) {
       where: {
         organizationId,
         createdAt: { gte: inicio, lt: fin },
-        estado: { not: 'cancelado' },
+        estado: { notIn: ['cancelado', 'pendiente_aprobacion'] },
         renovadoDeId: { not: null },
         cliente: { rutaId: { in: rutaIds } },
       },
@@ -927,7 +927,7 @@ export async function GET(request, { params }) {
       seguro: true,
       montoSeguro: { gt: 0 },
       createdAt: { gte: inicio, lt: fin },
-      estado: { not: 'cancelado' },
+      estado: { notIn: ['cancelado', 'pendiente_aprobacion'] },
       id: { in: desembolsos.map((d) => d.id) },
     },
     select: { id: true, montoSeguro: true, cliente: { select: { ruta: { select: { id: true } } } } },
@@ -1022,7 +1022,7 @@ export async function GET(request, { params }) {
         where: {
           organizationId,
           createdAt: { gte: inicio, lt: fin },
-          estado: { not: 'cancelado' },
+          estado: { notIn: ['cancelado', 'pendiente_aprobacion'] },
           cliente: { rutaId: { in: rutaIds } },
         },
         select: { renovadoDeId: true, interesFinanciado: true, cliente: { select: { rutaId: true } } },
@@ -1127,7 +1127,7 @@ export async function GET(request, { params }) {
       where: {
         organizationId,
         createdAt: { gte: inicio, lt: fin },
-        estado: { not: 'cancelado' },
+        estado: { notIn: ['cancelado', 'pendiente_aprobacion'] },
         renovadoDeId: null,
         cliente: { rutaId: { in: rutaIds } },
       },
@@ -1136,7 +1136,7 @@ export async function GET(request, { params }) {
       where: {
         organizationId,
         createdAt: { gte: inicio, lt: fin },
-        estado: { not: 'cancelado' },
+        estado: { notIn: ['cancelado', 'pendiente_aprobacion'] },
         renovadoDeId: { not: null },
         cliente: { rutaId: { in: rutaIds } },
       },

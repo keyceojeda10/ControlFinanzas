@@ -25,7 +25,7 @@ export async function GET(request, { params }) {
       include: {
         aportes: { orderBy: { fecha: 'desc' } },
         prestamos: {
-          where: { estado: { not: 'cancelado' }, organizationId: orgId },
+          where: { estado: { notIn: ['cancelado', 'pendiente_aprobacion'] }, organizationId: orgId },
           include: {
             cliente: { select: { nombre: true } },
             pagos: {

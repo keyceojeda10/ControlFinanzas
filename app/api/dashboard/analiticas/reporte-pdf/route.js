@@ -139,7 +139,7 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
            base. Ayer se filtró la de arriba y esta se quedó atrás: la cifra
            volvía a subir por la puerta de la corrección. Lo cazó comparar las dos
            pantallas del mismo negocio en el espejo, no leer el código. */
-        estado: { not: 'cancelado' },
+        estado: { notIn: ['cancelado', 'pendiente_aprobacion'] },
       },
       select: {
         montoPrestado: true, ...CAMPOS_DEL_REPARTO,
@@ -188,7 +188,7 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
       where: {
         organizationId, fechaPago: { gte: mesActual },
         tipo: { notIn: ['recargo', 'descuento'] },
-        prestamo: { estado: { not: 'cancelado' } },
+        prestamo: { estado: { notIn: ['cancelado', 'pendiente_aprobacion'] } },
       },
       _sum: { montoPagado: true }, _count: true,
     }),
@@ -196,7 +196,7 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
       where: {
         organizationId, fechaPago: { gte: mesAnterior, lt: mesActual },
         tipo: { notIn: ['recargo', 'descuento'] },
-        prestamo: { estado: { not: 'cancelado' } },
+        prestamo: { estado: { notIn: ['cancelado', 'pendiente_aprobacion'] } },
       },
       _sum: { montoPagado: true }, _count: true,
     }),

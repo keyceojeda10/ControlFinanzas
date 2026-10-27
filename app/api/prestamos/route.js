@@ -1016,7 +1016,7 @@ export async function POST(request) {
         fechaFin,
         seguro:        !!seguro,
         ...(seguro && montoSeguro > 0 && { montoSeguro: Number(montoSeguro) }),
-        ...(esPendiente && { estado: 'pendiente_aprobacion' }),
+        ...(esPendiente && { estado: 'pendiente_aprobacion', cuentaDesembolso, cuentaDesembolsoId }),
       },
     })
 
