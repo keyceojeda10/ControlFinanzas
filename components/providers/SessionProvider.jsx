@@ -6,6 +6,7 @@
 
 import { SessionProvider as NextAuthSessionProvider, useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
+import { pedirSesionOtraVez, PEDIR_OTRA_VEZ_CADA_MS } from '@/lib/sesion-perdida'
 
 const STORAGE_KEY = 'cf-session-cache'
 
@@ -28,10 +29,25 @@ function guardarSessionCache(session) {
 }
 
 function SessionUpdater() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   useEffect(() => {
     if (session?.user?.email) guardarSessionCache(session)
   }, [session])
+
+  // Si una renovación falló, next-auth no la vuelve a pedir: se le pide (ver lib/sesion-perdida.js).
+  useEffect(() => {
+    if (status !== 'unauthenticated') return
+    pedirSesionOtraVez()
+    const reloj = setInterval(pedirSesionOtraVez, PEDIR_OTRA_VEZ_CADA_MS)
+    const alVolver = () => { if (document.visibilityState === 'visible') pedirSesionOtraVez() }
+    window.addEventListener('online', pedirSesionOtraVez)
+    document.addEventListener('visibilitychange', alVolver)
+    return () => {
+      clearInterval(reloj)
+      window.removeEventListener('online', pedirSesionOtraVez)
+      document.removeEventListener('visibilitychange', alVolver)
+    }
+  }, [status])
   return null
 }
 

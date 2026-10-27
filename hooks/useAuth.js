@@ -10,37 +10,44 @@ import { useSession } from 'next-auth/react'
    cookie sigue buena. Con `?? false`, el modo se APAGABA en silencio: tecleaba
    «50» y se guardaban $50. INVERSIONESJYM y Distribuidora BM, cinco abonos
    entre el 22 y el 26 de octubre. Sin sesión a mano, manda la última de este
-   teléfono (la misma que guarda el SessionProvider). */
-function modoAbreviadoGuardado() {
-  if (typeof window === 'undefined') return false
-  try { return !!JSON.parse(localStorage.getItem('cf-session-cache') || 'null')?.user?.modoAbreviado } catch { return false }
+   teléfono (la misma que guarda el SessionProvider).
+
+   ⚠ Y NO SOLO EL MODO: EL ROL Y LOS PERMISOS TAMBIÉN (27 oct 2026). Caían a
+   falso igual, y a los cobradores de PRESTA MIL se les fue «Gestión» —con ella
+   «Financiar el saldo»— de la ficha del préstamo, teniendo el permiso. Es solo
+   lo que se ENSEÑA: cada API vuelve a mirar el permiso en el servidor.
+   `session` sigue siendo la de verdad. */
+function usuarioGuardado() {
+  if (typeof window === 'undefined') return null
+  try { return JSON.parse(localStorage.getItem('cf-session-cache') || 'null')?.user ?? null } catch { return null }
 }
 
 export function useAuth() {
   const { data: session, status, update } = useSession()
   const loading = status === 'loading'
 
-  const esOwner    = session?.user?.rol === 'owner'
-  const permisos   = session?.user?.permisos ?? {}
+  const user       = session?.user ?? usuarioGuardado()
+  const esOwner    = user?.rol === 'owner'
+  const permisos   = user?.permisos ?? {}
 
   return {
     session,
     loading,
     updateSession: update,
-    rol: session?.user?.rol ?? null,
-    organizationId: session?.user?.organizationId ?? null,
-    plan: session?.user?.plan ?? null,
-    country: session?.user?.country ?? 'co',
-    timezone: session?.user?.timezone ?? null,
-    orgNombre: session?.user?.orgNombre ?? null,
-    modoAbreviado: session?.user ? !!session.user.modoAbreviado : modoAbreviadoGuardado(),
-    ocultarSaldoWA: session?.user?.ocultarSaldoWA ?? false,
-    camposRecibo: session?.user?.camposRecibo ?? null,
-    rutaId: session?.user?.rutaId ?? null,
-    rutaIds: session?.user?.rutaIds ?? [],
+    rol: user?.rol ?? null,
+    organizationId: user?.organizationId ?? null,
+    plan: user?.plan ?? null,
+    country: user?.country ?? 'co',
+    timezone: user?.timezone ?? null,
+    orgNombre: user?.orgNombre ?? null,
+    modoAbreviado: !!user?.modoAbreviado,
+    ocultarSaldoWA: user?.ocultarSaldoWA ?? false,
+    camposRecibo: user?.camposRecibo ?? null,
+    rutaId: user?.rutaId ?? null,
+    rutaIds: user?.rutaIds ?? [],
     esOwner,
-    esCobrador: session?.user?.rol === 'cobrador',
-    esSuperadmin: session?.user?.rol === 'superadmin',
+    esCobrador: user?.rol === 'cobrador',
+    esSuperadmin: user?.rol === 'superadmin',
     // Permisos: owner siempre true, cobrador según configuración
     puedeCrearPrestamos: esOwner || Boolean(permisos.crearPrestamos),
     puedeGestionarPrestamos: esOwner || Boolean(permisos.gestionarPrestamos ?? permisos.crearPrestamos),
