@@ -212,8 +212,9 @@
    ],
    "donde": [
     {
-     "pantalla": "/configuracion",
-     "tipo": "D1"
+     "pantalla": "/mas",
+     "tipo": "E2",
+     "junto_a": "Configuración"
     }
    ],
    "para": [

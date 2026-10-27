@@ -280,7 +280,9 @@ export default function PantallaMas({
 
       <Rotulo>Cuenta</Rotulo>
       <Tarjeta plana>
-        <Fila icono="config"     nombre="Configuración" alto={54} primera onIr={ir('/configuracion')} />
+        {/* El video de Configuración va aquí, en la puerta, y no dentro de
+            Configuración (27 oct 2026): se mira antes de entrar a buscar. */}
+        <Fila icono="config"     nombre="Configuración" alto={54} primera onIr={ir('/configuracion')} video="inicio-configuracion" />
         <Fila icono="soporte"    nombre="Soporte"       alto={54} onIr={ir('/soporte')} />
         <Fila icono="tutoriales" nombre="Tutoriales"    alto={54} onIr={ir('/tutoriales')} />
         <FilaInstalar />
