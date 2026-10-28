@@ -13,6 +13,7 @@ import { sendTemplate, sendButtons, wamidDe } from '@/lib/bot/whatsapp-cloud'
 import { notificarEstadoLead } from '@/lib/bot/notificar-meta'
 import { buscarLeads, ventanaAbierta } from '@/lib/bot/telefono'
 import { mensajeBienvenida, botonesCartera, esCarteraGrande } from '@/lib/bot/cartera-post-registro'
+import { limpiarOrigen, canalDeOrigen } from '@/lib/origen-registro'
 
 function generarCodigoReferido() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -40,6 +41,9 @@ export async function POST(req) {
     const body = await req.json()
     const { nombreOrganizacion, nombre, email, telefono, password, ref, terminosAceptados, country: countryInput, canal } = body
     const country = COUNTRY_CODES.includes(countryInput) ? countryInput : 'co'
+    // De dónde vino (lib/origen-registro.js). Solo claves conocidas, y el canal en una palabra.
+    const origenLimpio = limpiarOrigen(body.origen)
+    const origen = origenLimpio ? { ...origenLimpio, canal: canalDeOrigen(origenLimpio) } : { canal: 'directo' }
 
     // Validaciones
     if (!nombreOrganizacion?.trim() || !nombre?.trim() || !email?.trim() || !password) {
@@ -165,6 +169,7 @@ export async function POST(req) {
           country,
           codigoReferido,
           planDemoHasta: vencimiento,
+          origenRegistro: JSON.stringify(origen),
           ...(orgReferidora ? { referidoPorId: orgReferidora.id } : {}),
         },
       })

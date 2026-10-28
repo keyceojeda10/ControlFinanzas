@@ -95,6 +95,9 @@ model Organization {
   rutasAdicionales      Int      @default(0)
   estadoContacto    EstadoContacto @default(nuevo)
   fuenteRegistro    String?
+  /// De dónde vino al registrarse: JSON con utm_*, gclid, fbclid, referrer,
+  /// landing y `canal` (lib/origen-registro.js). 28 oct 2026.
+  origenRegistro    String?   @db.Text
   planOriginal      Plan?
   planDemoHasta     DateTime?
   onboardingStep    Int            @default(0)

@@ -9,6 +9,7 @@ import AuthInput               from '@/components/auth/AuthInput'
 import { getCountryConfig, validatePhone } from '@/lib/i18n'
 import { getCountryList } from '@/lib/countries'
 import { normalizarEmail } from '@/lib/normalizar-email'
+import { origenDelRegistro } from '@/lib/origen-registro'
 
 const PAISES = getCountryList()
 /* ⚠ ESTA LISTA VA A LA PAR DE `COUNTRIES`. Los países salen de
@@ -138,7 +139,7 @@ function PieWizard({ onAtras, onSeguir, seguirBloqueado, seguirTexto = 'Continua
   )
 }
 
-export default function RegistroForm({ refCode, planParam, countryParam }) {
+export default function RegistroForm({ refCode, planParam, countryParam, origenParam }) {
   const router = useRouter()
   const t = useTheme()
 
@@ -230,6 +231,8 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
           plan: planSilencioso,
           country,
           canal: 'whatsapp',
+          // De dónde vino: la web lo manda en `?o=` (lib/origen-registro.js).
+          origen: origenDelRegistro(origenParam),
         }),
       })
       const data = await res.json()
