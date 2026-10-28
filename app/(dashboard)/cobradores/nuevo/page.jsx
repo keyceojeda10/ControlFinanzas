@@ -337,7 +337,7 @@ export default function NuevoCobrador() {
             {[
               { key: 'crearPrestamos', label: 'Crear préstamos', desc: 'Puede registrar préstamos nuevos para clientes de su ruta' },
               { key: 'gestionarPrestamos', label: 'Gestión de préstamos', desc: 'Renovar préstamos, modificar plazos y aplicar recargos' },
-              { key: 'prestarConPrestamoActivo', label: 'Prestarle a quien ya debe', desc: 'Puede hacerle otra cartulina a un cliente que ya tiene un préstamo activo. Si lo apagas, tendrá que pedirte permiso desde la app y tú lo apruebas' },
+              { key: 'prestarConPrestamoActivo', label: 'Prestarle a quien ya debe', desc: 'Puede hacerle otra cartulina a un cliente que ya tiene un préstamo activo. Si lo apagas, tendrá que pedirte permiso desde la app y tú lo apruebas. Si en Configuración encendiste «Pedir permiso para prestarle a quien ya debe», lo pide igual' },
               { key: 'aplicarDescuentos', label: 'Aplicar descuentos y liquidaciones', desc: 'Permite reducir el saldo de un préstamo (descuento o liquidación anticipada). Riesgoso: actívalo solo a cobradores de confianza' },
               { key: 'desembolsarLinea', label: 'Desembolsar líneas de crédito', desc: 'Permite registrar desembolsos en líneas de crédito rotativas de los clientes de su ruta' },
               { key: 'reportarGastos', label: 'Reportar gastos menores', desc: 'Puede registrar gastos menores en caja (hoy o ayer)' },

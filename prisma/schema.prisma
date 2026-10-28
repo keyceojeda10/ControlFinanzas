@@ -220,6 +220,9 @@ model Organization {
   camposRecibo      Json?
   plantillasWA      Json?
   requiereAprobacionPrestamos Boolean @default(false)
+  /// Con esto encendido, TODO cobrador pide permiso para prestarle a quien ya
+  /// tiene un préstamo activo (lib/dinero/permiso-prestamo.js). 28 oct 2026.
+  permisoParaPrestarConDeuda  Boolean @default(false)
   ocultarCapitalCobradores    Boolean @default(false)
   tasaMoratorio     Float          @default(0)
   diasGraciaMoratorio Int          @default(5)

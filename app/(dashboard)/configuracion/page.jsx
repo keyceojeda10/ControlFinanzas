@@ -684,6 +684,35 @@ function TabOrganizacion({ bloques, tema, onTema }) {
       </Card>
       )}
 
+      {/* Toggle permiso para prestarle a quien ya debe (28 oct 2026, PRESTA MIL).
+          Existía por cobrador desde cf-v1214, abierto por defecto, y nadie lo
+          apagó: los cobradores le hacían otra cartulina a quien ya debía en vez
+          de renovar. Aquí se cierra para todos de una vez. */}
+      {quiere('prestas') && (
+      <Card>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em]">Pedir permiso para prestarle a quien ya debe</p>
+            <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug mt-1">
+              Si el cliente ya tiene un préstamo activo, el cobrador no puede hacerle otro sin tu permiso: te llega la solicitud y la apruebas con un toque. Renovar sí puede, sin pedir nada.
+            </p>
+          </div>
+          <Toggle
+            checked={!!org?.permisoParaPrestarConDeuda}
+            onChange={async (nuevoValor) => {
+              try {
+                const res = await fetch('/api/configuracion/organizacion', {
+                  method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ permisoParaPrestarConDeuda: nuevoValor }),
+                })
+                if (res.ok) setData(prev => ({ ...prev, org: { ...prev.org, permisoParaPrestarConDeuda: nuevoValor } }))
+              } catch {}
+            }}
+          />
+        </div>
+      </Card>
+      )}
+
       {/* Toggle portal de clientes — datos completos */}
       {quiere('portal') && (
       <Card>
