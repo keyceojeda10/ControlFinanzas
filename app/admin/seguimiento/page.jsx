@@ -50,6 +50,10 @@ export default function SeguimientoAdmin() {
       <div>
         <Link href="/admin/inicio" className="text-[12px]" style={{ color: 'var(--cf-gold-dark)' }}>← Inicio</Link>
         <h1 className="text-xl font-bold mt-1" style={{ color: 'var(--cf-ink)' }}>Seguimiento</h1>
+        {/* La lista de los negocios serios (lib/seguimiento/serios.js): la misma
+            que llega por WhatsApp a las 9 a. m.; aquí entra con la sesión. */}
+        <Link href="/atender" className="inline-flex items-center h-11 px-4 mt-2 rounded-[12px] text-[14px] font-bold"
+          style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}>Para atender hoy</Link>
         <p className="text-[13px]" style={{ color: 'var(--cf-ink-3)' }}>
           Reenganche de quien se fue, aviso a quien dejó de usar la app y la oferta del 35 % por Nequi guardado. Últimos 30 días.
         </p>
