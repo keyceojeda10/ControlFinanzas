@@ -26,6 +26,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { segmentarOrganizaciones, SELECT_ORG_SEGMENTO, SEGMENTOS } from '@/lib/admin/segmentos'
+import { periodosDelUltimoPago } from '@/lib/admin/mrr'
 
 /** Los internos no son clientes: falsean todos los conteos. */
 const EMAILS_INTERNOS = ['keycejob@gmail.com', 'ccaojd@gmail.com', 'owner@test.com', 'controlfinanzasgmail@gmail.com']
@@ -82,7 +83,7 @@ export async function GET(req) {
 
   /* Los conteos salen de aquí y solo de aquí: de los clientes de verdad. Las
      cuentas de casa se buscan aparte, más abajo, y nunca entran en esta suma. */
-  const { fichas, mrr, porSegmento, totalReal } = segmentarOrganizaciones(orgs)
+  const { fichas, mrr, porSegmento, totalReal } = segmentarOrganizaciones(orgs, new Date(), { periodos: await periodosDelUltimoPago(prisma, orgs.map((o) => o.id)) })
 
   /* El buscador va sobre las fichas ya armadas y no sobre Prisma a propósito:
      el teléfono puede venir del dueño O de la organización, y esa decisión ya

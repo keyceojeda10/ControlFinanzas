@@ -165,7 +165,7 @@ export default function NegocioPage() {
             +{formatMoney(resumen.mrrProyectado - resumen.mrrActual, 'co')}
           </p>
           <p className="text-[10px] text-[var(--cf-ink-3)] mt-0.5">
-            {resumen.trialsCalientes} trials calientes · si todos convierten
+            {resumen.trialsCalientes} en prueba calientes · pagan 5 de cada 10
           </p>
           <p className="text-[10px] font-semibold text-[var(--cf-ink)] mt-1.5 pt-1.5 border-t border-[var(--cf-border)]">
             = {formatMoney(resumen.mrrProyectado, 'co')} total proyectado

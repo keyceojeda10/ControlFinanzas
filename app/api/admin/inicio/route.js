@@ -27,6 +27,7 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { segmentarOrganizaciones, SELECT_ORG_SEGMENTO } from '@/lib/admin/segmentos'
 import { clasificarPreferenciales, selectPreferenciales, wherePreferenciales } from '@/lib/admin/precios-preferenciales'
+import { periodosDelUltimoPago } from '@/lib/admin/mrr'
 
 /** Los internos no son clientes: falsean el conteo de registros y el de activos. */
 const EMAILS_INTERNOS = ['keycejob@gmail.com', 'ccaojd@gmail.com', 'owner@test.com', 'controlfinanzasgmail@gmail.com']
@@ -82,7 +83,7 @@ export async function GET() {
     prisma.organization.findMany({ where: wherePreferenciales(ahora), select: selectPreferenciales() }),
   ])
 
-  const { fichas, mrr, porSegmento, totalReal } = segmentarOrganizaciones(orgsRaw, ahora)
+  const { fichas, mrr, porSegmento, totalReal } = segmentarOrganizaciones(orgsRaw, ahora, { periodos: await periodosDelUltimoPago(prisma, orgsRaw.map((o) => o.id)) })
 
   /* ── 1 · Cuánto entró ─────────────────────────────────────────────────── */
   const porMes = {}

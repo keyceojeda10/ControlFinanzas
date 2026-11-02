@@ -4,6 +4,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { PLANES_CONFIG }    from '@/lib/planes'
+import { mensualDe, periodosDelUltimoPago } from '@/lib/admin/mrr'
+import { paraAtender } from '@/lib/seguimiento/para-atender'
+import { PROBABILIDAD } from '@/lib/seguimiento/serios'
 
 const PRECIO = (plan) => PLANES_CONFIG[plan]?.precio ?? 0
 const NOMBRE_PLAN = (plan) => PLANES_CONFIG[plan]?.nombre ?? plan
@@ -74,6 +77,12 @@ export async function GET() {
   }),
   ])
 
+  /* ⚠ 2 NOV 2026: el MRR va al mes (un trimestral no entra entero cada mes) y
+     «caliente» es la regla MEDIDA de lib/seguimiento/serios.js (paga 5 de cada
+     10), no el puntaje de antes, cuyos pesos no salían de ningún dato. */
+  const periodos = await periodosDelUltimoPago(prisma, orgs.map((o) => o.id))
+  const calientesMedidos = new Set((await paraAtender({ ahora })).filter((f) => f.nivel === 'caliente').map((f) => f.organizationId))
+
   const pagantes  = []
   const trials    = []
   const muertos   = []
@@ -100,7 +109,7 @@ export async function GET() {
     const esTrial    = !susc || susc.montoCOP === 0
     const esPagante  = susc && susc.montoCOP > 0 && susc.estado === 'activa'
     const esChuneado = susc && susc.estado === 'vencida' && !esTrial
-    const precio     = esPagante ? (susc.montoCOP ?? PRECIO(org.plan)) : 0
+    const precio     = esPagante ? mensualDe(susc.montoCOP ?? PRECIO(org.plan), periodos.get(org.id)) : 0
 
     const diasRestantesTrial = susc
       ? Math.max(0, Math.ceil((new Date(susc.fechaVencimiento) - ahora) / 86400000))
@@ -191,8 +200,9 @@ export async function GET() {
   churneados.sort((a, b) => a.diasSinPagar - b.diasSinPagar)
 
   // Proyección: score >= 60 + mínimo de datos reales (3+ clientes o 3+ préstamos)
-  const trialsCalientes = trials.filter(t => t.score >= 60 && (t.clientes >= 3 || t.prestamos >= 3))
-  const mrrProyectado = trialsCalientes.reduce((acc, t) => acc + PRECIO(t.plan), 0)
+  const trialsCalientes = trials.filter(t => calientesMedidos.has(t.id))
+  // Lo esperable, no «si todos convierten»: de cada 10 calientes pagan 5.
+  const mrrProyectado = Math.round(trialsCalientes.reduce((acc, t) => acc + PRECIO(t.plan), 0) * PROBABILIDAD.caliente / 10)
 
   // Calendario de cobros: próximos 30 días — trials que vencen cada día
   const calendarioMap = {}
@@ -202,7 +212,7 @@ export async function GET() {
     if (diffDias < -1 || diffDias > 30) continue // solo próximos 30 días (y vencidos ayer)
     const diaKey = fv.toISOString().slice(0, 10)
     if (!calendarioMap[diaKey]) calendarioMap[diaKey] = { dia: diaKey, usuarios: [], mrrPotencial: 0, mrrCaliente: 0 }
-    const esCaliente = (t.score ?? 0) >= 60 && (t.clientes >= 3 || t.prestamos >= 3)
+    const esCaliente = calientesMedidos.has(t.id)
     calendarioMap[diaKey].usuarios.push({
       id:           t.id,
       nombre:       t.nombre,
