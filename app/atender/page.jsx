@@ -12,6 +12,7 @@
 
 import { Suspense, useEffect, useState, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { enlaceWhatsApp, enlaceWaMe, esAndroid } from '@/lib/seguimiento/enlace-whatsapp'
 
 const fechaCorta = (d) => new Date(d).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', timeZone: 'America/Bogota' })
 const haceCuanto = (d) => {
@@ -35,7 +36,12 @@ function Dato({ cifra, rotulo }) {
   )
 }
 
-function Tarjeta({ f, resultados, onMarcar, marcando }) {
+const BOTON_WA = {
+  height: 52, borderRadius: 12, textDecoration: 'none', fontSize: 16, fontWeight: 800,
+  display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 10px',
+}
+
+function Tarjeta({ f, resultados, onMarcar, marcando, android }) {
   const [texto, setTexto] = useState(f.mensaje)
   const wa = numeroWa(f.telefono)
   const caliente = f.nivel === 'caliente'
@@ -83,11 +89,21 @@ function Tarjeta({ f, resultados, onMarcar, marcando }) {
         }} />
       </label>
 
-      {wa ? (
-        <a href={`https://wa.me/${wa}?text=${encodeURIComponent(texto)}`} target="_blank" rel="noopener noreferrer" style={{
-          height: 52, borderRadius: 12, background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)', textDecoration: 'none',
-          fontSize: 16, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>Escribirle por WhatsApp</a>
+      {/* En Android se elige la app: el Business es el de Control Finanzas y
+          va primero; `wa.me` solo abría el normal (lib/seguimiento/enlace-whatsapp). */}
+      {wa && android ? (
+        <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 8 }}>
+          <a href={enlaceWhatsApp(wa, texto, 'business')} style={{ ...BOTON_WA, background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}>
+            WhatsApp Business
+          </a>
+          <a href={enlaceWhatsApp(wa, texto, 'normal')} style={{ ...BOTON_WA, background: 'var(--cf-card)', color: 'var(--cf-ink)', border: '1px solid var(--cf-border-strong)' }}>
+            WhatsApp
+          </a>
+        </div>
+      ) : wa ? (
+        <a href={enlaceWaMe(wa, texto)} target="_blank" rel="noopener noreferrer" style={{ ...BOTON_WA, background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}>
+          Escribirle por WhatsApp
+        </a>
       ) : (
         <p style={{ margin: 0, fontSize: 14, color: 'var(--cf-red-dark)' }}>No tiene un teléfono que sirva para WhatsApp.</p>
       )}
@@ -122,6 +138,9 @@ function Lista() {
   const consulta = new URLSearchParams(Object.entries(firma).filter(([, v]) => v)).toString()
   const [datos, setDatos] = useState(null)
   const [error, setError] = useState(null)
+  // Después de montar: en el servidor no hay `navigator`.
+  const [android, setAndroid] = useState(false)
+  useEffect(() => { setAndroid(esAndroid(navigator.userAgent)) }, [])
   const [marcando, setMarcando] = useState(false)
 
   const cargar = useCallback(() => {
@@ -158,11 +177,11 @@ function Lista() {
         </p>
       </header>
       {error && <p style={{ margin: 0, fontSize: 14, color: 'var(--cf-red-dark)' }}>{error}</p>}
-      {pendientes.map((f) => <Tarjeta key={f.organizationId} f={f} resultados={datos.resultados} onMarcar={marcar} marcando={marcando} />)}
+      {pendientes.map((f) => <Tarjeta key={f.organizationId} f={f} resultados={datos.resultados} onMarcar={marcar} marcando={marcando} android={android} />)}
       {atendidos.length > 0 && (
         <>
           <h2 style={{ margin: '12px 0 0', fontSize: 16, fontWeight: 800, color: 'var(--cf-ink-2)' }}>Ya atendidos ({atendidos.length})</h2>
-          {atendidos.map((f) => <Tarjeta key={f.organizationId} f={f} resultados={datos.resultados} onMarcar={marcar} marcando={marcando} />)}
+          {atendidos.map((f) => <Tarjeta key={f.organizationId} f={f} resultados={datos.resultados} onMarcar={marcar} marcando={marcando} android={android} />)}
         </>
       )}
     </>
