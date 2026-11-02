@@ -17,6 +17,7 @@ import * as wa from '@/lib/bot/whatsapp-cloud'
 import { transcribirAudio } from '@/lib/bot/transcribe'
 import { responder } from '@/lib/bot-v2/agente'
 import { alertarLeadCaliente } from '@/lib/bot/alertas'
+import { avisarAlDueno, esQuierePagar, prometeCita } from '@/lib/seguimiento/aviso-al-dueno'
 import { esBotonDeCartera, respuestaDeBoton } from '@/lib/bot/cartera-post-registro'
 import { esDeAnuncio, decidirDesdeAnuncio, saludoDeAnuncio } from '@/lib/bot/flujo-anuncio'
 import { guardarMedia } from '@/lib/bot/media-store'
@@ -874,9 +875,30 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
   })
   historial.reverse()
 
+  /* ⚠ LA RÁFAGA ENTERA, NO SOLO EL ÚLTIMO MENSAJE. El debounce de arriba deja
+     contestar al último, y con su texto solo: «Buenos días, para pagar la
+     mensualidad cómo es» + «Por nequi» llegaba al agente como «Por nequi», que
+     no casa con nada, y en vez del enlace de pago, la oferta y el vídeo le
+     contestó el modelo con una frase rota (2 nov 2026, un cliente caliente que
+     quería pagar y no pagó). Lo que escribió desde la última respuesta del bot,
+     en los últimos 3 minutos, va junto. */
+  let textoRafaga = texto
+  if (tipoMensaje === 'chat') {
+    const rafaga = await prisma.botConversacion.findMany({
+      where: {
+        botLeadId: lead.id, rol: 'lead',
+        createdAt: { gt: ultimoBot?.createdAt ?? new Date(0), gte: new Date(Date.now() - 3 * 60000) },
+      },
+      orderBy: { createdAt: 'asc' },
+      select: { texto: true },
+    })
+    const juntos = rafaga.map((m) => String(m.texto || '').trim()).filter((t) => t && !t.startsWith('['))
+    if (juntos.length > 1) textoRafaga = juntos.join('\n')
+  }
+
   let decision
   try {
-    decision = await responder(lead, historial, { texto, tipoMensaje, imagenBase64, imagenMime })
+    decision = await responder(lead, historial, { texto: textoRafaga, tipoMensaje, imagenBase64, imagenMime })
   } catch (e) {
     console.error('[WA Cloud] Error del agente:', e.message)
     return
@@ -981,6 +1003,14 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
       data: { alertado: true, alertadoEn: new Date() },
     })
   }
+
+  /* Y a SU WhatsApp, solo lo que no puede esperar a la lista de las 9: el que
+     quiere pagar y la llamada que el bot prometió (lib/seguimiento/aviso-al-dueno). */
+  if (esQuierePagar(decision.motivo)) {
+    await avisarAlDueno({ lead, motivo: `Quiere pagar. Escribió: «${String(textoRafaga || '').slice(0, 160)}»` })
+  } else if (decision.mensaje && prometeCita(decision.mensaje)) {
+    await avisarAlDueno({ lead, motivo: `El bot le prometió una llamada: «${decision.mensaje.slice(0, 220)}»` })
+  }
 }
 
 /* Devuelve `true` si ya contestó y no hay que seguir al modelo.
@@ -1027,6 +1057,7 @@ async function atenderDesdeAnuncio(lead, { botonId, texto }) {
        registro y 10 % de pago. Se avisa a un humano por el mismo camino de los
        leads calientes, en vez de darle un teléfono al que nadie escribe. */
     await alertarLeadCaliente(lead, motivoAviso, []).catch(e => console.error('[WA Cloud] no pude avisar:', e.message))
+    if (motivoAviso === 'quiere pagar') await avisarAlDueno({ lead, motivo: `Quiere pagar. Escribió: «${String(texto || '').slice(0, 160)}»` })
     await prisma.botLead.update({
       where: { id: lead.id }, data: { alertado: true, alertadoEn: new Date(), temperatura: 80 },
     }).catch(() => {})

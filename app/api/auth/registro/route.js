@@ -294,7 +294,15 @@ export async function POST(req) {
        * quien no, ya le escribe el cron de onboarding al día siguiente. */
       if (botLeads.length) {
         try {
-          if (await ventanaAbierta(telefonoLimpio)) {
+          /* ⚠ UNA SOLA BIENVENIDA. Quien se vuelve a registrar antes de verificar
+             (cuenta fantasma de menos de 48 h, arriba) recibía la bienvenida
+             otra vez: 21 personas en 30 días hasta el 2 nov 2026, una de ellas
+             saludada como «Listo, 564141». */
+          const yaBienvenido = await prisma.botConversacion.findFirst({
+            where: { botLeadId: { in: botLeads.map((b) => b.id) }, promptId: 'bienvenida-cartera', createdAt: { gte: new Date(Date.now() - 48 * 3600 * 1000) } },
+            select: { id: true },
+          })
+          if (!yaBienvenido && await ventanaAbierta(telefonoLimpio)) {
             const lead = botLeads[0]
             // A quien declaró 50 clientes o más se le ofrece el asesor (bloque 4).
             const grande = botLeads.some((b) => esCarteraGrande(b.cantClientes))
