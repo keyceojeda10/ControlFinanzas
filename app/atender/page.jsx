@@ -24,7 +24,7 @@ const numeroWa = (tel) => {
   if (d.length === 10 && d.startsWith('3')) return `57${d}`
   return d.length >= 11 ? d : null
 }
-const TITULO_MOMENTO = { quiere_pagar: 'Preguntó cómo pagar', espera: 'Nos está esperando', decidir: 'Le toca decidir', enfrio: 'Se enfrió', cobrando: 'Ya está cobrando', arranco: 'Arrancó' }
+const TITULO_MOMENTO = { quiere_pagar: 'Preguntó cómo pagar', espera: 'Nos está esperando', precio: 'Preguntó el precio', decidir: 'Le toca decidir', enfrio: 'Se enfrió', cobrando: 'Ya está cobrando', arranco: 'Arrancó' }
 
 function Dato({ cifra, rotulo }) {
   return (
@@ -52,7 +52,7 @@ function Tarjeta({ f, resultados, onMarcar, marcando }) {
           background: caliente ? 'var(--cf-gold-tint)' : 'var(--cf-fill)',
           color: caliente ? 'var(--cf-gold-text)' : 'var(--cf-ink-2)',
         }}>{caliente ? `Caliente · de cada 10 así, pagan ${f.deCada10}` : 'Pidió algo'}</span>
-        <span style={{ fontSize: 12, fontWeight: 700, color: ['quiere_pagar', 'espera', 'decidir'].includes(f.momento) ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)' }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: ['quiere_pagar', 'espera', 'precio', 'decidir'].includes(f.momento) ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)' }}>
           {TITULO_MOMENTO[f.momento]}
         </span>
       </div>

@@ -5,9 +5,12 @@
 // lista (/atender). Si no hay nadie, no manda nada: «me llega un montón de
 // cosas que hasta las ignoro porque es pura basura».
 //
-// Va por la plantilla UTILITY `alerta_escalamiento` (ya aprobada, se puede
-// mandar fuera de la ventana de 24 h). Una vez al día por persona: lo que ya
-// salió hoy queda en `Evento` y no se repite si el cron corre dos veces.
+// Va por la plantilla UTILITY propia `lista_para_atender` (creada el 2 nov; la
+// de escalamiento decía «Escalamiento: X necesita atención» y se leía raro).
+// Si Meta todavía no la aprobó o la rechaza, cae a `alerta_escalamiento`, que
+// ya estaba aprobada: el aviso nunca se queda sin salir. Las dos son UTILITY y
+// se pueden mandar fuera de la ventana de 24 h. Una vez al día por persona: lo
+// que ya salió hoy queda en `Evento` y no se repite si el cron corre dos veces.
 
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
@@ -40,11 +43,17 @@ export async function POST(req) {
       calientes > 0 ? plural(calientes, 'caliente', 'calientes') : null,
       decidir > 0 ? `${decidir} por decidir hoy` : null,
     ].filter(Boolean).join(', ')
-    const r = await wa.sendTemplate(numero, 'alerta_escalamiento', {
-      nombre: `${quien}, hoy ${plural(lista.length, 'negocio serio', 'negocios serios')}`,
-      motivo: `Para atender hoy${detalle ? ` (${detalle})` : ''}. La lista con el mensaje para cada uno: ${enlace(BASE, quien, ahora)}`,
-      telefono: primero ? String(primero.telefono).replace(/\D/g, '').replace(/^(3\d{9})$/, '57$1') : '573011993001',
-    }).catch((e) => ({ error: e?.message ?? 'error' }))
+    const link = enlace(BASE, quien, ahora)
+    const resumenTxt = `${plural(lista.length, 'negocio serio', 'negocios serios')} para atender${detalle ? ` (${detalle})` : ''}`
+    let r = await wa.sendTemplate(numero, 'lista_para_atender', { quien, resumen: resumenTxt, enlace: link })
+      .catch((e) => ({ error: e?.message ?? 'error' }))
+    if (r?.error) {
+      r = await wa.sendTemplate(numero, 'alerta_escalamiento', {
+        nombre: `${quien}, hoy ${plural(lista.length, 'negocio serio', 'negocios serios')}`,
+        motivo: `Para atender hoy${detalle ? ` (${detalle})` : ''}. La lista con el mensaje para cada uno: ${link}`,
+        telefono: primero ? String(primero.telefono).replace(/\D/g, '').replace(/^(3\d{9})$/, '57$1') : '573011993001',
+      }).catch((e) => ({ error: e?.message ?? 'error' }))
+    }
     const ok = !r?.error
     // Solo se apunta lo que salió: si falló, la siguiente corrida lo reintenta.
     if (ok) await prisma.evento.create({ data: { evento: 'aviso_atender', pagina: clave, metadata: JSON.stringify({ quien, pendientes: lista.length }) } })
