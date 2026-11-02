@@ -26,6 +26,7 @@ import { formatMoney } from '@/lib/i18n'
 import { pedirCompartido } from '@/lib/pedir-compartido'
 import { PLANES_CONFIG } from '@/lib/planes'
 import { debeAbrirseVentanaNequi, precioConOferta } from '@/lib/oferta-nequi-aviso'
+import EnlaceProfeSuelto from '@/components/tutoriales/EnlaceProfeSuelto'
 
 /* Se apunta al ABRIRSE (verla ya cuenta), no al cerrarla: si cierra la app
    sin tocar nada, tampoco tiene que volver a salirle en la siguiente pantalla. */
@@ -65,13 +66,17 @@ export default function AvisoOfertaNequi() {
 
   const pct = d.ofertaNequi
   const enPrueba = d.planPagado === false
+  /* El 50 % del segundo mes (lib/seguimiento/segundo-mes.js) es esta misma
+     ventana con otra cifra; solo vale si lo activa antes de que venza. */
+  const segundoMes = !!d.ofertaSegundoMes
+  const titulo = segundoMes ? 'Tu segundo mes a mitad de precio' : `${enPrueba ? 'Tu primer mes' : 'Tu próximo mes'} ${pct} % más barato`
   const precio = Number(d.proximoCobro?.monto) || 0
   const nombrePlan = PLANES_CONFIG[d.proximoCobro?.plan]?.nombre ?? null
   const cerrar = () => setD(null)
   const guardarNequi = () => window.location.assign('/configuracion/plan?suscribir=1')
 
   return createPortal(
-    <div role="dialog" aria-modal="true" aria-label={`${enPrueba ? 'Tu primer mes' : 'Tu próximo mes'} ${pct} % más barato`} onClick={cerrar} style={{
+    <div role="dialog" aria-modal="true" aria-label={titulo} onClick={cerrar} style={{
       position: 'fixed', inset: 0, zIndex: 10003, display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: 20, background: 'rgba(10,11,14,.55)',
     }}>
@@ -93,10 +98,12 @@ export default function AvisoOfertaNequi() {
           </span>
         </div>
         <span style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 24, fontWeight: 600, letterSpacing: '-.02em', lineHeight: 1.15 }}>
-          {enPrueba ? 'Tu primer mes' : 'Tu próximo mes'} {pct} % más barato
+          {titulo}
         </span>
         <span style={{ fontSize: 14, lineHeight: 1.5, color: 'var(--cf-ink-2)' }}>
-          Deja tu Nequi guardado para el pago automático y {enPrueba ? 'el primer mes' : 'ese mes'} pagas menos. Solo ese mes; después, el precio normal. Lo quitas cuando quieras.
+          {segundoMes
+            ? <>Deja tu Nequi o tu tarjeta guardados para el cobro automático antes del {fechaLarga(d.fechaVencimiento)} y tu segundo mes te sale a la mitad. Pagando a mano, sin descuento. Desde el tercer mes, el precio normal; lo quitas cuando quieras.</>
+            : <>Deja tu Nequi guardado para el pago automático y {enPrueba ? 'el primer mes' : 'ese mes'} pagas menos. Solo ese mes; después, el precio normal. Lo quitas cuando quieras.</>}
         </span>
         {precio > 0 && (
           <div style={{
@@ -114,7 +121,10 @@ export default function AvisoOfertaNequi() {
         <button type="button" onClick={guardarNequi} style={{
           height: 52, borderRadius: 14, border: 0, cursor: 'pointer', font: 'inherit',
           background: 'var(--cf-green-dark)', color: '#fff', fontSize: 16, fontWeight: 700,
-        }}>Guardar mi Nequi</button>
+        }}>{segundoMes ? 'Activar cobro automático' : 'Guardar mi Nequi'}</button>
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: -6 }}>
+          <EnlaceProfeSuelto id="inicio-plan" pregunta="¿Cómo se activa?" capitulo="Que se cobre solo" origen="aviso-oferta-nequi" />
+        </div>
         <button type="button" onClick={cerrar} style={{
           height: 40, border: 0, background: 'none', cursor: 'pointer', font: 'inherit',
           fontSize: 14, fontWeight: 600, color: 'var(--cf-ink-3)',

@@ -436,9 +436,12 @@ export default function ReproductorProfe({ video, desde = 0, volver = 'Volver', 
   )
 
   /* ⚠ ENCIMA DE TODO, TAMBIÉN DEL MENÚ DEL +. Ese menú vive a z 90 y el
-     minuto de sus filas abre el video: a z 60 (el de las hojas) nacía debajo. */
+     minuto de sus filas abre el video: a z 60 (el de las hojas) nacía debajo.
+     Y encima de las ventanas de ofertas (AvisoOfertaNequi, z 10003), que
+     desde el 1 nov 2026 llevan «¿Cómo se activa?»: a z 95 el video se abría
+     DETRÁS de la ventana que lo pidió. */
   return createPortal(
-    <div style={{ position: 'relative', zIndex: 95 }}>
+    <div style={{ position: 'relative', zIndex: 10010 }}>
       <HojaInferior
         abierta
         onCerrar={() => cerrar()}

@@ -27,6 +27,8 @@ import { notificar } from '@/lib/notificar'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
 import { jsonComprimido } from '@/lib/http/json-comprimido'
+import { planSiguiente } from '@/lib/cupo-clientes'
+import { PLANES_CONFIG } from '@/lib/planes'
 
 // ─── GET /api/clientes ──────────────────────────────────────────
 export async function GET(request) {
@@ -649,8 +651,19 @@ export async function POST(request) {
   if (isFinite(limite)) {
     const total = await prisma.cliente.count({ where: { organizationId, estado: { notIn: ['eliminado'] } } })
     if (total >= limite) {
+      /* Lo que gana subiendo, no solo el tope (dueño, 1 nov 2026: «estás
+         vendiendo mal eso»). La hoja completa sale antes, desde el 85 %
+         (components/plan/CupoClientes.jsx); esto es lo que lee quien igual
+         llega al tope. */
+      const sig = planSiguiente(planReal)
+      const cfgSig = sig ? PLANES_CONFIG[sig] : null
       return Response.json(
-        { error: `Tu plan permite máximo ${limite} clientes. Considera actualizar.` },
+        {
+          error: cfgSig
+            ? `Llegaste a los ${limite} clientes de tu plan. Con el plan ${cfgSig.nombre} sigues creciendo hasta ${cfgSig.maxClientes.toLocaleString('es-CO')} clientes y desbloqueas más funciones: míralo en Mi plan.`
+            : `Llegaste a los ${limite} clientes de tu plan. Escríbenos y te ampliamos el cupo.`,
+          limite: 'clientes',
+        },
         { status: 403 }
       )
     }

@@ -8,6 +8,8 @@ import { selectResumenCobro, resumenCobro, vencimientoEfectivo } from '@/lib/cob
 import { selectPrecio, montoDelCobro, estadoPreferencial } from '@/lib/precio-plan'
 import { ultimoPago } from '@/lib/cobro-intento'
 import { DESCUENTO_NEQUI } from '@/lib/seguimiento/reglas'
+import { enSegundoMes, DESCUENTO_SEGUNDO_MES } from '@/lib/seguimiento/segundo-mes'
+import { getPaymentGateway } from '@/lib/i18n'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -106,6 +108,13 @@ export async function GET() {
   // Usar la suscripción recurrente si existe, si no la más reciente
   const subPrincipal = subRecurrente || sub
 
+  /* El 50 % del segundo mes (lib/seguimiento/segundo-mes.js): es la misma
+     oferta del Nequi, más grande, y no espera a la campaña. Si ya se aplicó
+     una oferta, no hay otra. */
+  const segundoMes = seguimiento?.ofertaNequi !== 'aplicada'
+    && await enSegundoMes(prisma, orgId, { gateway: getPaymentGateway(session.user.country ?? 'co') })
+  const ofertaDisponible = segundoMes || seguimiento?.ofertaNequi === 'disponible'
+
   const diasRestantes = Math.ceil(
     (new Date(subPrincipal.fechaVencimiento) - new Date()) / (1000 * 60 * 60 * 24)
   )
@@ -134,11 +143,14 @@ export async function GET() {
     planPagado: Number(subPrincipal.montoCOP) > 0,
     /* Cuándo vio por última vez la ventana del 35 % (cualquier aparato): la
        ventana vuelve a la semana o al entrar en los 3 últimos días del plan. */
-    ofertaVistaAt: seguimiento?.ofertaNequi === 'disponible'
+    ofertaVistaAt: ofertaDisponible
       ? (await prisma.envioSeguimiento.findFirst({ where: { organizationId: orgId, caso: 'oferta_app' }, orderBy: { createdAt: 'desc' }, select: { createdAt: true } }))?.createdAt ?? null
       : null,
     // El % de descuento que tiene esperando si deja el Nequi guardado, o null.
-    ofertaNequi: seguimiento?.ofertaNequi === 'disponible' ? DESCUENTO_NEQUI * 100 : null,
+    ofertaNequi: segundoMes ? DESCUENTO_SEGUNDO_MES * 100 : seguimiento?.ofertaNequi === 'disponible' ? DESCUENTO_NEQUI * 100 : null,
+    /* Cuando la oferta es la del segundo mes, las pantallas lo dicen así
+       («tu segundo mes a mitad de precio») y con su fecha límite. */
+    ofertaSegundoMes: segundoMes,
     cobradoresExtra,
     adicionales,
     limiteUsuarios: cuposDe(org, enTrial ? org.plan : subPrincipal.plan).usuarios,

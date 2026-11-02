@@ -12,6 +12,9 @@ import { SkeletonCard }        from '@/components/ui/Skeleton'
 import { PLANES_CONFIG } from '@/lib/planes'
 import { formatMoney, getPaymentGateway } from '@/lib/i18n'
 import { precioCheckout, precioMensual, adicionalesMensual } from '@/lib/precio-plan'
+import { orgPrecioDeEstado } from '@/lib/precio-desde-estado'
+import SegundoMesMitad from '@/components/pagos/SegundoMesMitad'
+import EnlaceProfeSuelto from '@/components/tutoriales/EnlaceProfeSuelto'
 
 /* ══ LO QUE OFRECE CADA PLAN SE DERIVA, NO SE ESCRIBE ════════════════════════
  *
@@ -133,8 +136,11 @@ export default function PlanPage() {
    * El pago único no desaparece — quien lo quiera lo cambia de un toque. Desde
    * la pantalla de acceso suspendido, «Pagar de otra forma» llega con
    * `?modo=unico` y ya viene puesto. */
-  const [modoPago,     setModoPago]     = useState(() => searchParams.get('modo') === 'unico' ? 'unico' : 'suscripcion')
-  const [periodo,      setPeriodo]      = useState('mensual')
+  /* `?periodo=anual` llega de la hoja «Paga el año» (AvisoPagarElAno): el año
+     solo se paga de una vez, así que también pone «Pago yo». */
+  const periodoUrl = ['mensual', 'trimestral', 'anual'].includes(searchParams.get('periodo')) ? searchParams.get('periodo') : null
+  const [modoPago,     setModoPago]     = useState(() => searchParams.get('modo') === 'unico' || (periodoUrl && periodoUrl !== 'mensual') ? 'unico' : 'suscripcion')
+  const [periodo,      setPeriodo]      = useState(periodoUrl ?? 'mensual')
   const [suscribiendo, setSuscribiendo] = useState(null)
 
   /* ⚠ LA SUSCRIPCIÓN ES MENSUAL, PUNTO. El cobro recurrente repite cada mes; si
@@ -238,16 +244,10 @@ export default function PlanPage() {
      `descuento` % que el cobro automático no miraba: podía prometer una cifra y
      cobrar otra. Ahora la cuenta es la del servidor, con el precio preferencial
      que haya puesto el panel y desde la fecha en que empezaría lo que se paga. */
-  const orgPrecio = {
-    country,
-    precioPreferencial:      estado?.preferencial?.monto ?? null,
-    precioPreferencialPlan:  estado?.preferencial?.plan ?? null,
-    precioPreferencialHasta: estado?.preferencial?.hasta ?? null,
-    /* Los cobradores y rutas que paga con el plan: cada botón de pagar los
-       suma, igual que el checkout (`precioCheckout`). */
-    cobradoresAdicionales:   estado?.adicionales?.cobradores ?? 0,
-    rutasAdicionales:        estado?.adicionales?.rutas ?? 0,
-  }
+  /* Con los cobradores y rutas que paga con el plan: cada botón de pagar los
+     suma, igual que el checkout (`precioCheckout`). La misma pieza la usan las
+     hojas de «Paga el año» y del segundo mes. */
+  const orgPrecio = orgPrecioDeEstado(estado, country)
   const inicioPeriodo = estado?.inicioPeriodo ? new Date(estado.inicioPeriodo) : new Date()
   const calcularPrecio = (planKey) => {
     const p = precioCheckout(orgPrecio, planKey, periodoEfectivo, inicioPeriodo)
@@ -642,6 +642,18 @@ export default function PlanPage() {
           ⚠ Y NO DICE «PAGO ÚNICO». «Esa opción parece como si solamente pagara
           una vez y no tuviera que pagar más nada» — el mismo día. Los dos
           rótulos dicen QUIÉN paga: se cobra solo, o pagas tú. */}
+      {/* El 50 % del segundo mes (lib/seguimiento/segundo-mes.js): la cifra de
+          la pantalla mientras dura, en el bloque oscuro. */}
+      {estado?.ofertaSegundoMes && gateway === 'wompi' && estado?.proximoCobro?.monto > 0 && (
+        <SegundoMesMitad
+          plan={PLANES_CONFIG[estado.proximoCobro.plan]?.nombre ?? infoPlan.nombre}
+          precioMes={estado.proximoCobro.monto}
+          pct={estado.ofertaNequi}
+          hasta={estado.fechaVencimiento}
+          onActivar={() => { setModoPago('suscripcion'); setSuscribiendo(estado.proximoCobro.plan) }}
+        />
+      )}
+
       <div className="rounded-[20px] cf-card-shadow p-4 space-y-3" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
         <p className="text-[10px] font-semibold uppercase tracking-[0.1em] font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>
           Pagar mi plan
@@ -681,7 +693,9 @@ export default function PlanPage() {
             {estado?.ofertaNequi > 0 && (
               <p className="text-[12px] font-semibold rounded-[10px] px-3 py-2"
                 style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 10%, transparent)', color: 'var(--cf-green-dark)' }}>
-                Con «Se cobra solo», tu próximo mes sale {estado.ofertaNequi} % más barato. Una sola vez.
+                {estado.ofertaSegundoMes
+                  ? `Con «Se cobra solo», tu segundo mes sale a mitad de precio si lo activas antes del ${formatFecha(estado.fechaVencimiento)}. Pagando a mano, el precio normal.`
+                  : `Con «Se cobra solo», tu próximo mes sale ${estado.ofertaNequi} % más barato. Una sola vez.`}
               </p>
             )}
           </>
@@ -694,35 +708,77 @@ export default function PlanPage() {
             Fuera del bloque de Wompi a propósito: en los países de MercadoPago
             y en los de cobro a mano no hay suscripción, pero el trimestral y el
             anual sí existen. */}
-        {!esSuscripcion && (
-          <div className="flex justify-center">
-            <div className="inline-flex rounded-[12px] p-1 overflow-x-auto" style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)' }}>
-              {[
-                { key: 'mensual', label: 'Mensual' },
-                { key: 'trimestral', label: 'Trimestral', badge: '-10%' },
-                { key: 'anual', label: 'Anual', badge: '2 gratis' },
-              ].map(p => (
+        {/* ── EL AÑO A LA VISTA (1 nov 2026) ─────────────────────────────
+            Era una tira de tres pastillas, y solo salía con «Pago yo»: 54 de
+            55 negocios pagaban mes a mes y uno solo había pagado más de un
+            mes. Ahora cada periodo dice su cifra y lo que se ahorra, y con «Se
+            cobra solo» una línea recuerda que existe el año. */}
+        {!esSuscripcion ? (
+          <div role="radiogroup" aria-label="Cuánto tiempo pagas" className="flex flex-col gap-2">
+            {[
+              { key: 'mensual',    label: 'Un mes' },
+              { key: 'trimestral', label: 'Tres meses' },
+              { key: 'anual',      label: 'El año', badge: '2 meses gratis' },
+            ].map((op) => {
+              const p = precioCheckout(orgPrecio, planActual, op.key, inicioPeriodo)
+              const ahorro = p.lista * p.meses + p.adicionales - p.total
+              const activo = periodo === op.key
+              return (
                 <button
-                  key={p.key}
-                  onClick={() => setPeriodo(p.key)}
-                  className="px-3 py-2 rounded-[8px] text-[12px] font-semibold transition-[background-color,color,border-color,transform] duration-150 flex items-center gap-1 whitespace-nowrap"
-                  style={periodo === p.key
-                    ? { background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }
-                    : { color: 'var(--cf-ink-3)' }
-                  }
+                  key={op.key}
+                  type="button"
+                  role="radio"
+                  aria-checked={activo}
+                  onClick={() => setPeriodo(op.key)}
+                  className="w-full text-left rounded-[16px] flex items-center gap-3 transition-[border-color] duration-150"
+                  style={{
+                    padding: activo ? '13px 15px' : '14px 16px',
+                    background: 'var(--cf-card)',
+                    border: activo ? '2px solid var(--cf-ink)' : '1px solid var(--cf-border)',
+                  }}
                 >
-                  {p.label}
-                  {p.badge && (
-                    <span className="text-[11px] font-bold px-1 py-0.5 rounded-full font-mono-display" style={{
-                      background: periodo === p.key ? 'rgba(0,0,0,0.15)' : 'var(--cf-green-dark)',
-                      color: periodo === p.key ? 'var(--cf-gold-ink)' : '#fff',
-                    }}>{p.badge}</span>
-                  )}
+                  <span aria-hidden className="shrink-0 rounded-full" style={{
+                    width: 20, height: 20, boxSizing: 'border-box',
+                    border: activo ? '6px solid var(--cf-ink)' : '2px solid var(--cf-border-strong)',
+                  }} />
+                  <span className="flex-1 min-w-0 flex flex-col gap-0.5">
+                    <span className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[16px] font-bold" style={{ color: 'var(--cf-ink)' }}>{op.label}</span>
+                      {op.badge && (
+                        <span className="text-[11px] font-extrabold rounded-full inline-flex items-center" style={{
+                          height: 22, padding: '0 8px', background: 'var(--cf-green-pill-bg)',
+                          color: 'var(--cf-green-dark)', border: '1px solid var(--cf-green-pill-border)',
+                        }}>{op.badge}</span>
+                      )}
+                    </span>
+                    <span className="text-[13px]" style={ahorro > 0 ? { color: 'var(--cf-green-dark)', fontWeight: 600 } : { color: 'var(--cf-ink-3)' }}>
+                      {ahorro > 0 ? <>Te ahorras <span className="cf-num">{formatMoney(ahorro)}</span></> : 'Pagas cada mes'}
+                    </span>
+                  </span>
+                  <span className="cf-fig shrink-0 text-[17px]" style={{ color: 'var(--cf-ink)' }}>{formatMoney(p.total)}</span>
                 </button>
-              ))}
-            </div>
+              )
+            })}
           </div>
-        )}
+        ) : (() => {
+          const mes = precioCheckout(orgPrecio, planActual, 'mensual', inicioPeriodo)
+          const ano = precioCheckout(orgPrecio, planActual, 'anual', inicioPeriodo)
+          const ahorro = mes.total * 12 - ano.total
+          if (!(ahorro > 0)) return null
+          return (
+            <button
+              type="button"
+              onClick={() => { setModoPago('unico'); setPeriodo('anual') }}
+              className="w-full text-left rounded-[12px] px-3 py-2.5 flex items-center justify-between gap-3"
+              style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)' }}
+            >
+              <span className="text-[13px]" style={{ color: 'var(--cf-ink-2)' }}>
+                ¿Prefieres pagar el año? <span style={{ color: 'var(--cf-green-dark)', fontWeight: 700 }}>Te ahorras <span className="cf-num">{formatMoney(ahorro)}</span></span>
+              </span>
+              <span className="text-[13px] font-bold shrink-0" style={{ color: 'var(--cf-gold-dark)' }}>Ver el año</span>
+            </button>
+          )
+        })()}
 
         {(() => {
           /* El precio va EN el botón: el que paga tiene que ver cuánto sin
@@ -765,13 +821,27 @@ export default function PlanPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                 </svg>
               )}
-              {esSuscripcion ? 'Suscribirme' : 'Pagar mi plan'}
+              {esSuscripcion ? 'Suscribirme'
+                : periodoEfectivo === 'anual' ? 'Pagar el año'
+                : periodoEfectivo === 'trimestral' ? 'Pagar 3 meses'
+                : 'Pagar un mes'}
               <span className="font-normal font-mono-display" style={{ opacity: 0.8 }}>
                 · {formatMoney(conDescuento)}{esSuscripcion ? '/mes' : ''}
               </span>
             </button>
           )
         })()}
+
+        {/* El video del profe, junto al botón: el capítulo del modo elegido
+            («Que se cobre solo» o «Pagar en Wompi»), no el video entero. */}
+        <div className="flex justify-center">
+          <EnlaceProfeSuelto
+            id="inicio-plan"
+            pregunta={esSuscripcion ? '¿Cómo se activa?' : '¿Cómo se paga?'}
+            capitulo={gateway === 'wompi' ? (esSuscripcion ? 'Que se cobre solo' : 'Pagar en Wompi') : null}
+            origen="/configuracion/plan"
+          />
+        </div>
 
         {/* Con qué se cobra solo. Solo sale si hay medio guardado: entonces es
             un dato del pago, no un cartel. */}

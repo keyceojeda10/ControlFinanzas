@@ -14,7 +14,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import ReproductorProfe from './ReproductorProfe'
-import { videosPara, profeHabilitado, desdeDe, duracionDe, reloj } from '@/lib/tutoriales/profe'
+import { videosPara, profeHabilitado, desdeDe, duracionDe, partesDe, reloj } from '@/lib/tutoriales/profe'
 
 const enviar = (cuerpo) => fetch('/api/tutoriales', {
   method: 'POST',
@@ -23,7 +23,11 @@ const enviar = (cuerpo) => fetch('/api/tutoriales', {
   body: JSON.stringify(cuerpo),
 }).catch(() => {})
 
-export default function EnlaceProfeSuelto({ id, junto, pregunta, origen }) {
+/* `capitulo`: el TÍTULO del capítulo en que abre («Pagar en Wompi», «Que se
+   cobre solo»), no el segundo: si el video se vuelve a grabar, el segundo
+   cambia y el título no. Sin tocar el catálogo, que se reimporta.
+   `color`: sobre el bloque oscuro el dorado oscuro no se lee. */
+export default function EnlaceProfeSuelto({ id, junto, pregunta, origen, capitulo = null, color = 'var(--cf-gold-dark)' }) {
   const { data: session } = useSession()
   const [abierto, setAbierto] = useState(false)
   // Hasta leer lo guardado no se pinta: si no, el enlace sale y se va bajo el dedo.
@@ -40,6 +44,10 @@ export default function EnlaceProfeSuelto({ id, junto, pregunta, origen }) {
   if (!profeHabilitado(session?.user?.organizationId) || guardado.botonVisible === false) return null
   const video = videosPara({ rol, paraCobradores: guardado.paraCobradores !== false }).find((v) => v.id === id)
   if (!video || !(video.para ?? []).includes(rol === 'cobrador' ? 'cobrador' : 'dueno')) return null
+  const cap = capitulo ? (video.capitulos ?? []).find((c) => c.titulo === capitulo) : null
+  const desde = cap ? Number(cap.t) : desdeDe(video, junto)
+  const parte = cap ? partesDe(video).find((p) => Math.abs(p.t - desde) < 0.5) : null
+  const dura = parte ? parte.dura : duracionDe(video, junto)
 
   return (
     <>
@@ -48,15 +56,15 @@ export default function EnlaceProfeSuelto({ id, junto, pregunta, origen }) {
         onClick={() => setAbierto(true)}
         aria-label={`${pregunta} Ver el video: ${video.titulo}`}
         className="h-11 rounded-[12px] font-semibold text-[13px] flex items-center justify-center gap-2"
-        style={{ background: 'none', border: 0, cursor: 'pointer', color: 'var(--cf-gold-dark)' }}
+        style={{ background: 'none', border: 0, cursor: 'pointer', color }}
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15a1 1 0 001.5.86l12.5-7.5a1 1 0 000-1.72L8.5 3.64A1 1 0 007 4.5z" /></svg>
-        <span style={{ fontVariantNumeric: 'tabular-nums' }}>{pregunta} · {reloj(duracionDe(video, junto))}</span>
+        <span style={{ fontVariantNumeric: 'tabular-nums' }}>{pregunta} · {reloj(dura)}</span>
       </button>
       {abierto && (
         <ReproductorProfe
           video={video}
-          desde={desdeDe(video, junto)}
+          desde={desde}
           onCerrar={() => setAbierto(false)}
           onApuntar={(tipo, extra) => enviar({ tipo, id: video.id, origen, via: 'enlace', ...extra })}
           onVisto={() => enviar({ tipo: 'visto', id: video.id })}

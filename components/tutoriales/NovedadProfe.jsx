@@ -41,7 +41,10 @@ export default function NovedadProfe({ profe, primeraVez, videoAbierto }) {
     if (!toca || abierta || videoAbierto) return undefined
     if (RUTAS_SIN_MODAL.some((r) => ruta.startsWith(r)) || saleLaOtra()) return undefined
     // Un respiro: que la pantalla cargue antes de que se abra nada encima.
-    const t = setTimeout(() => setAbierta(true), 1500)
+    /* ⚠ Y no encima de otra ventana (la del plan, la del cupo, la del Nequi):
+       dos abiertas a la vez es lo que hace que se cierre todo sin leer. Si hay
+       una, lo intenta en la siguiente pantalla (el efecto depende de la ruta). */
+    const t = setTimeout(() => { if (!document.querySelector('[role="dialog"]')) setAbierta(true) }, 1500)
     return () => clearTimeout(t)
   }, [toca, abierta, videoAbierto, ruta])
 

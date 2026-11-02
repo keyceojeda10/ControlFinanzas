@@ -37,6 +37,7 @@ import Avatar            from '@/components/ui/Avatar'
 import { Card }          from '@/components/ui/Card'
 import { formatMoney, isHoy } from '@/lib/i18n'
 import { useCountry }    from '@/hooks/useCountry'
+import CupoClientes from '@/components/plan/CupoClientes'
 
 // Iconos para acciones swipe
 const IconWA = (
@@ -799,6 +800,9 @@ export default function ClientesPage() {
           crearTexto="Nuevo cliente"
           onCrear={puedeCrearClientes ? () => router.push('/clientes/nuevo') : null}
         />
+        {/* Desde el 85 % del cupo: una línea gris y, dos veces, la hoja de subir
+            de plan (lib/cupo-clientes.js). Solo el dueño la ve. */}
+        <CupoClientes />
 
         {/* EL BUSCADOR DE LA LAMINA: radio 14, alto 46. Lo tenia como pildora
             (radio 999), que es la forma del buscador de la BARRA LATERAL — otra
