@@ -39,6 +39,7 @@ import PrestamoEntregado                           from '@/components/cf/Prestam
 import { useTactil }                               from '@/lib/tactil'
 import { planDelPrestamo, totalTraeGanancia, cargarCarteraActiva } from '@/lib/prestamo-entregado'
 import { MODOS_EN_ORDEN, etiquetaModo, sufijoTasa } from '@/lib/dinero/modos'
+import ReporteCliente from '@/components/clientes/ReporteCliente'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
 const hoyISO = () => getColombiaDate().toISOString().slice(0, 10)
@@ -1419,6 +1420,13 @@ function NuevoPrestamo() {
                   Cambiar
                 </button>
               </div>
+            )}
+
+            {/* ¿LE PRESTO? Cómo le ha ido con este cliente en el negocio —en
+                cualquier ruta— y en otros de la plataforma. Lo pidió el dueño
+                para que un cobrador no le preste a quien paga mal. */}
+            {clienteSeleccionado && !buscando && (
+              <ReporteCliente clienteId={clienteSeleccionado.id} contexto="prestamo" esOwner={esOwner} style={{ marginTop: 12 }} />
             )}
 
             {clienteSeleccionado?.montoMaximoPrestamo > 0 && (

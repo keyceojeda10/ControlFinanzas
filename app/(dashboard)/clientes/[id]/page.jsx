@@ -23,7 +23,7 @@ import { formatMoney } from '@/lib/i18n'
 import { mensajeBorrarPrestamo } from '@/lib/dinero/revertir-renovacion'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { planTieneFotos }            from '@/lib/planes'
-import ScoreCrediticio               from '@/components/clientes/ScoreCrediticio'
+import ReporteCliente                from '@/components/clientes/ReporteCliente'
 import ClienteHeroCard, { InfoContactoCard, AccionesClienteChips } from '@/components/clientes/ClienteHeroCard'
 import { generarTipCliente } from '@/lib/tips/clienteTips'
 import LucasSugiere from '@/components/clientes/LucasSugiere'
@@ -708,6 +708,12 @@ export default function ClienteDetallePage({ params }) {
         </div>
       )}
 
+      {/* ¿LE PRESTO? Su historial en este negocio y en otros de la plataforma
+          (components/clientes/ReporteCliente). Va ARRIBA, pegado al encabezado
+          y antes de Lucas: «que sea bastante visible», y si Lucas ofrece
+          «Prestarle $X», el «Alto riesgo» tiene que leerse antes. */}
+      <ReporteCliente clienteId={cliente.id} contexto="ficha" esOwner={esOwner} />
+
       {/* ⚠ ESTABA DEBAJO DE TODOS LOS PRÉSTAMOS.
           Iba pegada a los chips de acciones, y los chips están al final: para
           escribir «reagendar» había que pasar el hero, Lucas, el score, todos
@@ -737,11 +743,6 @@ export default function ClienteDetallePage({ params }) {
            cerrar el de uno no calle el de los demás. */
         claveCierre={id}
       />
-
-      {/* Score crediticio (si aplica al plan) */}
-      <div className="flex">
-        <ScoreCrediticio cedula={cliente.cedula} plan={plan} />
-      </div>
 
       {/* ── DOS COLUMNAS EN ESCRITORIO (T15-01) ─────────────────────────
           A 1440 esto era una columna de tarjetas móviles apiladas: el

@@ -11,6 +11,7 @@ import { validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { getCachedMutation, setCachedMutation, buildMutationKey } from '@/lib/mutation-idempotency'
 import { validateDocument, getDocumentConfig } from '@/lib/i18n'
 import { calificacionDe } from '@/lib/calificacion'
+import { historialDeUnCliente } from '@/lib/historial-cliente'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 import { anotarLlegadas, vieneDePorCliente } from '@/lib/rutas/procedencia'
 import { pasarPrestamosDeRuta, SELECT_PRESTAMO_TRASLADO } from '@/lib/rutas/traslado'
@@ -173,20 +174,8 @@ export async function GET(request, { params }) {
        distinto, la estrella de la lista y la de la ficha dirían cosas distintas
        del mismo cliente, que es el fallo que este repo lleva toda la semana
        arreglando en otras cifras. */
-    const [h] = await prisma.$queryRaw`
-      SELECT COUNT(*) AS terminados,
-             SUM(p.esClavo = 1) AS clavos,
-             MAX(DATEDIFF(
-               (SELECT MAX(g.fechaPago) FROM Pago g WHERE g.prestamoId = p.id AND g.montoPagado > 0),
-               p.fechaFin
-             )) AS peorRetraso
-      FROM Prestamo p
-      WHERE p.clienteId = ${cliente.id} AND p.estado IN ('completado', 'cancelado')
-    `
     const calificacion = calificacionDe({
-      terminados: Number(h?.terminados ?? 0),
-      clavos: Number(h?.clavos ?? 0),
-      peorRetraso: Number(h?.peorRetraso ?? 0),
+      ...(await historialDeUnCliente(cliente.id)),
       manual: cliente.calificacionManual,
     })
 

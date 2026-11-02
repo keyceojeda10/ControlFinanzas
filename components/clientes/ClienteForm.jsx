@@ -14,6 +14,7 @@ import DiasSinCobroSelector    from '@/components/ui/DiasSinCobroSelector'
 import { guardarClientePendiente, encolarMutacion, invalidarCachePorPrefijo, obtenerRutasOffline, obtenerRutaOffline } from '@/lib/offline'
 import { useCountry } from '@/hooks/useCountry'
 import ClienteCreado from '@/components/cf/ClienteCreado'
+import ReporteCliente from '@/components/clientes/ReporteCliente'
 
 const LocationPicker = dynamic(() => import('@/components/clientes/LocationPicker'), { ssr: false })
 
@@ -69,7 +70,6 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
   const [rutasEstado, setRutasEstado] = useState('cargando') // cargando | ok | error
   const [loading, setLoading]   = useState(false)
   const [error,   setError]     = useState('')
-  const [scoreData, setScoreData] = useState(null)
   const [paso, setPaso] = useState(0)
   const [posicionEnRuta, setPosicionEnRuta] = useState('final')
   const [clientesRuta, setClientesRuta] = useState([])
@@ -100,23 +100,6 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
     { label: 'Organizacion' },
   ]
 
-  // Consulta de score crediticio debounced al escribir cédula
-  const habilitadoScore = !esEdicion && ['standard', 'professional'].includes(plan)
-  useEffect(() => {
-    if (!habilitadoScore) return
-    const cedula = form.cedula.trim()
-    if (!validateDocument(cedula)) {
-      setScoreData(null)
-      return
-    }
-    const timer = setTimeout(() => {
-      fetch(`/api/clientes/score?cedula=${encodeURIComponent(cedula)}`)
-        .then(r => r.json())
-        .then(d => { if (!d.error) setScoreData(d); else setScoreData(null) })
-        .catch(() => setScoreData(null))
-    }, 500)
-    return () => clearTimeout(timer)
-  }, [form.cedula, habilitadoScore])
 
   /* ⚠ «TODAVÍA NO TIENES RUTAS» SALÍA MIENTRAS CARGABAN (y `/api/rutas` es
      pesado), o si la petición fallaba: con rutas de verdad (agente de los
@@ -592,19 +575,11 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                     inputMode={/[a-zA-Z]/.test(documentConfig.placeholder) ? 'text' : 'numeric'}
                     disabled={esEdicion}
                   />
-                  {scoreData?.encontrado && (() => {
-                    const sColor = scoreData.score === 'rojo' ? 'var(--cf-red-dark)' : scoreData.score === 'amarillo' ? 'var(--cf-gold)' : 'var(--cf-green-dark)'
-                    return (
-                      <div className="mt-2 text-xs px-3 py-2 rounded-[10px] flex items-center gap-2"
-                        style={{ background: `color-mix(in srgb, ${sColor} 10%, transparent)`, color: sColor, border: `1px solid color-mix(in srgb, ${sColor} 25%, transparent)` }}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: sColor }} />
-                        {scoreData.score === 'rojo' && 'Cliente con mora activa en otras entidades'}
-                        {scoreData.score === 'amarillo' && 'Cliente con creditos activos en otras entidades'}
-                        {scoreData.score === 'verde' && 'Sin historial negativo en la plataforma'}
-                      </div>
-                    )
-                  })()}
+                  {/* ¿Ya la tiene alguien? En tu negocio (otra ruta, otro
+                      cobrador) y en otros de la plataforma. Solo al crear. */}
+                  {!esEdicion && (
+                    <ReporteCliente cedula={form.cedula} contexto="nuevo-cliente" esOwner={esOwner} style={{ marginTop: 10 }} />
+                  )}
                 </>
               )}
               {/* ── LA CASILLA «NO TENGO LA CÉDULA» SE VA ──
