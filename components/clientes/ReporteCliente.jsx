@@ -66,9 +66,13 @@ function Renglon({ tono, children }) {
  */
 export default function ReporteCliente({ cedula, clienteId, contexto, esOwner = false, style }) {
   const [r, setR] = useState(null)
+  // El cobrador que se topa con una cédula que ya es de otra ruta le avisa al
+  // dueño: null → 'enviando' → 'avisado' | 'error'.
+  const [aviso, setAviso] = useState(null)
 
   const clave = clienteId ? `c:${clienteId}` : cedula?.trim()?.length >= 6 ? `d:${cedula.trim()}` : null
   useEffect(() => {
+    setAviso(null)
     if (!clave) { setR(null); return }
     const ctrl = new AbortController()
     const url = clienteId
@@ -86,6 +90,16 @@ export default function ReporteCliente({ cedula, clienteId, contexto, esOwner = 
   }, [clave])
 
   if (!r) return null
+
+  async function avisar(id) {
+    setAviso('enviando')
+    try {
+      const x = await fetch('/api/clientes/reporte', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clienteId: id }),
+      })
+      setAviso(x.ok ? 'avisado' : 'error')
+    } catch { setAviso('error') }
+  }
 
   const malo = r.nivel === 'rojo' || r.nivel === 'ambar'
   const existente = contexto === 'nuevo-cliente' ? r.existente : null
@@ -149,8 +163,37 @@ export default function ReporteCliente({ cedula, clienteId, contexto, esOwner = 
                 ? 'Lo habías borrado: si lo guardas, vuelve a quedar activo con su historial.'
                 : <>No hace falta crearlo otra vez.{' '}
                     {/* Al cobrador de otra ruta la ficha le daría «no encontrado». */}
-                    {esOwner && <Link href={`/clientes/${existente.id}`} style={{ color: 'var(--cf-gold-dark)', fontWeight: 700 }}>Ver su ficha</Link>}</>}
+                    {esOwner && <Link href={`/clientes/${existente.id}`} style={{ color: 'var(--cf-gold-dark)', fontWeight: 700 }}>Ver su ficha</Link>}
+                    {!esOwner && !existente.tuyo && 'Es de otra ruta: no puedes prestarle.'}</>}
             </span>
+          )}
+          {/* EL COBRADOR, QUE NO PUEDE CREARLO NI ABRIR SU FICHA: si es de su
+              ruta va a prestarle (con clavo le pedirá permiso allí); si es de
+              otra, le avisa al dueño (2 nov 2026). */}
+          {existente && !existente.eliminado && !esOwner && (
+            existente.tuyo
+              ? (
+                <Link href={`/prestamos/nuevo?clienteId=${existente.id}`} data-reporte-accion="prestarle"
+                  style={{ alignSelf: 'flex-start', marginTop: 4, height: 36, padding: '0 16px', display: 'inline-flex', alignItems: 'center', borderRadius: 10, fontSize: 13, fontWeight: 700, background: 'var(--cf-ink)', color: 'var(--cf-surface)' }}>
+                  Ir a prestarle
+                </Link>
+              )
+              : aviso === 'avisado'
+                ? (
+                  <span role="status" data-reporte-accion="avisado" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 4, fontSize: 13, fontWeight: 600, color: 'var(--cf-green-dark)' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
+                    Le avisamos al administrador.
+                  </span>
+                )
+                : (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10, marginTop: 4 }}>
+                    <button type="button" onClick={() => avisar(existente.id)} disabled={aviso === 'enviando'} data-reporte-accion="avisar"
+                      style={{ height: 36, padding: '0 16px', borderRadius: 10, fontSize: 13, fontWeight: 700, background: 'var(--cf-ink)', color: 'var(--cf-surface)', opacity: aviso === 'enviando' ? 0.6 : 1 }}>
+                      {aviso === 'enviando' ? 'Avisando…' : 'Avisarle al administrador'}
+                    </button>
+                    {aviso === 'error' && <span style={{ fontSize: 12, color: 'var(--cf-red-dark)' }}>No se pudo avisar. Revisa la señal.</span>}
+                  </div>
+                )
           )}
           {malo && contexto === 'prestamo' && (
             <span style={{ fontSize: 13, lineHeight: 1.45, color: 'var(--cf-ink-2)' }}>

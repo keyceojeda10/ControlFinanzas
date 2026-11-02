@@ -256,10 +256,13 @@ function NuevoPrestamo() {
       setPermisoPrestar(await r.json())
     } catch {
       const c = clientes.find((x) => x.id === id)
+      const clavo = perdidosDe(c)
       const vivos = (c?.prestamos || []).filter((x) => ['activo', 'pendiente_aprobacion'].includes(x.estado ?? 'activo'))
-      setPermisoPrestar(!puedePrestarConPrestamoActivo && vivos.length > 0
-        ? { necesita: true, cantidad: vivos.length, saldo: Math.round(vivos.reduce((a, x) => a + Math.max(0, Number(x.saldoPendiente) || 0), 0)), estado: null, sinSenal: true }
-        : null)
+      setPermisoPrestar(clavo
+        ? { necesita: true, motivo: 'clavo', ...clavo, estado: null, sinSenal: true }
+        : !puedePrestarConPrestamoActivo && vivos.length > 0
+          ? { necesita: true, motivo: 'debe', cantidad: vivos.length, saldo: Math.round(vivos.reduce((a, x) => a + Math.max(0, Number(x.saldoPendiente) || 0), 0)), estado: null, sinSenal: true }
+          : null)
     }
   }, [esCobrador, puedePrestarConPrestamoActivo, clientes])
   useEffect(() => { consultarPermiso(clienteId) }, [clienteId, consultarPermiso])
@@ -973,8 +976,9 @@ function NuevoPrestamo() {
   }
 
   const puedeAvanzarPaso = () => {
-    // Al cobrador no le deja seguir con un cliente en perdidos (#17).
-    if (!esOwner && perdidosDelElegido) return false
+    // Con un cliente en perdidos (#17) el cobrador sigue solo con permiso
+    // (`faltaPermiso`, abajo); cualquier otro rol que no sea el dueño, no.
+    if (!esOwner && !esCobrador && perdidosDelElegido) return false
     if (cuotaInsuficiente) return false
     // Ni con cliente que ya debe y sin el permiso del dueño.
     if (faltaPermiso) return false
@@ -1327,8 +1331,9 @@ function NuevoPrestamo() {
                 : 'Busca por nombre o cédula, o elige uno de los recientes.'}
             </p>
 
-            {/* Cliente en perdidos (#17): se dice antes de llenar nada. */}
-            {perdidosDelElegido && (
+            {/* Cliente en perdidos (#17): se dice antes de llenar nada. Al
+                cobrador se lo dice la tarjeta del permiso, de abajo. */}
+            {perdidosDelElegido && !esCobrador && (
               <div role="alert" className="mt-4 rounded-[14px] px-4 py-3 flex items-start gap-2.5"
                 style={{ background: 'var(--cf-red-pill-bg)', border: '1px solid color-mix(in srgb, var(--cf-red-dark) 30%, transparent)' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--cf-red-dark)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5" aria-hidden="true">
@@ -1346,12 +1351,16 @@ function NuevoPrestamo() {
               const aprobado = permisoPrestar.estado === 'aprobado'
               const rechazado = permisoPrestar.estado === 'rechazado'
               const esperando = permisoPrestar.estado === 'pendiente'
+              const clavo = permisoPrestar.motivo === 'clavo'
               const tono = aprobado
                 ? { fondo: 'var(--cf-green-pill-bg)', borde: 'var(--cf-green-pill-border)', texto: 'var(--cf-green-dark)' }
-                : rechazado
+                : rechazado || clavo
                   ? { fondo: 'var(--cf-red-pill-bg)', borde: 'var(--cf-red-pill-border)', texto: 'var(--cf-red-dark)' }
                   : { fondo: 'var(--cf-fill)', borde: 'var(--cf-border-strong)', texto: 'var(--cf-ink)' }
-              const tiene = permisoPrestar.cantidad === 1 ? 'ya tiene un préstamo activo' : `ya tiene ${permisoPrestar.cantidad} préstamos activos`
+              const tiene = clavo
+                ? `tiene ${permisoPrestar.cantidad === 1 ? 'un préstamo marcado' : `${permisoPrestar.cantidad} préstamos marcados`} como clavo`
+                : permisoPrestar.cantidad === 1 ? 'ya tiene un préstamo activo' : `ya tiene ${permisoPrestar.cantidad} préstamos activos`
+              const paraQue = clavo ? 'Para prestarle' : 'Para hacerle otro'
               return (
                 <div role="status" data-permiso-prestar={permisoPrestar.estado ?? 'sin-pedir'}
                   className="mt-4 rounded-[12px] px-4 py-3 flex flex-col gap-2.5"
@@ -1364,13 +1373,13 @@ function NuevoPrestamo() {
                     </svg>
                     <span className="text-sm" style={{ color: tono.texto }}>
                       {aprobado
-                        ? <><strong>Tienes permiso.</strong> El administrador autorizó otra cartulina para este cliente. Sirve para un préstamo, hoy.</>
+                        ? <><strong>Tienes permiso.</strong> El administrador autorizó prestarle a este cliente{clavo ? ', aunque tiene un clavo' : ''}. Sirve para un préstamo, hoy.</>
                         : <>
-                            <strong>Este cliente {tiene}</strong> y debe {formatMoney(permisoPrestar.saldo)}.{' '}
-                            {rechazado ? 'El administrador no autorizó otra cartulina.'
+                            <strong>{clavo ? 'Cliente con clavo: ' : 'Este cliente '}{tiene}</strong> y debe {formatMoney(permisoPrestar.saldo)}.{' '}
+                            {rechazado ? 'El administrador no autorizó prestarle.'
                               : esperando ? 'Le pedimos permiso al administrador. Cuando lo apruebe, esto se enciende solo.'
-                              : permisoPrestar.sinSenal ? 'Para hacerle otro necesitas el permiso del administrador, y sin señal no se puede pedir.'
-                              : 'Para hacerle otro necesitas el permiso del administrador.'}
+                              : permisoPrestar.sinSenal ? `${paraQue} necesitas el permiso del administrador, y sin señal no se puede pedir.`
+                              : `${paraQue} necesitas el permiso del administrador.`}
                           </>}
                     </span>
                   </div>

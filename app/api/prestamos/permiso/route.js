@@ -1,7 +1,8 @@
 // app/api/prestamos/permiso/route.js — El cobrador pide permiso para hacerle
 // otra cartulina a un cliente que ya debe. Ver lib/dinero/permiso-prestamo.js.
 //
-// GET  ?clienteId=  → en qué va: { necesita, cantidad, saldo, estado, permisoId }
+// GET  ?clienteId=  → en qué va: { necesita, motivo, cantidad, saldo, estado, permisoId }
+//      `motivo`: 'clavo' (tiene un préstamo marcado como clavo) o 'debe'.
 // POST { clienteId, monto } → crea la solicitud (o devuelve la que ya espera)
 //      y le avisa al dueño. Aprobarla o rechazarla es `permiso/[id]`.
 
@@ -15,6 +16,7 @@ import { situacionParaPrestar } from '@/lib/dinero/permiso-prestamo'
 function respuesta(s) {
   return {
     necesita: s.necesita,
+    motivo: s.motivo ?? null,
     cantidad: s.cantidad,
     saldo: s.saldo,
     estado: s.permiso?.estado ?? null,
@@ -61,19 +63,23 @@ export async function POST(request) {
     data: { organizationId, clienteId, cobradorId: userId, monto },
   })
 
+  const esClavo = s.motivo === 'clavo'
+  const porCuanto = monto ? ` por ${plata(monto)}` : ''
   logActividad({
     session,
     accion: 'solicitud_permiso_prestamo',
     entidadTipo: 'cliente',
     entidadId: clienteId,
-    detalle: `Pidió permiso para prestarle otra vez a ${cliente.nombre}${monto ? ` (${plata(monto)})` : ''}`,
+    detalle: `Pidió permiso para prestarle otra vez a ${cliente.nombre}${esClavo ? ', que tiene un clavo' : ''}${monto ? ` (${plata(monto)})` : ''}`,
     ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
   })
 
   notificar({
     organizationId, para: 'owners', tipo: 'permiso_prestamo',
-    titulo: 'Piden permiso para prestar',
-    mensaje: `${session.user.nombre} quiere hacerle otra cartulina a ${cliente.nombre}${monto ? ` por ${plata(monto)}` : ''}. Ya debe ${plata(s.saldo)}.`,
+    titulo: esClavo ? 'Piden permiso para prestarle a un clavo' : 'Piden permiso para prestar',
+    mensaje: esClavo
+      ? `${session.user.nombre} quiere prestarle a ${cliente.nombre}${porCuanto}. Tiene ${s.cantidad === 1 ? 'un préstamo marcado' : `${s.cantidad} préstamos marcados`} como clavo y debe ${plata(s.saldo)}.`
+      : `${session.user.nombre} quiere hacerle otra cartulina a ${cliente.nombre}${porCuanto}. Ya debe ${plata(s.saldo)}.`,
     href: `/clientes/${clienteId}`, datos: { permisoId: permiso.id, clienteId },
   })
 

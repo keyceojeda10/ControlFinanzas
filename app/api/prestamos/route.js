@@ -692,10 +692,12 @@ export async function POST(request) {
 
   /* ⚠ CLIENTE CON UN PRÉSTAMO EN PERDIDOS (decisión del dueño, 17 oct 2026).
      Otros cobradores del mismo negocio le volvían a prestar porque nada lo
-     marcaba. Al cobrador se le bloquea; el dueño presta solo si lo confirma
-     (`confirmarClienteEnPerdidos`). (DETALLES-PRESTAMOS #17.) */
+     marcaba. El dueño presta solo si lo confirma (`confirmarClienteEnPerdidos`).
+     El COBRADOR, desde el 2 nov, pide permiso: lo frena `situacionParaPrestar`
+     aquí abajo con `motivo: 'clavo'`. Cualquier otro rol sigue bloqueado.
+     (DETALLES-PRESTAMOS #17.) */
   const enPerdidos = await perdidosDelCliente(prisma, { organizationId, clienteId })
-  if (enPerdidos) {
+  if (enPerdidos && rol !== 'cobrador') {
     const aviso = textoClienteEnPerdidos(enPerdidos)
     if (rol !== 'owner') {
       return Response.json({ error: `${aviso} Solo el dueño puede prestarle.`, clienteEnPerdidos: enPerdidos }, { status: 403 })
@@ -719,7 +721,7 @@ export async function POST(request) {
       if (situacion.permiso?.estado !== 'aprobado') {
         return Response.json({
           error: textoNecesitaPermiso(situacion),
-          necesitaPermiso: { cantidad: situacion.cantidad, saldo: situacion.saldo, estado: situacion.permiso?.estado ?? null },
+          necesitaPermiso: { motivo: situacion.motivo, cantidad: situacion.cantidad, saldo: situacion.saldo, estado: situacion.permiso?.estado ?? null },
         }, { status: 403 })
       }
       permisoAUsar = situacion.permiso.id

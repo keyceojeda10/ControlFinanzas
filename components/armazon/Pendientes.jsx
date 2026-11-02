@@ -68,11 +68,14 @@ function Fila({ p, onResuelto, onAbrir }) {
   useEffect(() => () => clearTimeout(reloj.current), [])
 
   const titulo = p.clase === 'prestamo' ? `${p.quien} quiere prestar ${formatMoney(p.monto)}`
-    : p.clase === 'permiso' ? (p.monto ? `${p.quien} pide permiso para prestar ${formatMoney(p.monto)}` : `${p.quien} pide permiso para otra cartulina`)
+    : p.clase === 'permiso' ? (p.monto ? `${p.quien} pide permiso para prestar ${formatMoney(p.monto)}`
+        : p.clavo ? `${p.quien} pide permiso para prestarle a un clavo` : `${p.quien} pide permiso para otra cartulina`)
     : p.clase === 'reapertura' ? `${p.quien} pide reabrir su caja`
     : `${p.quien} anotó un gasto de ${formatMoney(p.monto)}`
   const detalle = p.clase === 'prestamo' ? (p.para ? `a ${p.para}` : null)
-    : p.clase === 'permiso' ? (p.para ? `a ${p.para}, que ya tiene un préstamo` : 'a un cliente que ya tiene un préstamo')
+    : p.clase === 'permiso' ? (p.clavo
+        ? `a ${p.para ?? 'un cliente'}, que tiene un clavo: debe ${formatMoney(p.clavo.saldo)}`
+        : p.para ? `a ${p.para}, que ya tiene un préstamo` : 'a un cliente que ya tiene un préstamo')
     : p.clase === 'reapertura' ? (p.fechaCaja ? `la del ${formatFecha(p.fechaCaja)}` : null)
     : p.concepto
 

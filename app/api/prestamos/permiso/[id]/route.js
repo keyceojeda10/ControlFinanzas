@@ -1,5 +1,5 @@
 // app/api/prestamos/permiso/[id]/route.js — El dueño aprueba o rechaza que un
-// cobrador le haga otra cartulina a un cliente que ya debe.
+// cobrador le preste a un cliente que ya debe o que tiene un clavo.
 // POST { decision: 'aprobar' | 'rechazar' }. Ver lib/dinero/permiso-prestamo.js.
 
 import { getServerSession } from 'next-auth'
@@ -49,8 +49,8 @@ export async function POST(request, { params }) {
     tipo: aprobar ? 'permiso_prestamo_aprobado' : 'permiso_prestamo_rechazado',
     titulo: aprobar ? 'Te dieron permiso para prestar' : 'No te dieron permiso para prestar',
     mensaje: aprobar
-      ? `Ya puedes hacerle la otra cartulina a ${nombre}. Sirve para un préstamo, hoy.`
-      : `El administrador no autorizó otra cartulina para ${nombre}.`,
+      ? `Ya puedes prestarle a ${nombre}. Sirve para un préstamo, hoy.`
+      : `El administrador no autorizó prestarle a ${nombre}.`,
     href: aprobar ? `/prestamos/nuevo?clienteId=${permiso.clienteId}` : `/clientes/${permiso.clienteId}`,
     datos: { permisoId: id, clienteId: permiso.clienteId },
   })

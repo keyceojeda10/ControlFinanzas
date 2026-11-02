@@ -17,6 +17,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { perdidosDelCliente } from '@/lib/dinero/cliente-en-perdidos'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
 export async function GET() {
@@ -75,6 +76,10 @@ export async function GET() {
     ? await prisma.cliente.findMany({ where: { id: { in: idsClientes }, organizationId }, select: { id: true, nombre: true } })
     : []
   const clienteDe = new Map(clientesDePermisos.map((c) => [c.id, c.nombre]))
+  /* El que pide prestarle a un clavo lo dice en la fila: el dueño decide con un
+     toque y tiene que saber qué está aprobando (2 nov 2026). */
+  const clavos = await Promise.all(idsClientes.map((clienteId) => perdidosDelCliente(prisma, { organizationId, clienteId })))
+  const clavoDe = new Map(idsClientes.map((id, i) => [id, clavos[i]]))
 
   const pendientes = [
     ...prestamos.map((p) => ({
@@ -97,6 +102,7 @@ export async function GET() {
       quien: nombreDe.get(p.cobradorId) ?? 'Un cobrador',
       para: clienteDe.get(p.clienteId) ?? null,
       monto: Number(p.monto) || 0,
+      clavo: clavoDe.get(p.clienteId) ? { saldo: clavoDe.get(p.clienteId).saldo } : null,
       desde: p.createdAt,
       href: `/clientes/${p.clienteId}`,
     })),
