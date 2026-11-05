@@ -7,6 +7,7 @@ import Image           from 'next/image'
 import { usePathname } from 'next/navigation'
 import { signOut }     from 'next-auth/react'
 import { Badge }       from '@/components/ui/Badge'
+import WhatsAppBusiness from '@/components/admin/WhatsAppBusiness'
 
 /* ══ TRECE ENTRADAS, Y NUEVE CABEN ═══════════════════════════════════════════
  *
@@ -153,6 +154,7 @@ export default function AdminLayout({ children }) {
 
   return (
     <div className="flex min-h-dvh bg-[var(--cf-surface)]">
+      <WhatsAppBusiness />
       {/* Sidebar desktop */}
       <aside className="hidden lg:flex w-60 flex-col border-r border-[var(--cf-border)] bg-[var(--cf-surface)] shrink-0">
         <div className="px-5 py-5 border-b border-[var(--cf-border)]">

@@ -38,6 +38,7 @@ export default function TuNegocio({ inicial = {}, paises = [], tema, onTema, onG
   }))
   const t = useRef(null)
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization -- aviso del React Compiler, que este proyecto no usa: el `useCallback` funciona igual.
   const guardar = useCallback(async (campos) => {
     setEstado('guardando')
     try {

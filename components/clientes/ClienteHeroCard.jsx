@@ -179,6 +179,7 @@ function FotoLightbox({ src, alt, onClose }) {
             height: 'auto',
             objectFit: 'contain',
             transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
+            // eslint-disable-next-line react-hooks/refs -- se lee al pintar a propósito: mientras dura el pellizco no hay transición (cada movimiento ya provoca un render).
             transition: gestureRef.current?.startDist > 0 ? 'none' : 'transform 0.2s ease-out',
           }}
         />

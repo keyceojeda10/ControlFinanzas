@@ -265,6 +265,7 @@ export default function DashboardError({ error, reset }) {
         <span className="text-[13px]" style={{ color: 'var(--cf-ink-2)' }}>
           Si esto sigue en 10 minutos, escríbenos y te contamos qué pasa.
         </span>
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- a propósito: desde una pantalla rota se recarga entera, sin arrastrar el estado que la rompió. */}
         <a href="/soporte/nuevo" className="text-[13px] font-bold shrink-0" style={{ color: 'var(--cf-gold-dark)' }}>
           Escribirnos
         </a>

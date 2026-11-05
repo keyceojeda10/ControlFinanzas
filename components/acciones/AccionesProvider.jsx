@@ -110,6 +110,7 @@ export function useRegistrarAcciones(clave, lista) {
    * y el efecto solo corre cuando cambia de verdad la lista. */
   const registrar = useContext(Contexto)?.registrar
   const ultima = useRef(lista)
+  // eslint-disable-next-line react-hooks/refs -- a propósito: el ref lleva lo último y la `firma` decide cuándo registrar (ver arriba: así se cortó el bucle de re-renders).
   ultima.current = lista
 
   const firma = (lista || [])

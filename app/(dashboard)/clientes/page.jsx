@@ -248,6 +248,7 @@ function AvisoFiltroUrl() {
       <span className="text-xs font-medium" style={{ color: 'var(--cf-ink-2)' }}>
         {FILTROS_URL[puesto]}
       </span>
+      {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- a propósito: la lista lee los filtros de la URL UNA vez al cargar (`useState(() => searchParams…)`, `AvisoFiltroUrl`); con <Link> el filtro se quedaría puesto. */}
       <a
         href="/clientes"
         className="text-xs font-semibold shrink-0"

@@ -109,6 +109,7 @@ export function useCabecera({ titulo, subtitulo, acciones, paso, total, onVolver
 
   // El ref lleva siempre lo último; la clave decide cuándo vale la pena avisar.
   const ultimo = useRef(null)
+  // eslint-disable-next-line react-hooks/refs -- a propósito: lo último va en el ref y la clave de abajo decide cuándo avisar al armazón.
   ultimo.current = { titulo, subtitulo, acciones, paso, total, onVolver, onCerrar, tarea }
 
   // Los MANEJADORES van en la clave como «hay o no hay», no por identidad.

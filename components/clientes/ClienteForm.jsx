@@ -4,6 +4,7 @@
 // subtitulo y campos amplios con mucho espacio. Stepper minimalista arriba.
 
 import { conPantalla } from '@/components/cf/Procesando'
+import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter }           from 'next/navigation'
 import dynamic                 from 'next/dynamic'
@@ -724,13 +725,13 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                   Todavía no tienes rutas. Crea el cliente sin ruta y se la
                   asignas cuando tengas una — no se pierde nada.
                 </p>
-                <a
+                <Link
                   href="/rutas"
                   className="inline-block mt-2.5 text-[13px] font-bold"
                   style={{ color: 'var(--cf-gold-dark)' }}
                 >
                   Ver mis rutas
-                </a>
+                </Link>
               </div>
             ) : null}
 
