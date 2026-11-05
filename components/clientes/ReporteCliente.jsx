@@ -40,6 +40,9 @@ function Escudo({ nivel }) {
   )
 }
 
+/** «RUTA # 1» tal cual; «Norte» → «la ruta Norte». */
+const dondeEsta = (ruta) => (ruta ? (/^\s*ruta\b/i.test(ruta) ? ruta : `la ruta ${ruta}`) : 'otra ruta')
+
 function Etiqueta({ children }) {
   return (
     <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
@@ -64,20 +67,21 @@ function Renglon({ tono, children }) {
  * @param {'ficha'|'nuevo-cliente'|'prestamo'} p.contexto
  * @param {boolean} [p.esOwner]   el dueño ve el enlace para subir de plan
  */
-export default function ReporteCliente({ cedula, clienteId, contexto, esOwner = false, style }) {
+export default function ReporteCliente({ cedula, clienteId, contexto, esOwner = false, rutaId = null, style }) {
   const [r, setR] = useState(null)
   // El cobrador que se topa con una cédula que ya es de otra ruta le avisa al
   // dueño: null → 'enviando' → 'avisado' | 'error'.
   const [aviso, setAviso] = useState(null)
 
-  const clave = clienteId ? `c:${clienteId}` : cedula?.trim()?.length >= 6 ? `d:${cedula.trim()}` : null
+  // En «nuevo cliente» la ruta elegida cambia la respuesta: ya tiene ficha ahí, o se registra también en ella.
+  const clave = clienteId ? `c:${clienteId}` : cedula?.trim()?.length >= 6 ? `d:${cedula.trim()}|${rutaId ?? ''}` : null
   useEffect(() => {
     setAviso(null)
     if (!clave) { setR(null); return }
     const ctrl = new AbortController()
     const url = clienteId
       ? `/api/clientes/reporte?clienteId=${encodeURIComponent(clienteId)}`
-      : `/api/clientes/reporte?cedula=${encodeURIComponent(cedula.trim())}`
+      : `/api/clientes/reporte?cedula=${encodeURIComponent(cedula.trim())}${rutaId ? `&rutaId=${encodeURIComponent(rutaId)}` : ''}`
     // Al escribir la cédula se espera a que deje de teclear; al elegir, no.
     const t = setTimeout(() => {
       fetch(url, { signal: ctrl.signal, cache: 'no-store' })
@@ -154,23 +158,37 @@ export default function ReporteCliente({ cedula, clienteId, contexto, esOwner = 
             <Pastilla tono={PASTILLA[r.nivel]}>{r.pastilla}</Pastilla>
           </div>
           <span style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.3, color: TINTA[r.nivel] ?? 'var(--cf-ink)' }}>
-            {existente ? 'Esta cédula ya está en tu negocio' : r.titulo}
+            {!existente ? r.titulo
+              : existente.caso === 'otra' ? `Ya es cliente en ${dondeEsta(existente.ruta)}`
+              : 'Esta cédula ya está en tu negocio'}
           </span>
           {existente && (
             <span style={{ fontSize: 13, lineHeight: 1.45, color: 'var(--cf-ink-2)' }}>
-              Es de <strong>{existente.nombre}</strong>{existente.ruta ? `, en ${/^\s*ruta\b/i.test(existente.ruta) ? '' : 'la ruta '}${existente.ruta}` : ''}.{' '}
-              {existente.eliminado
-                ? 'Lo habías borrado: si lo guardas, vuelve a quedar activo con su historial.'
-                : <>No hace falta crearlo otra vez.{' '}
-                    {/* Al cobrador de otra ruta la ficha le daría «no encontrado». */}
-                    {esOwner && <Link href={`/clientes/${existente.id}`} style={{ color: 'var(--cf-gold-dark)', fontWeight: 700 }}>Ver su ficha</Link>}
-                    {!esOwner && !existente.tuyo && 'Es de otra ruta: no puedes prestarle.'}</>}
+              Es de <strong>{existente.nombre}</strong>{existente.ruta ? `, en ${dondeEsta(existente.ruta)}` : ''}.{' '}
+              {/* ⚠ UNA PERSONA PUEDE TENER FICHA EN DOS RUTAS (5 nov 2026): si paga
+                  bien se registra también aquí, con la misma cédula; si paga mal,
+                  solo el dueño. La decisión es `casoDeLaCedula`, la del servidor. */}
+              {existente.caso === 'otra'
+                ? <>{{
+                      rojo: 'Paga mal, pero como administrador puedes registrarlo también en esta ruta, con la misma cédula.',
+                      ambar: 'Se atrasa a veces, pero puedes registrarlo también en esta ruta, con la misma cédula.',
+                      verde: 'Paga bien: si lo guardas, queda también en esta ruta, con la misma cédula.',
+                    }[r.nivel] ?? 'Si lo guardas, queda también en esta ruta, con la misma cédula.'}{' '}
+                    Cada ruta cobra su préstamo, y un clavo en cualquiera de las dos se ve en las dos.{' '}
+                    {esOwner && <Link href={`/clientes/${existente.id}`} style={{ color: 'var(--cf-gold-dark)', fontWeight: 700 }}>Ver su ficha</Link>}</>
+                : existente.caso === 'bloqueada'
+                  ? 'Paga mal, así que no puedes registrarlo en tu ruta: solo el administrador puede.'
+                  : existente.eliminado
+                    ? 'Lo habías borrado: si lo guardas, vuelve a quedar activo con su historial.'
+                    : <>No hace falta crearlo otra vez.{' '}
+                        {/* Al cobrador de otra ruta la ficha le daría «no encontrado». */}
+                        {esOwner && <Link href={`/clientes/${existente.id}`} style={{ color: 'var(--cf-gold-dark)', fontWeight: 700 }}>Ver su ficha</Link>}</>}
             </span>
           )}
           {/* EL COBRADOR, QUE NO PUEDE CREARLO NI ABRIR SU FICHA: si es de su
               ruta va a prestarle (con clavo le pedirá permiso allí); si es de
               otra, le avisa al dueño (2 nov 2026). */}
-          {existente && !existente.eliminado && !esOwner && (
+          {existente && !existente.eliminado && !esOwner && existente.caso !== 'otra' && (
             existente.tuyo
               ? (
                 <Link href={`/prestamos/nuevo?clienteId=${existente.id}`} data-reporte-accion="prestarle"

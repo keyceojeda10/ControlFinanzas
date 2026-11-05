@@ -8,6 +8,7 @@ import { calcularSaldoPendiente } from '@/lib/calculos'
 import { notificar } from '@/lib/notificar'
 import { anotarLlegadas } from '@/lib/rutas/procedencia'
 import { rutaPermitida } from '@/lib/limites-plan'
+import { chocanEnLaRuta, textoDelChoque } from '@/lib/clientes/misma-persona'
 
 /* Solo rutas activas: meter clientes en una ruta archivada (unida con otra)
    los escondería en una ruta que ninguna lista enseña. */
@@ -80,6 +81,10 @@ export async function POST(request, { params }) {
       { status: 409 }
     )
   }
+
+  // Una persona no puede tener dos fichas en la misma ruta (lib/clientes/misma-persona.js).
+  const chocan = await chocanEnLaRuta(prisma, { organizationId, clienteIds, rutaId: id })
+  if (chocan.length) return Response.json({ error: textoDelChoque(chocan) }, { status: 409 })
 
   /* Los préstamos activos de los que llegan: cambian de bolsa si esta ruta o la
      de donde vienen lleva capital propio (DETALLES-RUTAS #8). */

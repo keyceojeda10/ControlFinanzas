@@ -350,16 +350,23 @@ export async function PATCH(request, { params }) {
     if (!validateDocument(cedula.trim(), country)) {
       return Response.json({ error: `${docConfig.label} no válido (ej: ${docConfig.placeholder})` }, { status: 400 })
     }
-    const existe = await prisma.cliente.findUnique({
-      where: {
-        organizationId_cedula: {
-          organizationId: session.user.organizationId,
-          cedula: cedula.trim(),
-        },
-      },
+  }
+
+  /* ⚠ LA CÉDULA ES ÚNICA POR RUTA (5 nov 2026, lib/clientes/misma-persona.js):
+     una persona puede tener ficha en dos rutas, pero no dos en la misma. Choca
+     al cambiar la cédula y también al pasar el cliente a una ruta donde esa
+     persona ya tiene ficha: sin esto, la base lo rechazaba con un 500. */
+  const cedulaFinal = (cedula?.trim()) || clienteBase.cedula
+  const rutaFinal = rutaId !== undefined ? (rutaId || null) : (clienteBase.rutaId ?? null)
+  const cambiaCedula = !!cedula && cedula.trim() !== clienteBase.cedula
+  const cambiaRuta = rutaId !== undefined && (rutaId || null) !== (clienteBase.rutaId ?? null)
+  if ((cambiaCedula || cambiaRuta) && cedulaFinal && !String(cedulaFinal).startsWith('SIN-')) {
+    const choca = await prisma.cliente.findFirst({
+      where: { organizationId: session.user.organizationId, cedula: cedulaFinal, rutaId: rutaFinal, id: { not: id } },
+      select: { id: true },
     })
-    if (existe && existe.id !== id) {
-      return Response.json({ error: 'Ya existe un cliente con esa cédula' }, { status: 409 })
+    if (choca) {
+      return Response.json({ error: 'Ya hay un cliente con esa cédula en esa ruta' }, { status: 409 })
     }
   }
 

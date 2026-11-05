@@ -5,6 +5,9 @@ import { renovacionesDe } from '@/lib/prestamos/renovaciones'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { datosDelReporte } from '@/lib/reporte-cedula'
+import { reporteDe } from '@/lib/reporte-cliente'
+import { casoDeLaCedula } from '@/lib/clientes/misma-persona'
 import { calificacionDe }   from '@/lib/calificacion'
 import { historialPorCliente } from '@/lib/historial-cliente'
 import {
@@ -715,11 +718,39 @@ export async function POST(request) {
     return Response.json({ error: `${docConfig.label} no válido (ej: ${docConfig.placeholder})` }, { status: 400 })
   }
 
-  // Verificar cédula única en la organización (SIN- son siempre únicos, skip check)
-  const existe = !esSinCedula ? await prisma.cliente.findUnique({
-    where: { organizationId_cedula: { organizationId, cedula: cedula.trim() } },
-    select: { id: true, estado: true },
-  }) : null
+  /* ⚠ LA CÉDULA ES ÚNICA POR RUTA, NO POR NEGOCIO (5 nov 2026). Un buen
+     cliente puede tener ficha en dos rutas con su cédula real: PRESTA MIL le
+     mandaba el segundo préstamo a un compañero de otra ruta, y como la cédula
+     no entraba, el cobrador le cambiaba un número y el clavo dejaba de verse.
+     Quién puede, lo decide `casoDeLaCedula` (lib/clientes/misma-persona.js), la
+     misma que pinta la tarjeta de «nuevo cliente». SIN- son siempre únicos. */
+  const fichasMismaCedula = !esSinCedula ? await prisma.cliente.findMany({
+    where: { organizationId, cedula: cedula.trim() },
+    select: { id: true, estado: true, rutaId: true, ruta: { select: { nombre: true } } },
+  }) : []
+  let existe = null
+  let yaEnOtraRuta = null
+  if (fichasMismaCedula.length) {
+    const esDueno = session.user.rol === 'owner'
+    const rutaPedida = rutaId || autoRutaId || null
+    const enEsaRuta = fichasMismaCedula.some((f) => (f.rutaId ?? null) === rutaPedida)
+    // Solo hace falta el reporte si el cobrador la quiere en otra ruta.
+    const pagaMal = !enEsaRuta && !esDueno
+      ? reporteDe({ propio: (await datosDelReporte({ organizationId, cedula: cedula.trim(), conOtros: false })).propio }).nivel === 'rojo'
+      : false
+    const { caso, ficha } = casoDeLaCedula({
+      fichas: fichasMismaCedula.map((f) => ({ clienteId: f.id, rutaId: f.rutaId, eliminado: f.estado === 'eliminado' })),
+      rutaPedida, esDueno, rutasDelUsuario: session.user.rutaIds ?? [], pagaMal,
+    })
+    const laFicha = fichasMismaCedula.find((f) => f.id === ficha?.clienteId)
+    if (caso === 'misma') existe = laFicha
+    else if (caso === 'bloqueada') {
+      return Response.json({
+        error: `Ya es cliente en ${laFicha?.ruta?.nombre ?? 'otra ruta'} y tiene clavo o atraso: solo el administrador puede registrarlo en otra ruta.`,
+        existingId: laFicha?.id ?? null, bloqueada: true,
+      }, { status: 409 })
+    } else yaEnOtraRuta = laFicha
+  }
   /* ⚠ UN CLIENTE ELIMINADO CON ESA CÉDULA SE REACTIVA, pero DESPUÉS de validar
      la ruta y con los mismos datos que un cliente nuevo. Antes se reactivaba
      aquí arriba: un cobrador podía meterlo en una ruta que no era suya, y se
@@ -879,7 +910,17 @@ export async function POST(request) {
     })
   }
 
-  logActividad({ session, accion: 'crear_cliente', entidadTipo: 'cliente', entidadId: cliente.id, detalle: `Cliente ${nombre.trim()} (${cedula.trim()})`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
+  logActividad({ session, accion: 'crear_cliente', entidadTipo: 'cliente', entidadId: cliente.id, detalle: `Cliente ${nombre.trim()} (${cedula.trim()})${yaEnOtraRuta ? ` · ya era cliente en ${yaEnOtraRuta.ruta?.nombre ?? 'otra ruta'}` : ''}`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
+  /* El dueño se entera cuando un cobrador registra en su ruta a alguien que ya
+     es cliente en otra: lo pidió así (opción A, 5 nov 2026). */
+  if (yaEnOtraRuta && session.user.rol !== 'owner') {
+    notificar({
+      organizationId, para: 'owners', tipo: 'cliente_en_otra_ruta',
+      titulo: 'Un cliente quedó en dos rutas',
+      mensaje: `${session.user.nombre ?? 'Un cobrador'} registró a ${nombre.trim()} en su ruta. Ya era cliente en ${yaEnOtraRuta.ruta?.nombre ?? 'otra ruta'}.`,
+      href: `/clientes/${cliente.id}`, datos: { clienteId: cliente.id, otraFichaId: yaEnOtraRuta.id },
+    })
+  }
   trackEvent({ organizationId, userId: session.user.id, evento: 'crear_cliente' })
   // Avisa a Meta si con este cliente la organizacion cruzo 6 o 21 clientes.
   // No se espera: si el CAPI tarda o falla, la respuesta al usuario no se frena.

@@ -579,7 +579,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                   {/* ¿Ya la tiene alguien? En tu negocio (otra ruta, otro
                       cobrador) y en otros de la plataforma. Solo al crear. */}
                   {!esEdicion && (
-                    <ReporteCliente cedula={form.cedula} contexto="nuevo-cliente" esOwner={esOwner} style={{ marginTop: 10 }} />
+                    <ReporteCliente cedula={form.cedula} contexto="nuevo-cliente" esOwner={esOwner} rutaId={form.rutaId || null} style={{ marginTop: 10 }} />
                   )}
                 </>
               )}

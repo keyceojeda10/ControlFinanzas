@@ -18,12 +18,34 @@ import { reporteLimiter } from '@/lib/rate-limit'
 import { planVeOtrosNegocios } from '@/lib/planes'
 import { datosDelReporte } from '@/lib/reporte-cedula'
 import { reporteDe } from '@/lib/reporte-cliente'
+import { casoDeLaCedula } from '@/lib/clientes/misma-persona'
 import { prisma } from '@/lib/prisma'
 import { notificar } from '@/lib/notificar'
 import { logActividad } from '@/lib/activity-log'
 import { getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
 
 const enLaRuta = (ruta) => (ruta ? (/^\s*ruta\b/i.test(ruta) ? ruta : `la ruta ${ruta}`) : 'otra ruta')
+
+/* Qué le dice «nuevo cliente» de una cédula que ya está en el negocio. La
+   decisión es `casoDeLaCedula`, la misma que aplica el servidor al guardar:
+   «misma» (ya tiene ficha ahí), «otra» (paga bien: se registra también en esta
+   ruta) o «bloqueada» (paga mal: solo el dueño). */
+function existenteDe(propio, session, rutaPedida) {
+  if (!propio) return null
+  const esDueno = session.user.rol === 'owner'
+  const rutasDelUsuario = session.user.rutaIds ?? []
+  const { caso, ficha } = casoDeLaCedula({
+    fichas: propio.fichas ?? [], rutaPedida, esDueno, rutasDelUsuario,
+    pagaMal: reporteDe({ propio }).nivel === 'rojo',
+  })
+  const f = ficha ?? { clienteId: propio.clienteId, nombre: propio.nombre, ruta: propio.ruta, rutaId: propio.rutaId, eliminado: propio.eliminado }
+  return {
+    id: f.clienteId, nombre: f.nombre ?? propio.nombre, ruta: f.ruta, eliminado: f.eliminado,
+    caso,
+    // Para el cobrador: si es de una de sus rutas puede ir a prestarle.
+    tuyo: esDueno || rutasDelUsuario.includes(f.rutaId),
+  }
+}
 
 export async function GET(req) {
   const session = await getServerSession(authOptions)
@@ -37,6 +59,8 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url)
   const cedula = searchParams.get('cedula')?.trim() || null
   const clienteId = searchParams.get('clienteId')?.trim() || null
+  // La ruta elegida en «nuevo cliente»: con ella se sabe si la persona ya tiene ficha AHÍ.
+  const rutaPedida = searchParams.get('rutaId')?.trim() || null
   if (!cedula && !clienteId) return Response.json({ error: 'Falta la cédula' }, { status: 400 })
 
   const conOtros = planVeOtrosNegocios(session.user.plan)
@@ -48,14 +72,7 @@ export async function GET(req) {
       conOtros,
       negocios: datos.otros?.negocios ?? 0,
       // Para «nuevo cliente»: la cédula ya es de alguien de este negocio.
-      existente: datos.propio
-        ? {
-            id: datos.propio.clienteId, nombre: datos.propio.nombre, ruta: datos.propio.ruta, eliminado: datos.propio.eliminado,
-            // Para el cobrador: si es de una de sus rutas puede ir a prestarle;
-            // si no, solo avisarle al dueño.
-            tuyo: session.user.rol === 'owner' || (session.user.rutaIds ?? []).includes(datos.propio.rutaId),
-          }
-        : null,
+      existente: existenteDe(datos.propio, session, rutaPedida),
     })
   } catch (err) {
     console.error('[reporte cédula]', err)

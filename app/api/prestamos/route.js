@@ -35,6 +35,7 @@ import { rutaPermitida } from '@/lib/limites-plan'
 import { notificar, plata } from '@/lib/notificar'
 import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
 import { perdidosDelCliente, textoClienteEnPerdidos } from '@/lib/dinero/cliente-en-perdidos'
+import { chocanEnLaRuta } from '@/lib/clientes/misma-persona'
 import { situacionParaPrestar, textoNecesitaPermiso } from '@/lib/dinero/permiso-prestamo'
 import { jsonComprimido } from '@/lib/http/json-comprimido'
 
@@ -749,6 +750,11 @@ export async function POST(request) {
     const rutaIdsAsignadas = rutasAsignadas.map(r => r.id)
     if (!cliente.rutaId) {
       if (rutaIdsAsignadas.length === 1) {
+        // Si esa persona ya tiene ficha en esa ruta, se le presta desde ella (lib/clientes/misma-persona.js).
+        const chocan = await chocanEnLaRuta(prisma, { organizationId, clienteIds: [clienteId], rutaId: rutaIdsAsignadas[0] })
+        if (chocan.length) {
+          return Response.json({ error: 'Este cliente ya tiene ficha en tu ruta: préstale desde esa ficha.' }, { status: 400 })
+        }
         await prisma.cliente.update({
           where: { id: clienteId },
           data: { rutaId: rutaIdsAsignadas[0] },

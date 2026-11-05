@@ -454,7 +454,12 @@ model Cliente {
   cambiosRuta        CambioRuta[]
   lineasCredito      LineaCredito[]
 
-  @@unique([organizationId, cedula])
+  /// La cédula es única POR RUTA, no por negocio (5 nov 2026): un buen cliente
+  /// puede tener ficha en dos rutas del mismo negocio, con su cédula real. Los
+  /// controles (clavo, reporte, «ya debe») miran la cédula en todo el negocio:
+  /// lib/clientes/misma-persona.js. Sin ruta, MySQL deja repetir el NULL: eso lo
+  /// cuida `app/api/clientes/route.js`.
+  @@unique([organizationId, cedula, rutaId])
   @@index([organizationId])
   @@index([cedula])
   @@index([estado])
