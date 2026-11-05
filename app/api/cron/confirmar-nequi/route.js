@@ -27,6 +27,10 @@ export async function POST(req) {
   if (!rl.ok) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   if (!wompiConfigurado()) return NextResponse.json({ error: 'Wompi no configurado' }, { status: 500 })
 
+  /* `?soloGuardar=1`: guarda y aplica la oferta, sin cobrar en el momento. Para
+     recuperar autorizaciones viejas (las 7 del 5 nov 2026): el cobro lo hace el
+     proceso diario en la fecha de cada uno, como habría pasado. */
+  const soloGuardar = new URL(req.url).searchParams.get('soloGuardar') === '1'
   const ahora = Date.now()
   const res = { pendientes: 0, guardados: 0, esperando: 0, cerrados: 0, olvidados: 0, errores: 0 }
 
@@ -58,7 +62,7 @@ export async function POST(req) {
     try {
       const r = await confirmarNequi({
         organizationId: o.id, tokenId: o.nequiTokenPendiente,
-        planElegido: o.nequiPlanElegido, origen: 'confirmar-nequi-cron',
+        planElegido: o.nequiPlanElegido, origen: 'confirmar-nequi-cron', cobrar: !soloGuardar,
       })
       if (r.guardado) res.guardados++
       else if (r.estado === 'PENDING') res.esperando++
