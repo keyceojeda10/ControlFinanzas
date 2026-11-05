@@ -1,6 +1,7 @@
 // app/api/prestamos/[id]/route.js
 
 import { parejaDeLaEdicion } from '@/lib/dinero/editar-monto'
+import { pagosEnOrden } from '@/lib/dinero/orden-de-pagos'
 import { getServerSession }    from 'next-auth'
 import { authOptions }         from '@/lib/auth'
 import { prisma }              from '@/lib/prisma'
@@ -29,7 +30,7 @@ import { logActividad } from '@/lib/activity-log'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { revivirPrestamoRenovado, efectivoQueSalio, capitalYaDevuelto, vuelveACajaAlAnular, queHaceAnular, pasarLoCobradoDeMasAlAnterior } from '@/lib/dinero/revertir-renovacion'
 import { esDelDiaAbierto } from '@/lib/dinero/reverso-del-dia'
-import { getLocalDayRange, getLocalDateStr } from '@/lib/i18n'
+import { getLocalDayRange, getLocalDateStr, getUtcOffset } from '@/lib/i18n'
 import { getCachedMutation, setCachedMutation, buildMutationKey } from '@/lib/mutation-idempotency'
 import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
 import { cuentaDelDesembolso } from '@/lib/dinero/cuenta-del-desembolso'
@@ -60,6 +61,8 @@ async function obtenerPrestamo(id, session) {
     },
   })
   if (!p) return null
+  // El mismo día, el interés antes que el capital (lib/dinero/orden-de-pagos.js).
+  p.pagos = pagosEnOrden(p.pagos, { reciente: true, offsetHoras: getUtcOffset(session.user.country ?? 'co') })
   // Cobrador solo puede ver préstamos de clientes de su ruta
   if (session.user.rol === 'cobrador' && !(session.user.rutaIds ?? []).includes(p.cliente.rutaId)) return null
   if (p.creadoPorId) {

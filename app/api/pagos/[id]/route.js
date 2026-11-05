@@ -2,7 +2,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { calcularEstadoCliente, calcularSaldoPendiente, deshacerPagoDeInteres, tieneTablaAmortizacion } from '@/lib/calculos'
+import { calcularEstadoCliente, calcularSaldoPendiente, deshacerPagoDeInteres, tieneTablaAmortizacion, esAbiertoConDevengo } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset, getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
 import { registrarMovimientoCapital } from '@/lib/capital'
@@ -234,18 +234,26 @@ export async function DELETE(request, { params }) {
       const ahorroInteres = interesQueAhorraUnAbono({
         monto: pago.montoPagado, tasaInteres: prestamo.tasaInteres, diasPlazo: prestamo.diasPlazo,
         fechaInicio: prestamo.fechaInicio, ahora: pago.fechaPago, offsetHoras: getUtcOffset(session.user.country ?? 'co'),
+        abierto: esAbiertoConDevengo(prestamo),
       })
-      await tx.prestamo.update({
-        where: { id: prestamo.id },
-        data: { totalAPagar: prestamo.totalAPagar + ahorroInteres },
-      })
+      /* ⚠ `increment`, NUNCA `prestamo.totalAPagar + …` (5 nov 2026). `prestamo`
+         se leyó ANTES de la transacción, y `reajustarDevengosTrasCambio` (arriba)
+         ya movió el total dentro de ella: escribir el valor viejo borraba ese
+         ajuste. Inversiones Jk anuló un abono de un abierto y el préstamo quedó
+         debiendo $30.000 de menos. Lo mismo para recargo y descuento. */
+      if (ahorroInteres) {
+        await tx.prestamo.update({
+          where: { id: prestamo.id },
+          data: { totalAPagar: { increment: ahorroInteres } },
+        })
+      }
     }
 
     // 1c. Reversar recargo: reducir totalAPagar
     if (pago.tipo === 'recargo') {
       await tx.prestamo.update({
         where: { id: prestamo.id },
-        data: { totalAPagar: prestamo.totalAPagar - pago.montoPagado },
+        data: { totalAPagar: { decrement: pago.montoPagado } },
       })
     }
 
@@ -253,7 +261,7 @@ export async function DELETE(request, { params }) {
     if (pago.tipo === 'descuento') {
       await tx.prestamo.update({
         where: { id: prestamo.id },
-        data: { totalAPagar: prestamo.totalAPagar + pago.montoPagado },
+        data: { totalAPagar: { increment: pago.montoPagado } },
       })
     }
 

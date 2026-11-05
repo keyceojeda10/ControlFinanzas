@@ -1104,6 +1104,16 @@ export default function RegistrarPago({
           cifra: null,
         }
       }
+      /* En un abierto el abono no «ahorra» nada este mes: baja el capital y con
+         él el interés de los meses que vienen (lib/dinero/abono-capital.js). */
+      if (esAbierto) {
+        const queda = Math.max(0, Math.round(capitalAbierto - (Number(monto) || 0)))
+        return {
+          titulo: 'Abono a capital',
+          texto: `Baja el capital a ${formatMoney(queda)}. Desde el próximo período el interés se cobra sobre ese capital.`,
+          cifra: null,
+        }
+      }
       const ahorro = interesQueAhorraUnAbono({
         monto, tasaInteres: prestamo?.tasaInteres, diasPlazo: prestamo?.diasPlazo, fechaInicio: prestamo?.fechaInicio,
       })
@@ -1369,7 +1379,7 @@ export default function RegistrarPago({
         deudaQueNace: interesQueNace,
         // El interés que perdona el abono a capital, con la cuenta del servidor (#64).
         deudaQueSeVa: tipo === 'capital' && !conTablaAbono && montoNum > 0
-          ? interesQueAhorraUnAbono({ monto: montoNum, tasaInteres: prestamo?.tasaInteres, diasPlazo: prestamo?.diasPlazo, fechaInicio: prestamo?.fechaInicio })
+          ? interesQueAhorraUnAbono({ monto: montoNum, tasaInteres: prestamo?.tasaInteres, diasPlazo: prestamo?.diasPlazo, fechaInicio: prestamo?.fechaInicio, abierto: esAbierto })
           : 0,
         metodoPago,
         nombreCuenta: elegido.nombreCuenta,
@@ -1941,7 +1951,7 @@ export default function RegistrarPago({
                 {explicacionAplicacion?.texto ?? (conTablaAbono
                   ? 'Baja el capital y con él las próximas cuotas. El préstamo termina en la misma fecha.'
                   : 'Reduce el capital y los intereses sobre ese monto. El préstamo termina antes.')}
-                {!conTablaAbono && monto && Number(monto) > 0 && prestamo?.tasaInteres > 0 && (() => {
+                {!conTablaAbono && !esAbierto && monto && Number(monto) > 0 && prestamo?.tasaInteres > 0 && (() => {
                   const ahorro = interesQueAhorraUnAbono({ monto, tasaInteres: prestamo.tasaInteres, diasPlazo: prestamo.diasPlazo, fechaInicio: prestamo.fechaInicio })
                   return (
                     <> Ahorro en intereses: <span className="text-[var(--cf-ink-2)] font-medium font-mono-display">

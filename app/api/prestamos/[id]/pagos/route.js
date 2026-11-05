@@ -814,6 +814,7 @@ export async function POST(request, { params }) {
       const ahorroInteres = interesQueAhorraUnAbono({
         monto: montoFinal, tasaInteres: prestamo.tasaInteres, diasPlazo: prestamo.diasPlazo,
         fechaInicio: prestamo.fechaInicio, offsetHoras: getUtcOffset(session.user.country ?? 'co'),
+        abierto: esAbiertoConDevengo(prestamo),
       })
       const totalPagadoActual = prestamoActualizado.pagos
         .filter(p => !['recargo', 'descuento'].includes(p.tipo))

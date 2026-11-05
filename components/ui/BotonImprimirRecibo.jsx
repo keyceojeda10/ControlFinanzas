@@ -3,6 +3,7 @@
 'use client'
 
 import { formatMoney } from '@/lib/i18n'
+import { pagosEnOrden } from '@/lib/dinero/orden-de-pagos'
 import { abreviaturaDocumento, nombreDocumento } from '@/lib/documento'
 import { referenciaDelCredito } from '@/lib/prestamos/referencia'
 import { getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
@@ -215,8 +216,7 @@ export function generarHTMLRecibo(cliente, prestamo, pago, orgNombre, camposReci
 }
 
 function generarHTMLHistorialCompleto(cliente, prestamo, orgNombre, camposRecibo) {
-  const pagos = Array.isArray(prestamo?.pagos) ? [...prestamo.pagos] : []
-  pagos.sort((a, b) => new Date(a.fechaPago) - new Date(b.fechaPago))
+  const pagos = pagosEnOrden(Array.isArray(prestamo?.pagos) ? prestamo.pagos : [])
 
   const totalPagadoReal = pagos
     .filter((p) => !['recargo', 'descuento'].includes(p.tipo))
