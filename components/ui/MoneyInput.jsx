@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useId } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 
 function formatWithDots(val) {
@@ -52,6 +52,9 @@ export default function MoneyInput({
   }, [abreviado])
 
   const [display, setDisplay] = useState(() => formatWithDots(toDisplay(value)))
+  // La etiqueta va unida al campo: tocarla lo enfoca y el lector de pantalla lo nombra.
+  const idAuto = useId()
+  const idCampo = props.id ?? idAuto
   const inputRef = useRef(null)
   const isEditingRef = useRef(false)
 
@@ -76,7 +79,7 @@ export default function MoneyInput({
   return (
     <div className={`flex flex-col gap-1.5 ${containerClassName}`}>
       {label && (
-        <label className="text-xs font-medium text-[var(--cf-ink-2)]">{label}</label>
+        <label htmlFor={idCampo} className="text-xs font-medium text-[var(--cf-ink-2)]">{label}</label>
       )}
       <div className="relative flex items-center">
         <span className={`absolute pointer-events-none select-none text-[var(--cf-ink-3)] ${medidas.signo}`}>$</span>
@@ -106,6 +109,7 @@ export default function MoneyInput({
           onChange={handleChange}
           placeholder={placeholder || (abreviado ? 'Ej: 100 = 100.000' : 'Ej: 500.000')}
           {...props}
+          id={idCampo}
         />
         {sufijo && (
           <div className="absolute right-2.5 flex items-center gap-1.5">{sufijo}</div>

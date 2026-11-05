@@ -70,7 +70,17 @@ function paraCuando(cuando) {
   return `el ${cuando}`
 }
 
-function notaDePagoDeMas(modo, cuota, deMas, onACapital, formatMoney, { alDia = false } = {}) {
+function notaDePagoDeMas(modo, cuota, deMas, onACapital, formatMoney, { alDia = false, abierto = false } = {}) {
+  /* En un abierto lo que pasa del interés es capital (lib/dinero/recorrido-abierto.js):
+     la frase del Globo con plazo —«el capital no baja»— le decía lo contrario
+     al reparto que la hoja pinta justo debajo. */
+  if (abierto) {
+    return {
+      tono: 'extra',
+      texto: `${alDia ? 'Para quedar al día eran' : 'Le tocaba'} ${formatMoney(cuota)}: los ${formatMoney(deMas)} de más bajan el capital.`,
+      accion: null,
+    }
+  }
   const que = modo === 'solo_interes'
     ? 'Eso adelanta los intereses de las próximas cuotas: el capital no baja.'
     : modo === 'lineal_dinamico'
@@ -192,6 +202,9 @@ export default function RegistrarPago({
   const [metodoPagoId, setMetodoPagoId] = useState(null)
   const [metodosPago,  setMetodosPago]  = useState([])
   const [nota,         setNota]         = useState('')
+  // El reparto a mano de un cobro en un abierto: lo que va a interés, en pesos.
+  // `null` = el reparto automático (ver `repartoAbierto`).
+  const [interesManual, setInteresManual] = useState(null)
   // LO RARO VA PLEGADO. Esta es la hoja de T02-04/T08-01: monto, a qué se aplica,
   // cómo pagó, y qué queda después. Recargo, descuento y abono por días viven
   // detrás de una línea, y al abrirla se cae al formulario completo de siempre —el
@@ -260,6 +273,7 @@ export default function RegistrarPago({
     // Si ya estaba abierto y cambia saldoPendiente/cuotaDiaria por un
     // rerender del padre, NO pisar el monto que el usuario escribio.
     if (wasOpen) return
+    setInteresManual(null)
 
     // El pliegue se reinicia AL ABRIR. Sin esto, quien toca una vez «Recargo,
     // descuento y abono por días» se queda en el formulario viejo para siempre: la
@@ -525,6 +539,67 @@ export default function RegistrarPago({
       }
     }
 
+    /* EL REPARTO A MANO DE UN ABIERTO: dos pagos con su tipo (ver
+       `repartoAbierto`). Va en línea y nada más: la cola sin señal guarda un
+       pago por entrada, y partir uno a medias en el teléfono es justo el
+       descuadre que esto viene a evitar. Sin señal se dice y se puede cobrar
+       con el reparto automático, que sí se encola. */
+    if (repartoAbierto?.aMano) {
+      const partes = [
+        { tipo: 'intereses', monto: repartoAbierto.interes },
+        { tipo: 'capital', monto: repartoAbierto.capital },
+      ].filter((x) => x.monto > 0)
+      const guardados = []
+      const guionReparto = entraAlFajo(metodoPago, metodoPagoId, new Set(metodosPago.filter((x) => x.esDelCobrador).map((x) => x.id))) ? 'cobro' : 'cobroEnCuenta'
+      try {
+        await conPantalla(guionReparto, async () => {
+          coords = await obtenerCoordsRapido()
+          for (const parte of partes) {
+            const res = await fetch(`/api/prestamos/${prestamoId}/pagos`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ claveCobro: nuevaClaveCobro(), montoPagado: parte.monto, tipo: parte.tipo, nota, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), plataforma, ...(coords ?? {}) }),
+            })
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) throw Object.assign(new Error(data.error || 'No se pudo registrar el pago'), { delServidor: true })
+            guardados.push({ parte, data })
+          }
+        })
+      } catch (e) {
+        const motivo = e?.delServidor ? e.message : 'Sin señal no se puede repartir a mano. Cóbralo con el reparto automático o espera la señal.'
+        if (!guardados.length) {
+          setError(motivo)
+        } else {
+          // El interés entró y el capital no: se deja listo para cobrarlo con un toque.
+          const falta = partes[guardados.length]
+          setError(`Se guardaron ${formatMoney(guardados[0].parte.monto)} a interés, pero no los ${formatMoney(falta.monto)} a capital. ${e?.delServidor ? motivo : 'Se cortó la señal.'} Cóbralos en «Capital».`)
+          setInteresManual(null)
+          setTipo('capital')
+          fijarMonto(String(falta.monto))
+        }
+        setLoading(false)
+        return
+      }
+      /* Un cobro, un comprobante: el «antes debía» es el de ANTES del primer
+         pago y el reparto es el que se eligió, pegado al id del último. */
+      const ultimo = guardados[guardados.length - 1]
+      const pagoId = ultimo.data.saldoAntesDelPagoId ?? null
+      const pagoParaWA = { id: pagoId, montoPagado: m, tipo: 'completo', fechaPago: new Date().toISOString(), metodoPago, metodoPagoId, plataforma, conUbicacion: Boolean(coords), cuotaEsperada: null }
+      const prestamoFinal = {
+        ...ultimo.data,
+        saldoAntesDelPago: guardados[0].data.saldoAntesDelPago ?? null,
+        saldoAntesDelPagoId: pagoId,
+        repartoDelPago: { interes: repartoAbierto.interes, capital: repartoAbierto.capital },
+        repartoDelPagoId: pagoId,
+      }
+      setPagoGuardado(pagoParaWA)
+      setPrestamoAct(prestamoFinal)
+      setExitoso(true)
+      setLoading(false)
+      onSuccess?.(prestamoFinal, pagoParaWA)
+      return
+    }
+
     try {
       const qs = confirmarDuplicado ? '?confirmarDuplicado=1' : ''
       // Un recargo o un descuento no es un cobro: no mueve plata ni lleva
@@ -634,6 +709,7 @@ export default function RegistrarPago({
     setMetodoPago('efectivo')
     setPlataforma('')
     setNota('')
+    setInteresManual(null)
     setDiasAbonados(null)
     setError('')
     onClose?.()
@@ -963,9 +1039,13 @@ export default function RegistrarPago({
   const capitalAbierto = esAbierto
     ? Math.round(Number(prestamo?.capitalRestante ?? calcularCapitalRestante(prestamo ?? {})) || 0) : 0
   const interesQueNace = (() => {
-    if (!esAbierto || tipo !== 'intereses') return 0
+    if (!esAbierto || !['intereses', 'completo'].includes(tipo)) return 0
     const debido = Math.max(0, Math.round(Number(saldoPendiente ?? 0) - capitalAbierto))
-    if (!(Math.round(Number(monto) || 0) > debido)) return 0
+    /* Un «completo» también asienta el mes que corre cuando pasa de lo vencido
+       (el servidor, 5 nov 2026). Repartido a mano, lo que cuenta es la parte de
+       interés: esa es la que entra como «intereses». */
+    const aInteres = tipo === 'completo' && interesManual != null ? Number(interesManual) : Number(monto)
+    if (!(Math.round(aInteres || 0) > debido)) return 0
     const enCurso = periodoEnCursoAbierto(prestamo)
     if (!enCurso || (prestamo?.devengos ?? []).some((d) => d.periodo === enCurso.periodo)) return 0
     return enCurso.interesPeriodo
@@ -1091,7 +1171,40 @@ export default function RegistrarPago({
   // sin ella, «Capital» y «Cuota» se ven igual y nadie sabe qué cambia al elegir.
   // El ahorro en intereses se calcula IGUAL que en el formulario (era su única
   // cuenta propia); no se inventa nada nuevo.
+  /* ══ CUÁNTO VA A INTERÉS Y CUÁNTO A CAPITAL, EN UN ABIERTO (5 nov 2026) ═══
+   *
+   * Inversiones Jk: «que el cliente quiera asignar una parte de ese dinero a
+   * intereses y otra a capital, y que él pueda decidir cuánto». Juan Carlos lo
+   * hacía en dos cobros —uno «Interés», otro «Capital»— y al rehacerlos se le
+   * descuadró el préstamo de Yaneris Díaz.
+   *
+   * Sin tocar nada, el reparto es el del servidor (lib/dinero/recorrido-abierto.js):
+   * primero el interés que hay por cobrar —lo vencido y el mes que corre—, el
+   * resto a capital; se guarda UN «completo», como siempre. Si se cambia, se
+   * guardan dos pagos con su tipo: «intereses» y «capital». El interés no puede
+   * pasar de lo cobrable: el servidor tampoco lo acepta. */
+  const repartoAbierto = (() => {
+    if (!esAbierto || tipo !== 'completo') return null
+    const total = Math.round(Number(monto) || 0)
+    if (!(total > 0)) return null
+    const tope = Math.min(total, Math.max(0, Math.round(interesCobrableAhora(prestamo) || 0)))
+    const manual = interesManual != null
+      ? Math.min(tope, Math.max(0, Math.round(Number(interesManual) || 0)))
+      : null
+    const interes = manual ?? tope
+    return { total, tope, interes, capital: total - interes, aMano: manual != null && manual !== tope }
+  })()
+
   const explicacionAplicacion = (() => {
+    if (repartoAbierto) {
+      return {
+        titulo: 'Así se reparte',
+        texto: repartoAbierto.capital > 0
+          ? `${formatMoney(repartoAbierto.interes)} a interés y ${formatMoney(repartoAbierto.capital)} a capital: el capital queda en ${formatMoney(Math.max(0, capitalAbierto - repartoAbierto.capital))}.`
+          : `Todo a interés. El capital sigue en ${formatMoney(capitalAbierto)}.`,
+        cifra: null,
+      }
+    }
     if (tipo === 'capital') {
       /* ⚠ CON TABLA NO «TERMINA ANTES»: el servidor rehace las cuotas que faltan
          desde el saldo, con el mismo número y las mismas fechas. Bajan las
@@ -1365,7 +1478,7 @@ export default function RegistrarPago({
         : comoVa?.clase === 'extra'
           ? notaDePagoDeMas(prestamo?.modoInteres, debeHoy, montoNum - debeHoy, montoNum < Math.round(saldoPendiente ?? 0)
             ? () => { setTipo('capital'); setDiasAbonados(null) }
-            : null, formatMoney, { alDia: debeHoy > (refCuota ?? 0) })
+            : null, formatMoney, { alDia: debeHoy > (refCuota ?? 0), abierto: esAbierto })
           : null
 
     const { filas } = adaptarDespuesDelPago(
@@ -1533,7 +1646,37 @@ export default function RegistrarPago({
             setMetodoPagoId(g.metodoPagoId)
             setPlataforma(g.nombreCuenta || '')
           }}
-          extraExplicacion={puedeAplazar && fechaAplazada ? (
+          extraExplicacion={repartoAbierto ? (
+            <div style={{ marginTop: 9, paddingTop: 11, borderTop: '1px solid var(--cf-border)', display: 'flex', flexDirection: 'column', gap: 9 }}>
+              {interesManual == null ? (
+                <button type="button" onClick={() => setInteresManual(String(repartoAbierto.interes))}
+                  style={{ alignSelf: 'flex-start', minHeight: 44, padding: '0 2px', background: 'none', border: 0, color: 'var(--cf-gold-dark)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                  Repartir distinto
+                </button>
+              ) : (
+                <>
+                  <MoneyInput
+                    label={`A interés (hasta ${formatMoney(repartoAbierto.tope)})`}
+                    value={interesManual}
+                    onChange={(e) => setInteresManual(e.target.value)}
+                  />
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+                    <span style={{ fontSize: 13, color: 'var(--cf-ink-2)' }}>A capital</span>
+                    <span className="cf-fig" style={{ fontSize: 16, color: 'var(--cf-ink)' }}>{formatMoney(repartoAbierto.capital)}</span>
+                  </div>
+                  {Number(interesManual) > repartoAbierto.tope && (
+                    <span style={{ fontSize: 12, color: 'var(--cf-red-dark)' }}>
+                      De interés se le puede recibir hasta {formatMoney(repartoAbierto.tope)}; lo demás va a capital.
+                    </span>
+                  )}
+                  <button type="button" onClick={() => setInteresManual(null)}
+                    style={{ alignSelf: 'flex-start', minHeight: 44, padding: '0 2px', background: 'none', border: 0, color: 'var(--cf-gold-dark)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                    Volver al reparto automático
+                  </button>
+                </>
+              )}
+            </div>
+          ) : puedeAplazar && fechaAplazada ? (
             <div style={{ marginTop: 9, paddingTop: 11, borderTop: '1px solid var(--cf-border)' }}>
               <FilaInterruptor
                 etiqueta="Aplazar el próximo cobro"

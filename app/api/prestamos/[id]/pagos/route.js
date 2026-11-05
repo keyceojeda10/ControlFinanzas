@@ -531,7 +531,11 @@ export async function POST(request, { params }) {
        revivía debiendo menos y el «Interés perdonado» seguía en el libro. */
     const totalAntesDeLiquidar = prestamoLocked.totalAPagar
     let devengoDeLaLiquidacion = null
-    if (['intereses', 'liquidacion'].includes(tipo) && esAbiertoConDevengo(prestamoLocked)) {
+    /* Un «completo» también: paga lo vencido y el mes que corre, y lo que sobra
+       es capital (lib/dinero/recorrido-abierto.js). Sin asentar ese mes, el
+       capital de la ficha bajaba de más hasta el corte y la hoja de cobro
+       prometía otro reparto (5 nov 2026). */
+    if (['intereses', 'liquidacion', 'completo'].includes(tipo) && esAbiertoConDevengo(prestamoLocked)) {
       const enCurso = periodoEnCursoAbierto(prestamoLocked)
       if (enCurso) {
         const debido = Math.max(0, Math.round(
