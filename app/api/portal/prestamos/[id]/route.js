@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getPortalSession } from '@/lib/portal-auth'
 import { prisma } from '@/lib/prisma'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
+import { pagosEnOrden } from '@/lib/dinero/orden-de-pagos'
 
 export async function GET(request, { params }) {
   const session = await getPortalSession(request)
@@ -122,7 +123,8 @@ export async function GET(request, { params }) {
     fechaInicio: prestamo.fechaInicio,
     fechaFin: prestamo.fechaFin,
     cuotas,
-    pagos: prestamo.pagos,
+    // El mismo día, el interés antes que el capital (lib/dinero/orden-de-pagos.js).
+    pagos: pagosEnOrden(prestamo.pagos, { reciente: true }),
     diasMora,
     proximaCuota,
   }

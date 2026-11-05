@@ -13,6 +13,11 @@ const TIPO_BADGE = {
   completo:  { label: 'Completo',  variant: 'success' },
   parcial:   { label: 'Parcial',   variant: 'warning' },
   capital:   { label: 'Capital',   variant: 'info'    },
+  /* Sin estas dos un pago a interés o una liquidación caían al «Parcial» de
+     abajo: el historial de Yaneris Díaz (Inversiones Jk) llamaba «Parcial» a
+     su interés de $120.000 (5 nov 2026). */
+  intereses: { label: 'Interés',   variant: 'info'    },
+  liquidacion: { label: 'Liquidación', variant: 'success' },
   recargo:   { label: 'Recargo',   variant: 'danger'  },
   descuento: { label: 'Descuento', variant: 'success' },
   // Un pago de cuota que pasó de lo que tocaba (lib/dinero/cuota-de-referencia.js).

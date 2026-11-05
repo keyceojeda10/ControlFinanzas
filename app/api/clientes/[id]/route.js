@@ -16,6 +16,7 @@ import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 import { anotarLlegadas, vieneDePorCliente } from '@/lib/rutas/procedencia'
 import { pasarPrestamosDeRuta, SELECT_PRESTAMO_TRASLADO } from '@/lib/rutas/traslado'
 import { numerarPorCliente, camposDeNumero } from '@/lib/prestamos/numero'
+import { pagosEnOrden } from '@/lib/dinero/orden-de-pagos'
 
 // Helper: verificar que el cliente pertenece a la organización (y a la ruta del cobrador)
 async function obtenerCliente(id, session) {
@@ -113,6 +114,8 @@ export async function GET(request, { params }) {
       } catch { return Math.round(calcularSaldoPendiente(p)) }
     }
 
+    // El mismo día, el interés antes que el capital (lib/dinero/orden-de-pagos.js).
+    for (const p of cliente.prestamos) p.pagos = pagosEnOrden(p.pagos, { reciente: true })
     const prestamosEnriquecidos = cliente.prestamos.map((p) => {
       try {
         // diasSinCobro se resuelve por préstamo (máxima prioridad en jerarquía)

@@ -46,6 +46,7 @@ import {
   moodColorFromPrestamo,
 } from '@/components/prestamos/PrestamoDetalleViews'
 import { formatFechaCobroRelativa, tieneTablaAmortizacion, interesCobrableAhora, cobradoHoy, cuantosPagosHoy, pagosDelDia } from '@/lib/calculos'
+import { pagosEnOrden } from '@/lib/dinero/orden-de-pagos'
 import { cifraProximoCobro, DIAS_MORA } from '@/lib/adaptadores/clientes'
 import { calendarioDeCobro } from '@/lib/dias-sin-cobro'
 import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
@@ -745,7 +746,7 @@ function PrestamoDetalleContenido({ params }) {
     montoEnMora = 0,
     montoParaPonerseAlDia = 0,
     cuotaQueToca = null,
-    pagoHoy: yaPagoHoy, pagos = [], proximoCobro,
+    pagoHoy: yaPagoHoy, pagos: pagosCrudos = [], proximoCobro,
     seguro = false, montoSeguro,
     modoInteres, interesAdelantado = false, renovadoDeId, esClavo = false,
     cuotasAmortizacion = [],
@@ -753,6 +754,10 @@ function PrestamoDetalleContenido({ params }) {
     moratorio = null,
     createdAt: entregadoEl,
   } = prestamo
+  /* La API ya los manda así, pero sin señal la ficha sale de la copia del
+     teléfono, que viene solo por fecha: el mismo día, el interés antes que el
+     capital (lib/dinero/orden-de-pagos.js). Inversiones Jk, 5 nov 2026. */
+  const pagos = pagosEnOrden(pagosCrudos, { reciente: true })
 
   const frecuenciaLabel = {
     diario: 'diario',

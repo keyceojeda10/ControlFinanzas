@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { compararPagos } from '@/lib/dinero/orden-de-pagos'
 
 export async function GET(request, { params }) {
   const session = await getServerSession(authOptions)
@@ -69,7 +70,8 @@ export async function GET(request, { params }) {
     }))
   )
 
-  historial.sort((a, b) => new Date(b.fechaPago) - new Date(a.fechaPago))
+  // El mismo día, el interés antes que el capital (lib/dinero/orden-de-pagos.js).
+  historial.sort((a, b) => compararPagos(a, b, { reciente: true }))
 
   return NextResponse.json(historial)
 }

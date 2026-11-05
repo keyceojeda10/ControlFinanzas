@@ -2,6 +2,7 @@
 // app/(dashboard)/clientes/[id]/historial/page.jsx - Historial de pagos del cliente
 
 import { formatMoney } from '@/lib/i18n'
+import { compararPagos } from '@/lib/dinero/orden-de-pagos'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
@@ -43,7 +44,7 @@ export default function HistorialPage() {
                 prestamoMonto: p.montoPrestado,
               }))
             )
-            allPagos.sort((a, b) => new Date(b.fechaPago) - new Date(a.fechaPago))
+            allPagos.sort((a, b) => compararPagos(a, b, { reciente: true }))
             setHistorial(allPagos)
           }
         } catch { /* ignore */ }
