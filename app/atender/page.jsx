@@ -12,7 +12,7 @@
 
 import { Suspense, useEffect, useState, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { enlaceWhatsApp, enlaceWaMe, esAndroid } from '@/lib/seguimiento/enlace-whatsapp'
+import { enlaceWhatsApp, enlaceWaMe, esAndroidNavegador } from '@/lib/seguimiento/enlace-whatsapp'
 
 const fechaCorta = (d) => new Date(d).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', timeZone: 'America/Bogota' })
 const haceCuanto = (d) => {
@@ -140,7 +140,7 @@ function Lista() {
   const [error, setError] = useState(null)
   // Después de montar: en el servidor no hay `navigator`.
   const [android, setAndroid] = useState(false)
-  useEffect(() => { setAndroid(esAndroid(navigator.userAgent)) }, [])
+  useEffect(() => { setAndroid(esAndroidNavegador(navigator)) }, [])
   const [marcando, setMarcando] = useState(false)
 
   const cargar = useCallback(() => {

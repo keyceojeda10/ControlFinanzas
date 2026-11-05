@@ -15,11 +15,12 @@
 // desde su propio WhatsApp.
 
 import { useEffect } from 'react'
-import { enApp, esAndroid } from '@/lib/seguimiento/enlace-whatsapp'
+import { enApp, esAndroidNavegador } from '@/lib/seguimiento/enlace-whatsapp'
 
 export default function WhatsAppBusiness() {
   useEffect(() => {
-    if (!esAndroid(navigator.userAgent)) return undefined
+    // También la tableta en «vista de escritorio» (ver `esAndroidNavegador`).
+    if (!esAndroidNavegador(navigator)) return undefined
     const alTocar = (e) => {
       if (e.defaultPrevented || e.button !== 0) return
       const a = e.target?.closest?.('a[href^="https://wa.me/"]')
