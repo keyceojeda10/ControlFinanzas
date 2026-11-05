@@ -828,7 +828,13 @@ function PrestamoDetalleContenido({ params }) {
       /* ⚠ SE LLAMA A LA FUNCIÓN, NO SE USA `interesMonto`: esa constante se
          declara 300 líneas más abajo y leerla aquí es el mismo «Cannot access
          before initialization» que ya me dejó la ficha en blanco hace un rato. */
-      const debe = Math.round(interesCobrableAhora(prestamo) || 0)
+      /* ⚠ SOLO LO QUE YA VENCIÓ (5 nov 2026). `interesCobrableAhora` suma además
+         el mes que está corriendo —se puede cobrar por adelantado— y la ficha
+         decía «le faltan $210.000 de interés» a quien debía $120.000 (Yaneris
+         Díaz, Inversiones Jk). Lo que falta es saldo − capital. */
+      const debe = capitalRestante != null
+        ? Math.max(0, Math.round((saldoPendiente ?? 0) - capitalRestante))
+        : Math.round(interesCobrableAhora(prestamo) || 0)
       return debe > 0 ? `${formatMoney(debe)} de interés` : 'nada'
     }
     if (cuotasAmortizacion.length > 0) {
@@ -2181,7 +2187,10 @@ function PrestamoDetalleContenido({ params }) {
           montarse. */}
 
       {/* ── CÓMO VA — solo owner ────────────────────────────────────── */}
-      {esOwner && estaActivo && fechaInicio && fechaFin && (
+      {/* ⚠ NO EN UN ABIERTO (5 nov 2026): mide del inicio al vencimiento y un
+          abierto no vence. Pintaba «13 de 1 cuotas · vencimiento 3 de sept» en
+          el préstamo de Yaneris Díaz, que no tiene plazo. */}
+      {esOwner && estaActivo && fechaInicio && fechaFin && !esAbierto && (
         <TimelinePrestamo
           fechaInicio={fechaInicio}
           fechaFin={fechaFin}
