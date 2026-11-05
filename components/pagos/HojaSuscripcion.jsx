@@ -64,7 +64,8 @@ export default function HojaSuscripcion({ plan, nombre, precioMensual, ofertaPct
     try {
       const r = await fetch('/api/pagos/wompi/nequi', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telefono: digitos }),
+        // El plan va también aquí: si cierra la pantalla, el servidor cobra ese (lib/pagos/confirmar-nequi.js).
+        body: JSON.stringify({ telefono: digitos, plan }),
       })
       const d = await r.json()
       if (!r.ok) throw new Error(d.error || 'No se pudo pedir la autorización')
@@ -90,7 +91,9 @@ export default function HojaSuscripcion({ plan, nombre, precioMensual, ofertaPct
           } else if (Date.now() > hasta) {
             clearInterval(sondeo.current)
             setPaso('form')
-            setError('Se pasó el tiempo de espera. Vuelve a intentarlo y acepta la notificación de Nequi.')
+            /* Ya no se pierde: si la acepta más tarde, el servidor la termina de
+               guardar solo (lib/pagos/confirmar-nequi.js, cada diez minutos). */
+            setError('Todavía no vemos tu aprobación. Si ya la aceptaste en Nequi, no tienes que hacer nada: la terminamos de guardar en unos minutos.')
           }
         } catch { /* un fallo de red suelto no rompe la espera */ }
       }, 4000)

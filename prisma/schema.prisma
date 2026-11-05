@@ -137,6 +137,15 @@ model Organization {
   wompiFuenteTipo   String?
   /** El correo con el que se creó la fuente: Wompi lo exige en cada cobro. */
   wompiFuenteEmail  String?
+  /* ⚠ LA AUTORIZACIÓN DE NEQUI PEDIDA Y TODAVÍA SIN GUARDAR (5 nov 2026).
+     Antes solo la guardaba la pantalla, preguntando 3 minutos: si el cliente
+     aprobaba en Nequi más tarde, o salía de la app, el «aprobado» se perdía.
+     7 negocios aprobaron y nunca quedaron guardados. Ahora la confirma también
+     el servidor: lib/pagos/confirmar-nequi.js y /api/cron/confirmar-nequi. */
+  nequiTokenPendiente String?
+  nequiTokenPedidoAt  DateTime?
+  /** El plan que eligió en la pantalla al pedirla, para cobrar ese y no otro. */
+  nequiPlanElegido    String?
   /** Se puede tener la fuente guardada y el cobro apagado (el cliente lo pide). */
   cobroAutomatico   Boolean        @default(true)
   /** Intentos fallidos seguidos. Se pone a cero en cuanto uno entra. */

@@ -22,10 +22,8 @@ import { NextResponse }     from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { pedirTokenNequi, estadoTokenNequi, crearFuenteDePago, wompiConfigurado } from '@/lib/wompi'
-import { cobrarAhoraSiToca } from '@/lib/cobro-intento'
-import { motivoLegible } from '@/lib/cobro-automatico'
-import { aplicarOfertaNequi } from '@/lib/seguimiento/oferta-nequi'
+import { pedirTokenNequi, estadoTokenNequi, wompiConfigurado } from '@/lib/wompi'
+import { confirmarNequi, apuntarPedidoNequi } from '@/lib/pagos/confirmar-nequi'
 
 /** Guardar un medio de pago compromete plata del negocio: solo el dueño. */
 async function soloElDueno() {
@@ -49,9 +47,23 @@ export async function POST(req) {
   const { error, session } = await soloElDueno()
   if (error) return error
 
-  const { telefono } = await req.json().catch(() => ({}))
+  const { telefono, plan } = await req.json().catch(() => ({}))
+  /* Si ya había pedido una y la aprobó, no se le manda otra: esa es la que vale,
+     y pedir otra encima la dejaría olvidada. La guarda el sondeo de la pantalla. */
+  const previo = await prisma.organization.findUnique({
+    where: { id: session.user.organizationId }, select: { nequiTokenPendiente: true },
+  })
+  if (previo?.nequiTokenPendiente && !previo.nequiTokenPendiente.startsWith('guardando:')) {
+    const anterior = await estadoTokenNequi(previo.nequiTokenPendiente).catch(() => null)
+    if (anterior === 'APPROVED') {
+      return NextResponse.json({ ok: true, tokenId: previo.nequiTokenPendiente, estado: anterior })
+    }
+  }
   try {
     const t = await pedirTokenNequi(telefono)
+    /* ⚠ SE APUNTA (5 nov 2026): si el cliente aprueba con la pantalla cerrada,
+       el servidor lo confirma solo (lib/pagos/confirmar-nequi.js). */
+    await apuntarPedidoNequi(session.user.organizationId, { tokenId: t.id, plan: typeof plan === 'string' ? plan : null })
     console.log(`[wompi-nequi] autorización pedida para org ${session.user.organizationId} — token ${t.id} (${t.estado})`)
     return NextResponse.json({ ok: true, tokenId: t.id, estado: t.estado })
   } catch (e) {
@@ -61,12 +73,9 @@ export async function POST(req) {
 }
 
 /* ── Paso 2: ¿ya aprobó? ──────────────────────────────────────────────────
- * La pantalla pregunta cada pocos segundos. Cuando Wompi dice APPROVED, se crea
- * la fuente de pago y se guarda.
- *
- * ⚠ SE GUARDA AQUÍ Y NO EN OTRO SITIO. Si la creación de la fuente viviera en
- * un tercer paso, una pantalla cerrada a destiempo dejaría un token aprobado
- * que no sirve para nada y a la persona convencida de que ya está suscrita. */
+ * La pantalla pregunta cada pocos segundos mientras está abierta. Lo que pasa
+ * al aprobar vive en `confirmarNequi`, el MISMO que corre el cron cuando la
+ * pantalla ya no está (lib/pagos/confirmar-nequi.js). */
 export async function GET(req) {
   const { error, session } = await soloElDueno()
   if (error) return error
@@ -75,80 +84,15 @@ export async function GET(req) {
   const tokenId = params.get('token')
   if (!tokenId) return NextResponse.json({ error: 'Falta el token' }, { status: 400 })
 
-  let estado
   try {
-    estado = await estadoTokenNequi(tokenId)
-  } catch (e) {
-    console.error('[wompi-nequi] no pude consultar el token:', e.message)
-    return NextResponse.json({ error: e.message }, { status: 400 })
-  }
-
-  if (estado !== 'APPROVED') {
-    /* PENDING es lo normal mientras no toque «Aceptar». DECLINED y VOIDED son
-       finales: dijo que no, o se le pasó el tiempo. */
-    return NextResponse.json({ ok: true, estado, guardado: false })
-  }
-
-  const dueno = await prisma.user.findFirst({
-    where: { organizationId: session.user.organizationId, rol: 'owner' },
-    select: { email: true },
-  })
-  const email = dueno?.email ?? session.user.email
-  if (!email) {
-    return NextResponse.json({ error: 'La cuenta no tiene correo; Wompi lo exige' }, { status: 400 })
-  }
-
-  let fuente
-  try {
-    fuente = await crearFuenteDePago({ token: tokenId, tipo: 'NEQUI', email })
-  } catch (e) {
-    console.error('[wompi-nequi] Wompi rechazó la fuente:', e.message)
-    return NextResponse.json({ error: e.message }, { status: 400 })
-  }
-
-  const tel = String(fuente.publico?.phone_number ?? '')
-  const rotulo = tel ? `Nequi ···${tel.slice(-4)}` : 'Nequi'
-
-  await prisma.organization.update({
-    where: { id: session.user.organizationId },
-    data: {
-      wompiFuentePagoId: fuente.id,
-      wompiFuenteRotulo: rotulo,
-      wompiFuenteTipo:   'NEQUI',
-      wompiFuenteEmail:  email,
-      cobroAutomatico:   true,
-      /* Empieza de cero: si venía de tres cobros fallidos con el medio viejo,
-         el nuevo no arrastra ese historial. ⚠ El rechazo NO se borra: quitar y
-         volver a poner el Nequi no puede ser la forma de seguir dentro sin
-         pagar. Lo borra el pago. */
-      cobroFallos:       0,
-    },
-  })
-
-  console.log(`[wompi-nequi] GUARDADO ${rotulo} para org ${session.user.organizationId} — fuente ${fuente.id}`)
-
-  /* El 35 % por dejar el medio guardado, si tiene la oferta: va ANTES del
-     cobro para que el primero ya salga con descuento. Ver lib/seguimiento/oferta-nequi.js. */
-  await aplicarOfertaNequi(session.user.organizationId, { planElegido: params.get('plan') })
-
-  /* ⚠ Y SE COBRA AQUÍ SI TOCA. Antes este camino solo guardaba: quien estaba en
-     prueba, o venía de un rechazo, se «suscribía» y no se le cobraba nunca.
-     Las reglas son las de la tarjeta (`app/api/pagos/wompi/token`). El medio
-     queda guardado aunque el cobro falle. */
-  let cobro
-  try {
-    const r = await cobrarAhoraSiToca({
-      orgId:       session.user.organizationId,
-      planElegido: params.get('plan'),
-      origen:      'guardar-nequi',
+    const r = await confirmarNequi({
+      organizationId: session.user.organizationId, tokenId,
+      planElegido: params.get('plan'), origen: 'guardar-nequi',
     })
-    cobro = {
-      resultado: r.resultado,
-      motivo: ['rechazado', 'error'].includes(r.resultado) ? motivoLegible(r.motivo) : null,
-    }
+    if (r.error) return NextResponse.json({ error: r.error }, { status: 400 })
+    return NextResponse.json({ ok: true, ...r })
   } catch (e) {
-    console.error('[wompi-nequi] falló el primer cobro:', e.message)
-    cobro = { resultado: 'error', motivo: 'No pudimos hacer el cobro ahora. Reinténtalo en unos minutos.' }
+    console.error('[wompi-nequi] no pude confirmar la autorización:', e.message)
+    return NextResponse.json({ error: e.message }, { status: 400 })
   }
-  return NextResponse.json({ ok: true, estado, guardado: true, rotulo, cobro })
 }

@@ -209,6 +209,36 @@ export default function OrgDetallePage() {
         </div>
       </div>
 
+      {/* ── COBRO AUTOMÁTICO (5 nov 2026) ──────────────────────────────
+          «En el superadministrador yo tampoco puedo ver si eso es real»: un
+          cliente decía haber dejado su Nequi y no había forma de comprobarlo.
+          Aquí se ve qué medio tiene guardado y si hay una autorización de
+          Nequi esperando (lib/pagos/confirmar-nequi.js la guarda sola). */}
+      <Card>
+        <p className="text-xs font-semibold text-[var(--cf-ink-3)] uppercase tracking-wide mb-3">Cobro automático</p>
+        <div className="space-y-1.5 text-sm text-[var(--cf-ink)]">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span>{org.wompiFuenteRotulo ?? 'Sin medio de pago guardado'}</span>
+            <Badge variant={org.wompiFuentePagoId ? (org.cobroAutomatico ? 'green' : 'gray') : 'red'}>
+              {org.wompiFuentePagoId ? (org.cobroAutomatico ? 'Se cobra solo' : 'Guardado, cobro apagado') : 'No se cobra solo'}
+            </Badge>
+          </div>
+          {org.nequiTokenPendiente && (
+            <p className="text-xs text-[var(--cf-ink-2)]">
+              {org.nequiTokenPendiente.startsWith('guardando:')
+                ? 'Guardando ahora su Nequi.'
+                : `Pidió autorizar su Nequi el ${new Date(org.nequiTokenPedidoAt).toLocaleString('es-CO')}. Si la aprueba, el sistema la guarda solo.`}
+            </p>
+          )}
+          {org.cobroFallos > 0 && (
+            <p className="text-xs text-[var(--cf-red-dark)]">{org.cobroFallos} {org.cobroFallos === 1 ? 'cobro rechazado' : 'cobros rechazados'} seguidos</p>
+          )}
+          {org.cobroUltimoIntento && (
+            <p className="text-xs text-[var(--cf-ink-3)]">Último intento de cobro: {new Date(org.cobroUltimoIntento).toLocaleString('es-CO')}</p>
+          )}
+        </div>
+      </Card>
+
       {/* Suscripción actual */}
       {sub && (
         <Card>
