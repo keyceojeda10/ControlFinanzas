@@ -375,6 +375,14 @@ export async function GET(request) {
         // rapido desde la tarjeta de cliente salia sin ese renglon y el de la
         // lista de prestamos con el: el mismo modal diciendo dos cosas.
         diasPlazo:        p.diasPlazo,
+        // El calendario del préstamo: sin él, lo que se calcule en el teléfono con
+        // esta tarjeta (los mensajes de WhatsApp) cuenta cada 15 días desde el
+        // inicio y no los días que se pactaron (Prestamos juan, 6 nov 2026).
+        diaCobroMes:      p.diaCobroMes,
+        diaCobroMes2:     p.diaCobroMes2,
+        diaCobroSemana:   p.diaCobroSemana,
+        primerCobro:      p.primerCobro,
+        proximoCobroManual: p.proximoCobroManual,
         modoInteres:      p.modoInteres,
       /* ⚠ LAS FILAS VIAJAN, y antes no.
        *
