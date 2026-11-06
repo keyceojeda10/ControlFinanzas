@@ -170,6 +170,8 @@ export async function POST(req) {
           codigoReferido,
           planDemoHasta: vencimiento,
           origenRegistro: JSON.stringify(origen),
+          // Quien llega nuevo arranca con la tarjeta: nunca ha usado otra cosa.
+          reciboCliente: 'tarjeta',
           ...(orgReferidora ? { referidoPorId: orgReferidora.id } : {}),
         },
       })

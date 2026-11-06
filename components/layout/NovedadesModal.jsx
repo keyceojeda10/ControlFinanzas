@@ -134,6 +134,7 @@ export default function NovedadesModal() {
             etiqueta: entrada.items.length === 1 ? 'Nuevo' : 'Lo más útil',
             titulo: primera.titulo,
             texto: primera.texto,
+            partes: primera.partes,
             // No hay un sitio al que llevar desde aquí: las novedades del
             // registro no traen destino. La acción es enterarse y seguir.
             accion: 'Entendido',

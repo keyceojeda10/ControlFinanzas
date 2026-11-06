@@ -19,6 +19,8 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { perdidosDelCliente } from '@/lib/dinero/cliente-en-perdidos'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
+import { getUtcOffset } from '@/lib/i18n'
+import { tramoDelDia } from '@/lib/tarjeta/reclamo'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -27,7 +29,7 @@ export async function GET() {
 
   const { organizationId } = session.user
 
-  const [prestamos, reaperturas, gastos, permisos] = await Promise.all([
+  const [prestamos, reaperturas, gastos, permisos, reclamos] = await Promise.all([
     prisma.prestamo.findMany({
       where: { organizationId, estado: 'pendiente_aprobacion' },
       select: {
@@ -62,7 +64,36 @@ export async function GET() {
       orderBy: { createdAt: 'asc' },
       take: 30,
     }),
+    // «Pagué y no aparece», desde la tarjeta. Solo aquí, que es solo del dueño.
+    prisma.reclamoPago.findMany({
+      where: { organizationId, revisadoEn: null },
+      select: {
+        id: true, clienteId: true, monto: true, fecha: true, nota: true, createdAt: true,
+        cliente: { select: { nombre: true, telefono: true } },
+        organization: { select: { country: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 30,
+    }),
   ])
+
+  /* LO QUE SE ANOTÓ ESE DÍA, al lado de lo que dice el cliente: es lo que el dueño
+     viene a comparar. De lo cobrado, sin recargos ni descuentos, que no son plata
+     recibida. */
+  const anotado = await Promise.all(reclamos.map(async (r) => {
+    const { desde, hasta } = tramoDelDia(r.fecha, getUtcOffset(r.organization?.country ?? 'co'))
+    const pagos = await prisma.pago.findMany({
+      where: {
+        organizationId, prestamo: { clienteId: r.clienteId },
+        fechaPago: { gte: desde, lt: hasta }, tipo: { notIn: ['recargo', 'descuento'] },
+      },
+      select: { montoPagado: true, cobrador: { select: { nombre: true } } },
+    })
+    return {
+      total: pagos.reduce((s, p) => s + p.montoPagado, 0),
+      cobradores: [...new Set(pagos.map((p) => p.cobrador?.nombre).filter(Boolean))],
+    }
+  }))
 
   // `Prestamo.creadoPorId` es un id suelto, sin relación: los nombres se traen
   // aparte y de una vez.
@@ -116,6 +147,18 @@ export async function GET() {
       // «hace 8 h» recién creado, la fila mentía. Se dice «hoy» o «ayer».
       soloDia: true,
       href: '/gastos',
+    })),
+    ...reclamos.map((r, i) => ({
+      clave: `reclamo:${r.id}`, clase: 'reclamo', id: r.id,
+      quien: r.cliente?.nombre ?? 'Un cliente',
+      telefono: r.cliente?.telefono ?? null,
+      monto: r.monto == null ? null : Number(r.monto),
+      fechaPago: r.fecha,
+      nota: r.nota,
+      anotado: anotado[i].total,
+      cobradores: anotado[i].cobradores,
+      desde: r.createdAt,
+      href: `/clientes/${r.clienteId}`,
     })),
   ].sort((a, b) => new Date(a.desde) - new Date(b.desde))
 

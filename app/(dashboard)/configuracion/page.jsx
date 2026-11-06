@@ -9,6 +9,7 @@ import { IndiceConfiguracion } from '@/components/pantallas/config/movil'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { valoresIndice, filasIndice, seccionesConfig } from '@/lib/adaptadores/configuracion'
 import { useState, useEffect, Suspense } from 'react'
+import { useSession } from 'next-auth/react'
 import Link                    from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
@@ -359,6 +360,75 @@ function TabPerfil() {
 // ══════════════════════════════════════════════════════════════
 // TAB 2 — MI ORGANIZACIÓN
 // ══════════════════════════════════════════════════════════════
+
+/* ══ QUÉ RECIBE EL CLIENTE AL PAGAR ══════════════════════════════════════════
+   Lo decide el dueño y vale para todos sus cobradores: «hay algunos administradores
+   que no les gusta mucho que el cliente sepa sus cuentas». */
+const OPCIONES_RECIBO_CLIENTE = [
+  { id: 'tarjeta', titulo: 'El comprobante con su tarjeta',
+    texto: 'El recibo lleva un enlace donde ve sus pagos, lo que le falta y su próxima cuota. Si un pago no aparece, te avisa a ti.' },
+  { id: 'comprobante', titulo: 'Solo el comprobante', texto: 'El recibo de siempre, sin enlace.' },
+  { id: 'nada', titulo: 'Nada', texto: 'No se ofrece mandarle el recibo. Se puede seguir imprimiendo.' },
+]
+
+function QueRecibeElCliente({ valor, ocultarSaldo, onCambiar }) {
+  /* La sesión guarda la opción y se refresca cada 15 min (5 el cobrador). Sin este
+     `update`, el dueño la cambiaba y en su propio teléfono seguía viendo la anterior. */
+  const { update: refrescarSesion } = useSession()
+  const [guardando, setGuardando] = useState(false)
+  const [error, setError] = useState('')
+  const elegir = async (id) => {
+    if (id === valor || guardando) return
+    setGuardando(true)
+    setError('')
+    try {
+      const res = await fetch('/api/configuracion/organizacion', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reciboCliente: id }),
+      })
+      if (!res.ok) { setError('No se pudo guardar. Inténtalo de nuevo.'); return }
+      onCambiar(id)
+      refrescarSesion?.().catch?.(() => {})
+    } catch {
+      setError('Sin conexión. Inténtalo de nuevo.')
+    } finally { setGuardando(false) }
+  }
+  return (
+    <div data-seccion="recibo-cliente" role="radiogroup" aria-label="Qué recibe el cliente al pagar" style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--cf-ink)' }}>Qué recibe el cliente al pagar</span>
+      {OPCIONES_RECIBO_CLIENTE.map((o) => {
+        const activa = valor === o.id
+        return (
+          <button key={o.id} type="button" role="radio" aria-checked={activa} disabled={guardando} onClick={() => elegir(o.id)} style={{
+            display: 'flex', alignItems: 'flex-start', gap: 10, width: '100%', minHeight: 44, padding: '12px 14px', textAlign: 'left',
+            borderRadius: 14, cursor: 'pointer', font: 'inherit', opacity: guardando ? .6 : 1,
+            background: activa ? 'var(--cf-gold-tint)' : 'var(--cf-card)',
+            border: `1px solid ${activa ? 'var(--cf-gold)' : 'var(--cf-border-strong)'}`,
+          }}>
+            <span aria-hidden style={{
+              width: 18, height: 18, flex: 'none', marginTop: 1, borderRadius: 999, boxSizing: 'border-box',
+              border: activa ? '5px solid var(--cf-gold-dark)' : '2px solid var(--cf-border-strong)',
+            }} />
+            <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)' }}>{o.titulo}</span>
+              <span style={{ fontSize: 13, lineHeight: 1.4, color: 'var(--cf-ink-2)' }}>{o.texto}</span>
+            </span>
+          </button>
+        )
+      })}
+      {valor === 'tarjeta' && ocultarSaldo && (
+        <span style={{ fontSize: 13, lineHeight: 1.4, color: 'var(--cf-ink-2)' }}>
+          Como tienes «Ocultar saldo pendiente», la tarjeta muestra sus pagos y la próxima cuota, sin el saldo.
+        </span>
+      )}
+      {error && <span role="alert" style={{ fontSize: 13, color: 'var(--cf-red-dark)' }}>{error}</span>}
+      <a href="/t/ejemplo" target="_blank" rel="noopener noreferrer" style={{
+        alignSelf: 'flex-start', minHeight: 44, display: 'inline-flex', alignItems: 'center',
+        fontSize: 14, fontWeight: 700, color: 'var(--cf-gold-dark)', textDecoration: 'underline',
+      }}>Ver cómo se ve la tarjeta</a>
+    </div>
+  )
+}
 
 function TabOrganizacion({ bloques, tema, onTema }) {
   // ── UN MEGA-PANEL PARTIDO EN BLOQUES ──
@@ -924,6 +994,11 @@ function TabOrganizacion({ bloques, tema, onTema }) {
             } catch {}
             setGuardandoSaldoWA(false)
           }}
+        />
+        <QueRecibeElCliente
+          valor={org?.reciboCliente ?? 'comprobante'}
+          ocultarSaldo={ocultarSaldoWA}
+          onCambiar={(reciboCliente) => setData(prev => ({ ...prev, org: { ...prev.org, reciboCliente } }))}
         />
       </Card>
       )}

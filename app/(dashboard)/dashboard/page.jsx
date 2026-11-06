@@ -28,6 +28,7 @@ const CobradorOnboarding  = dynamic(() => import('@/components/onboarding/Cobrad
 const DashboardAiTip      = dynamic(() => import('@/components/dashboard/DashboardAiTip'),       { ssr: false })
 const BannerFotosDonadas  = dynamic(() => import('@/components/dashboard/BannerFotosDonadas'),   { ssr: false })
 const BannerSugerencias   = dynamic(() => import('@/components/dashboard/BannerSugerencias'),    { ssr: false })
+const BannerTarjetaCliente = dynamic(() => import('@/components/dashboard/BannerTarjetaCliente'), { ssr: false })
 const MonedaCF            = dynamic(() => import('@/components/ui/MonedaCF'),                    { ssr: false })
 
 function Skeleton({ className = '' }) {
@@ -1665,6 +1666,7 @@ export default function DashboardPage() {
           40 fotos o por pasar el lunes— así que quitarlo de aquí no es urgente,
           pero sí conviene: es código de una campaña de tres días. */}
       {esOwner && <BannerFotosDonadas />}
+      {esOwner && <BannerTarjetaCliente />}
       {/* ⚠ SIN `esOwner`, y a propósito. El banner de fotos era solo para dueños
           y los cobradores no lo vieron nunca — son justo los que caminan la ruta
           con la app en la mano ocho horas y tienen las quejas más concretas. */}

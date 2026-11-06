@@ -39,6 +39,7 @@ const ICONO = {
   prestamo: <><rect x="3" y="6" width="18" height="12" rx="2" /><circle cx="12" cy="12" r="2.5" /><path d="M6.5 9.5v.01M17.5 14.5v.01" /></>,
   reapertura: <><rect x="4" y="10" width="16" height="10" rx="2" /><path d="M8 10V7a4 4 0 017.5-2" /></>,
   gasto: <><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z" /><path d="M9 8h6M9 12h6" /></>,
+  reclamo: <><path d="M12 9v4" /><path d="M12 17h.01" /><path d="M10.3 3.9L2.5 17.5A2 2 0 004.2 20.5h15.6a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" /></>,
   permiso: <><rect x="4" y="5" width="12" height="15" rx="2" /><path d="M8 3h12v15" /><path d="M7.5 12.5l2 2 3.5-4" /></>,
 }
 
@@ -57,6 +58,89 @@ async function resolver(p, accion) {
     method: 'PATCH', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ estado: accion === 'aprobar' ? 'aprobado' : 'rechazado' }),
   })
+}
+
+/* «PAGUÉ Y NO APARECE». No se aprueba ni se rechaza: el dueño compara lo que dice el
+   cliente con lo que se anotó ese día, y decide fuera de aquí. Por eso «Revisado» va
+   de un toque: no mueve plata. */
+function FilaReclamo({ p, onResuelto, onAbrir }) {
+  const { formatMoney, formatFecha } = useCountry()
+  const [enviando, setEnviando] = useState(false)
+  const [error, setError] = useState('')
+  const falta = p.monto != null ? p.monto - p.anotado : null
+
+  const revisado = async () => {
+    setEnviando(true)
+    setError('')
+    try {
+      const res = await fetch(`/api/tarjeta/reclamo-revisado/${p.id}`, { method: 'POST' })
+      if (!res.ok) { setError('No se pudo. Inténtalo de nuevo.'); return }
+      onResuelto?.(p, 'revisado')
+    } catch {
+      setError('Sin conexión. Inténtalo de nuevo.')
+    } finally { setEnviando(false) }
+  }
+
+  const fila = (etiqueta, valor, color = 'var(--cf-ink)') => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 13 }}>
+      <span style={{ color: 'var(--cf-ink-2)' }}>{etiqueta}</span>
+      <span className="cf-num" style={{ fontWeight: 700, color, textAlign: 'right' }}>{valor}</span>
+    </div>
+  )
+
+  return (
+    <div data-pendiente="reclamo" style={{
+      borderRadius: 'var(--cf-r-card)', background: 'var(--cf-card)',
+      border: '1px solid var(--cf-border)', padding: '13px 14px',
+      display: 'flex', flexDirection: 'column', gap: 11,
+    }}>
+      <button type="button" onClick={() => onAbrir?.(p)} style={{
+        display: 'flex', alignItems: 'flex-start', gap: 11, textAlign: 'left',
+        background: 'none', border: 0, padding: 0, cursor: 'pointer', font: 'inherit',
+      }}>
+        <span aria-hidden style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          width: 30, height: 30, minWidth: 30, borderRadius: 10, background: 'var(--cf-gold-tint)',
+        }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--cf-gold-dark)"
+            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{ICONO.reclamo}</svg>
+        </span>
+        <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)', lineHeight: 1.3 }}>
+            {p.quien} dice que pagó y no aparece
+          </span>
+          <span className="cf-num" style={{ fontSize: 13, color: 'var(--cf-ink-2)', lineHeight: 1.4 }}>
+            {haceCuanto(p.desde)}
+          </span>
+        </span>
+      </button>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+        {fila(`Dice el cliente, el ${formatFecha(p.fechaPago)}`, p.monto != null ? formatMoney(p.monto) : 'Sin valor')}
+        {fila(p.cobradores?.length ? `Anotado ese día (${p.cobradores.join(', ')})` : 'Anotado ese día', formatMoney(p.anotado))}
+        {falta > 0 && fila('Diferencia', formatMoney(falta), 'var(--cf-red-dark)')}
+        {p.nota && <span style={{ fontSize: 13, lineHeight: 1.4, color: 'var(--cf-ink-2)', overflowWrap: 'anywhere' }}>«{p.nota}»</span>}
+      </div>
+
+      {error && <span style={{ fontSize: 13, color: 'var(--cf-red-dark)' }}>{error}</span>}
+
+      <div style={{ display: 'flex', gap: 8 }}>
+        {p.telefono && (
+          <a href={`tel:${p.telefono}`} style={{
+            flex: 1, height: 40, borderRadius: 'var(--cf-r-control)', display: 'inline-flex',
+            alignItems: 'center', justifyContent: 'center', textDecoration: 'none',
+            fontSize: 14, fontWeight: 700, color: 'var(--cf-ink-2)', background: 'var(--cf-card)',
+            border: '1px solid var(--cf-border-strong)',
+          }}>Llamar</a>
+        )}
+        <button type="button" disabled={enviando} onClick={revisado} style={{
+          flex: 1, height: 40, borderRadius: 'var(--cf-r-control)', cursor: 'pointer', border: 0,
+          fontSize: 14, fontWeight: 700, opacity: enviando ? .6 : 1,
+          background: 'var(--cf-ink)', color: 'var(--cf-surface)',
+        }}>{enviando ? 'Guardando…' : 'Marcar revisado'}</button>
+      </div>
+    </div>
+  )
 }
 
 function Fila({ p, onResuelto, onAbrir }) {
@@ -167,7 +251,9 @@ export default function Pendientes({ pendientes = [], onResuelto, onAbrir }) {
         {pendientes.length === 1 ? 'Esperan tu decisión · 1' : `Esperan tu decisión · ${pendientes.length}`}
       </span>
       {pendientes.map((p) => (
-        <Fila key={p.clave} p={p} onResuelto={onResuelto} onAbrir={onAbrir} />
+        p.clase === 'reclamo'
+          ? <FilaReclamo key={p.clave} p={p} onResuelto={onResuelto} onAbrir={onAbrir} />
+          : <Fila key={p.clave} p={p} onResuelto={onResuelto} onAbrir={onAbrir} />
       ))}
     </div>
   )

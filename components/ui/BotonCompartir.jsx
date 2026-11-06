@@ -4,6 +4,8 @@
 
 import { useState } from 'react'
 import { generarTextoComprobante, generarTextoHistorialCredito } from '@/lib/whatsapp'
+import { useAuth } from '@/hooks/useAuth'
+import { pedirEnlaceTarjeta, pagoLlevaEnlace } from '@/lib/tarjeta/pedir-enlace'
 
 const SHARE_ICON = (
   <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -13,9 +15,15 @@ const SHARE_ICON = (
 
 export default function BotonCompartir({ tipo = 'pago', cliente, prestamo, pago, orgNombre, ocultarSaldo, camposRecibo }) {
   const [copiado, setCopiado] = useState(false)
+  const { reciboCliente } = useAuth()
+  // El dueño eligió que no se le mande nada al cliente al pagar.
+  if (tipo === 'pago' && reciboCliente === 'nada') return null
 
   const handleClick = async () => {
-    const opts = { orgNombre, ocultarSaldo, camposRecibo }
+    const tarjetaUrl = tipo === 'pago' && pagoLlevaEnlace(pago)
+      ? await pedirEnlaceTarjeta(cliente?.id ?? prestamo?.clienteId)
+      : null
+    const opts = { orgNombre, ocultarSaldo, camposRecibo, tarjetaUrl }
     const texto = tipo === 'historial'
       ? generarTextoHistorialCredito(cliente, prestamo, opts)
       : generarTextoComprobante(cliente, prestamo, pago, opts)

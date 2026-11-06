@@ -5,6 +5,7 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
+import { OPCIONES_RECIBO } from '@/lib/tarjeta/enlace'
 
 // Nombres tal como los ve el dueño en la pantalla de Configuración. Sin esto el
 // registro diria "renovacionesEnCobrado" y no le serviria a nadie que no lea el
@@ -21,6 +22,7 @@ const ETIQUETA_CAMPO = {
   renovacionesEnCobrado: 'Contar renovaciones en el cobrado',
   modoAbreviado: 'Modo abreviado de montos',
   ocultarSaldoWA: 'Ocultar saldo en WhatsApp',
+  reciboCliente: 'Qué recibe el cliente al pagar',
   tasaMoratorio: 'Tasa moratoria mensual (%)',
   diasGraciaMoratorio: 'Días de gracia de mora',
   requiereAprobacionPrestamos: 'Aprobar préstamos del cobrador',
@@ -64,7 +66,7 @@ export async function GET() {
 
   const org = await prisma.organization.findUnique({
     where: { id: orgId },
-    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true, frecuenciaDefault: true, tasaDefault: true, modoInteresDefault: true, country: true, timezone: true, createdAt: true, activo: true, capitalEsEfectivo: true, renovacionesEnCobrado: true, modoAbreviado: true, ocultarSaldoWA: true, tasaMoratorio: true, diasGraciaMoratorio: true, requiereAprobacionPrestamos: true, permisoParaPrestarConDeuda: true, portalDatosCompletos: true, camposRecibo: true, plantillasWA: true },
+    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true, frecuenciaDefault: true, tasaDefault: true, modoInteresDefault: true, country: true, timezone: true, createdAt: true, activo: true, capitalEsEfectivo: true, renovacionesEnCobrado: true, modoAbreviado: true, ocultarSaldoWA: true, reciboCliente: true, tasaMoratorio: true, diasGraciaMoratorio: true, requiereAprobacionPrestamos: true, permisoParaPrestarConDeuda: true, portalDatosCompletos: true, camposRecibo: true, plantillasWA: true },
   })
 
   const sub = await prisma.suscripcion.findFirst({
@@ -121,7 +123,7 @@ export async function PATCH(req) {
   // NOTA: `country` y `timezone` NO se aceptan desde este endpoint.
   // Cambios de pais solo pueden hacerse desde superadmin para evitar corrupcion
   // de calculos de mora/timezone y precios de planes en organizaciones con datos.
-  const { nombre, telefono, ciudad, diasSinCobro, frecuenciaDefault, tasaDefault, modoInteresDefault, capitalEsEfectivo, renovacionesEnCobrado, modoAbreviado, ocultarSaldoWA, tasaMoratorio, diasGraciaMoratorio, requiereAprobacionPrestamos, permisoParaPrestarConDeuda, portalDatosCompletos, camposRecibo, plantillasWA } = await req.json()
+  const { nombre, telefono, ciudad, diasSinCobro, frecuenciaDefault, tasaDefault, modoInteresDefault, capitalEsEfectivo, renovacionesEnCobrado, modoAbreviado, ocultarSaldoWA, reciboCliente, tasaMoratorio, diasGraciaMoratorio, requiereAprobacionPrestamos, permisoParaPrestarConDeuda, portalDatosCompletos, camposRecibo, plantillasWA } = await req.json()
 
   if (nombre !== undefined && !nombre?.trim()) {
     return NextResponse.json({ error: 'El nombre es obligatorio' }, { status: 400 })
@@ -187,6 +189,7 @@ export async function PATCH(req) {
     ...(renovacionesEnCobrado !== undefined && { renovacionesEnCobrado: !!renovacionesEnCobrado }),
     ...(modoAbreviado !== undefined && { modoAbreviado: !!modoAbreviado }),
     ...(ocultarSaldoWA !== undefined && { ocultarSaldoWA: !!ocultarSaldoWA }),
+    ...(OPCIONES_RECIBO.includes(reciboCliente) && { reciboCliente }),
     ...(tasaMoratorio !== undefined && { tasaMoratorio: Math.max(0, Math.min(100, Number(tasaMoratorio) || 0)) }),
     ...(diasGraciaMoratorio !== undefined && { diasGraciaMoratorio: Math.max(0, Math.min(90, Math.round(Number(diasGraciaMoratorio) || 0))) }),
     ...(requiereAprobacionPrestamos !== undefined && { requiereAprobacionPrestamos: !!requiereAprobacionPrestamos }),
@@ -199,7 +202,7 @@ export async function PATCH(req) {
   const org = await prisma.organization.update({
     where: { id: orgId },
     data: datosActualizados,
-    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true, country: true, timezone: true, capitalEsEfectivo: true, renovacionesEnCobrado: true, modoAbreviado: true, ocultarSaldoWA: true, tasaMoratorio: true, diasGraciaMoratorio: true, requiereAprobacionPrestamos: true, permisoParaPrestarConDeuda: true, portalDatosCompletos: true, camposRecibo: true, plantillasWA: true },
+    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true, country: true, timezone: true, capitalEsEfectivo: true, renovacionesEnCobrado: true, modoAbreviado: true, ocultarSaldoWA: true, reciboCliente: true, tasaMoratorio: true, diasGraciaMoratorio: true, requiereAprobacionPrestamos: true, permisoParaPrestarConDeuda: true, portalDatosCompletos: true, camposRecibo: true, plantillasWA: true },
   })
 
   // Solo se registra si algo cambio de verdad: guardar sin tocar nada no ensucia

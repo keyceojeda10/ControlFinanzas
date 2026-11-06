@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { accionLimiter } from '@/lib/rate-limit'
 import { clearCachedContexto } from '@/lib/asistente-cache'
 import { generarTextoComprobante, formatearTelefono } from '@/lib/whatsapp'
+import { asegurarToken, urlDeTarjeta } from '@/lib/tarjeta/enlace'
 import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
@@ -242,6 +243,11 @@ export async function POST(req) {
                teléfono de cualquiera. */
             const tel = formatearTelefono(cliente?.telefono, session.user.country)
             if (tel) {
+              const orgRecibo = await prisma.organization.findUnique({
+                where: { id: session.user.organizationId }, select: { reciboCliente: true },
+              })
+              const tokenTarjeta = orgRecibo?.reciboCliente === 'tarjeta' && cliente?.id ? await asegurarToken(cliente.id) : null
+              const tarjetaUrl = tokenTarjeta ? urlDeTarjeta(tokenTarjeta) : null
               const pagosReal = (prestamo.pagos ?? []).filter(p => !['recargo', 'descuento'].includes(p.tipo))
               const totalPagado = pagosReal.reduce((s, p) => s + Number(p.montoPagado), 0)
               const saldoPendiente = Math.max(0, Number(prestamo.totalAPagar) - totalPagado)
@@ -253,9 +259,10 @@ export async function POST(req) {
                 { nombre: cliente.nombre, cedula: cliente.cedula },
                 { totalPagado, saldoPendiente, porcentajePagado, diasMora: prestamo.diasMora ?? 0 },
                 { montoPagado: montoGuardado, fechaPago: ultimoPago?.fechaPago ?? new Date().toISOString() },
-                { orgNombre: session.user.orgNombre },
+                { orgNombre: session.user.orgNombre, ocultarSaldo: session.user.ocultarSaldoWA, tarjetaUrl },
               )
-              waUrl = `https://wa.me/${tel}?text=${encodeURIComponent(texto)}`
+              // El dueño puede haber elegido que no se le mande nada al cliente al pagar.
+              if (orgRecibo?.reciboCliente !== 'nada') waUrl = `https://wa.me/${tel}?text=${encodeURIComponent(texto)}`
             }
           }
         } catch {}

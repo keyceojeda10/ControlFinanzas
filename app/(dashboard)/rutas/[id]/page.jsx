@@ -355,7 +355,7 @@ function RotuloGrupo({ titulo, cuantos, color, cerrado, onPlegar }) {
 export default function RutaDetallePage({ params }) {
   const { id }    = use(params)
   const router    = useRouter()
-  const { session, country, timezone, esOwner, puedeGestionarRutas, puedeVerCapitalRuta, orgNombre, ocultarSaldoWA, organizationId, camposRecibo: camposReciboOrg } = useAuth()
+  const { session, country, timezone, esOwner, puedeGestionarRutas, puedeVerCapitalRuta, orgNombre, ocultarSaldoWA, reciboCliente, organizationId, camposRecibo: camposReciboOrg } = useAuth()
 
     const { lastSyncedAt } = useOffline()
 
@@ -2471,7 +2471,7 @@ export default function RutaDetallePage({ params }) {
         cuando={new Date().toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' })}
         recibidoPor={ruta?.cobrador?.nombre ?? null}
         telefono={ruta?.clientes?.find((c) => c.id === reciboCobro.clienteId)?.telefono ?? null}
-        onWhatsApp={() => {
+        onWhatsApp={reciboCliente === 'nada' ? null : () => {
           const c = ruta?.clientes?.find((x) => x.id === reciboCobro.clienteId)
           // Sin exigir teléfono: la hoja ya avisa y deja copiar el mensaje,
           // que es más útil que no abrir nada.
@@ -2511,6 +2511,7 @@ export default function RutaDetallePage({ params }) {
       />
       {/* Montada SIEMPRE, no dentro de un `&&`: ver [[hoja_inferior_primer_cuadro]]. */}
       <HojaReciboPrevio
+        sinCompartir={reciboCliente === 'nada'}
         abierta={previoAbierto}
         onCerrar={() => setPrevioAbierto(false)}
         dibujar={dibujarRecibo}

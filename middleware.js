@@ -38,6 +38,20 @@ const RUTAS_PRIVADAS = [
 export async function middleware(request) {
   const { pathname } = request.nextUrl
 
+  // ─── /t/* → LA TARJETA DEL CLIENTE, PÚBLICA ────────────────────────
+  // El enlace ES la llave. `x-cf-publica` le dice al layout que no cargue la
+  // etiqueta de Google ni el píxel de Meta: la dirección completa, con la llave,
+  // les llegaría a ellos.
+  if (pathname.startsWith('/t/')) {
+    const cabeceras = new Headers(request.headers)
+    cabeceras.set('x-cf-publica', '1')
+    const respuesta = NextResponse.next({ request: { headers: cabeceras } })
+    respuesta.headers.set('Referrer-Policy', 'no-referrer')
+    respuesta.headers.set('X-Robots-Tag', 'noindex, nofollow')
+    respuesta.headers.set('Cache-Control', 'no-store')
+    return respuesta
+  }
+
   // ─── /portal/* → cookie-presence check (full verify in API routes) ──
   if (pathname.startsWith('/portal')) {
     const hasToken = !!request.cookies.get(PORTAL_COOKIE)?.value
@@ -69,7 +83,7 @@ export async function middleware(request) {
 
     const EXENTAS = ['/api/auth/', '/api/pagos/', '/api/plan/', '/api/webhook/',
       '/api/cron/', '/api/admin/', '/api/health', '/api/ping', '/api/analytics/',
-      '/api/unsubscribe', '/api/logo', '/api/telegram/', '/api/uploads/', '/api/portal/',
+      '/api/unsubscribe', '/api/logo', '/api/telegram/', '/api/uploads/', '/api/portal/', '/api/tarjeta/reclamo/',
       // «Cómo pagar tu plan» sale en la pantalla de vencida: apuntar que se vio
       // no toca nada del negocio (solo `Evento`).
       '/api/tutoriales']
@@ -161,6 +175,7 @@ export const config = {
   // ninguna pantalla de app/(dashboard). Asi se descubrio que 11 rutas se
   // abrian sin sesion: se fueron añadiendo pantallas y nadie toco estas listas.
   matcher: [
+    '/t/:path*',
     '/api/:path*',
     '/admin/:path*',
     '/actividad/:path*',

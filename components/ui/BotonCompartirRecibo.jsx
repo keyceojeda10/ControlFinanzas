@@ -10,6 +10,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useAuth } from '@/hooks/useAuth'
 import { formatMoney } from '@/lib/i18n'
 import { abreviaturaDocumento } from '@/lib/documento'
 import { referenciaDelCredito } from '@/lib/prestamos/referencia'
@@ -617,12 +618,16 @@ export function dibujarRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) 
 }
 
 export default function BotonCompartirRecibo({ cliente, prestamo, pago, orgNombre = '', camposRecibo, label = 'Compartir recibo' }) {
+  const { reciboCliente } = useAuth()
   /* ⚠ EL RECIBO SE VE ANTES DE MANDARSE. Este botón disparaba la hoja del
      teléfono con el PNG ya adjunto, así que el cobrador no veía el papel hasta
      que estaba en el chat del cliente y ya no había vuelta atrás. Ahora abre la
      vista previa y desde ahí se manda o se guarda. Lo pidió el dueño el 14 sep
      2026: «como en Nequi o así». */
   const [previo, setPrevio] = useState(false)
+
+  // El dueño eligió que no se le mande nada al cliente al pagar.
+  if (reciboCliente === 'nada') return null
 
   return (
     <>

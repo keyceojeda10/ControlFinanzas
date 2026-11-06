@@ -225,6 +225,12 @@ model Organization {
   metaSociedad      Float?
   modoAbreviado     Boolean        @default(false)
   ocultarSaldoWA    Boolean        @default(false)
+  /// Qué recibe el cliente al pagar: 'tarjeta' | 'comprobante' | 'nada'. Por
+  /// defecto, lo de siempre: un negocio no se encuentra con sus clientes viendo las
+  /// cuentas sin haberlo pedido. Los nuevos nacen en 'tarjeta' (api/auth/registro).
+  reciboCliente     String         @default("comprobante") @db.VarChar(16)
+  /// Cuándo se le ofreció la tarjeta en Inicio. Se ofrece una sola vez.
+  avisoTarjetaEn    DateTime?
   portalDatosCompletos Boolean      @default(false)
   camposRecibo      Json?
   plantillasWA      Json?
@@ -246,6 +252,7 @@ model Organization {
   users              User[]
   rutas              Ruta[]
   clientes           Cliente[]
+  reclamosPago       ReclamoPago[]
   prestamos          Prestamo[]
   pagos              Pago[]
   cierresCaja        CierreCaja[]
@@ -450,6 +457,10 @@ model Cliente {
   pinPortal           String?
   portalActivo        Boolean       @default(false)
   ultimoAccesoPortal  DateTime?
+  /// El enlace de su tarjeta (/t/<token>). Se crea la primera vez que hace falta.
+  tarjetaToken        String?       @unique @db.VarChar(32)
+  /// Última vez que la abrió alguien que no es el robot de la vista previa.
+  tarjetaVistaAt      DateTime?
   camposRecibo        Json?
   createdAt           DateTime      @default(now())
 
@@ -459,6 +470,7 @@ model Cliente {
   creadoPor          User?              @relation("ClientesCreadosPor", fields: [creadoPorId], references: [id])
   calificacionPor    User?              @relation("ClientesCalificadosPor", fields: [calificacionPorId], references: [id])
   prestamos          Prestamo[]
+  reclamosPago       ReclamoPago[]
   visitasReagendadas VisitaReagendada[]
   cambiosRuta        CambioRuta[]
   lineasCredito      LineaCredito[]
@@ -1722,4 +1734,25 @@ model SolicitudCarga {
 
   @@index([estado, createdAt])
   @@index([organizationId])
+}
+
+/// «PAGUÉ Y NO APARECE» (tarjeta del cliente, 5 nov 2026). Lo que dice el cliente
+/// desde su tarjeta; le llega solo al dueño, nunca al cobrador.
+model ReclamoPago {
+  id             String    @id @default(cuid())
+  organizationId String
+  clienteId      String
+  monto          Float?
+  fecha          DateTime
+  nota           String?   @db.VarChar(200)
+  revisadoEn     DateTime?
+  revisadoPorId  String?
+  createdAt      DateTime  @default(now())
+
+  // En cascada: borrar un cliente o un negocio no puede atascarse por un reclamo.
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  cliente        Cliente      @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, revisadoEn])
+  @@index([clienteId, createdAt])
 }

@@ -42,6 +42,7 @@ export function useAuth() {
     orgNombre: user?.orgNombre ?? null,
     modoAbreviado: !!user?.modoAbreviado,
     ocultarSaldoWA: user?.ocultarSaldoWA ?? false,
+    reciboCliente: user?.reciboCliente ?? 'comprobante',
     camposRecibo: user?.camposRecibo ?? null,
     rutaId: user?.rutaId ?? null,
     rutaIds: user?.rutaIds ?? [],

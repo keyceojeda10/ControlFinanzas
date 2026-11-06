@@ -23,6 +23,7 @@
 // «enviar resumen» y se abre WhatsApp con un mensaje que el cobrador NO HA
 // LEÍDO, en el chat de alguien que le debe plata.
 
+import { useEnlaceTarjeta, pagoLlevaEnlace } from '@/lib/tarjeta/pedir-enlace'
 import { useState, useMemo, useEffect } from 'react'
 import { Plantillas } from '@/components/pantallas/Plantillas'
 import { enlaceWhatsApp } from '@/lib/adaptadores/plantillas'
@@ -128,9 +129,15 @@ export default function HojaWhatsApp({
      Es el patrón que este proyecto ya tiene documentado: el rediseño pierde
      funciones en silencio. La hoja se queda —leer el mensaje antes de mandarlo
      es lo que aporta— pero el texto lo pone el motor. */
+  /* El enlace a su tarjeta, solo en un recibo de un pago que ya está en el servidor
+     y si el dueño la manda: eso lo responde el servidor (lib/tarjeta/pedir-enlace.js). */
+  const tarjetaUrl = useEnlaceTarjeta(
+    cliente?.id ?? prestamo?.clienteId,
+    Boolean(open) && pagoLlevaEnlace(pago) && pago?.id != null,
+  )
   const ctx = useMemo(
-    () => contextoMotor({ cliente, prestamo, orgNombre, ocultarSaldo, pago, camposRecibo }),
-    [cliente, prestamo, orgNombre, ocultarSaldo, pago, camposRecibo],
+    () => contextoMotor({ cliente, prestamo, orgNombre, ocultarSaldo, pago, camposRecibo, tarjetaUrl }),
+    [cliente, prestamo, orgNombre, ocultarSaldo, pago, camposRecibo, tarjetaUrl],
   )
 
   const familias = useMemo(() => familiasConPlantillas(ctx, organizationId), [ctx, organizationId])

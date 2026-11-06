@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useCountry } from '@/hooks/useCountry'
 import { useAuth }    from '@/hooks/useAuth'
+import { pedirEnlaceTarjeta, pagoLlevaEnlace, useEnlaceTarjeta } from '@/lib/tarjeta/pedir-enlace'
 import { useRouter }   from 'next/navigation'
 import { Modal }       from '@/components/ui/Modal'
 import { Button }      from '@/components/ui/Button'
@@ -120,7 +121,7 @@ export default function RegistrarPago({
 }) {
   const router = useRouter()
   const { formatMoney } = useCountry()
-  const { puedeAplicarDescuentos, puedeGestionarPrestamos, orgNombre, ocultarSaldoWA, organizationId, camposRecibo: camposReciboOrg, modoAbreviado } = useAuth()
+  const { puedeAplicarDescuentos, puedeGestionarPrestamos, orgNombre, ocultarSaldoWA, organizationId, camposRecibo: camposReciboOrg, modoAbreviado, reciboCliente } = useAuth()
 
   // ── EL MODO ABREVIADO, EN LA HOJA NUEVA ──
   // Se escribe en miles: «40» son $40.000. `MoneyInput` lo hace desde siempre,
@@ -772,23 +773,35 @@ export default function RegistrarPago({
   // por WhatsApp» de la pantalla de éxito. No envía nada: quien pulsa enviar es el
   // usuario, dentro de WhatsApp. Y solo con teléfono y en un pago de verdad —de un
   // recargo no se manda recibo, porque no hubo cobro.
+  useEnlaceTarjeta(cliente?.id ?? prestamo?.clienteId, Boolean(open) && reciboCliente !== 'nada')
   const reciboDisparadoRef = useRef(false)
   useEffect(() => {
     if (!exitoso || !pagoGuardado) { reciboDisparadoRef.current = false; return }
     if (reciboDisparadoRef.current) return
     if (!enviarRecibo) return
+    if (reciboCliente === 'nada') return
     if (!cliente?.telefono) return
     if (['recargo', 'descuento'].includes(pagoGuardado.tipo)) return
     reciboDisparadoRef.current = true
     const tel = formatearTelefono(cliente.telefono)
     if (!tel) return
-    const texto = generarTextoPlantilla('pago_confirmacion', {
-      cliente, prestamo: prestamoAct ?? prestamo, pago: pagoGuardado,
-      orgNombre, ocultarSaldo: ocultarSaldoWA, camposRecibo: camposLocal,
-    }, organizationId)
-    abrirWhatsApp(`https://wa.me/${tel}?text=${encodeURIComponent(texto)}`)
+    const abrir = (tarjetaUrl) => {
+      const texto = generarTextoPlantilla('pago_confirmacion', {
+        cliente, prestamo: prestamoAct ?? prestamo, pago: pagoGuardado,
+        orgNombre, ocultarSaldo: ocultarSaldoWA, camposRecibo: camposLocal, tarjetaUrl,
+      }, organizationId)
+      abrirWhatsApp(`https://wa.me/${tel}?text=${encodeURIComponent(texto)}`)
+    }
+    /* El enlace se pidió de antemano al abrir la hoja (`useEnlaceTarjeta`, arriba):
+       aquí sale en el acto. Un pago sin señal va sin enlace, porque la tarjeta
+       todavía no lo mostraría. */
+    if (pagoLlevaEnlace(pagoGuardado) && pagoGuardado.id != null) {
+      pedirEnlaceTarjeta(cliente?.id ?? prestamo?.clienteId).then(abrir)
+    } else {
+      abrir(null)
+    }
   }, [exitoso, pagoGuardado, enviarRecibo, cliente, prestamoAct, prestamo,
-      orgNombre, ocultarSaldoWA, camposLocal, organizationId])
+      orgNombre, ocultarSaldoWA, camposLocal, organizationId, reciboCliente])
 
   // ── Vista comprobante (segundo paso desde éxito) ──────────────
   if (exitoso && pagoGuardado && vistaComprobante) {
@@ -953,7 +966,7 @@ export default function RegistrarPago({
               subiendo: subiendoFoto,
               onAdjuntar: () => fotoInputRef.current?.click(),
             } : null}
-            onWhatsApp={() => setModalWA(true)}
+            onWhatsApp={reciboCliente === 'nada' ? null : () => setModalWA(true)}
             /* Los dos hacen la acción de verdad, no abren un paso intermedio. El
                checklist de «qué campos salen en el impreso» sigue existiendo,
                pero es configuración del cliente y no tiene por qué interponerse
@@ -985,6 +998,7 @@ export default function RegistrarPago({
 
         {/* Montada SIEMPRE, no dentro de un `&&`: ver [[hoja_inferior_primer_cuadro]]. */}
         <HojaReciboPrevio
+          sinCompartir={reciboCliente === 'nada'}
           abierta={previoAbierto}
           onCerrar={() => setPrevioAbierto(false)}
           dibujar={dibujarRecibo}
@@ -1584,7 +1598,7 @@ export default function RegistrarPago({
             deshabilitado={!(montoNum > 0) || pasaDelSaldo}
             error={error || (pasaDelSaldo ? `Es más de lo que debe (${formatMoney(Math.round(saldoPendiente ?? 0))}).` : null)}
             recibo={enviarRecibo}
-            onRecibo={cambiarRecibo}
+            onRecibo={reciboCliente === 'nada' ? null : cambiarRecibo}
             deslizar
           />
         }

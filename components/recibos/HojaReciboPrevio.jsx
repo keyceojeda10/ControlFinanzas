@@ -70,6 +70,8 @@ export default function HojaReciboPrevio({
   pago,
   orgNombre = '',
   camposRecibo,
+  /* El dueño eligió que no se le mande nada al cliente: el papel se ve y se guarda. */
+  sinCompartir = false,
 }) {
   const [imagen, setImagen] = useState(null)
   const [error, setError] = useState(false)
@@ -190,7 +192,7 @@ export default function HojaReciboPrevio({
           /* Sin hoja de compartir —escritorio, navegadores viejos— guardar ES la
              acción principal. Un botón dorado que no hace nada se lee como
              averiado. */
-          puedeCompartir ? (
+          puedeCompartir && !sinCompartir ? (
             <>
               <BotonPrimario style={{ flex: 2, opacity: imagen ? 1 : 0.5 }} onClick={compartir} disabled={!imagen}>
                 Compartir

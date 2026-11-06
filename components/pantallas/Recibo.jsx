@@ -423,7 +423,7 @@ export function Recibo({
         {/* Verde WhatsApp: la excepción de marca externa permitida. Apagado sin
             teléfono, que es lo que pasa en la mitad de los clientes cargados en
             la calle. */}
-        <button
+        {onWhatsApp && <button
           type="button"
           disabled={!telefono}
           onClick={onWhatsApp}
@@ -440,7 +440,7 @@ export function Recibo({
             <path d="M20 12a8 8 0 01-11.6 7.1L4 20l.9-4.3A8 8 0 1120 12z" />
           </svg>
           {telefono ? 'Enviar por WhatsApp' : 'Sin teléfono para enviarlo'}
-        </button>
+        </button>}
 
         <div style={{ display: 'flex', gap: 10 }}>
           {/* «Ver el recibo», no «Guardar imagen»: desde el 14 sep 2026 esto

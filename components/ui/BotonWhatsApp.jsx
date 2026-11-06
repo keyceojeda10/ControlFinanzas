@@ -3,6 +3,8 @@ import {
   abrirWhatsApp,
 } from '@/lib/whatsapp'
 import { generarTextoPlantilla } from '@/lib/whatsapp-plantillas'
+import { useAuth } from '@/hooks/useAuth'
+import { useEnlaceTarjeta, pagoLlevaEnlace } from '@/lib/tarjeta/pedir-enlace'
 
 const WA_ICON = (
   <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
@@ -57,14 +59,19 @@ const ESTILOS = {
 }
 
 export default function BotonWhatsApp({ tipo, cliente, prestamo, pago, orgNombre, ocultarSaldo, camposRecibo, organizationId }) {
+  const { reciboCliente } = useAuth()
+  const esRecibo = tipo === 'pago'
+  const tarjetaUrl = useEnlaceTarjeta(cliente?.id ?? prestamo?.clienteId, esRecibo && Boolean(cliente?.telefono) && pagoLlevaEnlace(pago))
   if (!cliente?.telefono) return null
+  // El dueño eligió que no se le mande nada al cliente al pagar.
+  if (esRecibo && reciboCliente === 'nada') return null
 
   const handleClick = () => {
     const tel = formatearTelefono(cliente.telefono)
     if (!tel) return
 
     const templateId = tipo === 'mora' ? moraTemplate(prestamo) : (TIPO_TO_TEMPLATE[tipo] || 'pago_confirmacion')
-    const ctx = { cliente, prestamo, pago, orgNombre, ocultarSaldo, camposRecibo }
+    const ctx = { cliente, prestamo, pago, orgNombre, ocultarSaldo, camposRecibo, tarjetaUrl: esRecibo ? tarjetaUrl : null }
     const texto = generarTextoPlantilla(templateId, ctx, organizationId)
 
     if (texto) {

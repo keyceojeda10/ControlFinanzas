@@ -244,9 +244,21 @@ export function Novedades({
 
             {/* Qué hace y POR QUÉ sirve. «Así dejan de llamarte a preguntar» es lo
                 que convierte una función en una razón para tocarla. */}
-            <span style={{ fontSize: 14, lineHeight: 1.5, color: CARBON_TINTA_2 }}>
-              {destacada.texto}
-            </span>
+            {destacada.partes?.length > 0 ? (
+              /* Por partes cuando hay que explicar cómo se usa, no solo qué es. */
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {destacada.partes.map((p) => (
+                  <div key={p.titulo} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: CARBON_TINTA }}>{p.titulo}</span>
+                    <span style={{ fontSize: 14, lineHeight: 1.5, color: CARBON_TINTA_2 }}>{p.texto}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <span style={{ fontSize: 14, lineHeight: 1.5, color: CARBON_TINTA_2 }}>
+                {destacada.texto}
+              </span>
+            )}
 
             <div style={{ display: 'flex', gap: 9 }}>
               {onActivar && (

@@ -2,6 +2,7 @@ import { Manrope, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import SessionProvider from "@/components/providers/SessionProvider";
 import { getServerSession } from "next-auth";
+import { headers } from "next/headers";
 import { authOptions } from "@/lib/auth";
 import OfflineProvider from "@/components/providers/OfflineProvider";
 import { ThemeProvider } from "@/lib/theme/ThemeProvider";
@@ -102,6 +103,23 @@ export const viewport = {
    parchado pantalla por pantalla con `montado` (FranjaVerComo); con la misma
    sesión a los dos lados deja de pasar en todas. */
 export default async function RootLayout({ children }) {
+  /* ⚠ LA TARJETA DEL CLIENTE (/t/*) VA SIN NADA DE ESTO. Su dirección es la llave
+     de la deuda de una persona: la etiqueta de Google y el píxel de Meta la leen
+     entera, y el deudor no tiene por qué recibir la captura de «Instalar», la
+     sesión ni el modo sin señal de una app que no es suya. */
+  const publica = (await headers()).get('x-cf-publica') === '1';
+  if (publica) {
+    return (
+      <html lang="es" suppressHydrationWarning>
+        <head>
+          <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        </head>
+        <body className={`${manrope.variable} ${spaceGrotesk.variable} antialiased`} suppressHydrationWarning>
+          {children}
+        </body>
+      </html>
+    );
+  }
   const session = await getServerSession(authOptions).catch(() => null);
   return (
     <html lang="es" suppressHydrationWarning>

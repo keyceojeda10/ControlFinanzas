@@ -141,7 +141,7 @@ function PrestamoDetalleContenido({ params }) {
   // mismo enlace muerto que ya me pasó con ?diasMoraMin=30.
   const parametros         = useSearchParams()
   const modoPedido         = parametros.get('editar')
-  const { session, esOwner, esCobrador, puedeGestionarPrestamos, puedeAplicarDescuentos, orgNombre, ocultarSaldoWA, camposRecibo: camposReciboOrg, modoAbreviado, country } = useAuth()
+  const { session, esOwner, esCobrador, puedeGestionarPrestamos, puedeAplicarDescuentos, orgNombre, ocultarSaldoWA, reciboCliente, camposRecibo: camposReciboOrg, modoAbreviado, country } = useAuth()
   /* ¿Dedo o ratón? Decide si lo que mueve plata se desliza o se pulsa. */
   const tactil = useTactil()
 
@@ -1760,7 +1760,7 @@ function PrestamoDetalleContenido({ params }) {
           titulo={completado ? 'Préstamo saldado' : 'Cobro registrado'}
           detalle={[formatMoney(ultimoPago.montoPagado ?? 0), exito ? 'ahora mismo' : null].filter(Boolean).join(' · ')}
         >
-          {cliente?.telefono && (
+          {cliente?.telefono && reciboCliente !== 'nada' && (
             <BotonAbrirHojaWA texto="WhatsApp" onClick={() => { setWaPago(ultimoPago); setModalWA(true) }} />
           )}
           <BotonCompartir cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} organizationId={session?.user?.organizationId} />

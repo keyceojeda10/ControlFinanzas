@@ -1,5 +1,5 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v1239'
+const CACHE_NAME   = 'cf-v1240'
 // API_CACHE solo sube cuando cambian las CIFRAS que devuelve el servidor.
 //
 // Este release SÍ las cambia, en `/api/cobros-hoy` (Adenda 5):
@@ -113,6 +113,8 @@ const AUTH_SKIP = [
   '/api/auth/signout',
   '/api/auth/csrf',
   '/api/auth/providers',
+  // La tarjeta del cliente: en el teléfono del cobrador no puede salir el armazón.
+  '/t/',
 ]
 
 // ─── Install: precache app shell ────────────────────────────
