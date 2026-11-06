@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getSaldosPorCuenta } from '@/lib/capital'
+import { juntarSinRepartir } from '@/lib/dinero/sin-repartir'
 import { getLocalDayRange, getLocalDateStr } from '@/lib/i18n'
 
 export const dynamic = 'force-dynamic'
@@ -41,7 +42,9 @@ export async function GET(request) {
 
   try {
     const cuentas = await getSaldosPorCuenta(prisma, session.user.organizationId, { desde, hasta })
-    return Response.json({ periodo, cuentas })
+    /* Lo que no tiene cuenta va en UNA fila, «Capital sin repartir»
+       (lib/dinero/sin-repartir.js), no en tres cajones con nombres de sistema. */
+    return Response.json({ periodo, cuentas: juntarSinRepartir(cuentas) })
   } catch (e) {
     return Response.json({ error: 'No se pudo calcular el desglose por cuenta' }, { status: 500 })
   }

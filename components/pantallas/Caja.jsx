@@ -1006,7 +1006,7 @@ export function PestanasCaja({ pestanas = [], activa, onCambiar }) {
    él, el dueño ve que el trozo dorado grande es el efectivo que todavía no ha
    contado. */
 export function Cuentas({
-  total, tramos = [], cuentas = [], onMover, rotuloTotal = 'Tienes en total',
+  total, tramos = [], cuentas = [], onMover, rotuloTotal = 'Tienes en total', onAccion,
 }) {
   return (
     <>
@@ -1089,6 +1089,14 @@ export function Cuentas({
               fontSize: 20, fontWeight: 600, letterSpacing: '-.025em', color: 'var(--cf-ink)', flex: 'none',
             }}>{c.saldo}</span>
           </div>
+
+          {c.accion && onAccion && (
+            <button type="button" onClick={() => onAccion(c.id)} style={{
+              alignSelf: 'flex-start', minHeight: 44, padding: '0 14px', borderRadius: 12, cursor: 'pointer',
+              border: '1px solid var(--cf-border-strong)', background: 'var(--cf-card)',
+              font: 'inherit', fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)',
+            }}>{c.accion}</button>
+          )}
 
           {/* Las tres cifras del día SOLO en efectivo. Nequi y el banco se concilian
               solos: enseñarles «entró / salió / sin contar» sería inventar una

@@ -6,6 +6,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
 import { pasarEntreCuentas } from '@/lib/capital'
+import { SIN_REPARTIR, NOMBRE_SIN_REPARTIR } from '@/lib/dinero/sin-repartir'
 import { formatMoney } from '@/lib/i18n'
 
 export const dynamic = 'force-dynamic'
@@ -31,12 +32,12 @@ export async function POST(request) {
   if (!(monto > 0)) return Response.json({ error: 'Escribe cuánto pasas' }, { status: 400 })
 
   // Las cuentas son del negocio: nunca el id de otro.
-  const ids = [desde, hacia].filter((c) => c !== 'efectivo')
+  const ids = [desde, hacia].filter((c) => c !== 'efectivo' && c !== SIN_REPARTIR)
   const metodos = ids.length
     ? await prisma.metodoPago.findMany({ where: { organizationId, id: { in: ids } }, select: { id: true, nombre: true } })
     : []
   if (metodos.length !== ids.length) return Response.json({ error: 'Esa cuenta no existe' }, { status: 400 })
-  const nombre = (c) => (c === 'efectivo' ? 'Efectivo' : metodos.find((m) => m.id === c)?.nombre ?? 'otra cuenta')
+  const nombre = (c) => (c === 'efectivo' ? 'Efectivo' : c === SIN_REPARTIR ? NOMBRE_SIN_REPARTIR : metodos.find((m) => m.id === c)?.nombre ?? 'otra cuenta')
 
   const descripcion = `De ${nombre(desde)} a ${nombre(hacia)}${nota ? ` · ${nota}` : ''}`
   const { referenciaId } = await prisma.$transaction((tx) => pasarEntreCuentas(tx, {

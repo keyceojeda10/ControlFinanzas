@@ -33,6 +33,7 @@ import DiasSinCobroSelector                        from '@/components/ui/DiasSin
 import { Toggle }                                  from '@/components/ui/Toggle'
 import MetodoPagoSelector                          from '@/components/pagos/MetodoPagoSelector'
 import PasarEntreCuentas                           from '@/components/caja/PasarEntreCuentas'
+import CuadrarCuentas                             from '@/components/caja/CuadrarCuentas'
 import { guardarPrestamoPendiente, obtenerClientesOffline } from '@/lib/offline'
 import DeslizarParaConfirmar                       from '@/components/cf/DeslizarParaConfirmar'
 import PrestamoEntregado                           from '@/components/cf/PrestamoEntregado'
@@ -399,6 +400,7 @@ function NuevoPrestamo() {
      dato que Caja → Cuentas («Todo»), solo para el dueño. */
   const [saldosCuentas, setSaldosCuentas] = useState(null)
   const [pasarAbierto, setPasarAbierto] = useState(null) // { hacia, monto }
+  const [cuadrarAbierto, setCuadrarAbierto] = useState(false)
   const [pasoHecho, setPasoHecho] = useState('')
   // Mientras se relee el saldo tras un paso, el botón no se ofrece: con el
   // saldo viejo en pantalla, dos toques pasaban la plata dos veces.
@@ -2747,6 +2749,23 @@ function NuevoPrestamo() {
                    eso lo dice la línea de «Te quedarías en …» de arriba. */
                 const aviso = avisoDeCuenta(saldosCuentas, clave, monto)
                 if (!aviso) return null
+                /* NO SE SABE SI ALCANZA: parte del capital no está en ninguna
+                   cuenta. Sin rojo y sin decir que algo esté mal —con 65 negocios
+                   en este caso, un aviso urgente se leería como un fallo—: una
+                   línea que invita a decir cuánto hay (lib/dinero/sin-repartir.js). */
+                if (aviso.tipo === 'sin_repartir') return (
+                  <div className="mt-2.5 flex flex-col gap-2">
+                    {/* Toda la línea se toca: el enlace solo medía 24px. */}
+                    <button type="button" onClick={() => setCuadrarAbierto(true)} className="text-[12px]"
+                      style={{ border: 0, background: 'none', padding: '4px 0', cursor: 'pointer', font: 'inherit',
+                        fontSize: 12, textAlign: 'left', minHeight: 44, color: 'var(--cf-ink-3)', lineHeight: 1.45 }}>
+                      ¿Cuánto tienes hoy en {aviso.nombre}?{' '}
+                      <span style={{ fontWeight: 700, color: 'var(--cf-gold-dark)', textDecoration: 'underline' }}>Cuadra tus cuentas</span>
+                      {' '}y la app te dirá si alcanza.
+                    </button>
+                    {pasoHecho && <p role="status" className="text-[12px]" style={{ color: 'var(--cf-ink-2)' }}>{pasoHecho}</p>}
+                  </div>
+                )
                 const cuenta = { nombre: aviso.nombre, neto: aviso.hay }
                 const { falta, enOtras } = aviso
                 const sePuedePasar = aviso.sePuedePasar && !releyendoSaldos
@@ -3034,7 +3053,16 @@ function NuevoPrestamo() {
             bajo el panel de la cuenta, que no es lo que se está rellenando. */}
         {/* La hoja de pasar plata, al lado de los demás diálogos y no dentro
             de la tarjeta de la cuenta. */}
-        {esOwner && (
+        {esOwner && (<>
+          <CuadrarCuentas
+            abierta={cuadrarAbierto}
+            onCerrar={() => setCuadrarAbierto(false)}
+            onHecho={(texto) => {
+              setPasoHecho(texto); setReleyendoSaldos(true)
+              cargarSaldosCuentas().finally(() => setReleyendoSaldos(false))
+              setTimeout(() => setPasoHecho(''), 6000)
+            }}
+          />
           <PasarEntreCuentas
             abierta={!!pasarAbierto}
             onCerrar={() => setPasarAbierto(null)}
@@ -3046,7 +3074,7 @@ function NuevoPrestamo() {
               setTimeout(() => setPasoHecho(''), 6000)
             }}
           />
-        )}
+        </>)}
         <div className="max-w-2xl xl:max-w-[1076px] mx-auto flex items-center gap-3 xl:pr-[404px]">
           <ConfirmModal
             open={confirmarSalir}

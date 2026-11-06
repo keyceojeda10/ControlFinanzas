@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react'
 import { useCountry } from '@/hooks/useCountry'
 import { getPlataformaInfo, PlataformaIcon } from '@/components/ui/LogoPlataforma'
 import { BotonSecundario } from '@/components/cf/primitivos'
+import CuadrarCuentas from '@/components/caja/CuadrarCuentas'
 import PasarEntreCuentas from '@/components/caja/PasarEntreCuentas'
 
 /* `total`: lo que dice la cifra grande. Con «Todo» ES el saldo —desde
@@ -34,6 +35,7 @@ export default function DesglosePorCuenta() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [pasando, setPasando] = useState(false)
+  const [cuadrando, setCuadrando] = useState(false)
   const [hecho, setHecho] = useState('')
   const [recarga, setRecarga] = useState(0)
 
@@ -136,7 +138,8 @@ export default function DesglosePorCuenta() {
 
           El fetch, el estado y el endpoint no se tocan. */}
       {!loading && !error && cuentas && cuentas.length > 0 && (
-        <Cuentas {...adaptarCuentas(cuentas, formatMoney)} rotuloTotal={PERIODOS.find((p) => p.key === periodo)?.total} />
+        <Cuentas {...adaptarCuentas(cuentas, formatMoney)} rotuloTotal={PERIODOS.find((p) => p.key === periodo)?.total}
+          onAccion={() => setCuadrando(true)} />
       )}
 
       {/* Préstamos Quintero Esteves, 21 oct 2026: un préstamo sale de UNA
@@ -145,6 +148,17 @@ export default function DesglosePorCuenta() {
       {hecho && (
         <p role="status" className="cf-num" style={{ fontSize: 13, textAlign: 'center', color: 'var(--cf-ink-2)', margin: 0 }}>{hecho}</p>
       )}
+      <BotonSecundario onClick={() => setCuadrando(true)}>
+        <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" aria-hidden>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        Cuadrar con lo que tengo
+      </BotonSecundario>
+      <CuadrarCuentas
+        abierta={cuadrando}
+        onCerrar={() => setCuadrando(false)}
+        onHecho={(texto) => { setHecho(texto); setRecarga((n) => n + 1); setTimeout(() => setHecho(''), 6000) }}
+      />
       <BotonSecundario onClick={() => setPasando(true)}>
         <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" aria-hidden>
           <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
