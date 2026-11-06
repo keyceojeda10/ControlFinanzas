@@ -40,6 +40,7 @@ import { useTactil }                               from '@/lib/tactil'
 import { planDelPrestamo, totalTraeGanancia, cargarCarteraActiva } from '@/lib/prestamo-entregado'
 import { MODOS_EN_ORDEN, etiquetaModo, sufijoTasa } from '@/lib/dinero/modos'
 import ReporteCliente from '@/components/clientes/ReporteCliente'
+import { avisoDeCuenta } from '@/lib/dinero/aviso-de-cuenta'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
 const hoyISO = () => getColombiaDate().toISOString().slice(0, 10)
@@ -2740,19 +2741,15 @@ function NuevoPrestamo() {
                   y aquí mismo: cuánto hay en la elegida y, si no alcanza, el paso. */}
               {esOwner && (() => {
                 const clave = cuentaDesembolso.metodoPago === 'efectivo' ? 'efectivo' : cuentaDesembolso.metodoPagoId
-                const cuenta = clave ? saldosCuentas?.find((c) => c.key === clave) : null
-                const n = Math.round(Number(monto) || 0)
-                if (!cuenta || !(n > 0)) return null
-                const falta = Math.round(n - Number(cuenta.neto || 0))
-                /* Pasar solo sirve si OTRA cuenta tiene lo que falta. Si no, el
-                   botón ofrecería dejar otra cuenta en negativo, y con el modo
-                   estricto el préstamo se rechazaría igual: mover plata no la
-                   crea. Ahí lo que falta es capital, y lo dice la línea de
-                   «Te quedarías en …» de arriba. */
-                const enOtras = Math.round((saldosCuentas ?? [])
-                  .filter((c) => c.key !== clave && (c.key === 'efectivo' || (c.tipoCuenta === 'transferencia' && c.key !== 'transferencia')))
-                  .reduce((a, c) => a + Math.max(0, Number(c.neto) || 0), 0))
-                const sePuedePasar = falta > 0 && enOtras >= falta && !releyendoSaldos
+                /* Solo se dice «faltan» si la plata sin cuenta no lo explica
+                   (lib/dinero/aviso-de-cuenta.js). Pasar solo sirve si OTRA
+                   cuenta tiene lo que falta: si no, lo que falta es capital, y
+                   eso lo dice la línea de «Te quedarías en …» de arriba. */
+                const aviso = avisoDeCuenta(saldosCuentas, clave, monto)
+                if (!aviso) return null
+                const cuenta = { nombre: aviso.nombre, neto: aviso.hay }
+                const { falta, enOtras } = aviso
+                const sePuedePasar = aviso.sePuedePasar && !releyendoSaldos
                 return (
                   <div className="mt-2.5 flex flex-col gap-2">
                     <p className="text-[12px]" style={{ color: falta > 0 ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)' }}>
