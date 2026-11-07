@@ -5,6 +5,7 @@ import { renovacionesDe } from '@/lib/prestamos/renovaciones'
 import { getServerSession }    from 'next-auth'
 import { authOptions }         from '@/lib/auth'
 import { prisma }              from '@/lib/prisma'
+import { primerCobroElegido } from '@/lib/dinero/calendario'
 import {
   fechaDePeriodo,
   calcularPrestamo,
@@ -596,7 +597,7 @@ export async function POST(request) {
 
   const { organizationId, rol } = session.user
   const body = await request.json()
-  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual, inyeccionPrevia, diaCobroSemana, diaCobroMes, diaCobroMes2, seguro, montoSeguro, modoInteres, nombreProducto, interesAdelantado, capitalExtra, socioId, sinPlazo, tipoAbonoPrevio, metodoPago: metodoPagoDesembolso, metodoPagoId: metodoPagoIdDesembolso } = body
+  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual, inyeccionPrevia, primerCobro: primerCobroPedido, diaCobroSemana, diaCobroMes, diaCobroMes2, seguro, montoSeguro, modoInteres, nombreProducto, interesAdelantado, capitalExtra, socioId, sinPlazo, tipoAbonoPrevio, metodoPago: metodoPagoDesembolso, metodoPagoId: metodoPagoIdDesembolso } = body
   // Cuenta de la que sale el desembolso (para el desglose por cuenta). Si no
   // viene, se asume efectivo (el caso mas comun en gota a gota).
   const cuentaDesembolso = metodoPagoDesembolso || 'efectivo'
@@ -655,6 +656,13 @@ export async function POST(request) {
     diaCobroMesDb = dias[0] ?? null
     diaCobroMes2Db = dias[1] ?? null
   }
+
+  /* UN SÁBADO SÍ Y OTRO NO (6 nov 2026). Quincenal con día de la semana: se guarda
+     su primer cobro y desde ahí van 14 días exactos (`esSemanaPorMedio`). Lo elige
+     el prestamista en el formulario; si no viene, el de siempre (`primerCobroElegido`). */
+  const primerCobroSemana = freq === 'quincenal' && diaCobroSemanaDb != null && !diaCobroMesDb && !diaCobroMes2Db && fechaInicio
+    ? primerCobroElegido(`${fechaInicio}T05:00:00.000Z`, diaCobroSemanaDb, primerCobroPedido)
+    : null
 
   // Validaciones
   if (!clienteId)     return Response.json({ error: 'El cliente es requerido' },          { status: 400 })
@@ -830,6 +838,9 @@ export async function POST(request) {
     ...(Array.isArray(capitalExtra) && capitalExtra.length > 0 && { capitalExtra }),
     diaCobroMes: diaCobroMesDb,
     diaCobroMes2: diaCobroMes2Db,
+    /* ⚠ El abierto no: cobra interés POR PERÍODO, y con períodos de 14 días serían
+       26 intereses al año en vez de 24. Sigue con su quincena. */
+    ...(primerCobroSemana && !esAbierto && { diaCobroSemana: diaCobroSemanaDb, primerCobro: primerCobroSemana }),
   })
   // Sobre saldo con una cuota que no cubre ni el interes del primer periodo: el
   // prestamo no amortiza nunca y la tabla degenera en un globo gigante. Se corta
@@ -898,6 +909,7 @@ export async function POST(request) {
         montoPrestado: capital, tasaInteres: Number(tasaInteres),
         frecuencia: freq, fechaInicio,
         diaCobroMes: diaCobroMesDb, diaCobroMes2: diaCobroMes2Db,
+        diaCobroSemana: diaCobroSemanaDb,
         primerCobro: calc.primerCobro ?? null,
         pagos: [], devengos: [], cuotasAmortizacion: [],
       })

@@ -13,7 +13,7 @@ import { Button }                                  from '@/components/ui/Button'
 import { Input }                                   from '@/components/ui/Input'
 import MoneyInput                                  from '@/components/ui/MoneyInput'
 import { calcularPrestamo } from '@/lib/calculos'
-import { fechaDePeriodo } from '@/lib/dinero/calendario'
+import { fechaDePeriodo, primerCobroElegido } from '@/lib/dinero/calendario'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { usePantallaAncha } from '@/hooks/usePantallaAncha'
 import { formatMoney, soloDecimal } from '@/lib/i18n'
@@ -307,6 +307,8 @@ function NuevoPrestamo() {
   const [diaCobroMes, setDiaCobroMes]       = useState('')
   const [diaCobroMes2, setDiaCobroMes2]     = useState('')
   const [modoDiaCobro, setModoDiaCobro]     = useState('semana') // 'semana' | 'mes'
+  // Quincenal con día de la semana: el primer cobro que eligió ('' = el de siempre).
+  const [primerCobroSemana, setPrimerCobroSemana] = useState('')
   // Dias totales derivados de plazoUnidades × diasPorPeriodo
   const plazo = String((Number(plazoUnidades) || 0) * (DIAS_POR_PERIODO[frecuencia] || 1))
   const [fechaInicio,  setFechaInicio]  = useState(hoyISO())
@@ -801,6 +803,35 @@ function NuevoPrestamo() {
     } catch { return null }
   }, [frecuencia, modoDiaCobro, diaCobroMes, diaCobroMes2, fechaInicio])
 
+  /* UN SÁBADO SÍ Y OTRO NO (6 nov 2026): «a los albañiles les pagan un sábado sí y
+   * un sábado no». Quincenal con día de la semana son 14 días exactos desde el
+   * primer cobro, así que se pregunta cuál es y se enseñan las fechas. Salen de
+   * `fechaDePeriodo`, la misma que usa todo el sistema, y el servidor valida la
+   * elegida con `primerCobroElegido`. */
+  const cobroSemanaPorMedio = useMemo(() => {
+    if (frecuencia !== 'quincenal' || modoDiaCobro !== 'semana' || diaCobroSemana === '') return null
+    const dia = Number(diaCobroSemana)
+    const inicio = new Date(`${fechaInicio}T05:00:00.000Z`)
+    if (!Number.isInteger(dia) || Number.isNaN(inicio.getTime())) return null
+    const aIso = (f) => f.toISOString().slice(0, 10)
+    const corto = (f) => f.toLocaleDateString('es-CO', { timeZone: 'UTC', day: 'numeric', month: 'short' })
+    const primera = new Date(inicio)
+    do { primera.setUTCDate(primera.getUTCDate() + 1) } while (primera.getUTCDay() !== dia)
+    const opciones = [0, 7, 14].map((k) => {
+      const f = new Date(primera.getTime() + k * 86400000)
+      return { iso: aIso(f), corto: corto(f) }
+    })
+    const elegido = opciones.some((o) => o.iso === primerCobroSemana)
+      ? primerCobroSemana
+      : aIso(primerCobroElegido(inicio, dia, null))
+    const total = Math.ceil(Number(plazo) / 15) || 4
+    const fechas = Array.from({ length: Math.min(6, Math.max(1, total)) }, (_, i) => corto(fechaDePeriodo(i + 1, {
+      freq: 'quincenal', diaCobroSemana: dia, primerCobro: new Date(`${elegido}T05:00:00.000Z`),
+    })))
+    const nombre = primera.toLocaleDateString('es-CO', { timeZone: 'UTC', weekday: 'long' })
+    return { opciones, elegido, fechas, nombre, masDeSeis: total > 6 }
+  }, [frecuencia, modoDiaCobro, diaCobroSemana, fechaInicio, primerCobroSemana, plazo])
+
   // Cálculo en tiempo real — usa el ultimo resultado valido como fallback
   // para que el panel de resumen no desaparezca al editar campos (ej: borrar
   // temporalmente el monto o plazo antes de escribir el nuevo valor).
@@ -889,6 +920,7 @@ function NuevoPrestamo() {
         fechaInicio,
         frecuencia,
         ...((frecuencia === 'semanal' || (frecuencia === 'quincenal' && modoDiaCobro === 'semana')) && diaCobroSemana !== '' && { diaCobroSemana: Number(diaCobroSemana) }),
+        ...(cobroSemanaPorMedio && { primerCobro: cobroSemanaPorMedio.elegido }),
         ...((frecuencia === 'mensual' || (frecuencia === 'quincenal' && modoDiaCobro === 'mes')) && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
         ...(frecuencia === 'quincenal' && modoDiaCobro === 'mes' && diaCobroMes2 !== '' && { diaCobroMes2: Number(diaCobroMes2) }),
         ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
@@ -1032,6 +1064,7 @@ function NuevoPrestamo() {
       fechaInicio,
       frecuencia,
       ...((frecuencia === 'semanal' || (frecuencia === 'quincenal' && modoDiaCobro === 'semana')) && diaCobroSemana !== '' && { diaCobroSemana: Number(diaCobroSemana) }),
+      ...(cobroSemanaPorMedio && { primerCobro: cobroSemanaPorMedio.elegido }),
       ...((frecuencia === 'mensual' || (frecuencia === 'quincenal' && modoDiaCobro === 'mes')) && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
       ...(frecuencia === 'quincenal' && modoDiaCobro === 'mes' && diaCobroMes2 !== '' && { diaCobroMes2: Number(diaCobroMes2) }),
       ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
@@ -1808,6 +1841,7 @@ function NuevoPrestamo() {
                        Y el comentario va SIN LLAVES: dentro de una rama de
                        ternario solo cabe una expresión, y `{…}` + `<div>` son
                        dos hijos sueltos. Eso tumbó la pantalla entera. */
+                    <>
                     <div className="grid grid-cols-7 gap-1">
                       <button type="button" onClick={() => setDiaCobroSemana('')}
                         className="h-10 rounded-[10px] border text-[10px] font-semibold transition-all"
@@ -1818,6 +1852,25 @@ function NuevoPrestamo() {
                           style={estiloOpcionMenor(diaCobroSemana === d.v)}>{d.l}</button>
                       ))}
                     </div>
+                    {cobroSemanaPorMedio && (
+                      <div className="mt-2 rounded-[10px] border p-2.5"
+                        style={{ borderColor: 'var(--cf-border-soft)', background: 'var(--cf-fill)' }}>
+                        <p className="text-[11px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
+                          ¿Cuál es el primer {cobroSemanaPorMedio.nombre}?
+                        </p>
+                        <div className="grid grid-cols-3 gap-1 mt-1.5">
+                          {cobroSemanaPorMedio.opciones.map((o) => (
+                            <button key={o.iso} type="button" onClick={() => setPrimerCobroSemana(o.iso)}
+                              className="h-10 rounded-[10px] border text-[11px] font-semibold transition-all"
+                              style={estiloOpcionMenor(cobroSemanaPorMedio.elegido === o.iso)}>{o.corto}</button>
+                          ))}
+                        </div>
+                        <p className="text-[11px] mt-2" style={{ color: 'var(--cf-ink-2)' }}>
+                          Le cobras un {cobroSemanaPorMedio.nombre} sí y otro no: {cobroSemanaPorMedio.fechas.join(', ')}{cobroSemanaPorMedio.masDeSeis ? '…' : ''}
+                        </p>
+                      </div>
+                    )}
+                    </>
                   ) : (
                     <>
                       <div className="grid grid-cols-2 gap-3">

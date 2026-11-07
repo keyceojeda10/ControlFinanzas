@@ -5,6 +5,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { primerCobroElegido } from '@/lib/dinero/calendario'
 import {
   calcularPrestamo, calcularSaldoPendiente, minimoParaRenovar,
   prestamoDevuelveMenosDeLoPrestado, mensajePrestamoConPerdida,
@@ -251,6 +252,13 @@ export async function POST(request, { params }) {
   const diaCobroSemanaDb = mismaFrecuencia && (freq === 'semanal' || freq === 'quincenal')
     ? original.diaCobroSemana : null
 
+  /* Un sábado sí y otro no: el préstamo nuevo arranca su ciclo de 14 días. El
+     primer cobro lo puede mandar la pantalla; si no, el de siempre. */
+  const primerCobroSemana = freq === 'quincenal' && Number.isInteger(diaCobroSemanaDb)
+    && !Number.isInteger(diaCobroMesDb) && !Number.isInteger(diaCobroMes2Db)
+    ? primerCobroElegido(`${String(fechaInicioFinal).slice(0, 10)}T05:00:00.000Z`, diaCobroSemanaDb, body.primerCobro)
+    : null
+
   const cuotaManualNum = cuotaManual ? Number(cuotaManual) : undefined
   const calc = calcularPrestamo({
     montoPrestado: montoFinal, tasaInteres: tasaFinal, diasPlazo, fechaInicio: fechaInicioFinal, frecuencia: freq, modoInteres: modoFinal,
@@ -258,6 +266,7 @@ export async function POST(request, { params }) {
     ...(modoFinal === 'solo_interes' && { interesAdelantado: !!body.interesAdelantado }),
     ...(Number.isInteger(diaCobroMesDb) && { diaCobroMes: diaCobroMesDb }),
     ...(Number.isInteger(diaCobroMes2Db) && { diaCobroMes2: diaCobroMes2Db }),
+    ...(primerCobroSemana && { diaCobroSemana: diaCobroSemanaDb, primerCobro: primerCobroSemana }),
   })
   // Ver la guardia equivalente en POST /api/prestamos: una cuota que no cubre el
   // interes del primer periodo hace que el prestamo nunca amortice.

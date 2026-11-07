@@ -1281,7 +1281,7 @@ export async function POST(request, { params }) {
   let proximoCobroFinal = calcularProximoCobro(prestamoFinal, diasExcluidosFinal, festivos)
   let aplazadoA = null
   if (aplazarUnPeriodo && tipo === 'intereses' && elInteresSubeLaDeuda(prestamoFinal) && proximoCobroFinal) {
-    const nueva = siguientePeriodo(proximoCobroFinal, prestamoFinal.frecuencia, prestamoFinal.diaCobroMes)
+    const nueva = siguientePeriodo(proximoCobroFinal, prestamoFinal.frecuencia, prestamoFinal.diaCobroMes, prestamoFinal)
     if (nueva) {
       await prisma.prestamo.update({
         where: { id: prestamoId },

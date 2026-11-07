@@ -1120,7 +1120,7 @@ export default function RegistrarPago({
   const puedeAplazar = tipo === 'intereses' && subeLaDeuda && Boolean(prestamo?.proximoCobro)
 
   const fechaAplazada = puedeAplazar
-    ? siguientePeriodo(prestamo.proximoCobro, prestamo?.frecuencia, prestamo?.diaCobroMes)
+    ? siguientePeriodo(prestamo.proximoCobro, prestamo?.frecuencia, prestamo?.diaCobroMes, prestamo)
     : null
 
   // «¿A qué se aplica?» — las tres de la lámina.

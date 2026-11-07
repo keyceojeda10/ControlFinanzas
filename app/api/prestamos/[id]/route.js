@@ -1,5 +1,6 @@
 // app/api/prestamos/[id]/route.js
 
+import { esSemanaPorMedio, primerCobroElegido, fechaDePeriodo } from '@/lib/dinero/calendario'
 import { parejaDeLaEdicion } from '@/lib/dinero/editar-monto'
 import { pagosEnOrden } from '@/lib/dinero/orden-de-pagos'
 import { getServerSession }    from 'next-auth'
@@ -911,7 +912,33 @@ export async function PATCH(request, { params }) {
       dataUpdate.primerCobro = Number.isInteger(dataUpdate.diaCobroMes)
         ? primerCobroMensual(new Date(p.fechaInicio), dataUpdate.diaCobroMes)
         : null
-    } else if (usaTabla && anclaPorDiaSemana) {
+    }
+
+    /* UN SÁBADO SÍ Y OTRO NO. Quincenal con día de la semana sin pagos todavía:
+       estrena su ciclo de 14 días desde el primer cobro (elegido o el de siempre).
+       Con pagos encima y ya en ese ciclo, solo se corre al nuevo día de la semana.
+       Los viejos con pagos (primerCobro null) se quedan como estaban. Y si deja el
+       día de la semana, el quincenal no usa `primerCobro`: se limpia. */
+    // ⚠ El abierto no entra: cobra interés por período (ver POST /api/prestamos).
+    if (freq === 'quincenal' && !(p.sinPlazo === true && p.modoInteres === 'solo_interes')) {
+      const eraPorMedio = esSemanaPorMedio(p)
+      if (anclaPorDiaSemana && sinPagosAun) {
+        dataUpdate.primerCobro = primerCobroElegido(new Date(p.fechaInicio), dataUpdate.diaCobroSemana, body?.primerCobro)
+        // Con tabla, sus filas salen del mismo calendario nuevo.
+        if (usaTabla) {
+          const args = { freq, diaCobroSemana: dataUpdate.diaCobroSemana, primerCobro: dataUpdate.primerCobro }
+          fechaPorPeriodo = new Map(p.cuotasAmortizacion.map((f) => [f.numeroPeriodo, fechaDePeriodo(f.numeroPeriodo, args)]))
+        }
+      } else if (anclaPorDiaSemana && eraPorMedio) {
+        const f = new Date(p.primerCobro)
+        f.setUTCDate(f.getUTCDate() + ((dataUpdate.diaCobroSemana - f.getUTCDay() + 7) % 7))
+        dataUpdate.primerCobro = f
+      } else if (!anclaPorDiaSemana && eraPorMedio) {
+        dataUpdate.primerCobro = null
+      }
+    }
+
+    if (!fechaPorPeriodo && usaTabla && anclaPorDiaSemana) {
       // Dia de la semana en modo con tabla: calcularPrestamo no reprograma por
       // dia de la semana, asi que corremos cada fila FUTURA al dia objetivo
       // (0=dom..6=sab), moviendola hacia adelante. Las fechas se guardan a las
