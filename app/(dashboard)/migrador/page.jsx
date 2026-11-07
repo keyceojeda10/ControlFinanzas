@@ -1,5 +1,7 @@
 'use client'
 
+import { abonoSinResolver } from '@/lib/dinero/monto-raro'
+import PreguntaAbonoRaro from '@/components/prestamos/PreguntaAbonoRaro'
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { useRouter } from 'next/navigation'
@@ -451,6 +453,8 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
                 onChange={e => set('yaAbonado', e.target.value)}
                 placeholder="Monto total ya abonado"
               />
+              <PreguntaAbonoRaro abono={ficha.yaAbonado} montoPrestado={ficha.monto} totalAPagar={calculo?.totalAPagar}
+                confirmado={ficha.abonoConfirmado} onCorregir={(v) => set('yaAbonado', v)} onConfirmar={(v) => set('abonoConfirmado', v)} />
               {/* Si ya venía pagando y la fecha sigue en hoy, no empezó hoy: con
                   esa fecha quedaba «adelantado» todo lo abonado y el cobrador
                   no lo visitaba en días (DETALLES-CARTERA #2). Se ofrece, no se
@@ -859,6 +863,9 @@ export default function MigradorPage() {
     if (!ficha.nombre.trim()) { setError('El nombre es obligatorio'); return }
     if (!ficha.monto || Number(ficha.monto) <= 0) { setError('El monto es obligatorio'); return }
     if (!calculo) { setError('Revisa los datos del préstamo'); return }
+    if (ficha.esEnCurso && abonoSinResolver({ abono: ficha.yaAbonado, montoPrestado: ficha.monto, totalAPagar: calculo.totalAPagar, confirmado: ficha.abonoConfirmado })) {
+      setError('Revisa cuánto ha pagado hasta ahora'); return
+    }
 
     setSaving(true)
     setError('')

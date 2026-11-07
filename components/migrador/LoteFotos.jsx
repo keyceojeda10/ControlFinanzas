@@ -40,6 +40,8 @@
 // amortización. Cuesta dos peticiones por cliente; a cambio, la plata queda
 // bien.
 
+import { abonoSinResolver } from '@/lib/dinero/monto-raro'
+import PreguntaAbonoRaro from '@/components/prestamos/PreguntaAbonoRaro'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { BotonPrimario, Chip, EtiquetaCampo, Pastilla } from '@/components/cf/primitivos'
 import MoneyInput from '@/components/ui/MoneyInput'
@@ -141,6 +143,8 @@ function estadoDe(f, base) {
   /* Lo primero: si el lector dejó una duda concreta en esta fila, ahí sí hay
      algo que mirar, y la fila lo dice con el campo por su nombre. */
   if (f._dudas?.length) return 'ambar'
+  // Un abono que parece escrito en miles: la fila lo pregunta al abrirla.
+  if (abonoSinResolver({ abono: f.yaAbonado, montoPrestado: e.monto, confirmado: f.abonoConfirmado })) return 'ambar'
 
   if (!f.frecuencia) return 'ambar'
 
@@ -306,6 +310,8 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
   }
   const visibles = soloRevisar ? conEstado.filter((f) => f._estado !== 'verde') : conEstado
   const creables = conEstado.filter((f) => f._estado !== 'rojo')
+  // ¿$80 o $80.000? Mientras alguna fila no conteste, no se crea nada de la tanda.
+  const abonosPorResolver = creables.filter((f) => abonoSinResolver({ abono: f.yaAbonado, montoPrestado: efectivo(f, base).monto, confirmado: f.abonoConfirmado })).length
 
   /* ── CREAR ──
      De tres en tres. En serie, treinta clientes son sesenta viajes seguidos y
@@ -313,6 +319,7 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
      peticiones de golpe. Y va contando: quien sube su cuaderno entero necesita
      ver que avanza. */
   const crear = async () => {
+    if (abonosPorResolver) return
     setCreando({ hechos: 0, total: creables.length, fallos: [] })
     const fallos = []
     let hechos = 0
@@ -697,7 +704,12 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
             {cuenta.rojo === 1 ? 'Una fila' : `${cuenta.rojo} filas`} sin nombre o sin monto se {cuenta.rojo === 1 ? 'queda' : 'quedan'} fuera
           </span>
         )}
-        <BotonPrimario onClick={crear} disabled={!creables.length || !!creando}>
+        {abonosPorResolver > 0 && (
+          <span role="alert" style={{ fontSize: 12, fontWeight: 600, color: 'var(--cf-gold-text-2)', textAlign: 'center' }}>
+            {abonosPorResolver === 1 ? 'Una fila tiene' : `${abonosPorResolver} filas tienen`} un abono por revisar: ábrelas en «¿Ya te ha abonado algo?».
+          </span>
+        )}
+        <BotonPrimario onClick={crear} disabled={!creables.length || !!creando || abonosPorResolver > 0}>
           {creando
             ? `Creando… ${creando.hechos} de ${creando.total}`
             : `Crear ${creables.length} cliente${creables.length === 1 ? '' : 's'}`}
@@ -894,6 +906,8 @@ function Fila({ f, base, onAbrir, abierta, onEditar, onQuitar }) {
           <label>
             <EtiquetaCampo>¿Ya te ha abonado algo?</EtiquetaCampo>
             <MoneyInput value={String(f.yaAbonado ?? '')} onChange={(e) => onEditar('yaAbonado', e.target.value)} />
+            <PreguntaAbonoRaro abono={f.yaAbonado} montoPrestado={efectivo(f, base).monto}
+              confirmado={f.abonoConfirmado} onCorregir={(v) => onEditar('yaAbonado', v)} onConfirmar={(v) => onEditar('abonoConfirmado', v)} />
           </label>
 
           {/* Cuándo empezó: si el papel no lo dice y ya abonó, se calcula por lo

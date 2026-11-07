@@ -1,6 +1,8 @@
 'use client'
 // app/(dashboard)/rutas/[id]/page.jsx - Detalle de ruta
 
+import PreguntaMontoRaro from '@/components/cf/PreguntaMontoRaro'
+import { camposDePregunta } from '@/lib/dinero/monto-raro'
 import { formatMoney, getLocalDateStr } from '@/lib/i18n'
 import { entraAlFajo } from '@/lib/dinero/cuentas'
 import { abreviaturaDocumento } from '@/lib/documento'
@@ -435,6 +437,7 @@ export default function RutaDetallePage({ params }) {
   // La hoja de WhatsApp del recibo se va con el recibo: el siguiente abre cerrado.
   useEffect(() => { if (!reciboCobro) setWaDelRecibo(false) }, [reciboCobro])
   const [modalPagoRapido, setModalPagoRapido] = useState(null)
+  const [montoRaro, setMontoRaro] = useState(null)
   // La pantalla de «estoy en eso» mientras el cobro viaja (components/cf/Procesando).
   const { procesando, conPantalla } = useProcesando()
   // El GPS se pone a trabajar al ABRIR la hoja de cobro, no al confirmar: mientras
@@ -1105,7 +1108,7 @@ export default function RutaDetallePage({ params }) {
     }
   }
 
-  const ejecutarPagoRapido = async (metodoPago, { confirmarDuplicado = false, metodoPagoId = null, destino = null } = {}) => {
+  const ejecutarPagoRapido = async (metodoPago, { confirmarDuplicado = false, metodoPagoId = null, destino = null, respuestaMonto = null } = {}) => {
     const objetivo = destino ?? modalPagoRapido
     if (!objetivo || pagandoRapido) return
     const { id: clienteId, nombre, cuota, cuotaOriginal, prestamoActivo } = objetivo
@@ -1138,8 +1141,8 @@ export default function RutaDetallePage({ params }) {
       const res = await conPantalla(enFajo ? 'cobro' : 'cobroEnCuenta', async () => {
         coords = await obtenerCoordsRapido().catch(() => null)
         const payload = esCuotaExacta
-          ? { claveCobro, montoPagado: cuota, tipo: 'completo', diasAbonados: 1, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), ...(coords ?? {}) }
-          : { claveCobro, montoPagado: cuota, tipo: 'parcial', metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), ...(coords ?? {}) }
+          ? { claveCobro, montoPagado: cuota, tipo: 'completo', ...camposDePregunta(respuestaMonto), diasAbonados: 1, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), ...(coords ?? {}) }
+          : { claveCobro, montoPagado: cuota, tipo: 'parcial', ...camposDePregunta(respuestaMonto), metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), ...(coords ?? {}) }
         return fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1233,7 +1236,16 @@ export default function RutaDetallePage({ params }) {
       } else if (res.status === 409) {
         // Duplicado detectado: preguntar al usuario si confirmar
         const data = await res.json().catch(() => ({}))
-        if (data?.duplicado && !confirmarDuplicado) {
+        if (data?.montoRaro) {
+          // ¿$30 o $30.000? Se revierte lo optimista y se pregunta; nada se guardó.
+          await fetchRuta()
+          setMontoRaro({
+            ...data.montoRaro, nombre,
+            reintentar: (monto, respuesta) => ejecutarPagoRapido(metodoPago, { metodoPagoId, destino: { ...objetivo, cuota: monto }, respuestaMonto: respuesta }),
+            // El cliente entero: `objetivo` es recortado y la hoja no sabría pintarse.
+            cambiar: () => setModalPagoRapido(modalPagoRapido ?? objetivo),
+          })
+        } else if (data?.duplicado && !confirmarDuplicado) {
           await fetchRuta()
           if (confirm(`${nombre} ya recibió un pago por ${formatMoney(cuota)} hace menos de 1 minuto.\n\n¿Registrar este pago de todos modos?`)) {
             /* El MISMO cobro, con su monto: sin `destino` leía el modal del
@@ -2550,6 +2562,10 @@ export default function RutaDetallePage({ params }) {
         NO CAMBIA NADA DE LO QUE MUEVE PLATA: sigue pasando por
         `ejecutarPagoRapido`, con su cola offline, su deshacer de 10 segundos y
         su detección de duplicados. */}
+    {/* En la raíz: dentro de una hoja cerrada no pintaría nada. */}
+    <PreguntaMontoRaro pregunta={montoRaro} formatMoney={formatMoney}
+      onResponder={(monto, respuesta) => { const m = montoRaro; setMontoRaro(null); m.reintentar(monto, respuesta) }}
+      onCambiar={() => { const m = montoRaro; setMontoRaro(null); m?.cambiar() }} />
     <Modal
       open={!!modalPagoRapido}
       onClose={() => setModalPagoRapido(null)}

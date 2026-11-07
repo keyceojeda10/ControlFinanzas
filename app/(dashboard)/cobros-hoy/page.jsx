@@ -1,5 +1,7 @@
 'use client'
 
+import PreguntaMontoRaro from '@/components/cf/PreguntaMontoRaro'
+import { camposDePregunta } from '@/lib/dinero/monto-raro'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
@@ -52,6 +54,7 @@ export default function CobrosHoyPage() {
   const [confirmDeshacer, setConfirmDeshacer] = useState(null) // { pagoId, nombre, monto }
   const [deshaciendo, setDeshaciendo]     = useState(false)
   const [confirmDuplicado, setConfirmDuplicado] = useState(null)
+  const [montoRaro, setMontoRaro] = useState(null)
   const undoTimerRef = useRef(null)
   const [metaCumplida, setMetaCumplida] = useState(false)
   const [rutasColapsadas, setRutasColapsadas] = useState({})
@@ -263,7 +266,7 @@ export default function CobrosHoyPage() {
     }
   }
 
-  const ejecutarPago = async (metodoPago, { confirmarDuplicado = false, montoCustom = null, metodoPagoId = null, plataforma = null, destino = null } = {}) => {
+  const ejecutarPago = async (metodoPago, { confirmarDuplicado = false, montoCustom = null, metodoPagoId = null, plataforma = null, destino = null, respuestaMonto = null } = {}) => {
     try { sessionStorage.setItem('cf-ultimo-metodo-pago', metodoPago) } catch {}
     // `destino` para el reintento del duplicado: el modal ya está cerrado (#35).
     const objetivo = destino ?? modalPago
@@ -322,7 +325,7 @@ export default function CobrosHoyPage() {
         return fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ claveCobro, montoPagado: montoFinal, tipo: tipoPago, diasAbonados: tipoPago === 'completo' ? 1 : 0, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), ...(coords ?? {}) }),
+          body: JSON.stringify({ claveCobro, montoPagado: montoFinal, ...camposDePregunta(respuestaMonto), tipo: tipoPago, diasAbonados: tipoPago === 'completo' ? 1 : 0, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), ...(coords ?? {}) }),
         })
       })
 
@@ -343,7 +346,16 @@ export default function CobrosHoyPage() {
         }
       } else if (res.status === 409) {
         const d = await res.json().catch(() => ({}))
-        if (d?.duplicado && !confirmarDuplicado) {
+        if (d?.montoRaro) {
+          // ¿$30 o $30.000? Se revierte lo optimista y se pregunta; nada se guardó.
+          fetchCobros()
+          setMontoRaro({
+            ...d.montoRaro, nombre,
+            reintentar: (monto, respuesta) => ejecutarPago(metodoPago, { montoCustom: monto, metodoPagoId, plataforma, destino: objetivo, respuestaMonto: respuesta }),
+            // El cliente entero: `objetivo` es recortado y la hoja no sabría pintarse.
+            cambiar: () => setModalPago(modalPago ?? objetivo),
+          })
+        } else if (d?.duplicado && !confirmarDuplicado) {
           fetchCobros()
           setConfirmDuplicado({ clienteId, nombre, cuota, cuotaOriginal, prestamoActivo, metodoPago, metodoPagoId, montoCustom, faltaHoy: objetivo.faltaHoy })
         } else {
@@ -714,6 +726,10 @@ export default function CobrosHoyPage() {
       </Modal>
 
       {/* ── Modal: confirmar pago duplicado ── */}
+      {/* En la raíz: dentro de un Modal cerrado no pintaría nada. */}
+      <PreguntaMontoRaro pregunta={montoRaro} formatMoney={formatMoney}
+        onResponder={(monto, respuesta) => { const m = montoRaro; setMontoRaro(null); m.reintentar(monto, respuesta) }}
+        onCambiar={() => { const m = montoRaro; setMontoRaro(null); m?.cambiar() }} />
       <Modal
         open={!!confirmDuplicado}
         onClose={() => { setConfirmDuplicado(null); fetchCobros() }}

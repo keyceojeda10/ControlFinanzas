@@ -1,6 +1,8 @@
 'use client'
 // components/prestamos/RegistrarPago.jsx - Modal de registro de pago
 
+import PreguntaMontoRaro from '@/components/cf/PreguntaMontoRaro'
+import { camposDePregunta } from '@/lib/dinero/monto-raro'
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useCountry } from '@/hooks/useCountry'
@@ -185,6 +187,7 @@ export default function RegistrarPago({
   // Los atajos y los efectos fijan `monto` con la cifra REAL. Al hacerlo hay
   // que olvidar lo tecleado, o el campo seguiría pintando el texto viejo.
   const fijarMonto = (v) => { setMontoTecleado(null); setMonto(v) }
+  const [montoRaro, setMontoRaro] = useState(null)
   const verMonto = (v) => (
     montoTecleado != null
       ? montoParaMostrar(montoTecleado, undefined)
@@ -425,8 +428,9 @@ export default function RegistrarPago({
     fetch('/api/metodos-pago').then(r => r.ok ? r.json() : []).then(setMetodosPago).catch(() => {})
   }, [])
 
-  const handleSubmit = async ({ confirmarDuplicado = false } = {}) => {
-    let m = Number(monto)
+  const handleSubmit = async ({ confirmarDuplicado = false, respuestaMonto = null, montoForzado = null } = {}) => {
+    // `montoForzado`: la cifra que acaban de contestar; `monto` aún no se ha repintado.
+    let m = montoForzado ?? Number(monto)
     if (!m || m <= 0) { setError('Ingresa un monto válido'); return }
     // Nota obligatoria para recargo y descuento (auditoria).
     if ((tipo === 'recargo' || tipo === 'descuento') && !nota.trim()) {
@@ -612,7 +616,7 @@ export default function RegistrarPago({
         return fetch(`/api/prestamos/${prestamoId}/pagos${qs}`, {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ claveCobro, montoPagado: m, tipo, nota, diasAbonados, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), plataforma, ...(coords ?? {}), ...(puedeAplazar && aplazar ? { aplazarUnPeriodo: true } : {}) }),
+          body:    JSON.stringify({ claveCobro, montoPagado: m, ...camposDePregunta(respuestaMonto), tipo, nota, diasAbonados, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), plataforma, ...(coords ?? {}), ...(puedeAplazar && aplazar ? { aplazarUnPeriodo: true } : {}) }),
         })
       })
       // Fix #6: el Service Worker puede responder 503 cuando no hay red en vez
@@ -622,6 +626,12 @@ export default function RegistrarPago({
         return
       }
       const data = await res.json()
+      if (res.status === 409 && data?.montoRaro) {
+        // ¿$30 o $30.000? Nada se guardó: se pregunta aquí mismo, encima de la hoja.
+        setLoading(false)
+        setMontoRaro(data.montoRaro)
+        return
+      }
       if (res.status === 409 && data?.duplicado) {
         setLoading(false)
         const hace = Math.round((Date.now() - new Date(data.pagoReciente.fechaPago).getTime()) / 1000)
@@ -629,7 +639,7 @@ export default function RegistrarPago({
           `Ya se registró un pago idéntico hace ${hace}s.\n\n¿Confirmas que este es un pago adicional y no un duplicado?`
         )
         if (ok) {
-          return handleSubmit({ confirmarDuplicado: true })
+          return handleSubmit({ confirmarDuplicado: true, respuestaMonto, montoForzado })
         }
         return
       }
@@ -1340,6 +1350,18 @@ export default function RegistrarPago({
   // El MOTIVO es obligatorio en los dos y ya lo era: se reutiliza `nota`, que es el
   // campo que el endpoint espera. Sin motivo no se puede confirmar, y eso se dice
   // apagando el botón en vez de dejar que el servidor lo rechace después.
+  /* ⚠ VA EN LAS DOS SALIDAS: la hoja de cobro de abajo Y el formulario completo. Con
+     una sola en el archivo, las pruebas pasaban y en la hoja nunca salía. */
+  const preguntaMonto = (
+    <PreguntaMontoRaro pregunta={montoRaro} formatMoney={formatMoney}
+      onResponder={(valor, respuesta) => {
+        setMontoRaro(null)
+        fijarMonto(String(valor))
+        handleSubmit({ respuestaMonto: respuesta, montoForzado: valor })
+      }}
+      onCambiar={() => setMontoRaro(null)} />
+  )
+
   if ((tipo === 'recargo' || tipo === 'descuento') && !verFormularioCompleto) {
     const esRecargo = tipo === 'recargo'
     const montoNum = Math.round(Number(monto) || 0)
@@ -1765,6 +1787,7 @@ export default function RegistrarPago({
             }}
           />
         </HojaInferior>
+      {preguntaMonto}
       </>
     )
   }
@@ -2171,6 +2194,7 @@ export default function RegistrarPago({
           />
         </div>
       </div>
+      {preguntaMonto}
     </Modal>
   )
 }

@@ -14,6 +14,8 @@ import { Input }                                   from '@/components/ui/Input'
 import MoneyInput                                  from '@/components/ui/MoneyInput'
 import { calcularPrestamo } from '@/lib/calculos'
 import { fechaDePeriodo, primerCobroElegido } from '@/lib/dinero/calendario'
+import { abonoSinResolver } from '@/lib/dinero/monto-raro'
+import PreguntaAbonoRaro from '@/components/prestamos/PreguntaAbonoRaro'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { usePantallaAncha } from '@/hooks/usePantallaAncha'
 import { formatMoney, soloDecimal } from '@/lib/i18n'
@@ -336,6 +338,7 @@ function NuevoPrestamo() {
      que es donde la respuesta hace lo que dice — ver lib/dinero/abono-previo.js. */
   const [tipoAbonoPrevio, setTipoAbonoPrevio] = useState('completo')
   const [yaAbonado, setYaAbonado] = useState('')
+  const [abonoConfirmado, setAbonoConfirmado] = useState(null)
   // Cobro de seguro (opcional)
   const [seguro, setSeguro] = useState(false)
   const [montoSeguro, setMontoSeguro] = useState('')
@@ -884,6 +887,11 @@ function NuevoPrestamo() {
     return resultado
   }, [monto, tasa, plazo, fechaInicio, calcularConTasa])
 
+  // ¿$80 o $80.000? Sin responder no se sigue: el préstamo nacería debiendo de más.
+  const abonoPorResolver = esEnCurso && abonoSinResolver({
+    abono: yaAbonado, montoPrestado: monto, totalAPagar: calculo?.totalAPagar, confirmado: abonoConfirmado,
+  })
+
   /* ── LA CUOTA EN PESOS ──────────────────────────────────────────────────
      «que la persona pudiera escoger el monto que le paga la cuota y que el
       sistema automáticamente calcule el porcentaje» (el dueño, 10 oct 2026).
@@ -1017,6 +1025,7 @@ function NuevoPrestamo() {
     if (cuotaInsuficiente) return false
     // Ni con cliente que ya debe y sin el permiso del dueño.
     if (faltaPermiso) return false
+    if (abonoPorResolver) return false
     // Una cuota en pesos que no devuelve el capital: la de abajo es la anterior.
     if (pesos.imposible) return false
     /* ⚠ EN PC EL PASO 0 LLEVA LAS DOS COSAS. Con el `return !!clienteId` de
@@ -1052,6 +1061,7 @@ function NuevoPrestamo() {
     if (esEnCurso && Number(yaAbonado) > calculo.totalAPagar) {
       setError('El abono no puede ser mayor al total a pagar'); return
     }
+    if (abonoPorResolver) { setError('Revisa el monto ya abonado'); return }
 
     setLoading(true)
     setError('')
@@ -2374,6 +2384,8 @@ function NuevoPrestamo() {
                 <div>
                   <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Monto ya abonado</label>
                   <div className="mt-1.5"><MoneyInput value={yaAbonado} onChange={(e) => setYaAbonado(e.target.value)} placeholder="0" /></div>
+                  <PreguntaAbonoRaro abono={yaAbonado} montoPrestado={monto} totalAPagar={calculo?.totalAPagar}
+                    confirmado={abonoConfirmado} onCorregir={setYaAbonado} onConfirmar={setAbonoConfirmado} />
 
                   {/* ══ ¿A QUÉ SE ABONÓ? ═══════════════════════════════════════
                       «El sistema no está preguntando si esos abonos son a

@@ -1,5 +1,7 @@
 // app/api/prestamos/[id]/pagos/route.js
 
+import { cobroRaro, fueraDeLaCuota, TIPOS_QUE_SE_PREGUNTAN } from '@/lib/dinero/monto-raro'
+import { SIN_ABONO_PREVIO } from '@/lib/dinero/abono-previo'
 import { reajustarDevengosTrasCambio } from '@/lib/dinero/devengar'
 import { getServerSession }    from 'next-auth'
 import { authOptions }         from '@/lib/auth'
@@ -72,6 +74,11 @@ async function cobradorPuedeAplicarDescuentos(userId) {
 }
 
 // ─── POST /api/prestamos/[id]/pagos ─────────────────────────────
+/** La medición no puede tumbar un cobro: si falla, se pierde el dato y ya. */
+function registrarMontoRaro({ organizationId, userId, evento, metadata }) {
+  prisma.evento.create({ data: { organizationId, userId, evento, metadata: JSON.stringify(metadata) } }).catch(() => {})
+}
+
 export async function POST(request, { params }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.organizationId) {
@@ -446,6 +453,31 @@ export async function POST(request, { params }) {
         pagoReciente: { id: reciente.id, fechaPago: reciente.fechaPago },
       }, { status: 409 })
     }
+  }
+
+  /* ¿ESTA CIFRA PARECE UN DEDAZO? (7 nov 2026). Solo si la pantalla sabe preguntar
+     (`preguntarMonto`), y nunca a un cobro de la cola: ese ya se hizo en la puerta.
+     Se registra cada pregunta y cada respuesta para medir si la regla acierta. Ver
+     lib/dinero/monto-raro.js. */
+  const tocaPreguntar = body.preguntarMonto === true && !marcador && TIPOS_QUE_SE_PREGUNTAN.includes(tipo)
+    && !(Number(diasAbonados) > 1) && fueraDeLaCuota(montoFinal, prestamo.cuotaDiaria)
+  if (tocaPreguntar) {
+    const { _min, _max } = await prisma.pago.aggregate({
+      where: { prestamoId, organizationId, tipo: { in: ['completo', 'parcial', 'capital', 'intereses'] }, ...SIN_ABONO_PREVIO },
+      _min: { montoPagado: true },
+      _max: { montoPagado: true },
+    })
+    const montoRaro = cobroRaro({
+      monto: montoFinal, cuota: prestamo.cuotaDiaria, saldo: saldoActual,
+      minimo: _min.montoPagado, maximo: _max.montoPagado,
+    })
+    if (montoRaro) {
+      registrarMontoRaro({ organizationId, userId, evento: 'monto_raro_preguntado', metadata: { prestamoId, ...montoRaro } })
+      return Response.json({ error: 'Revisa el monto', montoRaro }, { status: 409 })
+    }
+  }
+  if (['era_otra', 'confirmo'].includes(body.respuestaMontoRaro)) {
+    registrarMontoRaro({ organizationId, userId, evento: 'monto_raro_respuesta', metadata: { prestamoId, respuesta: body.respuestaMontoRaro, monto: montoFinal, cuota: prestamo.cuotaDiaria } })
   }
 
   // Registrar pago y actualizar estados en transacción
