@@ -70,6 +70,8 @@ export const ICONO_DE_RUTA = {
   '/socios':        <><circle cx="8" cy="9" r="2.8" /><circle cx="16" cy="9" r="2.8" /><path d="M2.5 19c0-2.6 2.4-4.2 5.5-4.2M21.5 19c0-2.6-2.4-4.2-5.5-4.2" /></>,
   // El reloj que da marcha atrás: lo que YA pasó. (Cobrar hoy es el reloj a secas.)
   '/actividad':     <><path d="M3.5 12a8.5 8.5 0 102.6-6.1L3.5 8.5" /><path d="M3.5 4v4.5H8M12 7.5v5l3 1.8" /></>,
+  // El mes con sus días marcados: qué día le toca a quién. (Mi plan es el mes vacío.)
+  '/calendario':    <><rect x="3" y="4.5" width="18" height="16.5" rx="2.5" /><path d="M3 9.5h18M8 2.5v4M16 2.5v4" /><path d="M8 13.5h.01M12 13.5h.01M16 13.5h.01M8 17h.01M12 17h.01" strokeWidth="2.6" /></>,
   '/clavos':        <><circle cx="12" cy="12" r="8.5" /><path d="M8.8 8.8l6.4 6.4M15.2 8.8l-6.4 6.4" /></>,
   '/prestamos/simulador': <><rect x="4.5" y="2.5" width="15" height="19" rx="2.5" /><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 15.5v3" /></>,
   '/configuracion': <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5v.2a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.6 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1h-.2a2 2 0 110-4h.1a1.7 1.7 0 001.6-1.1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3h.1a1.7 1.7 0 001-1.5v-.2a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9v.1a1.7 1.7 0 001.5 1h.2a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" /></>,

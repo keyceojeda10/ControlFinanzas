@@ -27,7 +27,7 @@ import { BotonMinutoProfe } from '@/components/tutoriales/PiezasProfe'
    busca por el icono». Este mapa solo traduce el nombre corto a su ruta. */
 const RUTA_DE = {
   plata: '/capital', caja: '/caja', negocio: '/dashboard/analiticas', simulador: '/prestamos/simulador',
-  reportes: '/reportes', gastos: '/gastos', cobradores: '/cobradores', perdidos: '/clavos',
+  reportes: '/reportes', calendario: '/calendario', gastos: '/gastos', cobradores: '/cobradores', perdidos: '/clavos',
   socios: '/socios', quien: '/actividad', config: '/configuracion', soporte: '/soporte',
   tutoriales: '/tutoriales', cuaderno: '/migrador', excel: '/carga-masiva',
 }
@@ -190,6 +190,7 @@ export default function PantallaMas({
       { icono: 'simulador', nombre: 'Simulador', cifra: 'Cuánto quedaría de cuota', destino: '/prestamos/simulador' },
       puedeReportarGastos && { icono: 'gastos', nombre: 'Gastos', cifra: null, destino: '/gastos' },
       { icono: 'reportes',  nombre: 'Reportes',  cifra: 'La hoja de cobros del día', destino: '/reportes' },
+      { icono: 'calendario', nombre: 'Calendario', cifra: 'Qué día le toca a quién', destino: '/calendario' },
       { icono: 'perdidos',  nombre: 'Clavos',  cifra: 'Los de tu ruta', destino: '/clavos' },
     ].filter(Boolean)
     return (
@@ -250,6 +251,9 @@ export default function PantallaMas({
     // los días, y allí costaba 50px permanentes en la pantalla más apretada.
     { icono: 'simulador',  nombre: 'Simulador',           cifra: 'Cuánto quedaría de cuota', destino: '/prestamos/simulador' },
     { icono: 'reportes',   nombre: 'Reportes',            cifra: null, destino: '/reportes' },
+    // «Un calendario donde la gente pudiera ver qué día le toca a qué persona»
+    // (6 nov 2026). Aquí y no en «Cobrar hoy»: no todo el mundo usa «Cobrar hoy».
+    { icono: 'calendario', nombre: 'Calendario',          cifra: 'Qué día le toca a quién', destino: '/calendario' },
     { icono: 'gastos',     nombre: 'Gastos',              cifra: gastosMes, tono: 'ambar', destino: '/gastos' },
     { icono: 'cobradores', nombre: 'Cobradores',          cifra: cobradoresSinRegistrar, tono: 'mal', destino: '/cobradores' },
     { icono: 'perdidos',   nombre: 'Clavos',              cifra: perdidos, destino: '/clavos' },

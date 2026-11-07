@@ -62,6 +62,7 @@ const HERRAMIENTAS = [
   { href: '/lineas-credito',       nombre: 'Líneas de crédito' },
   { href: '/gastos',               nombre: 'Gastos' },
   { href: '/reportes',             nombre: 'Reportes' },
+  { href: '/calendario',           nombre: 'Calendario' },
   { href: '/dashboard/analiticas', nombre: '¿Cómo va el negocio?' },
   { href: '/cobradores',           nombre: 'Cobradores' },
   { href: '/socios',               nombre: 'Socios' },
