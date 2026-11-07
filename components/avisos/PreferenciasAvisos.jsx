@@ -122,7 +122,7 @@ export default function PreferenciasAvisos() {
           {push === 'sin-soporte' && ios.es && !ios.instalada && (
             <ol style={{ margin: 0, paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 5, fontSize: 14, color: 'var(--cf-ink)', lineHeight: 1.45 }}>
               <li>Abre <strong>app.control-finanzas.com</strong> en <strong>Safari</strong>.</li>
-              <li>Toca el botón de <strong>Compartir</strong> y elige <strong>«Añadir a pantalla de inicio»</strong>.</li>
+              <li>Toca el botón de <strong>Compartir</strong> y elige <strong>«Agregar a inicio»</strong>. Si no lo ves, está dentro de los tres puntos (···) de abajo a la derecha.</li>
               <li>Abre la app desde ese icono, vuelve aquí y enciende las notificaciones.</li>
             </ol>
           )}

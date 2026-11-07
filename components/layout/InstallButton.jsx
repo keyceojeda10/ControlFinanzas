@@ -1,6 +1,7 @@
 'use client'
 
 import { createPortal } from 'react-dom'
+import { detectar, safariEscondeCompartir, PASOS_SAFARI_PUNTOS } from '@/lib/instalar'
 
 export function isStandalone() {
   if (typeof window === 'undefined') return false
@@ -130,6 +131,14 @@ function getInstructions() {
 
   // iOS (iPhone / iPad)
   if (device === 'ios') {
+    // Safari 26 guarda Compartir dentro de los ··· (ver lib/instalar.js).
+    if (browser === 'safari' && safariEscondeCompartir(detectar(navigator.userAgent))) {
+      const iconos = ['dots-h', 'share-ios', 'add', 'check']
+      return {
+        title: 'Instalar desde Safari',
+        steps: PASOS_SAFARI_PUNTOS.map((p, i) => ({ icon: iconos[i], text: p.titulo, sub: p.texto })),
+      }
+    }
     if (browser === 'safari') {
       return {
         title: 'Instalar desde Safari',

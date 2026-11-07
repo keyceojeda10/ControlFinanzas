@@ -6,8 +6,10 @@
  *                       el teléfono no deja instalar. Un botón salta a Chrome.
  *   'ios-dentro'      — iPhone dentro de otra app: abrirla en Safari, con el
  *                       enlace ya copiado para pegarlo.
- *   'ios-safari'      — iPhone en Safari: una flecha que apunta al botón
- *                       Compartir de abajo, y después «Agregar a inicio».
+ *   'ios-safari'      — iPhone en Safari hasta el 18: una flecha que apunta al
+ *                       botón Compartir de abajo, y después «Agregar a inicio».
+ *   'ios-safari-puntos' — Safari 26 en adelante: Compartir está dentro de los ···
+ *                       de abajo a la derecha, y ahí apunta la flecha. Ver lib/instalar.js.
  *   'ios-chrome'      — iPhone en Chrome: igual, pero Compartir va arriba a la
  *                       derecha.
  *
@@ -20,7 +22,7 @@
 
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { enlaceAChrome, detectar } from '@/lib/instalar'
+import { enlaceAChrome, detectar, PASOS_SAFARI_PUNTOS } from '@/lib/instalar'
 
 const NOMBRE_APP = { facebook: 'Facebook', instagram: 'Instagram', whatsapp: 'WhatsApp', tiktok: 'TikTok' }
 
@@ -35,12 +37,20 @@ const AgregarInicio = () => (
   </svg>
 )
 
+const TresPuntos = () => (
+  <svg width={26} height={26} viewBox="0 0 24 24" fill="#0A84FF" aria-hidden>
+    <circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" />
+  </svg>
+)
+
 const ESTILO = `
 @keyframes cfFlechaAbajo { 0%,100% { transform: translate(-50%, 0) } 50% { transform: translate(-50%, 12px) } }
 @keyframes cfFlechaArriba { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-12px) } }
+@keyframes cfFlechaEsquina { 0%,100% { transform: translateY(0) } 50% { transform: translateY(12px) } }
 .cf-flecha-abajo { animation: cfFlechaAbajo 1.1s cubic-bezier(.45,0,.55,1) infinite; }
 .cf-flecha-arriba { animation: cfFlechaArriba 1.1s cubic-bezier(.45,0,.55,1) infinite; }
-@media (prefers-reduced-motion: reduce) { .cf-flecha-abajo, .cf-flecha-arriba { animation: none } }
+.cf-flecha-esquina { animation: cfFlechaEsquina 1.1s cubic-bezier(.45,0,.55,1) infinite; }
+@media (prefers-reduced-motion: reduce) { .cf-flecha-abajo, .cf-flecha-arriba, .cf-flecha-esquina { animation: none } }
 `
 
 const boton = {
@@ -107,7 +117,9 @@ export default function GuiaInstalar({ camino, onCerrar }) {
 
   // ── iPhone: la flecha encima de su propia pantalla ──
   const arriba = camino === 'ios-chrome'
-  const pasos = [
+  const puntos = camino === 'ios-safari-puntos'
+  const iconosPuntos = [<TresPuntos key="p" />, <Compartir key="c" />, <AgregarInicio key="a" />, <span key="g" style={{ fontSize: 15, fontWeight: 700, color: '#0A84FF' }}>Agregar</span>]
+  const pasos = puntos ? PASOS_SAFARI_PUNTOS.map((x, i) => ({ ...x, icono: iconosPuntos[i] })) : [
     {
       titulo: 'Toca Compartir',
       texto: arriba
@@ -131,6 +143,8 @@ export default function GuiaInstalar({ camino, onCerrar }) {
       {/* La flecha: solo en el primer paso, que es el que hay que encontrar. */}
       {paso === 0 && (arriba
         ? <svg className="cf-flecha-arriba" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#F5B824" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ position: 'absolute', top: 'max(6px, env(safe-area-inset-top))', right: 18 }}><path d="M12 20V5M5.5 11.5L12 5l6.5 6.5" /></svg>
+        : puntos
+        ? <svg className="cf-flecha-esquina" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#F5B824" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ position: 'absolute', bottom: 22, right: 6 }}><path d="M12 4v15M5.5 12.5L12 19l6.5-6.5" /></svg>
         : <svg className="cf-flecha-abajo" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#F5B824" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ position: 'absolute', bottom: 22, left: '50%' }}><path d="M12 4v15M5.5 12.5L12 19l6.5-6.5" /></svg>)}
 
       <div style={{ background: '#fff', color: '#15161A', borderRadius: 18, padding: '18px 18px 14px', display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 440, width: '100%', alignSelf: 'center' }}>
