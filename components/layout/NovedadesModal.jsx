@@ -18,7 +18,7 @@
 // superiores), así que aquí solo queda el fondo y la lógica de versión.
 
 import { useEffect, useState } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { NOVEDADES, NOVEDADES_VERSION, novedadVigente } from '@/lib/novedades'
 import { Novedades } from '@/components/pantallas/Cargando'
 import { useAuth } from '@/hooks/useAuth'
@@ -36,6 +36,7 @@ export default function NovedadesModal() {
   const [abierto, setAbierto] = useState(false)
   const [destacada, setDestacada] = useState(0)
   const ruta = usePathname()
+  const router = useRouter()
   const { esOwner, loading: cargandoSesion } = useAuth()
 
   useEffect(() => {
@@ -135,11 +136,11 @@ export default function NovedadesModal() {
             titulo: primera.titulo,
             texto: primera.texto,
             partes: primera.partes,
-            // No hay un sitio al que llevar desde aquí: las novedades del
-            // registro no traen destino. La acción es enterarse y seguir.
-            accion: 'Entendido',
+            // La que trae `href` lleva a su pantalla; las demás no tienen destino
+            // y la acción es enterarse y seguir. La X y el fondo siempre cierran.
+            accion: primera.accion ?? 'Entendido',
           }}
-          onActivar={cerrar}
+          onActivar={() => { cerrar(); if (primera.href) router.push(primera.href) }}
           restoTitulo={otras.length === 1 ? 'Y una más' : `Las otras ${otras.length}, en una línea`}
           resto={otras.map((it) => ({ id: `nov-${it.i}`, texto: it.titulo, i: it.i }))}
           onNovedad={(n) => setDestacada(n.i)}
