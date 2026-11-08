@@ -16,6 +16,7 @@ import { calcularPrestamo } from '@/lib/calculos'
 import { fechaDePeriodo, primerCobroElegido } from '@/lib/dinero/calendario'
 import { abonoSinResolver } from '@/lib/dinero/monto-raro'
 import PreguntaAbonoRaro from '@/components/prestamos/PreguntaAbonoRaro'
+import EleccionInteresPorMes from '@/components/prestamos/EleccionInteresPorMes'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { usePantallaAncha } from '@/hooks/usePantallaAncha'
 import { formatMoney, soloDecimal } from '@/lib/i18n'
@@ -367,7 +368,7 @@ function NuevoPrestamo() {
   const esAbierto = modoInteres === 'solo_interes' && sinPlazo
   /* Decreciente quincenal con el interés que baja cada mes: el % es al mes y cada
      quincena cobra la mitad (180, 180, 168, 168…). Ver `calcularPrestamo`. */
-  const [interesPorMes, setInteresPorMes] = useState(false)
+  const [interesPorMes, setInteresPorMes] = useState(() => deLaUrl('interesPorMes', '') === '1')
   const interesPorMesActivo = interesPorMes && modoInteres === 'lineal' && frecuencia === 'quincenal' && modo !== 'mercancia'
   const sufijoDeLaTasa = interesPorMesActivo ? 'al mes' : sufijoTasa(modoInteres)
   const [capitalExtra, setCapitalExtra] = useState([])
@@ -2213,27 +2214,7 @@ function NuevoPrestamo() {
               {/* El interés que baja cada mes: «abona 100 mil de capital y la mitad de
                   los intereses». Justo debajo de su modo, como el préstamo abierto. */}
               {modoInteres === 'lineal' && frecuencia === 'quincenal' && modo !== 'mercancia' && (
-                <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>¿Cada cuánto baja el interés?</label>
-                  <div className="grid grid-cols-2 gap-2 mt-1.5">
-                    <button type="button" onClick={() => setInteresPorMes(false)}
-                      className="h-11 rounded-[10px] border text-[13px] font-semibold transition-all"
-                      style={estiloOpcionMenor(!interesPorMes)}>Cada quincena</button>
-                    <button type="button" onClick={() => setInteresPorMes(true)}
-                      className="h-11 rounded-[10px] border text-[13px] font-semibold transition-all"
-                      style={estiloOpcionMenor(interesPorMes)}>Cada mes</button>
-                  </div>
-                  <p className="text-[11px] mt-1.5 leading-relaxed" style={{ color: 'var(--cf-ink-3)' }}>
-                    {interesPorMes
-                      ? 'Escribe el % de un mes. Se calcula sobre lo que debe al empezar el mes y cada quincena paga la mitad.'
-                      : 'El % se cobra en cada quincena, sobre lo que debe en ese momento.'}
-                  </p>
-                  {interesPorMes && calculo?.tablaAmortizacion?.length > 2 && (
-                    <p className="text-[12px] mt-1 font-semibold cf-num" style={{ color: 'var(--cf-ink-2)' }}>
-                      Interés por quincena: {calculo.tablaAmortizacion.slice(0, 4).map((f) => formatMoney(f.interes)).join(', ')}…
-                    </p>
-                  )}
-                </div>
+                <EleccionInteresPorMes porMes={interesPorMes} onElegir={setInteresPorMes} tabla={calculo?.tablaAmortizacion} />
               )}
 
               {/* ══ EL PRÉSTAMO ABIERTO, JUSTO DEBAJO DE SU MODO ══════════════

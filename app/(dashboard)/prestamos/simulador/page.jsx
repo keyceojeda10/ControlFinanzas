@@ -30,6 +30,7 @@ import Simulador from '@/components/pantallas/Simulador'
 import HojaInferior from '@/components/cf/HojaInferior'
 import ModoInteresSelector, { AvisoPorCobro, avisoDelPorcentaje } from '@/components/prestamos/ModoInteresSelector'
 import TablaAmortizacion from '@/components/prestamos/TablaAmortizacion'
+import EleccionInteresPorMes from '@/components/prestamos/EleccionInteresPorMes'
 import { Toggle } from '@/components/ui/Toggle'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { calcularPrestamo } from '@/lib/calculos'
@@ -77,6 +78,8 @@ export default function SimuladorPage() {
   const [plazoUnidades, setPlazoUnidades] = useState('30')
   const [modoInteres, setModoInteres] = useState('fijo')
   const [interesAdelantado, setInteresAdelantado] = useState(false)
+  // Decreciente quincenal con el interés que baja cada mes (180, 180, 168, 168…).
+  const [interesPorMes, setInteresPorMes] = useState(false)
   const [cuotaManual, setCuotaManual] = useState('')
 
   const [hojaModos, setHojaModos] = useState(false)
@@ -88,6 +91,8 @@ export default function SimuladorPage() {
   const freqInfo = FRECUENCIAS.find((f) => f.value === frecuencia) || FRECUENCIAS[0]
   const diasPlazo = (Number(plazoUnidades) || 0) * (DIAS_POR_PERIODO[frecuencia] || 1)
   const cuotaManualActiva = modoInteres === 'manual'
+  const hayEleccionPorMes = modoInteres === 'lineal' && frecuencia === 'quincenal'
+  const interesPorMesActivo = interesPorMes && hayEleccionPorMes
   const saldoCuotaPersonalizada = modoInteres === 'saldo' && cuotaManual !== '' && Number(cuotaManual) > 0
 
   /* El cálculo como función de la tasa: lo usan la cuota de la pantalla y el
@@ -106,12 +111,13 @@ export default function SimuladorPage() {
         modoInteres,
         ...(cm > 0 && { cuotaManual: cm }),
         interesAdelantado: modoInteres === 'solo_interes' && interesAdelantado,
+        interesPorMes: interesPorMesActivo,
       })
     } catch {
       return null
     }
   }, [monto, diasPlazo, frecuencia, modoInteres, cuotaManualActiva,
-    saldoCuotaPersonalizada, cuotaManual, interesAdelantado])
+    saldoCuotaPersonalizada, cuotaManual, interesAdelantado, interesPorMesActivo])
   const calculo = useMemo(() => (tasa === '' || tasa == null ? null : calcularConTasa(Number(tasa))), [tasa, calcularConTasa])
 
   // La cuota en pesos: «le presto 200 y me paga 10 diarios», y sale el %.
@@ -166,6 +172,8 @@ export default function SimuladorPage() {
       frecuencia,
       plazo: String(plazoUnidades),
       modo: modoInteres,
+      // Sin esto se crearía con otra cuenta distinta a la que acaba de simular.
+      ...(interesPorMesActivo && { interesPorMes: '1' }),
     })
     router.push(`/prestamos/nuevo?${p}`)
   }
@@ -259,7 +267,7 @@ export default function SimuladorPage() {
           ? (v) => pesos.setCuota(montoCrudoConModo(v, modoAbreviado))
           : (v) => setTasa(soloDecimal(v))}
         interesEnPesos={pesos.enPesos}
-        etiquetaInteres={pesos.enPesos ? rotuloCuotaEnPesos(frecuencia, false) : 'Interés'}
+        etiquetaInteres={pesos.enPesos ? rotuloCuotaEnPesos(frecuencia, false) : interesPorMesActivo ? 'Interés al mes' : 'Interés'}
         selectorInteres={puedeEnPesos ? <SelectorPorcentajePesos enPesos={pesos.enPesos} onElegir={pesos.elegir} /> : null}
         notaInteres={pesos.enPesos ? <NotaCuotaEnPesos monto={monto} cuota={pesos.cuota} tasa={tasa} buscada={pesos.buscada}
           modo={modoInteres} total={calculo?.totalAPagar} cuotas={calculo?.numPeriodos ?? plazoUnidades} /> : null}
@@ -277,8 +285,13 @@ export default function SimuladorPage() {
         /* El aviso del «% por cada cobro» va AQUÍ y no solo dentro de la lista
            de modos: esa lista es una hoja que se cierra al elegir, así que el
            aviso se pintaba y desaparecía en el mismo gesto. */
-        notaModo={<AvisoPorCobro aviso={avisoDelPorcentaje(modoInteres, calculo,
-          { monto: Number(monto) || 0, tasa: Number(tasa) || 0 })} />}
+        notaModo={<>
+          {/* En la pantalla y no en la hoja de modos: esa se cierra al elegir. */}
+          {hayEleccionPorMes && <EleccionInteresPorMes porMes={interesPorMes} onElegir={setInteresPorMes} tabla={calculo?.tablaAmortizacion} />}
+          {/* Con «Cada mes» el % no es por cobro: el aviso diría una cosa falsa. */}
+          {!interesPorMesActivo && <AvisoPorCobro aviso={avisoDelPorcentaje(modoInteres, calculo,
+            { monto: Number(monto) || 0, tasa: Number(tasa) || 0 })} />}
+        </>}
 
         onCrear={calculo ? crear : null}
         onMandar={calculo ? mandar : null}
@@ -293,6 +306,7 @@ export default function SimuladorPage() {
         titulo="Cómo se cobra el interés"
       >
         <ModoInteresSelector
+          interesPorMes={interesPorMesActivo}
           modoInteres={modoInteres}
           onChange={(m) => { setModoInteres(m); setHojaModos(false) }}
           calculo={calculo}
