@@ -171,6 +171,7 @@ export default function RenovarPrestamo({
     try {
       const usarManual = cuotaManualActiva && !modoUsaTabla && modo !== 'saldo'
       return calcularPrestamo({
+        interesPorMes: !!prestamoAnterior?.interesPorMes && modo === 'lineal' && frecuencia === 'quincenal',
         montoPrestado: montoNum,
         tasaInteres:   t,
         diasPlazo,
@@ -230,6 +231,7 @@ export default function RenovarPrestamo({
           ...(modo === 'saldo' && cuotaManualActiva && { cuotaManual: Number(cuotaManual) }),
           ...(seguro && montoSeguroNum > 0 && { seguro: true, montoSeguro: montoSeguroNum }),
           ...(modo === 'solo_interes' && prestamoAnterior?.interesAdelantado && { interesAdelantado: true }),
+          ...(prestamoAnterior?.interesPorMes && modo === 'lineal' && frecuencia === 'quincenal' && { interesPorMes: true }),
           ...(soloModo && { soloCambioDeModo: true }),
           // Por dónde sale la diferencia. Sin elegir nada = efectivo.
           ...(cuentaEntrega?.metodoPago === 'transferencia' && {

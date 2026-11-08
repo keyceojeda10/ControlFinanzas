@@ -77,12 +77,12 @@ const PREGUNTA_2 = {
   ],
 }
 
-function calcularEjemplo(modo, { monto, tasa, frecuencia, diasPlazo }) {
+function calcularEjemplo(modo, { monto, tasa, frecuencia, diasPlazo, interesPorMes = false }) {
   const m = Number(monto)
   const p = Number(diasPlazo)
   if (!m || !p) return null
   try {
-    return calcularPrestamo({ montoPrestado: m, tasaInteres: Number(tasa), diasPlazo: p, fechaInicio: new Date(), frecuencia, modoInteres: modo })
+    return calcularPrestamo({ montoPrestado: m, tasaInteres: Number(tasa), diasPlazo: p, fechaInicio: new Date(), frecuencia, modoInteres: modo, interesPorMes: interesPorMes && modo === 'lineal' })
   } catch { return null }
 }
 
@@ -160,13 +160,13 @@ const CHECK = (
   <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.704 5.29a1 1 0 010 1.415l-7.997 8a1 1 0 01-1.414 0L3.296 10.71a1 1 0 011.415-1.415l3.29 3.29 7.288-7.295a1 1 0 011.415 0z" clipRule="evenodd" /></svg>
 )
 
-export default function ModoInteresSelector({ modoInteres, onChange, calculo, monto, tasa, frecuencia, diasPlazo, preferido = null, onGuardarPreferido }) {
+export default function ModoInteresSelector({ interesPorMes = false, modoInteres, onChange, calculo, monto, tasa, frecuencia, diasPlazo, preferido = null, onGuardarPreferido }) {
   // paso: 'lista' | 'q1' | 'q2' | 'resultado'
   const [paso, setPaso] = useState('lista')
   const [sugerido, setSugerido] = useState(null)
   const [verAvanzados, setVerAvanzados] = useState(false)
 
-  const ctx = { monto, tasa, frecuencia, diasPlazo }
+  const ctx = { monto, tasa, frecuencia, diasPlazo, interesPorMes }
   const modoData = (k) => MODOS.find(m => m.key === k)
 
   const elegirOpcion = (op) => {
@@ -296,7 +296,7 @@ export default function ModoInteresSelector({ modoInteres, onChange, calculo, mo
                 <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md" style={{ background: m.key === 'fijo' ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.06)', color: m.key === 'fijo' ? 'var(--cf-green-dark)' : 'var(--cf-ink-3)' }}>{m.tag}</span>
               )}
             </div>
-            {m.base && <p className="text-[11px] font-semibold mb-0.5" style={{ color: BASES[m.base].color }}>{BASES[m.base].texto}</p>}
+            {m.base && (() => { const base = interesPorMes && m.key === 'lineal' ? BASES.mes : BASES[m.base]; return <p className="text-[11px] font-semibold mb-0.5" style={{ color: base.color }}>{base.texto}</p> })()}
             <p className="text-[11px] leading-snug" style={{ color: 'var(--cf-ink-3)' }}>{m.desc}</p>
             {ej && m.key !== 'manual' && (
               <p className="text-[11px] mt-1 font-medium tabular-nums" style={{ color: activo ? 'var(--cf-gold)' : 'var(--cf-ink-2)' }}>

@@ -527,6 +527,9 @@ model Prestamo {
   /// archivos— pero en un abierto NO deciden nada: son el primer período, y la
   /// pantalla enseña «Abierto» en vez de una fecha.
   sinPlazo       Boolean        @default(false)
+  /// Decreciente quincenal: el % es AL MES, sobre lo que debía al empezar el mes, y
+  /// cada quincena cobra la mitad (180, 180, 168, 168…). Ver `calcularPrestamo`.
+  interesPorMes  Boolean        @default(false)
   seguro         Boolean        @default(false)
   montoSeguro    Float?
   estado         EstadoPrestamo @default(activo)

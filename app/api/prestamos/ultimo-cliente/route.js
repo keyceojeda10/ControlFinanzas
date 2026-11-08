@@ -54,6 +54,7 @@ export async function GET(request) {
       modoInteres: true,
       sinPlazo: true,
       interesAdelantado: true,
+      interesPorMes: true,
       createdAt: true,
     },
   })

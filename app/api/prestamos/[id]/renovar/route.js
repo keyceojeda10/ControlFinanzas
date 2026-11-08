@@ -260,6 +260,8 @@ export async function POST(request, { params }) {
     : null
 
   const cuotaManualNum = cuotaManual ? Number(cuotaManual) : undefined
+  // Lo manda la pantalla, que lo hereda del préstamo anterior si sigue igual.
+  const interesPorMesDb = body.interesPorMes === true && modoFinal === 'lineal' && freq === 'quincenal'
   const calc = calcularPrestamo({
     montoPrestado: montoFinal, tasaInteres: tasaFinal, diasPlazo, fechaInicio: fechaInicioFinal, frecuencia: freq, modoInteres: modoFinal,
     ...(cuotaManualNum > 0 && { cuotaManual: cuotaManualNum }),
@@ -267,6 +269,7 @@ export async function POST(request, { params }) {
     ...(Number.isInteger(diaCobroMesDb) && { diaCobroMes: diaCobroMesDb }),
     ...(Number.isInteger(diaCobroMes2Db) && { diaCobroMes2: diaCobroMes2Db }),
     ...(primerCobroSemana && { diaCobroSemana: diaCobroSemanaDb, primerCobro: primerCobroSemana }),
+    interesPorMes: interesPorMesDb,
   })
   // Ver la guardia equivalente en POST /api/prestamos: una cuota que no cubre el
   // interes del primer periodo hace que el prestamo nunca amortice.
@@ -426,6 +429,7 @@ export async function POST(request, { params }) {
         cuotaDiaria,
         frecuencia:    freq,
         modoInteres:   modoInteresFinal,
+        interesPorMes: interesPorMesDb,
         interesAdelantado: modoInteresFinal === 'solo_interes' && !!body.interesAdelantado,
         diaCobroSemana: diaCobroSemanaDb,
         diaCobroMes:    diaCobroMesDb,

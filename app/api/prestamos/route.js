@@ -597,7 +597,7 @@ export async function POST(request) {
 
   const { organizationId, rol } = session.user
   const body = await request.json()
-  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual, inyeccionPrevia, primerCobro: primerCobroPedido, diaCobroSemana, diaCobroMes, diaCobroMes2, seguro, montoSeguro, modoInteres, nombreProducto, interesAdelantado, capitalExtra, socioId, sinPlazo, tipoAbonoPrevio, metodoPago: metodoPagoDesembolso, metodoPagoId: metodoPagoIdDesembolso } = body
+  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual, inyeccionPrevia, primerCobro: primerCobroPedido, interesPorMes, diaCobroSemana, diaCobroMes, diaCobroMes2, seguro, montoSeguro, modoInteres, nombreProducto, interesAdelantado, capitalExtra, socioId, sinPlazo, tipoAbonoPrevio, metodoPago: metodoPagoDesembolso, metodoPagoId: metodoPagoIdDesembolso } = body
   // Cuenta de la que sale el desembolso (para el desglose por cuenta). Si no
   // viene, se asume efectivo (el caso mas comun en gota a gota).
   const cuentaDesembolso = metodoPagoDesembolso || 'efectivo'
@@ -830,6 +830,8 @@ export async function POST(request) {
     }, { status: 400 })
   }
 
+  // Solo Decreciente quincenal; en cualquier otro modo el % ya significa otra cosa.
+  const interesPorMesDb = interesPorMes === true && modoValido === 'lineal' && freq === 'quincenal'
   const calc = calcularPrestamo({
     ...(esAbierto && { sinPlazo: true }),
     montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia: freq, modoInteres: modoValido,
@@ -841,6 +843,7 @@ export async function POST(request) {
     /* ⚠ El abierto no: cobra interés POR PERÍODO, y con períodos de 14 días serían
        26 intereses al año en vez de 24. Sigue con su quincena. */
     ...(primerCobroSemana && !esAbierto && { diaCobroSemana: diaCobroSemanaDb, primerCobro: primerCobroSemana }),
+    interesPorMes: interesPorMesDb,
   })
   // Sobre saldo con una cuota que no cubre ni el interes del primer periodo: el
   // prestamo no amortiza nunca y la tabla degenera en un globo gigante. Se corta
@@ -1012,6 +1015,7 @@ export async function POST(request) {
         cuotaDiaria,
         frecuencia:    freq,
         modoInteres:   modoInteresFinal,
+        interesPorMes: interesPorMesDb,
         interesAdelantado: modoInteresFinal === 'solo_interes' && !!interesAdelantado && !esAbierto,
         sinPlazo: esAbierto,
         ...(typeof nombreProducto === 'string' && nombreProducto.trim() && { nombreProducto: nombreProducto.trim().slice(0, 100) }),

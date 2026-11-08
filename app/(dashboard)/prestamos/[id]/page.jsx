@@ -748,7 +748,7 @@ function PrestamoDetalleContenido({ params }) {
     cuotaQueToca = null,
     pagoHoy: yaPagoHoy, pagos: pagosCrudos = [], proximoCobro,
     seguro = false, montoSeguro,
-    modoInteres, interesAdelantado = false, renovadoDeId, esClavo = false,
+    modoInteres, interesAdelantado = false, interesPorMes = false, renovadoDeId, esClavo = false,
     cuotasAmortizacion = [],
     creadoPor,
     moratorio = null,
@@ -3401,7 +3401,7 @@ function PrestamoDetalleContenido({ params }) {
         saldoPendiente={saldoPendiente}
         minimoRenovacion={minimoRenovacion}
         interesVencidoRenovacion={prestamo?.interesVencidoRenovacion ?? 0}
-        prestamoAnterior={{ tasaInteres, diasPlazo, frecuencia, modoInteres, cuotaDiaria, montoPrestado, interesAdelantado }}
+        prestamoAnterior={{ interesPorMes, tasaInteres, diasPlazo, frecuencia, modoInteres, cuotaDiaria, montoPrestado, interesAdelantado }}
         clienteNombre={cliente?.nombre}
         montoMaximoPrestamo={cliente?.montoMaximoPrestamo}
         // Ya estaban cargadas para la hoja de pago; sin pasarlas, la renovación
@@ -3421,7 +3421,7 @@ function PrestamoDetalleContenido({ params }) {
         saldoPendiente={saldoPendiente}
         minimoRenovacion={minimoRenovacion}
         interesVencidoRenovacion={prestamo?.interesVencidoRenovacion ?? 0}
-        prestamoAnterior={{ tasaInteres, diasPlazo, frecuencia, modoInteres, cuotaDiaria, montoPrestado, interesAdelantado }}
+        prestamoAnterior={{ interesPorMes, tasaInteres, diasPlazo, frecuencia, modoInteres, cuotaDiaria, montoPrestado, interesAdelantado }}
         clienteNombre={cliente?.nombre}
         montoMaximoPrestamo={cliente?.montoMaximoPrestamo}
         metodosPago={metodosPagoOrg}

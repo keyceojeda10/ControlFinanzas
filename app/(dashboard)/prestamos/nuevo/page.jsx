@@ -365,6 +365,11 @@ function NuevoPrestamo() {
   /* La bandera solo vale en Globo. Se deriva en vez de guardarse para que
      cambiar de modo no deje un préstamo «abierto» de otro tipo por olvido. */
   const esAbierto = modoInteres === 'solo_interes' && sinPlazo
+  /* Decreciente quincenal con el interés que baja cada mes: el % es al mes y cada
+     quincena cobra la mitad (180, 180, 168, 168…). Ver `calcularPrestamo`. */
+  const [interesPorMes, setInteresPorMes] = useState(false)
+  const interesPorMesActivo = interesPorMes && modoInteres === 'lineal' && frecuencia === 'quincenal' && modo !== 'mercancia'
+  const sufijoDeLaTasa = interesPorMesActivo ? 'al mes' : sufijoTasa(modoInteres)
   const [capitalExtra, setCapitalExtra] = useState([])
 
   /* ── EL INTERÉS EN PESOS (préstamo sin vencimiento) ─────────────────────
@@ -671,6 +676,7 @@ function NuevoPrestamo() {
     if (u.modoInteres) setModoInteres(u.modoInteres)
     setSinPlazo(Boolean(u.sinPlazo && u.modoInteres === 'solo_interes'))
     setInteresAdelantado(Boolean(u.interesAdelantado))
+    setInteresPorMes(Boolean(u.interesPorMes))
   }
 
   // Guard de permiso
@@ -868,6 +874,7 @@ function NuevoPrestamo() {
       ...(cm > 0 && { cuotaManual: cm }),
       interesAdelantado: modoInteres === 'solo_interes' && interesAdelantado && !esAbierto,
       ...(esAbierto && { sinPlazo: true }),
+      ...(interesPorMesActivo && { interesPorMes: true }),
       ...(capitalExtra.length > 0 && { capitalExtra }),
       /* ⚠ LA MISMA CONDICIÓN QUE AL GUARDAR. Esta previsualización llevaba
          `modoDiaCobro === 'mes'`, que es el interruptor de QUINCENAL: en mensual
@@ -878,7 +885,7 @@ function NuevoPrestamo() {
       ...((frecuencia === 'mensual' || (frecuencia === 'quincenal' && modoDiaCobro === 'mes')) && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
       ...(frecuencia === 'quincenal' && modoDiaCobro === 'mes' && diaCobroMes2 !== '' && { diaCobroMes2: Number(diaCobroMes2) }),
     })
-  }, [monto, plazo, fechaInicio, frecuencia, modo, modoInteres, cuotaManualActiva, cuotaManual, precioVenta, numCuotas, interesAdelantado, esAbierto, capitalExtra, modoDiaCobro, diaCobroMes, diaCobroMes2])
+  }, [monto, plazo, fechaInicio, frecuencia, modo, modoInteres, interesPorMesActivo, cuotaManualActiva, cuotaManual, precioVenta, numCuotas, interesAdelantado, esAbierto, capitalExtra, modoDiaCobro, diaCobroMes, diaCobroMes2])
 
   const calculo = useMemo(() => {
     if (!Number(monto) || (tasa === '' || tasa == null) || !Number(plazo) || !fechaInicio) return lastValidCalculo.current
@@ -941,6 +948,7 @@ function NuevoPrestamo() {
         ...(seguro && Number(montoSeguro) > 0 && { seguro: true, montoSeguro: Number(montoSeguro) }),
         ...(modoInteres === 'solo_interes' && interesAdelantado && !esAbierto && { interesAdelantado: true }),
         ...(esAbierto && { sinPlazo: true }),
+        ...(interesPorMesActivo && { interesPorMes: true }),
         ...(capitalExtra.length > 0 && { capitalExtra }),
         ...(socioId && { socioId }),
         metodoPago: cuentaDesembolso.metodoPago,
@@ -1988,7 +1996,7 @@ function NuevoPrestamo() {
                       {/* En un abierto el % se cobra CADA período de la frecuencia (decisión
                           del dueño, 17 oct 2026): «Interés mensual» sobre un diario hacía
                           leer 20 % al mes donde se cobra 20 % al día. (DETALLES-PRESTAMOS #5.) */}
-                      {pesos.enPesos || esAbierto ? rotuloCuotaEnPesos(frecuencia, esAbierto) : (sufijoTasa(modoInteres) ? `Interés ${sufijoTasa(modoInteres)}` : 'Interés')}
+                      {pesos.enPesos || esAbierto ? rotuloCuotaEnPesos(frecuencia, esAbierto) : (sufijoDeLaTasa ? `Interés ${sufijoDeLaTasa}` : 'Interés')}
                     </label>
                     {puedeEnPesos && <SelectorPorcentajePesos enPesos={pesos.enPesos} onElegir={pesos.elegir} />}
                   </div>
@@ -2199,7 +2207,34 @@ function NuevoPrestamo() {
                 diasPlazo={plazo}
                 preferido={modoPreferido}
                 onGuardarPreferido={(m) => { guardarModoPreferido(m); setModoPreferido(m) }}
+                interesPorMes={interesPorMesActivo}
               />
+
+              {/* El interés que baja cada mes: «abona 100 mil de capital y la mitad de
+                  los intereses». Justo debajo de su modo, como el préstamo abierto. */}
+              {modoInteres === 'lineal' && frecuencia === 'quincenal' && modo !== 'mercancia' && (
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>¿Cada cuánto baja el interés?</label>
+                  <div className="grid grid-cols-2 gap-2 mt-1.5">
+                    <button type="button" onClick={() => setInteresPorMes(false)}
+                      className="h-11 rounded-[10px] border text-[13px] font-semibold transition-all"
+                      style={estiloOpcionMenor(!interesPorMes)}>Cada quincena</button>
+                    <button type="button" onClick={() => setInteresPorMes(true)}
+                      className="h-11 rounded-[10px] border text-[13px] font-semibold transition-all"
+                      style={estiloOpcionMenor(interesPorMes)}>Cada mes</button>
+                  </div>
+                  <p className="text-[11px] mt-1.5 leading-relaxed" style={{ color: 'var(--cf-ink-3)' }}>
+                    {interesPorMes
+                      ? 'Escribe el % de un mes. Se calcula sobre lo que debe al empezar el mes y cada quincena paga la mitad.'
+                      : 'El % se cobra en cada quincena, sobre lo que debe en ese momento.'}
+                  </p>
+                  {interesPorMes && calculo?.tablaAmortizacion?.length > 2 && (
+                    <p className="text-[12px] mt-1 font-semibold cf-num" style={{ color: 'var(--cf-ink-2)' }}>
+                      Interés por quincena: {calculo.tablaAmortizacion.slice(0, 4).map((f) => formatMoney(f.interes)).join(', ')}…
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* ══ EL PRÉSTAMO ABIERTO, JUSTO DEBAJO DE SU MODO ══════════════
                   ⚠ ESTE ES EL SITIO. Lo puse primero en el panel «Resumen del
@@ -2476,13 +2511,13 @@ function NuevoPrestamo() {
                           editor={<MoneyInput value={monto} onChange={e => setMonto(e.target.value)} autoFocus />} />
 
                         {modo === 'prestamo' && (
-                          <EditableRow label="Interés" value={`${formatearTasa(tasa || 0)}% ${sufijoTasa(modoInteres) ?? ''}`.trim()} pencil={pencil}
+                          <EditableRow label="Interés" value={`${formatearTasa(tasa || 0)}% ${sufijoDeLaTasa ?? ''}`.trim()} pencil={pencil}
                             editor={
                               <div className="flex items-center gap-1.5">
                                 <input type="text" inputMode="decimal" value={tasa} onChange={e => { pesos.apagar(); setTasa(soloDecimal(e.target.value)) }}
                                   className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
                                   style={{ background: 'var(--cf-fill)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus />
-                                <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>% {sufijoTasa(modoInteres) ?? ''}</span>
+                                <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>% {sufijoDeLaTasa ?? ''}</span>
                               </div>
                             } />
                         )}
@@ -2672,14 +2707,14 @@ function NuevoPrestamo() {
 
                 {/* Tasa — editable (solo prestamo, no mercancia) */}
                 {modo === 'prestamo' && (
-                  <EditableRow label="Interés" value={`${formatearTasa(tasa)}% ${sufijoTasa(modoInteres) ?? ''}`.trim()}
+                  <EditableRow label="Interés" value={`${formatearTasa(tasa)}% ${sufijoDeLaTasa ?? ''}`.trim()}
                     pencil={pencilIcon}
                     editor={
                       <div className="flex items-center gap-1.5">
                         <input type="text" inputMode="decimal" value={tasa} onChange={e => { pesos.apagar(); setTasa(soloDecimal(e.target.value)) }}
                           className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
                           style={{ background: 'var(--cf-fill)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus />
-                        <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>% {sufijoTasa(modoInteres) ?? ''}</span>
+                        <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>% {sufijoDeLaTasa ?? ''}</span>
                       </div>
                     }
                   />

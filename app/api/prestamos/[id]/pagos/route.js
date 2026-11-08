@@ -798,6 +798,8 @@ export async function POST(request, { params }) {
              la última cuota previa. */
           diaCobroMes: prestamoActualizado.diaCobroMes ?? null,
           interesAdelantado: !!prestamoActualizado.interesAdelantado,
+          interesPorMes: !!prestamoActualizado.interesPorMes,
+          interesDelMes: ultimaPrevia ? Number(ultimaPrevia.interes) : null,
         })
 
         for (const fila of tablaRecalculada) {

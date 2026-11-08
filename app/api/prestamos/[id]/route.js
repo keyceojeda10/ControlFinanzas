@@ -888,6 +888,7 @@ export async function PATCH(request, { params }) {
         fechaInicio:   new Date(p.fechaInicio),
         frecuencia:    freq,
         modoInteres:   p.modoInteres,
+        interesPorMes: !!p.interesPorMes,
         ...(p.modoInteres === 'saldo' && p.cuotaDiaria > 0 && { cuotaManual: p.cuotaDiaria }),
         interesAdelantado: p.interesAdelantado,
         diaCobroMes:   dataUpdate.diaCobroMes,
@@ -1088,7 +1089,10 @@ export async function PATCH(request, { params }) {
     const diaCobroMesUsar = diaCobroMes !== undefined ? diaCobroMes : p.diaCobroMes
     const diaCobroMes2Usar = diaCobroMes2 !== undefined ? diaCobroMes2 : p.diaCobroMes2
 
+    // Sigue valiendo mientras siga siendo Decreciente quincenal.
+    const interesPorMesUsar = !!p.interesPorMes && modoInteresUsar === 'lineal' && frecuenciaUsar === 'quincenal'
     const calc = calcularPrestamo({
+      interesPorMes: interesPorMesUsar,
       montoPrestado: montoParaCalculo,
       tasaInteres:   tasaInteres ?? p.tasaInteres,
       // El plazo PEDIDO es la entrada del calculo. El plazo REAL (que con cuota

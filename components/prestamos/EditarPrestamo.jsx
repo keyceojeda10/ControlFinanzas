@@ -101,6 +101,7 @@ export default function EditarPrestamo({
         ...(capitalExtraState.length > 0 && { capitalExtra: capitalExtraState }),
         sinPlazo,
         interesAdelantado: interesAdelantadoPrevio,
+        interesPorMes: !!p.interesPorMes && modoInteres === 'lineal' && frecuencia === 'quincenal',
       })
     } catch { return null }
   }, [monto, periodos, fechaInicio, frecuencia, modoInteres, cuotaManual, capitalExtraState, sinPlazo, interesAdelantadoPrevio])
