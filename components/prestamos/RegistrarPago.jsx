@@ -2,7 +2,7 @@
 // components/prestamos/RegistrarPago.jsx - Modal de registro de pago
 
 import PreguntaMontoRaro from '@/components/cf/PreguntaMontoRaro'
-import { camposDePregunta } from '@/lib/dinero/monto-raro'
+import { camposDePregunta, cobroRaro } from '@/lib/dinero/monto-raro'
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useCountry } from '@/hooks/useCountry'
@@ -35,7 +35,7 @@ import { interesQueAhorraUnAbono } from '@/lib/dinero/abono-capital'
 import { efectoDelPago } from '@/lib/dinero/saldo-tras-cada-pago'
 import { cargarDiaCobrado } from '@/lib/dia-cobrado'
 import { getPlataformaInfo } from '@/components/ui/LogoPlataforma'
-import { formatFechaCobroRelativa, siguientePeriodo, interesCobrableAhora, esAbiertoConDevengo, periodoEnCursoAbierto, calcularCapitalRestante, tieneTablaAmortizacion } from '@/lib/calculos'
+import { formatFechaCobroRelativa, siguientePeriodo, interesCobrableAhora, esAbiertoConDevengo, periodoEnCursoAbierto, calcularCapitalRestante, tieneTablaAmortizacion, interesDeUnCobroAbierto } from '@/lib/calculos'
 import { FilaInterruptor } from '@/components/cf/primitivos2'
 import {
   adaptarDespuesDelPago, atajosDeMonto, mediosParaHoja, medioAGuardar,
@@ -475,13 +475,11 @@ export default function RegistrarPago({
     const claveCobro = nuevaClaveCobro()
 
     // Fix #6: helper para encolar offline — usado tanto en catch de red como en 503 del SW
-    const encolarOffline = async () => {
+    const encolarOffline = async (entradas = [{ claveCobro, montoPagado: m, tipo }]) => {
       try {
-        await guardarPagoPendiente({
+        for (const entrada of entradas) await guardarPagoPendiente({
           prestamoId,
-          claveCobro,
-          montoPagado: m,
-          tipo,
+          ...entrada,
           nota,
           diasAbonados,
           metodoPago,
@@ -549,10 +547,37 @@ export default function RegistrarPago({
        pago por entrada, y partir uno a medias en el teléfono es justo el
        descuadre que esto viene a evitar. Sin señal se dice y se puede cobrar
        con el reparto automático, que sí se encola. */
-    if (repartoAbierto?.aMano) {
+    /* EL COBRO QUE ENTRA JUSTO DESPUÉS DEL CORTE (8 nov 2026): también son dos pagos.
+       En un solo «completo», el abono baja el capital con que empieza el mes y a la
+       vez ese mes se cobra del mismo pago: la hoja, la ficha y el interés siguiente
+       daban tres capitales distintos ($700.000 sobre $2.000.000 al 10 %: 1,7 M,
+       1,65 M y 1,5 M). Separado da 1,5 M en los tres. No toca lo que ya está guardado. */
+    const interesDeEste = repartoAbierto ? Math.min(repartoAbierto.interes, m) : 0
+    const capitalDeEste = repartoAbierto ? m - interesDeEste : 0
+    const separarAlCorte = !!repartoAbierto?.separar && capitalDeEste > 0
+
+    /* La pregunta de cifra rara solo la hace el servidor en un «completo»: al separarlo
+       se le quedaría callada, así que aquí se pregunta con la misma regla. */
+    if (separarAlCorte && !repartoAbierto.aMano && !respuestaMonto) {
+      const previos = (prestamo?.pagos ?? [])
+        .filter((x) => ['completo', 'parcial', 'capital', 'intereses'].includes(x.tipo))
+        .map((x) => Number(x.montoPagado) || 0)
+      const raro = cobroRaro({
+        monto: m, cuota: cuotaDiaria, saldo: saldoPendiente,
+        minimo: previos.length ? Math.min(...previos) : null,
+        maximo: previos.length ? Math.max(...previos) : null,
+      })
+      if (raro) {
+        setLoading(false)
+        setMontoRaro(raro)
+        return
+      }
+    }
+
+    if (repartoAbierto?.aMano || separarAlCorte) {
       const partes = [
-        { tipo: 'intereses', monto: repartoAbierto.interes },
-        { tipo: 'capital', monto: repartoAbierto.capital },
+        { tipo: 'intereses', monto: interesDeEste, clave: nuevaClaveCobro() },
+        { tipo: 'capital', monto: capitalDeEste, clave: nuevaClaveCobro() },
       ].filter((x) => x.monto > 0)
       const guardados = []
       const guionReparto = entraAlFajo(metodoPago, metodoPagoId, new Set(metodosPago.filter((x) => x.esDelCobrador).map((x) => x.id))) ? 'cobro' : 'cobroEnCuenta'
@@ -563,14 +588,23 @@ export default function RegistrarPago({
             const res = await fetch(`/api/prestamos/${prestamoId}/pagos`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ claveCobro: nuevaClaveCobro(), montoPagado: parte.monto, tipo: parte.tipo, nota, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), plataforma, ...(coords ?? {}) }),
+              body: JSON.stringify({ claveCobro: parte.clave, montoPagado: parte.monto, ...(respuestaMonto && parte === partes[0] ? camposDePregunta(respuestaMonto) : {}), tipo: parte.tipo, nota, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), plataforma, ...(coords ?? {}) }),
             })
+            if (res.status === 503 && !navigator.onLine) throw new Error('Sin señal')
             const data = await res.json().catch(() => ({}))
             if (!res.ok) throw Object.assign(new Error(data.error || 'No se pudo registrar el pago'), { delServidor: true })
             guardados.push({ parte, data })
           }
         })
       } catch (e) {
+        /* Sin señal, lo que falta va a la cola, cada parte con su clave. Si el servidor
+           ya guardó una y no alcanzó a contestar, no se crea otra vez. El cobrador no se
+           queda sin registrar: el reparto a mano sí pide señal, este no lo eligió él. */
+        if (!e?.delServidor && !repartoAbierto.aMano) {
+          await encolarOffline(partes.slice(guardados.length).map((x) => ({ claveCobro: x.clave, montoPagado: x.monto, tipo: x.tipo })))
+          setLoading(false)
+          return
+        }
         const motivo = e?.delServidor ? e.message : 'Sin señal no se puede repartir a mano. Cóbralo con el reparto automático o espera la señal.'
         if (!guardados.length) {
           setError(motivo)
@@ -594,7 +628,7 @@ export default function RegistrarPago({
         ...ultimo.data,
         saldoAntesDelPago: guardados[0].data.saldoAntesDelPago ?? null,
         saldoAntesDelPagoId: pagoId,
-        repartoDelPago: { interes: repartoAbierto.interes, capital: repartoAbierto.capital },
+        repartoDelPago: { interes: interesDeEste, capital: capitalDeEste },
         repartoDelPagoId: pagoId,
       }
       setPagoGuardado(pagoParaWA)
@@ -1211,19 +1245,22 @@ export default function RegistrarPago({
     if (!esAbierto || tipo !== 'completo') return null
     const total = Math.round(Number(monto) || 0)
     if (!(total > 0)) return null
-    const tope = Math.min(total, Math.max(0, Math.round(interesCobrableAhora(prestamo) || 0)))
+    const { tope: topeDeInteres, separar } = interesDeUnCobroAbierto(prestamo)
+    const tope = Math.min(total, topeDeInteres)
     const manual = interesManual != null
       ? Math.min(tope, Math.max(0, Math.round(Number(interesManual) || 0)))
       : null
     const interes = manual ?? tope
-    return { total, tope, interes, capital: total - interes, aMano: manual != null && manual !== tope }
+    return { total, tope, interes, capital: total - interes, aMano: manual != null && manual !== tope, separar }
   })()
 
   const explicacionAplicacion = (() => {
     if (repartoAbierto) {
       return {
         titulo: 'Así se reparte',
-        texto: repartoAbierto.capital > 0
+        texto: repartoAbierto.capital > 0 && repartoAbierto.interes <= 0
+          ? `Todo a capital: queda en ${formatMoney(Math.max(0, capitalAbierto - repartoAbierto.capital))}.`
+          : repartoAbierto.capital > 0
           ? `${formatMoney(repartoAbierto.interes)} a interés y ${formatMoney(repartoAbierto.capital)} a capital: el capital queda en ${formatMoney(Math.max(0, capitalAbierto - repartoAbierto.capital))}.`
           : `Todo a interés. El capital sigue en ${formatMoney(capitalAbierto)}.`,
         cifra: null,
