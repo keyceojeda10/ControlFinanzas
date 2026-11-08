@@ -2890,6 +2890,14 @@ function PrestamoDetalleContenido({ params }) {
           <button
             onClick={() => {
               setModalAtajosCobro(false)
+              /* En un abierto, el abono va a capital. Abría en «Cuota»: ahí un monto
+                 de más paga primero el interés del mes que corre, y quien venía a
+                 abonar no lo pidió (8 nov 2026). */
+              if (esAbierto) {
+                setPresetPago({ tipo: 'capital' })
+                setModalPago(true)
+                return
+              }
               abrirPagoNormal()
             }}
             className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--cf-green-dark)] bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.25)] hover:bg-[rgba(34,197,94,0.15)] transition-all"

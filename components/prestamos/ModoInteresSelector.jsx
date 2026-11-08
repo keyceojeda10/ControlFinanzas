@@ -297,7 +297,7 @@ export default function ModoInteresSelector({ interesPorMes = false, modoInteres
               )}
             </div>
             {m.base && (() => { const base = interesPorMes && m.key === 'lineal' ? BASES.mes : BASES[m.base]; return <p className="text-[11px] font-semibold mb-0.5" style={{ color: base.color }}>{base.texto}</p> })()}
-            <p className="text-[11px] leading-snug" style={{ color: 'var(--cf-ink-3)' }}>{m.desc}</p>
+            <p className="text-[11px] leading-snug" style={{ color: 'var(--cf-ink-3)' }}>{interesPorMes && m.key === 'lineal' ? 'El capital se divide parejo. El interés baja cada mes y cada quincena paga la mitad.' : m.desc}</p>
             {ej && m.key !== 'manual' && (
               <p className="text-[11px] mt-1 font-medium tabular-nums" style={{ color: activo ? 'var(--cf-gold)' : 'var(--cf-ink-2)' }}>
                 {ej.numPeriodos} cuotas de {formatMoney(ej.cuotaDiaria)} · Total {formatMoney(ej.totalAPagar)}
@@ -308,7 +308,7 @@ export default function ModoInteresSelector({ interesPorMes = false, modoInteres
                 detalle), sin llenar todas las tarjetas de botones. */}
             {activo && (
               <p className="text-[11px] mt-1.5 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
-                <span className="font-semibold">Cómo se calcula: </span>{m.formula}
+                <span className="font-semibold">Cómo se calcula: </span>{interesPorMes && m.key === 'lineal' ? 'Capital ÷ cobros (parejo) + la mitad del interés del mes (lo que debe al empezar el mes × %).' : m.formula}
               </p>
             )}
             {/* ⚠ Solo en el modo ELEGIDO. En las siete tarjetas a la vez sería
