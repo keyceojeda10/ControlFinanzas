@@ -12,7 +12,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
-import HojaInferior from '@/components/cf/HojaInferior'
+import HojaInferior, { salirDeHojaHacia } from '@/components/cf/HojaInferior'
 import { BotonPrimario, BotonTexto } from '@/components/cf/primitivos'
 import { formatMoney } from '@/lib/i18n'
 import { pedirCompartido } from '@/lib/pedir-compartido'
@@ -36,6 +36,15 @@ const leerVistos = (orgId, plan) => UMBRALES.filter((u) => {
 const apuntar = (orgId, plan, umbrales) => umbrales.forEach((u) => {
   try { localStorage.setItem(llaveCupo(orgId, plan, u), '1') } catch {}
 })
+
+/* Sin esto no se supo en 6 días que el botón no llevaba a ninguna parte. */
+const marcar = (evento, metadata) => {
+  fetch('/api/analytics/track', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ evento, pagina: '/cupo-clientes', metadata }),
+  }).catch(() => {})
+}
 
 export default function CupoClientes() {
   const { rol, session } = useAuth()
@@ -67,6 +76,7 @@ export default function CupoClientes() {
       if (document.querySelector('[role="dialog"]')) return
       // Las de abajo se dan por vistas: nunca dos hojas seguidas.
       apuntar(orgId, uso.plan, UMBRALES.filter((u) => u <= umbral))
+      marcar('cupo_hoja_vista', { umbral, usado: uso.clientes?.usado, limite: uso.clientes?.limite })
       setHoja(true)
     }, 3000) // después de la novedad del profe (1,5 s), para verla si salió
     return () => clearTimeout(t)
@@ -77,7 +87,13 @@ export default function CupoClientes() {
   const quedan = Math.max(0, limite - usado)
   const subir = beneficiosDeSubir(uso.plan)
   const precio = diferenciaMensual(uso.plan, country)
-  const verPlanes = () => { setHoja(false); router.push('/configuracion/plan') }
+  /* ⚠ `salirDeHojaHacia`: cerrar una hoja y empujar no navega (navegar-desde-una-hoja.test.js).
+     Entre el 2 y el 8 nov 2026 este botón cerraba la hoja y dejaba a la persona donde estaba. */
+  const verPlanes = () => {
+    marcar('cupo_hoja_tocada', { usado: uso?.clientes?.usado, limite: uso?.clientes?.limite })
+    setHoja(false)
+    salirDeHojaHacia(router, '/configuracion/plan')
+  }
 
   return (
     <>

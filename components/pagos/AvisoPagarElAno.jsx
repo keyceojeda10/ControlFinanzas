@@ -17,7 +17,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
-import HojaInferior from '@/components/cf/HojaInferior'
+import HojaInferior, { salirDeHojaHacia } from '@/components/cf/HojaInferior'
 import { BotonPrimario, BotonTexto } from '@/components/cf/primitivos'
 import { formatMoney } from '@/lib/i18n'
 import { pedirCompartido } from '@/lib/pedir-compartido'
@@ -28,6 +28,14 @@ import EnlaceProfeSuelto from '@/components/tutoriales/EnlaceProfeSuelto'
 const fechaLarga = (d) => new Date(d).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', timeZone: 'America/Bogota' })
 const leer = (k) => { try { return localStorage.getItem(k) } catch { return null } }
 const apuntar = (k) => { try { localStorage.setItem(k, '1') } catch {} }
+/* Sin esto no se supo en 6 días que el botón no llevaba a ninguna parte. */
+const marcar = (evento, metadata) => {
+  fetch('/api/analytics/track', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ evento, pagina: '/aviso-pagar-ano', metadata }),
+  }).catch(() => {})
+}
 
 export default function AvisoPagarElAno() {
   const { rol, session } = useAuth()
@@ -57,6 +65,7 @@ export default function AvisoPagarElAno() {
         if (document.querySelector('[role="dialog"]')) return // otra ventana abierta
         yaSalio.current = true
         apuntar(llave)
+        marcar('hoja_ano_vista', { dias: estado.diasRestantes })
         setD({ estado, precios })
       })
       .catch(() => {})
@@ -66,7 +75,13 @@ export default function AvisoPagarElAno() {
   if (!d) return null
   const { estado, precios } = d
   const cerrar = () => setD(null)
-  const irA = (periodo) => { setD(null); router.push(`/configuracion/plan?periodo=${periodo}`) }
+  /* ⚠ `salirDeHojaHacia`: cerrar una hoja y empujar no navega (navegar-desde-una-hoja.test.js).
+     Entre el 2 y el 8 nov 2026 este botón cerraba la hoja y dejaba a la persona donde estaba. */
+  const irA = (periodo) => {
+    marcar('hoja_ano_tocada', { periodo })
+    setD(null)
+    salirDeHojaHacia(router, `/configuracion/plan?periodo=${periodo}`)
+  }
 
   return (
     <HojaInferior
