@@ -981,12 +981,22 @@ export default function ClientesPage() {
           const color = (cif) => cif?.tono === 'contra' ? 'var(--cf-red-dark)'
             : cif?.tono === 'favor' ? 'var(--cf-green-dark)' : 'var(--cf-ink)'
           return (
-            <button
+            /* ⚠ UN DIV CON ROL DE BOTÓN, NO UN <button>. La estrella de cómo
+               paga es un botón (su «tac» explica el color) y va DENTRO de la
+               fila: un botón dentro de otro es HTML inválido, el navegador lo
+               reparte a su manera y el lector de pantalla lee una fila partida.
+               Lo mismo que la tarjeta de la ruta. */
+            <div
               key={c.id}
               id={ANCLA_CLIENTE(c.id)}
               data-ancla-lista=""
-              type="button"
+              role="button"
+              tabIndex={0}
               onClick={() => { guardarSitio(c.id); window.location.href = `/clientes/${c.id}` }}
+              onKeyDown={(e) => {
+                if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return
+                e.preventDefault(); guardarSitio(c.id); window.location.href = `/clientes/${c.id}`
+              }}
               className="grid items-center w-full text-left px-4 py-3"
               style={{
                 // ⚠ LAS MISMAS COLUMNAS QUE LA CABECERA, O NO CUADRAN. Aquí
@@ -1061,7 +1071,7 @@ export default function ClientesPage() {
               <span className="cf-fig text-[13px] text-right" style={{ color: color(cumple) }}>{cumple?.valor ?? '—'}</span>
               <span className="cf-fig text-[13px] text-right" style={{ color: 'var(--cf-ink-2)' }}>{pagado?.valor ?? '—'}</span>
               <span className="text-[13px] text-right truncate" style={{ color: color(prox) }}>{prox?.valor ?? '—'}</span>
-            </button>
+            </div>
           )
         }
 

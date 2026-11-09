@@ -1,4 +1,5 @@
 import '@/app/globals.css'
+import Contenido from '@/components/layout/Contenido'
 
 /* ⚠ EL TITULO NO LLEVA NUESTRA MARCA.
    Decía «Mi Portal - Control Finanzas». Es la pestaña que ve el DEUDOR cuando
@@ -13,7 +14,8 @@ export const metadata = {
 export default function PortalLayout({ children }) {
   return (
     <div className="min-h-screen bg-[var(--cf-surface)]">
-      {children}
+      {/* ⚠ Contenido en medio, nunca `children` directo en el <div>: #418. */}
+      <Contenido>{children}</Contenido>
     </div>
   )
 }

@@ -8,6 +8,7 @@ import { usePathname } from 'next/navigation'
 import { signOut }     from 'next-auth/react'
 import { Badge }       from '@/components/ui/Badge'
 import WhatsAppBusiness from '@/components/admin/WhatsAppBusiness'
+import Contenido       from '@/components/layout/Contenido'
 
 /* ══ TRECE ENTRADAS, Y NUEVE CABEN ═══════════════════════════════════════════
  *
@@ -292,7 +293,8 @@ export default function AdminLayout({ children }) {
         </nav>
 
         <main className="flex-1 px-4 py-5 lg:px-6 lg:py-6 pb-24 lg:pb-6 overflow-y-auto">
-          {children}
+          {/* ⚠ Contenido en medio, nunca `children` directo en el <main>: #418. */}
+          <Contenido>{children}</Contenido>
         </main>
       </div>
     </div>
