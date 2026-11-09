@@ -182,6 +182,92 @@ export function Carril({
    ⚠ `display:'inline'` y `verticalAlign`, no un flex: el nombre baja de renglón
    cuando es largo —los apellidos no se recortan nunca— y una flecha en su
    propia caja se quedaría arriba, separada de la última palabra. */
+/* ══ LOS ABONOS, DESPLEGADOS EN LA PROPIA TARJETA (9 nov 2026) ═══════════════
+   Lo pidió el cliente que manda al supervisor a revisar la ruta:
+
+     «el cliente: bueno, muéstrame cuántos abonos le he dado […] le toca ir
+      hasta acá para mostrarle los abonos. Pero cuando la señal está mala el
+      programa se queda así en blanco, se pega. Sería bueno que cuando tengamos
+      que mirar los abonos […] nos desplegaran los abonos acá.»
+
+   Los datos ya vienen con la ruta (`abonos` de cada préstamo en
+   /api/rutas/[id]), así que abrir esto no pide nada al servidor: funciona sin
+   señal, que es el motivo del pedido. Cada fila dice lo mismo que «Gestionar
+   los pagos» de la ficha, con la misma cuenta del «quedó en».
+
+   Arranca cerrado: se abre cuando el cliente pregunta, no en cada visita. */
+function AbonosDeLaParada({ prestamos = [] }) {
+  const [abierto, setAbierto] = useState(false)
+  const conAbonos = (prestamos ?? []).filter((p) => Array.isArray(p?.abonos) && p.abonos.length > 0)
+  if (conAbonos.length === 0) return null
+  const total = conAbonos.reduce((n, p) => n + p.abonos.length, 0)
+  const varios = conAbonos.length > 1
+
+  return (
+    <div style={{ flex: 'none' }} onClick={(e) => e.stopPropagation()}>
+      <button
+        type="button"
+        aria-expanded={abierto}
+        onClick={() => setAbierto((v) => !v)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 6, minHeight: 36, padding: 0,
+          background: 'none', border: 0, cursor: 'pointer', font: 'inherit',
+          fontSize: 13, fontWeight: 700, color: 'var(--cf-ink-2)',
+        }}
+      >
+        {abierto ? 'Ocultar los abonos' : total === 1 ? 'Ver el abono' : `Ver los ${total} abonos`}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
+          style={{ transform: abierto ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}>
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+
+      {abierto && (
+        <div style={{
+          display: 'flex', flexDirection: 'column', marginTop: 4,
+          border: '1px solid var(--cf-hairline)', borderRadius: 12, overflow: 'hidden',
+        }}>
+          {conAbonos.map((p, ip) => (
+            <div key={p.id ?? ip} style={{ display: 'flex', flexDirection: 'column' }}>
+              {/* Con dos préstamos, cuál es cuál: el cliente dice «el de
+                  septiembre», no «el uno». */}
+              {varios && (
+                <span style={{
+                  padding: '8px 12px', fontSize: 11, fontWeight: 700, letterSpacing: '.06em',
+                  textTransform: 'uppercase', color: 'var(--cf-ink-3)', background: 'var(--cf-surface)',
+                  borderTop: ip > 0 ? '1px solid var(--cf-hairline)' : 0,
+                }}>
+                  {p.desde ? `Préstamo del ${p.desde}` : 'Préstamo'}
+                </span>
+              )}
+              {p.abonos.map((a, i) => (
+                <div key={a.clave} style={{
+                  display: 'flex', alignItems: 'center', gap: 12, padding: '9px 12px',
+                  borderTop: (i > 0 || varios) ? '1px solid var(--cf-hairline)' : 0,
+                }}>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span className="cf-num" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--cf-ink)' }}>
+                      {a.fecha}
+                    </span>
+                    <span className="cf-num" style={{ display: 'block', fontSize: 12, color: 'var(--cf-ink-3)', marginTop: 1 }}>
+                      {a.como}
+                      {a.quedo && <> · <span style={{ whiteSpace: 'nowrap' }}>{a.quedo}</span></>}
+                    </span>
+                  </span>
+                  <span className="cf-fig" style={{ flex: 'none', fontSize: 15, color: 'var(--cf-green-dark)' }}>
+                    {a.monto}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function FlechaFicha({ tam = 13 }) {
   return (
     <svg width={tam} height={tam} viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-4)"
@@ -244,8 +330,10 @@ export function FilaCobro({
   // real; ver la nota larga junto a la fila de acciones—.
   activa = false, onLlamar, onWhatsApp, onMapa, onMas,
 }) {
+  // El anillo dice lo mismo que la pastilla: un «al día» de zona que en
+  // realidad lleva atraso va con el color de su atraso, no en verde.
   const color = contexto
-    ? (COLOR_ZONA[contexto.zona] || COLOR_ESTADO.aldia)
+    ? ((contexto.zona === 'aldia' && COLOR_ESTADO[contexto.pastilla?.tono]) || COLOR_ZONA[contexto.zona] || COLOR_ESTADO.aldia)
     : (COLOR_ESTADO[estado] || COLOR_ESTADO.aldia)
   // UNA sola pastilla: con contexto manda la de la zona («Al día», «Clavo»,
   // «Sin préstamo»). La de los días de atraso sobra ahí —quien no tiene cobro
@@ -847,6 +935,8 @@ export function FilaCobro({
           )}
         </div>
       )}
+
+      {!cobrada && <AbonosDeLaParada prestamos={prestamos} />}
 
 
       {/* ── LOS PRÉSTAMOS, PLEGADOS (E07) ──

@@ -69,7 +69,7 @@ import DeslizarParaConfirmar from '@/components/cf/DeslizarParaConfirmar'
 import { useTactil } from '@/lib/tactil'
 import { adaptarPerdidos, adaptarCerrar, resumenCerrar , adaptarRecargo, adaptarDescuento, montoDesdePorcentaje } from '@/lib/adaptadores/gestion'
 import { ChecklistCamposRecibo, getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
-import { comoFueElPago, faltaDeLaCuotaDeHoy } from '@/lib/dinero/cuota-de-referencia'
+import { comoFueElPago, faltaDeLaCuotaDeHoy, marcaDelPago as marcaDelPagoComun } from '@/lib/dinero/cuota-de-referencia'
 import FichaPrestamo from '@/components/pantallas/FichaPrestamo'
 import { formatearTasa, moraEsGrave } from '@/lib/adaptadores/prestamos'
 import { useCabecera } from '@/components/armazon/Armazon'
@@ -981,13 +981,7 @@ function PrestamoDetalleContenido({ params }) {
     /* Parcial o con extra lo dice la cuota que tocaba, no `tipo` (soporte del
        12 oct 2026): aquí un «completo» no llevaba marca, y $200.000 de una
        cuota de $450.000 salía igual que una cuota pagada. */
-    const marcaDelPago = (p) => {
-      const c = comoFueElPago(p)
-      if (c?.clase === 'parcial') return c.cuota ? `parcial, faltaron ${formatMoney(-c.diferencia)}` : 'parcial'
-      if (c?.clase === 'extra') return `${formatMoney(c.diferencia)} de más`
-      if (c) return null
-      return p.tipo && p.tipo !== 'completo' ? p.tipo : null
-    }
+    const marcaDelPago = (p) => marcaDelPagoComun(p, formatMoney)
     for (const { pago: p, saldoDespues: saldo } of conSaldo) {
       const monto = Math.round(p.montoPagado || 0)
       filas.push({

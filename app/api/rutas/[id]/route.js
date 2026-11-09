@@ -32,6 +32,7 @@ import { distanciaMetros } from '@/lib/geo'
 import { totalDistance } from '@/lib/routeOptimizer'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 import { pagosDelCalculoPorPrestamo } from '@/lib/dinero/pagos-del-calculo'
+import { saldoTrasCadaPago } from '@/lib/dinero/saldo-tras-cada-pago'
 import { esFinanciacion } from '@/lib/financiar'
 import { vieneDePorCliente, compararProcedencias } from '@/lib/rutas/procedencia'
 import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
@@ -229,6 +230,62 @@ export async function GET(request, { params }) {
     })
     for (const f of finales) finDePrestamo.set(f.prestamoId, f._max.fechaPago)
   }
+
+  /* ── LOS ABONOS DE CADA PRÉSTAMO, EN LA MISMA TARJETA (9 nov 2026) ──────
+     Pedido por el cliente que manda al supervisor a revisar la ruta:
+
+       «el cliente: bueno, muéstrame cuántos abonos le he dado […] le toca ir
+        hasta acá para mostrarle los abonos. Pero cuando la señal está mala el
+        programa se queda así en blanco, se pega.»
+
+     Por eso vienen AQUÍ y no se piden al tocar: pedirlos al servidor en la
+     puerta falla justo con mala señal, que es la queja. La ruta ya viaja
+     comprimida (`jsonComprimido`); la más grande de producción son ~1.050
+     abonos de préstamos vivos.
+
+     Solo préstamos vivos y no clavos: son los que se discuten en la puerta.
+     UNA consulta para toda la ruta, no una por cliente. */
+  const offsetHorasPais = Math.abs(getUtcOffset(session.user.country ?? 'co'))
+  const pagosParaMostrar = new Map()
+  /* ⚠ `tasaInteres` NO VIENE en el `select` de la ruta, y deshacer un abono a
+     capital la necesita (`interesQueAhorraUnAbono`): sin ella valdría
+     `undefined` y el «quedó en» saldría mal SIN ningún error. Se pide aparte y
+     solo para esto, para no cambiar en silencio las demás cuentas de la ruta. */
+  const tasaDe = new Map()
+  {
+    const idsVivos = (ruta.clientes ?? []).flatMap((c) =>
+      (c.prestamos ?? []).filter((p) => p.estado === 'activo' && !p.esClavo).map((p) => p.id)
+    )
+    if (idsVivos.length > 0) {
+      const [todos, tasas] = await Promise.all([
+        prisma.pago.findMany({
+          where: { prestamoId: { in: idsVivos } },
+          orderBy: { fechaPago: 'desc' },
+          select: { prestamoId: true, fechaPago: true, montoPagado: true, tipo: true, metodoPago: true, cuotaEsperada: true },
+        }),
+        prisma.prestamo.findMany({ where: { id: { in: idsVivos } }, select: { id: true, tasaInteres: true } }),
+      ])
+      for (const t of tasas) tasaDe.set(t.id, t.tasaInteres)
+      for (const pg of todos) {
+        if (!pagosParaMostrar.has(pg.prestamoId)) pagosParaMostrar.set(pg.prestamoId, [])
+        pagosParaMostrar.get(pg.prestamoId).push(pg)
+      }
+    }
+  }
+  /* «Quedó en» con la MISMA cuenta que la ficha (`saldoTrasCadaPago`, desde el
+     mismo saldo de hoy): dos pantallas que dicen el saldo tras un abono no
+     pueden discrepar. Donde no se puede rehacer (abierto, abono con tabla),
+     sin cifra, igual que allí. */
+  const abonosDe = (p, saldoHoy) =>
+    saldoTrasCadaPago({ ...p, tasaInteres: tasaDe.get(p.id), pagos: pagosParaMostrar.get(p.id) ?? [] }, saldoHoy, { limite: Infinity, offsetHoras: offsetHorasPais })
+      .map(({ pago, saldoDespues }) => ({
+        fecha: pago.fechaPago,
+        monto: Math.round(pago.montoPagado || 0),
+        metodo: pago.metodoPago === 'transferencia' ? 'transferencia' : 'efectivo',
+        tipo: pago.tipo,
+        ...(pago.cuotaEsperada > 0 ? { cuotaEsperada: Math.round(pago.cuotaEsperada) } : {}),
+        saldo: saldoDespues,
+      }))
 
   // Calcular métricas del día + cartera
   let esperadoHoy  = 0
@@ -656,6 +713,7 @@ export async function GET(request, { params }) {
         esBalloon: proximaCuota?.esBalloon || false,
         cuotaNumero: proximaCuota?.numeroPeriodo ?? null,
         ...extraInfo,
+        abonos: abonosDe(p, saldoPendientePrestamo),
       })
 
       /* ⚠ CON DOS PRESTAMOS DE FRECUENCIAS DISTINTAS, ESTO MENTIA.
