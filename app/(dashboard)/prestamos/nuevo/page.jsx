@@ -1114,6 +1114,12 @@ function NuevoPrestamo() {
      sí rompería el día que alguien la llame desde arriba. */
   const faltaFechaDelCapital = esEnCurso && esAbierto && tipoAbonoPrevio === 'separado'
     && (Number(yaAbonado) || 0) - (Number(abonoDeInteres) || 0) > 0 && !fechaAbonoCapital
+  /* «Ambos» con «De eso, de interés» vacío (Federico, Créditos pete, 10 nov 2026):
+     el vacío valía 0, los $245.000 se guardaron todos a capital y el préstamo salió
+     «vencido, 11 días» con el interés del 30 sin pagar. Si todo fue a capital, es
+     «Capital»; «Ambos» pide las dos partes. */
+  const faltaInteresDeAmbos = esEnCurso && esAbierto && tipoAbonoPrevio === 'separado'
+    && (Number(yaAbonado) || 0) > 0 && !((Number(abonoDeInteres) || 0) > 0)
   const condicionesListas = () => {
     if (clienteSeleccionado?.montoMaximoPrestamo > 0 && Number(monto) > clienteSeleccionado.montoMaximoPrestamo) return false
     // Mercancia: se vende mas caro de lo que costo, y en un numero de cuotas.
@@ -1127,6 +1133,7 @@ function NuevoPrestamo() {
        con «Ambos» y capital, la fecha del abono a capital es obligatoria, y el
        error salía al final, en «Revisar», donde el campo ya no se ve. Se frena aquí. */
     if (faltaFechaDelCapital) return false
+    if (faltaInteresDeAmbos) return false
     return Number(monto) > 0 && Number(tasa) >= 0 && (esAbierto || Number(plazoUnidades) > 0) && !!fechaInicio && !!calculo
   }
 
@@ -2696,14 +2703,16 @@ function NuevoPrestamo() {
                         : ab > corrido
                           ? `Paga lo que corrió (${formatMoney(corrido)}) y deja pagado por adelantado el período que va corriendo (${formatMoney(delQueCorre)}). Te sigue debiendo ${formatMoney(cap)}.`
                           : `Solo te pagó la ganancia. Te sigue debiendo ${formatMoney(cap)} y el mes sigue en ${formatMoney(mes)}.`,
-                      separado: !fechaAbonoCapital && deCapital > 0
+                      separado: !(deInteres > 0)
+                        ? 'Pon cuánto fue de interés. Si todo fue a capital, elige «Capital».'
+                        : !fechaAbonoCapital && deCapital > 0
                         ? 'Pon la fecha en que le abonó el capital.'
                         : deInteres > corrido + delQueCorre
                           ? `De interés caben ${formatMoney(corrido + delQueCorre)}: lo que corrió hasta hoy${delQueCorre > 0 ? ' más el período que va corriendo' : ''}.`
                           : `${formatMoney(deInteres)} de interés y ${formatMoney(deCapital)} a capital. Te queda debiendo ${formatMoney(cap - deCapital)}.`,
                     }[tipoAbonoPrevio]
                     const avisoRojo = (tipoAbonoPrevio === 'intereses' && ab > corrido + delQueCorre)
-                      || (tipoAbonoPrevio === 'separado' && ((!fechaAbonoCapital && deCapital > 0) || deInteres > corrido + delQueCorre))
+                      || (tipoAbonoPrevio === 'separado' && (!(deInteres > 0) || (!fechaAbonoCapital && deCapital > 0) || deInteres > corrido + delQueCorre))
                     return (
                       <div className="mt-3">
                         <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>¿A qué se abonó?</label>

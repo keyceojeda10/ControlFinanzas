@@ -964,6 +964,11 @@ export async function POST(request) {
       ].filter((x) => x.monto > 0)
     : [{ monto: abono, tipo: tipoAbono, fecha: fechaInicio }]
   if (separado) {
+    /* «Ambos» con el interés vacío lo mandaba todo a capital sin decir nada
+       (Federico, Créditos pete, 10 nov 2026). Si todo fue a capital, es «Capital». */
+    if (abono > 0 && !(abonoInteres > 0)) {
+      return Response.json({ error: 'Pon cuánto fue de interés. Si todo fue a capital, elige «Capital».' }, { status: 400 })
+    }
     if (abonoInteres < 0 || abonoCapital < 0 || abonoInteres + abonoCapital !== Math.round(abono)) {
       return Response.json({ error: 'Lo de interés más lo de capital tiene que dar el abono completo.' }, { status: 400 })
     }
