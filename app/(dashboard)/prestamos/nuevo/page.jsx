@@ -191,6 +191,31 @@ function CifraResumen({ rotulo, valor, tam = 22, color = 'var(--cf-ink)', pie })
 /* El período de un abierto, en palabras, y cuántos caben en un mes (para decir
    cuánto suma al mes un interés que se cobra cada semana o cada día). */
 const PERIODO_ABIERTO = { diario: 'día', semanal: 'semana', quincenal: 'quincena', mensual: 'mes' }
+
+/* ══ UNA FECHA QUE EMPIEZA VACÍA, Y SE NOTA (10 nov 2026) ═══════════════════
+   En iPhone un campo de fecha vacío es un cuadro gris sin nada escrito: Créditos
+   pete no encontró «Capital abonado el» y el error le salió al final. Vacío, el
+   campo dice qué hacer (y en rojo si falta); el «dd/mm/aaaa» del navegador se
+   esconde para que no se monte encima. Con fecha, es el campo de siempre. */
+function FechaConAviso({ value, onChange, min, max, aviso, falta = false }) {
+  const vacio = !value
+  return (
+    <div className="relative">
+      {/* `Input` usa el `style` que llega EN VEZ del suyo: va completo. */}
+      <Input type="date" value={value} min={min} max={max}
+        onChange={(e) => onChange(e.target.value)}
+        style={vacio
+          ? { background: 'var(--cf-fill)', borderColor: falta ? 'var(--cf-red-dark)' : 'var(--cf-border)', color: 'transparent' }
+          : undefined} />
+      {vacio && (
+        <span className="absolute left-3 top-0 h-14 flex items-center text-[13px] pointer-events-none"
+          style={{ color: falta ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)' }}>
+          {aviso}
+        </span>
+      )}
+    </div>
+  )
+}
 const POR_MES = { diario: 30, semanal: 52 / 12, quincenal: 2, mensual: 1 }
 
 export default function NuevoPrestamoPage() {
@@ -1087,6 +1112,8 @@ function NuevoPrestamo() {
      ⚠ Va ANTES de `puedeAvanzarPaso`, que la llama. Las dos son `const`, así
      que solo se leen al pintar y el orden no rompe nada hoy; escrito al revés
      sí rompería el día que alguien la llame desde arriba. */
+  const faltaFechaDelCapital = esEnCurso && esAbierto && tipoAbonoPrevio === 'separado'
+    && (Number(yaAbonado) || 0) - (Number(abonoDeInteres) || 0) > 0 && !fechaAbonoCapital
   const condicionesListas = () => {
     if (clienteSeleccionado?.montoMaximoPrestamo > 0 && Number(monto) > clienteSeleccionado.montoMaximoPrestamo) return false
     // Mercancia: se vende mas caro de lo que costo, y en un numero de cuotas.
@@ -1096,6 +1123,10 @@ function NuevoPrestamo() {
     }
     /* En un abierto no hay plazo que pedir: exigirlo dejaba el botón apagado
        para siempre en el único modo que no lo necesita. */
+    /* «Me sale que coloque la fecha… no la encuentro» (Créditos pete, 10 nov 2026):
+       con «Ambos» y capital, la fecha del abono a capital es obligatoria, y el
+       error salía al final, en «Revisar», donde el campo ya no se ve. Se frena aquí. */
+    if (faltaFechaDelCapital) return false
     return Number(monto) > 0 && Number(tasa) >= 0 && (esAbierto || Number(plazoUnidades) > 0) && !!fechaInicio && !!calculo
   }
 
@@ -2421,8 +2452,8 @@ function NuevoPrestamo() {
                         <div className="mt-2.5">
                           <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Primer cobro (si no es el del calendario)</p>
                           <div className="mt-1.5">
-                            <Input type="date" value={primerCobroElegidoAb} min={fechaInicio || undefined}
-                              onChange={(e) => setPrimerCobroElegidoAb(e.target.value)} />
+                            <FechaConAviso value={primerCobroElegidoAb} min={fechaInicio || undefined}
+                              onChange={setPrimerCobroElegidoAb} aviso="Opcional: toca y elige el día" />
                           </div>
                           {(() => {
                             if (!fechaInicio) return null
@@ -2698,8 +2729,11 @@ function NuevoPrestamo() {
                               <div className="mt-1.5"><MoneyInput value={abonoDeInteres} onChange={(e) => setAbonoDeInteres(e.target.value)} placeholder="0" /></div>
                             </div>
                             <div>
-                              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Capital abonado el</label>
-                              <div className="mt-1.5"><Input type="date" value={fechaAbonoCapital} min={fechaInicio || undefined} max={hoyISO()} onChange={(e) => setFechaAbonoCapital(e.target.value)} /></div>
+                              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>¿Qué día abonó el capital?</label>
+                              <div className="mt-1.5">
+                                <FechaConAviso value={fechaAbonoCapital} min={fechaInicio || undefined} max={hoyISO()}
+                                  onChange={setFechaAbonoCapital} aviso="Toca y elige el día" falta={faltaFechaDelCapital} />
+                              </div>
                             </div>
                           </div>
                         )}
