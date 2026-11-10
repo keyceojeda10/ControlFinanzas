@@ -71,7 +71,7 @@ export async function GET(request) {
               fechaFin: true,
               diaCobroSemana: true,
               diaCobroMes: true,
-              primerCobro: true,
+              primerCobro: true, interesPorMes: true,
               diaCobroMes2: true,
               /* ⚠ LO QUE LE FALTABA A ESTA PARA DECIR LO MISMO QUE EL INICIO. Las dos
                  usan `tienePeriodoEsperadoHoy`, pero cada una con su `select`, y

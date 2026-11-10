@@ -143,7 +143,7 @@ export async function GET(request) {
         diaCobroSemana: true,
         diaCobroMes: true,
         diaCobroMes2: true,
-        primerCobro: true,
+        primerCobro: true, interesPorMes: true,
         diasSinCobro: true,
         sinPlazo: true,
         /* ⚠ SIN ESTO UN PRÉSTAMO ABIERTO SALE «AL DÍA» SIEMPRE: su mora es el

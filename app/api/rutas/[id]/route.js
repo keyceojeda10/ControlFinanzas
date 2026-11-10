@@ -123,7 +123,7 @@ export async function GET(request, { params }) {
               diasPlazo: true,
               diaCobroSemana: true,
               diaCobroMes: true,
-              primerCobro: true,
+              primerCobro: true, interesPorMes: true,
               diaCobroMes2: true,
               diasSinCobro: true,
               createdAt: true,

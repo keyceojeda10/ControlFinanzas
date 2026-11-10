@@ -112,7 +112,7 @@ export async function GET(req) {
         fechaInicio: true,
         fechaFin: true,
         diaCobroMes: true,
-        primerCobro: true,
+        primerCobro: true, interesPorMes: true,
         /* ⚠ SIN ESTO UN PRÉSTAMO ABIERTO SALE «AL DÍA» SIEMPRE: su mora es el
            interés devengado sin pagar, y un campo que no se pide vale `undefined`
            —no da error, decide en silencio—. Ver lib/dinero/devengar.js. */

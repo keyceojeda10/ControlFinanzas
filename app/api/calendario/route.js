@@ -93,7 +93,7 @@ export async function GET(request) {
             id: true, estado: true, esClavo: true, cuotaDiaria: true, montoPrestado: true, ...CAMPOS_DEL_REPARTO,
             totalAPagar: true, totalPagado: true, abonadoCapital: true, frecuencia: true, fechaInicio: true,
             fechaFin: true, diasPlazo: true, diaCobroSemana: true, diaCobroMes: true, diaCobroMes2: true,
-            primerCobro: true, diasSinCobro: true, modoInteres: true, sinPlazo: true, capitalExtra: true,
+            primerCobro: true, interesPorMes: true, diasSinCobro: true, modoInteres: true, sinPlazo: true, capitalExtra: true,
             proximoCobroManual: true, proximoCobroPorInteres: true, interesAdelantado: true,
             devengos: { select: { periodo: true, interes: true } },
             cuotasAmortizacion: {

@@ -339,6 +339,11 @@ function NuevoPrestamo() {
      que es donde la respuesta hace lo que dice — ver lib/dinero/abono-previo.js. */
   const [tipoAbonoPrevio, setTipoAbonoPrevio] = useState('completo')
   const [yaAbonado, setYaAbonado] = useState('')
+  // «Ambos» (abierto): cuánto del abono fue interés; el resto es capital, con su fecha.
+  const [abonoDeInteres, setAbonoDeInteres] = useState('')
+  const [fechaAbonoCapital, setFechaAbonoCapital] = useState('')
+  // Primer cobro elegido (abierto quincenal «Mes completo»). Vacío = el del calendario.
+  const [primerCobroElegidoAb, setPrimerCobroElegidoAb] = useState('')
   const [abonoConfirmado, setAbonoConfirmado] = useState(null)
   // Cobro de seguro (opcional)
   const [seguro, setSeguro] = useState(false)
@@ -853,13 +858,14 @@ function NuevoPrestamo() {
     })
     const args = {
       fechaInicio: inicio, freq: 'quincenal', diasPeriodo: 15,
+      ...(esAbierto && interesMesCompleto && primerCobroElegidoAb && { primerCobro: new Date(`${primerCobroElegidoAb}T05:00:00.000Z`) }),
       diaCobroMes: d1,
       ...(Number.isInteger(d2) && d2 >= 1 && d2 <= 31 ? { diaCobroMes2: d2 } : {}),
     }
     try {
       return [escribir(fechaDePeriodo(1, args)), escribir(fechaDePeriodo(2, args))]
     } catch { return null }
-  }, [frecuencia, modoDiaCobro, diaCobroMes, diaCobroMes2, fechaInicio])
+  }, [frecuencia, modoDiaCobro, diaCobroMes, diaCobroMes2, fechaInicio, esAbierto, interesMesCompleto, primerCobroElegidoAb])
 
   /* UN SÁBADO SÍ Y OTRO NO (6 nov 2026): «a los albañiles les pagan un sábado sí y
    * un sábado no». Quincenal con día de la semana son 14 días exactos desde el
@@ -989,6 +995,11 @@ function NuevoPrestamo() {
     ...(frecuencia === 'quincenal' && modoDiaCobro === 'mes' && diaCobroMes2 !== '' && { diaCobroMes2: Number(diaCobroMes2) }),
     ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
     ...(esEnCurso && Number(yaAbonado) > 0 && esAbierto && { tipoAbonoPrevio }),
+    ...(esEnCurso && Number(yaAbonado) > 0 && esAbierto && tipoAbonoPrevio === 'separado' && {
+      abonoPrevioInteres: Math.min(Number(abonoDeInteres) || 0, Number(yaAbonado) || 0),
+      abonoPrevioCapital: Math.max(0, (Number(yaAbonado) || 0) - (Number(abonoDeInteres) || 0)),
+      fechaAbonoCapital,
+    }),
     ...(calculo?.cuotaDiaria > 0 && (cuotaManualActiva || modo === 'mercancia') && { cuotaManual: calculo.cuotaDiaria }),
     ...(modoInteres === 'saldo' && Number(cuotaManual) > 0 && { cuotaManual: Number(cuotaManual) }),
     modoInteres: modo === 'mercancia' ? 'manual' : modoInteres,
@@ -997,7 +1008,9 @@ function NuevoPrestamo() {
     ...(modoInteres === 'solo_interes' && interesAdelantado && !esAbierto && { interesAdelantado: true }),
     ...(esAbierto && { sinPlazo: true }),
     ...(esAbierto && interesMesCompleto && { interesMesCompleto: true }),
-    ...(interesPorMesActivo && { interesPorMes: true }),
+    // «Al mes» en el abierto quincenal es la regla del mes: interés sobre el capital al empezar el mes.
+    ...((interesPorMesActivo || pctAlMesActivo) && { interesPorMes: true }),
+    ...(esAbierto && frecuencia === 'quincenal' && interesMesCompleto && primerCobroElegidoAb && { primerCobro: primerCobroElegidoAb }),
     ...(capitalExtra.length > 0 && { capitalExtra }),
     ...(socioId && { socioId }),
     metodoPago: cuentaDesembolso.metodoPago,
@@ -2402,6 +2415,33 @@ function NuevoPrestamo() {
                                 : 'Si te paga todo antes de cumplir el período, paga el período completo de interés.')
                           : 'Cada mes cuenta desde el día en que prestas. Si te paga todo antes, paga solo los días que corrieron.'}
                       </p>
+                      {/* «Le presté el 2 y le cobro desde el 20» (Créditos pete): el primer
+                          cobro lo pone él. Vacío, sale del calendario. */}
+                      {interesMesCompleto && frecuencia === 'quincenal' && (
+                        <div className="mt-2.5">
+                          <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Primer cobro (si no es el del calendario)</p>
+                          <div className="mt-1.5">
+                            <Input type="date" value={primerCobroElegidoAb} min={fechaInicio || undefined}
+                              onChange={(e) => setPrimerCobroElegidoAb(e.target.value)} />
+                          </div>
+                          {(() => {
+                            if (!fechaInicio) return null
+                            const ini = new Date(`${fechaInicio}T05:00:00.000Z`)
+                            const args = {
+                              fechaInicio: ini, freq: 'quincenal', diasPeriodo: 15,
+                              ...(primerCobroElegidoAb && { primerCobro: new Date(`${primerCobroElegidoAb}T05:00:00.000Z`) }),
+                              ...(modoDiaCobro === 'mes' && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
+                              ...(modoDiaCobro === 'mes' && diaCobroMes2 !== '' && { diaCobroMes2: Number(diaCobroMes2) }),
+                            }
+                            const f = (n) => fechaDePeriodo(n, args).toLocaleDateString('es-CO', { timeZone: 'UTC', day: 'numeric', month: 'long' })
+                            return (
+                              <p className="text-[11px] mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>
+                                Cobros: el {f(1)}, el {f(2)} y el {f(3)}…
+                              </p>
+                            )
+                          })()}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -2588,14 +2628,22 @@ function NuevoPrestamo() {
                        «Interés», así que la frase y lo guardado no pueden discrepar. */
                     const conCorte = interesMesCompleto && frecuencia === 'mensual' && diaCobroMes !== '' && fechaInicio
                     const conDosDias = interesMesCompleto && frecuencia === 'quincenal' && modoDiaCobro === 'mes' && diaCobroMes !== '' && diaCobroMes2 !== ''
+                    // «Ambos»: lo de interés que escribió y el resto a capital, en su fecha.
+                    const deInteres = Math.min(Number(abonoDeInteres) || 0, ab)
+                    const deCapital = Math.max(0, ab - deInteres)
+                    const pagosDelAbono = tipoAbonoPrevio === 'separado' && deCapital > 0 && fechaAbonoCapital
+                      ? [{ tipo: 'capital', montoPagado: deCapital, fechaPago: `${fechaAbonoCapital}T05:00:00.000Z` }]
+                      : []
                     const comoSeGuarda = {
-                      modoInteres: 'solo_interes', sinPlazo: true,
+                      modoInteres: 'solo_interes', sinPlazo: true, interesPorMes: pctAlMesActivo,
                       montoPrestado: cap, tasaInteres: Number(tasa) || 0,
                       frecuencia, fechaInicio,
                       diaCobroMes: conCorte || conDosDias ? Math.min(Number(diaCobroMes), conDosDias ? Number(diaCobroMes2) : 99) : null,
                       diaCobroMes2: conDosDias ? Math.max(Number(diaCobroMes), Number(diaCobroMes2)) : null,
-                      primerCobro: conCorte ? primerCorteMesCompleto(new Date(`${fechaInicio}T05:00:00.000Z`), Number(diaCobroMes)) : null,
-                      pagos: [], cuotasAmortizacion: [],
+                      primerCobro: conCorte
+                        ? primerCorteMesCompleto(new Date(`${fechaInicio}T05:00:00.000Z`), Number(diaCobroMes))
+                        : (interesMesCompleto && frecuencia === 'quincenal' && primerCobroElegidoAb ? `${primerCobroElegidoAb}T05:00:00.000Z` : null),
+                      pagos: pagosDelAbono, cuotasAmortizacion: [],
                     }
                     const cerrados = fechaInicio ? devengosPendientes({ ...comoSeGuarda, devengos: [] }) : []
                     const corrido = Math.round(cerrados.reduce((acc, d) => acc + (Number(d.interes) || 0), 0))
@@ -2617,8 +2665,14 @@ function NuevoPrestamo() {
                         : ab > corrido
                           ? `Paga lo que corrió (${formatMoney(corrido)}) y deja pagado por adelantado el período que va corriendo (${formatMoney(delQueCorre)}). Te sigue debiendo ${formatMoney(cap)}.`
                           : `Solo te pagó la ganancia. Te sigue debiendo ${formatMoney(cap)} y el mes sigue en ${formatMoney(mes)}.`,
+                      separado: !fechaAbonoCapital && deCapital > 0
+                        ? 'Pon la fecha en que le abonó el capital.'
+                        : deInteres > corrido + delQueCorre
+                          ? `De interés caben ${formatMoney(corrido + delQueCorre)}: lo que corrió hasta hoy${delQueCorre > 0 ? ' más el período que va corriendo' : ''}.`
+                          : `${formatMoney(deInteres)} de interés y ${formatMoney(deCapital)} a capital. Te queda debiendo ${formatMoney(cap - deCapital)}.`,
                     }[tipoAbonoPrevio]
-                    const avisoRojo = tipoAbonoPrevio === 'intereses' && ab > corrido + delQueCorre
+                    const avisoRojo = (tipoAbonoPrevio === 'intereses' && ab > corrido + delQueCorre)
+                      || (tipoAbonoPrevio === 'separado' && ((!fechaAbonoCapital && deCapital > 0) || deInteres > corrido + delQueCorre))
                     return (
                       <div className="mt-3">
                         <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>¿A qué se abonó?</label>
@@ -2628,11 +2682,27 @@ function NuevoPrestamo() {
                               { id: 'completo', nombre: 'Cuotas' },
                               { id: 'capital', nombre: 'Capital' },
                               { id: 'intereses', nombre: 'Interés' },
+                              { id: 'separado', nombre: 'Ambos' },
                             ]}
                             valor={tipoAbonoPrevio}
                             onElegir={setTipoAbonoPrevio}
                           />
                         </div>
+                        {/* «El 31 me pagó 15 mil de interés y 160 de capital»: se copia la
+                            tarjeta. El capital lleva su fecha, que es la que baja el interés
+                            de los meses siguientes. */}
+                        {tipoAbonoPrevio === 'separado' && (
+                          <div className="mt-2.5 grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>De eso, de interés</label>
+                              <div className="mt-1.5"><MoneyInput value={abonoDeInteres} onChange={(e) => setAbonoDeInteres(e.target.value)} placeholder="0" /></div>
+                            </div>
+                            <div>
+                              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Capital abonado el</label>
+                              <div className="mt-1.5"><Input type="date" value={fechaAbonoCapital} min={fechaInicio || undefined} max={hoyISO()} onChange={(e) => setFechaAbonoCapital(e.target.value)} /></div>
+                            </div>
+                          </div>
+                        )}
                         <p className="text-xs mt-1.5" style={{ color: avisoRojo ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)' }}>{consecuencia}</p>
                       </div>
                     )

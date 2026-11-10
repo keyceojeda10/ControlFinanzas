@@ -94,7 +94,7 @@ export async function POST(req) {
         cuotaDiaria: true, totalAPagar: true, totalPagado: true, abonadoCapital: true, montoPrestado: true, ...CAMPOS_DEL_REPARTO,
         frecuencia: true, fechaInicio: true, diasPlazo: true, modoInteres: true,
         diaCobroSemana: true, diaCobroMes: true, diaCobroMes2: true,
-        primerCobro: true,
+        primerCobro: true, interesPorMes: true,
         proximoCobroManual: true, proximoCobroPorInteres: true, esClavo: true, diasSinCobro: true,
         /* ⚠ SIN ESTO UN PRÉSTAMO ABIERTO SALE «AL DÍA» SIEMPRE: su mora es el
            interés devengado sin pagar, y un campo que no se pide vale `undefined`
