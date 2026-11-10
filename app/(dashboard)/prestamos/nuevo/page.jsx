@@ -940,6 +940,40 @@ function NuevoPrestamo() {
     c.cedula.includes(buscadorCliente)
   )
 
+  /* ⚠ UN SOLO CUERPO PARA CREAR EL PRÉSTAMO, CON SEÑAL Y SIN ELLA (10 nov 2026).
+     Se armaba dos veces a mano, y cada opción nueva se añadía solo a la vía con
+     señal: sin conexión se perdían `sinPlazo` (el abierto se creaba como Globo
+     con plazo), `interesPorMes`, `interesAdelantado` y `capitalExtra`, sin un
+     aviso. Lo único propio de la vía con señal es la inyección de capital y la
+     confirmación del cliente en perdidos, que se piden en ese momento. */
+  const cuerpoDelPrestamo = () => ({
+    clienteId,
+    montoPrestado: Number(monto),
+    tasaInteres: Number(tasa),
+    diasPlazo: Number(plazo),
+    fechaInicio,
+    frecuencia,
+    ...((frecuencia === 'semanal' || (frecuencia === 'quincenal' && modoDiaCobro === 'semana')) && diaCobroSemana !== '' && { diaCobroSemana: Number(diaCobroSemana) }),
+    ...(cobroSemanaPorMedio && { primerCobro: cobroSemanaPorMedio.elegido }),
+    ...((frecuencia === 'mensual' || (frecuencia === 'quincenal' && modoDiaCobro === 'mes')) && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
+    ...(frecuencia === 'quincenal' && modoDiaCobro === 'mes' && diaCobroMes2 !== '' && { diaCobroMes2: Number(diaCobroMes2) }),
+    ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
+    ...(esEnCurso && Number(yaAbonado) > 0 && esAbierto && { tipoAbonoPrevio }),
+    ...(calculo?.cuotaDiaria > 0 && (cuotaManualActiva || modo === 'mercancia') && { cuotaManual: calculo.cuotaDiaria }),
+    ...(modoInteres === 'saldo' && Number(cuotaManual) > 0 && { cuotaManual: Number(cuotaManual) }),
+    modoInteres: modo === 'mercancia' ? 'manual' : modoInteres,
+    ...(modo === 'mercancia' && nombreProducto.trim() && { nombreProducto: nombreProducto.trim() }),
+    ...(seguro && Number(montoSeguro) > 0 && { seguro: true, montoSeguro: Number(montoSeguro) }),
+    ...(modoInteres === 'solo_interes' && interesAdelantado && !esAbierto && { interesAdelantado: true }),
+    ...(esAbierto && { sinPlazo: true }),
+    ...(esAbierto && interesMesCompleto && { interesMesCompleto: true }),
+    ...(interesPorMesActivo && { interesPorMes: true }),
+    ...(capitalExtra.length > 0 && { capitalExtra }),
+    ...(socioId && { socioId }),
+    metodoPago: cuentaDesembolso.metodoPago,
+    ...(cuentaDesembolso.metodoPago === 'transferencia' && cuentaDesembolso.metodoPagoId && { metodoPagoId: cuentaDesembolso.metodoPagoId }),
+  })
+
   const crearPrestamoRequest = async (inyeccionPrevia = null) => {
     // Cliente en perdidos: el dueño confirma; al cobrador el servidor no lo deja (#17).
     const res = await enviarConfirmandoPerdidos((confirmado) => fetch('/api/prestamos', {
@@ -947,32 +981,8 @@ function NuevoPrestamo() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...(confirmado ? { confirmarClienteEnPerdidos: true } : {}),
-        clienteId,
-        montoPrestado: Number(monto),
-        tasaInteres: Number(tasa),
-        diasPlazo: Number(plazo),
-        fechaInicio,
-        frecuencia,
-        ...((frecuencia === 'semanal' || (frecuencia === 'quincenal' && modoDiaCobro === 'semana')) && diaCobroSemana !== '' && { diaCobroSemana: Number(diaCobroSemana) }),
-        ...(cobroSemanaPorMedio && { primerCobro: cobroSemanaPorMedio.elegido }),
-        ...((frecuencia === 'mensual' || (frecuencia === 'quincenal' && modoDiaCobro === 'mes')) && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
-        ...(frecuencia === 'quincenal' && modoDiaCobro === 'mes' && diaCobroMes2 !== '' && { diaCobroMes2: Number(diaCobroMes2) }),
-        ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
-        ...(esEnCurso && Number(yaAbonado) > 0 && esAbierto && { tipoAbonoPrevio }),
-        ...(calculo?.cuotaDiaria > 0 && (cuotaManualActiva || modo === 'mercancia') && { cuotaManual: calculo.cuotaDiaria }),
-        ...(modoInteres === 'saldo' && Number(cuotaManual) > 0 && { cuotaManual: Number(cuotaManual) }),
-        modoInteres: modo === 'mercancia' ? 'manual' : modoInteres,
-        ...(modo === 'mercancia' && nombreProducto.trim() && { nombreProducto: nombreProducto.trim() }),
+        ...cuerpoDelPrestamo(),
         ...(inyeccionPrevia && { inyeccionPrevia }),
-        ...(seguro && Number(montoSeguro) > 0 && { seguro: true, montoSeguro: Number(montoSeguro) }),
-        ...(modoInteres === 'solo_interes' && interesAdelantado && !esAbierto && { interesAdelantado: true }),
-        ...(esAbierto && { sinPlazo: true }),
-        ...(esAbierto && interesMesCompleto && { interesMesCompleto: true }),
-        ...(interesPorMesActivo && { interesPorMes: true }),
-        ...(capitalExtra.length > 0 && { capitalExtra }),
-        ...(socioId && { socioId }),
-        metodoPago: cuentaDesembolso.metodoPago,
-        ...(cuentaDesembolso.metodoPago === 'transferencia' && cuentaDesembolso.metodoPagoId && { metodoPagoId: cuentaDesembolso.metodoPagoId }),
       }),
     }))
     const data = await res.json()
@@ -1094,29 +1104,8 @@ function NuevoPrestamo() {
     setLoading(true)
     setError('')
 
-    const payloadOffline = {
-      clienteId,
-      montoPrestado: Number(monto),
-      tasaInteres: Number(tasa),
-      diasPlazo: Number(plazo),
-      fechaInicio,
-      frecuencia,
-      ...((frecuencia === 'semanal' || (frecuencia === 'quincenal' && modoDiaCobro === 'semana')) && diaCobroSemana !== '' && { diaCobroSemana: Number(diaCobroSemana) }),
-      ...(cobroSemanaPorMedio && { primerCobro: cobroSemanaPorMedio.elegido }),
-      ...((frecuencia === 'mensual' || (frecuencia === 'quincenal' && modoDiaCobro === 'mes')) && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
-      ...(frecuencia === 'quincenal' && modoDiaCobro === 'mes' && diaCobroMes2 !== '' && { diaCobroMes2: Number(diaCobroMes2) }),
-      ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
-      ...(esEnCurso && Number(yaAbonado) > 0 && esAbierto && { tipoAbonoPrevio }),
-      ...(esAbierto && interesMesCompleto && { interesMesCompleto: true }),
-      ...(calculo?.cuotaDiaria > 0 && (cuotaManualActiva || modo === 'mercancia') && { cuotaManual: calculo.cuotaDiaria }),
-      ...(modoInteres === 'saldo' && Number(cuotaManual) > 0 && { cuotaManual: Number(cuotaManual) }),
-      modoInteres: modo === 'mercancia' ? 'manual' : modoInteres,
-      ...(modo === 'mercancia' && nombreProducto.trim() && { nombreProducto: nombreProducto.trim() }),
-      ...(seguro && Number(montoSeguro) > 0 && { seguro: true, montoSeguro: Number(montoSeguro) }),
-      ...(socioId && { socioId }),
-      metodoPago: cuentaDesembolso.metodoPago,
-      ...(cuentaDesembolso.metodoPago === 'transferencia' && cuentaDesembolso.metodoPagoId && { metodoPagoId: cuentaDesembolso.metodoPagoId }),
-    }
+    // El mismo cuerpo que con señal (ver `cuerpoDelPrestamo`).
+    const payloadOffline = cuerpoDelPrestamo()
 
     // Offline: encolar sin intentar fetch (evita esperar timeout)
     // Volvemos a /prestamos (que ya está cacheado) en vez de al detalle por

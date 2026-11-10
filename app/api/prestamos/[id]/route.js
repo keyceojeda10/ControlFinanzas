@@ -786,6 +786,36 @@ export async function PATCH(request, { params }) {
       return Response.json({ error: 'Solo se puede editar el día de cobro de préstamos activos' }, { status: 400 })
     }
 
+    /* ⚠ EL ABIERTO, CON LAS MISMAS REGLAS QUE AL CREARLO (10 nov 2026).
+     *   · Con meses de interés ya asentados no se mueve el calendario: los
+     *     períodos guardados quedan fuera de las fechas nuevas y el siguiente
+     *     corte se cobra encima o deja un hueco. Medido en producción: el único
+     *     abierto al que se le puso día por aquí tenía un mes asentado el 15 y
+     *     quedó con día 25 (está cancelado). Es la regla de mover la fecha de
+     *     inicio, más arriba.
+     *   · Sin «Mes completo» no lleva día de corte: el POST lo rechaza porque el
+     *     primer mes no se prorratea en el abierto, y esta vía lo dejaba pasar. */
+    // Guardar el diálogo sin tocar nada no es un cambio: no se le pone traba.
+    const comoDia = (v) => (v === undefined ? undefined : (v === null || v === '' ? null : Number(v)))
+    const cambiaElDia = ['diaCobroMes', 'diaCobroMes2', 'diaCobroSemana']
+      .some((k) => comoDia(body?.[k]) !== undefined && comoDia(body?.[k]) !== (p[k] ?? null))
+    if (cambiaElDia && p.sinPlazo === true && p.modoInteres === 'solo_interes') {
+      const asentados = Array.isArray(p.devengos)
+        ? p.devengos.length
+        : await prisma.devengoInteres.count({ where: { prestamoId: id } })
+      if (asentados > 0) {
+        return Response.json({
+          error: `No se puede cambiar el día de cobro: este préstamo abierto ya tiene ${asentados} ${asentados === 1 ? 'mes de interés asentado' : 'meses de interés asentados'}, y cambiarlo los volvería a cobrar o dejaría un hueco.`,
+        }, { status: 400 })
+      }
+      const pideDia = (body?.diaCobroMes != null && body.diaCobroMes !== '') || (body?.diaCobroMes2 != null && body.diaCobroMes2 !== '')
+      if (pideDia && !(p.interesMesCompleto === true && (p.frecuencia || 'diario') === 'mensual')) {
+        return Response.json({
+          error: 'Un préstamo abierto por días cobra cada mes desde el día en que se prestó. Para cobrar siempre el mismo día, el préstamo tiene que ser «Mes completo».',
+        }, { status: 400 })
+      }
+    }
+
     const freq = p.frecuencia || 'diario'
     const dataUpdate = {}
 
