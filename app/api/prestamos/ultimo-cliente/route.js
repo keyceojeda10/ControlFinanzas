@@ -55,6 +55,7 @@ export async function GET(request) {
       sinPlazo: true,
       interesAdelantado: true,
       interesPorMes: true,
+      interesMesCompleto: true,
       createdAt: true,
     },
   })

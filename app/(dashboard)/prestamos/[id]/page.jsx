@@ -513,7 +513,8 @@ function PrestamoDetalleContenido({ params }) {
       /* ⚠ ABRE CON LA CIFRA QUE SE TOCÓ. La fila del menú y «Si lo cancela hoy»
          enseñan la prorrateada (ver `cierre`), y la hoja abría con el mes
          completo: se tocaba $X y aparecía otra cifra (DETALLES-PRESTAMOS #8). */
-      const inicial = data.proporcional ? 'proporcional' : 'mesCompleto'
+      // El préstamo «mes completo» abre en el mes completo: es la que él cobra.
+      const inicial = data.porDefecto?.modalidad ?? (data.proporcional ? 'proporcional' : 'mesCompleto')
       setLiqModalidad(inicial)
       setLiqTecleado(null); setLiqMonto(data[inicial]?.restanteHoy ?? 0)
     } catch {
@@ -1100,7 +1101,9 @@ function PrestamoDetalleContenido({ params }) {
   // Manda `proporcional`: es la modalidad que perdona mas interes, la que el
   // cliente esperaria si pregunta «cuanto por cerrarlo hoy». La del mes
   // completo se elige dentro de la hoja, si se quiere.
-  const cierre = cierreHoy?.proporcional ?? cierreHoy?.mesCompleto ?? null
+  // `porDefecto` solo lo trae el abierto: la del mes completo si el préstamo
+  // lo eligió, la prorrateada si no. Los demás modos, igual que siempre.
+  const cierre = cierreHoy?.porDefecto ?? cierreHoy?.proporcional ?? cierreHoy?.mesCompleto ?? null
   // SOLO SE ENSEÑA SI HAY ALGO QUE AHORRAR. En un prestamo pasado de plazo ya
   // corrio todo el interes, asi que cerrarlo hoy cuesta exactamente lo que
   // debe: la linea repetiria la cifra de arriba sin decir nada, y dos veces el
@@ -1197,10 +1200,18 @@ function PrestamoDetalleContenido({ params }) {
     }
   }
 
-  const hayCierre = cierre && cierre.interesPerdonado > 0
+  /* ⚠ EN EL ABIERTO «MES COMPLETO» LA LÍNEA TAMBIÉN SALE, AUNQUE NO SE AHORRE
+     NADA (10 nov 2026). Ahí cerrar hoy cuesta MÁS que lo que dice «debe»: el
+     mes que corre se cobra entero y todavía no está en el saldo. Sin la línea,
+     la ficha decía «debe $2.000.000» y el cliente tenía que pagar $2.200.000. */
+  const cierreConMesCompleto = !!cierreHoy?.abierto && cierreHoy?.porDefecto?.modalidad === 'mesCompleto'
+    && Math.round(cierre?.restanteHoy ?? 0) > Math.round(cierreHoy?.saldoActual ?? 0)
+  const hayCierre = cierre && (cierre.interesPerdonado > 0 || cierreConMesCompleto)
   const cierreTexto = hayCierre ? formatMoney(Math.round(cierre.restanteHoy ?? 0)) : null
   const cierrePerdonaTexto = hayCierre
-    ? `se ahorra ${formatMoney(Math.round(cierre.interesPerdonado))} de interés`
+    ? (cierre.interesPerdonado > 0
+        ? `se ahorra ${formatMoney(Math.round(cierre.interesPerdonado))} de interés`
+        : 'con el mes completo')
     : null
 
   // ⚠ VA AQUI Y NO ARRIBA: `atajosAjuste` lee `cuotaDiaria`, que se define en

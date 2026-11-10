@@ -12,8 +12,8 @@ import { enviarConfirmandoPerdidos } from '@/lib/confirmar-perdidos'
 import { Button }                                  from '@/components/ui/Button'
 import { Input }                                   from '@/components/ui/Input'
 import MoneyInput                                  from '@/components/ui/MoneyInput'
-import { calcularPrestamo } from '@/lib/calculos'
-import { fechaDePeriodo, primerCobroElegido } from '@/lib/dinero/calendario'
+import { calcularPrestamo, devengosPendientes } from '@/lib/calculos'
+import { fechaDePeriodo, primerCobroElegido, primerCorteMesCompleto } from '@/lib/dinero/calendario'
 import { abonoSinResolver } from '@/lib/dinero/monto-raro'
 import PreguntaAbonoRaro from '@/components/prestamos/PreguntaAbonoRaro'
 import EleccionInteresPorMes from '@/components/prestamos/EleccionInteresPorMes'
@@ -369,6 +369,23 @@ function NuevoPrestamo() {
   /* Decreciente quincenal con el interés que baja cada mes: el % es al mes y cada
      quincena cobra la mitad (180, 180, 168, 168…). Ver `calcularPrestamo`. */
   const [interesPorMes, setInteresPorMes] = useState(() => deLaUrl('interesPorMes', '') === '1')
+  /* ABIERTO «MES COMPLETO» (10 nov 2026). Viene marcado como lo tenga el
+     negocio en Configuración → «Cómo prestas por defecto», salvo que la URL
+     diga otra cosa o la persona ya lo haya tocado aquí. */
+  const [interesMesCompleto, setInteresMesCompleto] = useState(() => deLaUrl('mesCompleto', '') === '1')
+  const mesCompletoTocado = useRef(searchParams.get('mesCompleto') != null)
+  const elegirMesCompleto = (v) => { mesCompletoTocado.current = true; setInteresMesCompleto(v) }
+  useEffect(() => {
+    let vivo = true
+    fetch('/api/configuracion/organizacion', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const def = !!(d?.org ?? d)?.interesMesCompletoDefault
+        if (vivo && def && !mesCompletoTocado.current) setInteresMesCompleto(true)
+      })
+      .catch(() => {})
+    return () => { vivo = false }
+  }, [])
   const interesPorMesActivo = interesPorMes && modoInteres === 'lineal' && frecuencia === 'quincenal' && modo !== 'mercancia'
   const sufijoDeLaTasa = interesPorMesActivo ? 'al mes' : sufijoTasa(modoInteres)
   const [capitalExtra, setCapitalExtra] = useState([])
@@ -678,6 +695,7 @@ function NuevoPrestamo() {
     setSinPlazo(Boolean(u.sinPlazo && u.modoInteres === 'solo_interes'))
     setInteresAdelantado(Boolean(u.interesAdelantado))
     setInteresPorMes(Boolean(u.interesPorMes))
+    if (u.interesMesCompleto != null) elegirMesCompleto(Boolean(u.interesMesCompleto))
   }
 
   // Guard de permiso
@@ -949,6 +967,7 @@ function NuevoPrestamo() {
         ...(seguro && Number(montoSeguro) > 0 && { seguro: true, montoSeguro: Number(montoSeguro) }),
         ...(modoInteres === 'solo_interes' && interesAdelantado && !esAbierto && { interesAdelantado: true }),
         ...(esAbierto && { sinPlazo: true }),
+        ...(esAbierto && interesMesCompleto && { interesMesCompleto: true }),
         ...(interesPorMesActivo && { interesPorMes: true }),
         ...(capitalExtra.length > 0 && { capitalExtra }),
         ...(socioId && { socioId }),
@@ -1088,6 +1107,7 @@ function NuevoPrestamo() {
       ...(frecuencia === 'quincenal' && modoDiaCobro === 'mes' && diaCobroMes2 !== '' && { diaCobroMes2: Number(diaCobroMes2) }),
       ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
       ...(esEnCurso && Number(yaAbonado) > 0 && esAbierto && { tipoAbonoPrevio }),
+      ...(esAbierto && interesMesCompleto && { interesMesCompleto: true }),
       ...(calculo?.cuotaDiaria > 0 && (cuotaManualActiva || modo === 'mercancia') && { cuotaManual: calculo.cuotaDiaria }),
       ...(modoInteres === 'saldo' && Number(cuotaManual) > 0 && { cuotaManual: Number(cuotaManual) }),
       modoInteres: modo === 'mercancia' ? 'manual' : modoInteres,
@@ -1967,6 +1987,38 @@ function NuevoPrestamo() {
                       </p>
                     </div>
                   )}
+
+                  {/* EL ABIERTO CON DÍA DE COBRO. Con «Mes completo» se dice
+                      cuándo cae el primer interés y cuánto es; con «Por días» el
+                      servidor no lo acepta (el prorrateo del primer mes no está
+                      hecho para el abierto), así que se avisa aquí y no al guardar. */}
+                  {esAbierto && diaCobroMes !== '' && (() => {
+                    if (!interesMesCompleto) {
+                      return (
+                        <p className="text-[11px] mt-2" style={{ color: 'var(--cf-red-dark)' }}>
+                          Un préstamo abierto por días cobra cada mes desde el día en que prestas. Deja
+                          este campo vacío, o elige «Mes completo» arriba para cobrar siempre este día.
+                        </p>
+                      )
+                    }
+                    if (!fechaInicio) return null
+                    const primero = primerCorteMesCompleto(new Date(`${fechaInicio}T05:00:00.000Z`), Number(diaCobroMes))
+                    const dias = Math.round((primero - new Date(`${fechaInicio}T05:00:00.000Z`)) / 86400000)
+                    const interes = Math.round((Number(monto) || 0) * ((Number(tasa) || 0) / 100))
+                    return (
+                      <div className="mt-2 rounded-[10px] border p-2.5"
+                        style={{ borderColor: 'var(--cf-border-soft)', background: 'var(--cf-fill)' }}>
+                        <p className="text-[11px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
+                          Primer interés el {primero.toLocaleDateString('es-CO', { timeZone: 'UTC', day: 'numeric', month: 'long' })}
+                        </p>
+                        <p className="text-[10px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
+                          {dias === 1 ? 'Es 1 día' : `Son ${dias} días`} después de prestar y se cobra el mes completo
+                          {interes > 0 && <>: <span className="font-mono-display font-semibold" style={{ color: 'var(--cf-ink-2)' }}>{formatMoney(interes)}</span></>}.
+                          Después, el {Number(diaCobroMes)} de cada mes.
+                        </p>
+                      </div>
+                    )
+                  })()}
                 </div>
               )}
             </div>
@@ -2246,6 +2298,35 @@ function NuevoPrestamo() {
                       cobro siguiente baja solo. El préstamo se cierra cuando el capital llegue a cero.
                     </p>
                   )}
+                  {/* ══ ¿CÓMO COBRAS EL MES DE INTERÉS? ════════════════════════
+                      «Yo cobro si el cliente vino y prestó aquí la plata hoy, y
+                      mañana quiere devolver la plata, tiene que pagar los 60 mil
+                      pesos» (Créditos pete, 10 nov 2026). Es una forma legítima
+                      de prestar, así que va como PREGUNTA a la vista —«la opción
+                      no puede quedar súper escondida», el dueño— y no como un
+                      ajuste perdido. «Por días» es lo de siempre. */}
+                  {esAbierto && (
+                    <div className="mt-2.5 pt-2.5" style={{ borderTop: '1px solid var(--cf-hairline)' }}>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>¿Cómo cobras el mes de interés?</p>
+                      <div className="mt-1.5">
+                        <GrupoSegmentado
+                          opciones={[
+                            { id: 'dias', nombre: 'Por días' },
+                            { id: 'completo', nombre: 'Mes completo' },
+                          ]}
+                          valor={interesMesCompleto ? 'completo' : 'dias'}
+                          onElegir={(v) => elegirMesCompleto(v === 'completo')}
+                        />
+                      </div>
+                      <p className="text-[11px] mt-1.5 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
+                        {interesMesCompleto
+                          ? (frecuencia === 'mensual'
+                              ? 'Si pones día de cobro, el primer interés se cobra ese día aunque falten pocos, y es el mes entero. Si te paga todo antes de cumplir el mes, paga el mes completo.'
+                              : 'Si te paga todo antes de cumplir el período, paga el período completo de interés.')
+                          : 'Cada mes cuenta desde el día en que prestas. Si te paga todo antes, paga solo los días que corrieron.'}
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -2421,11 +2502,37 @@ function NuevoPrestamo() {
                     const t = (Number(tasa) || 0) / 100
                     const mes = Math.round(cap * t)
                     const mesNuevo = Math.round((cap - ab) * t)
+                    /* ⚠ CUÁNTO INTERÉS HA CORRIDO DE VERDAD (10 nov 2026). «Cuotas»
+                       decía siempre «se toma como el interés que ya corrió, te sigue
+                       debiendo $2.000.000», y si todavía no había cerrado ningún mes
+                       el servidor lo mandaba TODO a capital: Créditos pete lo vio
+                       como «una anomalía». Se pregunta a `devengosPendientes`, lo
+                       mismo que el servidor usa para asentarlo y para el techo de
+                       «Interés», así que la frase y lo guardado no pueden discrepar. */
+                    const conCorte = interesMesCompleto && frecuencia === 'mensual' && diaCobroMes !== '' && fechaInicio
+                    const corrido = fechaInicio ? Math.round(devengosPendientes({
+                      modoInteres: 'solo_interes', sinPlazo: true,
+                      montoPrestado: cap, tasaInteres: Number(tasa) || 0,
+                      frecuencia, fechaInicio,
+                      diaCobroMes: conCorte ? Number(diaCobroMes) : null,
+                      primerCobro: conCorte ? primerCorteMesCompleto(new Date(`${fechaInicio}T05:00:00.000Z`), Number(diaCobroMes)) : null,
+                      pagos: [], devengos: [], cuotasAmortizacion: [],
+                    }).reduce((acc, d) => acc + (Number(d.interes) || 0), 0)) : 0
+                    const aCapital = Math.max(0, ab - corrido)
                     const consecuencia = {
-                      completo: `Se toma como el interés que ya corrió. Te sigue debiendo ${formatMoney(cap)}.`,
+                      completo: aCapital <= 0
+                        ? `Se toma como el interés que ya corrió (${formatMoney(corrido)} hasta hoy). Te sigue debiendo ${formatMoney(cap)}.`
+                        : corrido > 0
+                          ? `Hasta hoy corrieron ${formatMoney(corrido)} de interés; los otros ${formatMoney(aCapital)} van a capital y te queda debiendo ${formatMoney(cap - aCapital)}.`
+                          : `Todavía no ha cerrado ningún mes de interés, así que todo va a capital: te queda debiendo ${formatMoney(cap - aCapital)}.`,
                       capital: `Bajó lo que te debe a ${formatMoney(cap - ab)}. El mes pasa de ${formatMoney(mes)} a ${formatMoney(mesNuevo)}.`,
-                      intereses: `Solo te pagó la ganancia. Te sigue debiendo ${formatMoney(cap)} y el mes sigue en ${formatMoney(mes)}.`,
+                      intereses: ab > corrido
+                        ? (corrido > 0
+                            ? `De interés solo han corrido ${formatMoney(corrido)} hasta hoy: no se puede guardar más que eso como interés.`
+                            : 'Todavía no ha cerrado ningún mes de interés, así que no se puede guardar como interés.')
+                        : `Solo te pagó la ganancia. Te sigue debiendo ${formatMoney(cap)} y el mes sigue en ${formatMoney(mes)}.`,
                     }[tipoAbonoPrevio]
+                    const avisoRojo = tipoAbonoPrevio === 'intereses' && ab > corrido
                     return (
                       <div className="mt-3">
                         <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>¿A qué se abonó?</label>
@@ -2440,7 +2547,7 @@ function NuevoPrestamo() {
                             onElegir={setTipoAbonoPrevio}
                           />
                         </div>
-                        <p className="text-xs mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>{consecuencia}</p>
+                        <p className="text-xs mt-1.5" style={{ color: avisoRojo ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)' }}>{consecuencia}</p>
                       </div>
                     )
                   })()}

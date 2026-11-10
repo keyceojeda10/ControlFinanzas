@@ -109,7 +109,8 @@ export async function GET(request, { params }) {
     const cierreHoyDe = (p, diasExcluidos, festivos) => {
       try {
         const liq = calcularLiquidacionAnticipada(p, new Date(), diasExcluidos, festivos)
-        const v = Math.round(liq?.proporcional?.restanteHoy ?? liq?.restanteHoy ?? 0)
+        // `porDefecto`: el abierto «mes completo» cierra con el mes entero.
+        const v = Math.round(liq?.porDefecto?.restanteHoy ?? liq?.proporcional?.restanteHoy ?? liq?.restanteHoy ?? 0)
         return Number.isFinite(v) && v > 0 ? v : Math.round(calcularSaldoPendiente(p))
       } catch { return Math.round(calcularSaldoPendiente(p)) }
     }

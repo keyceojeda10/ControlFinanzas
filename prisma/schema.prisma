@@ -208,6 +208,9 @@ model Organization {
   frecuenciaDefault   String?      // diario | semanal | quincenal | mensual
   tasaDefault         Float?       // el % , con la semántica que fije modoInteresDefault
   modoInteresDefault  String?      // fijo | unico | solo_interes | saldo | ...
+  /// Con qué viene marcada la pregunta «¿Cómo cobras el mes de interés?» en un
+  /// préstamo abierto nuevo. `false` = por días, como siempre.
+  interesMesCompletoDefault Boolean @default(false)
 
   capitalEstricto   Boolean        @default(false)
   capitalEsEfectivo Boolean        @default(false)
@@ -530,6 +533,12 @@ model Prestamo {
   /// Decreciente quincenal: el % es AL MES, sobre lo que debía al empezar el mes, y
   /// cada quincena cobra la mitad (180, 180, 168, 168…). Ver `calcularPrestamo`.
   interesPorMes  Boolean        @default(false)
+  /// Abierto «mes completo» (Créditos pete, 10 nov 2026): el mes de interés se
+  /// cobra entero. Con día de corte, el primer corte es el próximo día de corte
+  /// aunque falten pocos días (`primerCorteMesCompleto`), y al cancelar antes la
+  /// cifra que se ofrece es la del mes completo, no la prorrateada. `false` en
+  /// todos los que existían: para ellos no cambia nada.
+  interesMesCompleto Boolean    @default(false)
   seguro         Boolean        @default(false)
   montoSeguro    Float?
   estado         EstadoPrestamo @default(activo)

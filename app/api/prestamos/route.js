@@ -5,7 +5,7 @@ import { renovacionesDe } from '@/lib/prestamos/renovaciones'
 import { getServerSession }    from 'next-auth'
 import { authOptions }         from '@/lib/auth'
 import { prisma }              from '@/lib/prisma'
-import { primerCobroElegido } from '@/lib/dinero/calendario'
+import { primerCobroElegido, primerCorteMesCompleto } from '@/lib/dinero/calendario'
 import {
   fechaDePeriodo,
   calcularPrestamo,
@@ -597,7 +597,7 @@ export async function POST(request) {
 
   const { organizationId, rol } = session.user
   const body = await request.json()
-  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual, inyeccionPrevia, primerCobro: primerCobroPedido, interesPorMes, diaCobroSemana, diaCobroMes, diaCobroMes2, seguro, montoSeguro, modoInteres, nombreProducto, interesAdelantado, capitalExtra, socioId, sinPlazo, tipoAbonoPrevio, metodoPago: metodoPagoDesembolso, metodoPagoId: metodoPagoIdDesembolso } = body
+  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual, inyeccionPrevia, primerCobro: primerCobroPedido, interesPorMes, interesMesCompleto, diaCobroSemana, diaCobroMes, diaCobroMes2, seguro, montoSeguro, modoInteres, nombreProducto, interesAdelantado, capitalExtra, socioId, sinPlazo, tipoAbonoPrevio, metodoPago: metodoPagoDesembolso, metodoPagoId: metodoPagoIdDesembolso } = body
   // Cuenta de la que sale el desembolso (para el desglose por cuenta). Si no
   // viene, se asume efectivo (el caso mas comun en gota a gota).
   const cuentaDesembolso = metodoPagoDesembolso || 'efectivo'
@@ -824,7 +824,16 @@ export async function POST(request) {
    * el primer período, y ese prorrateo todavía no está fijado por una prueba
    * para el devengo. Antes que dejarlo pasar y cobrar de más el primer mes, se
    * ignora: el primer período es un período entero desde que se entregó. */
-  if (esAbierto && (diaCobroMes || diaCobroMes2)) {
+  /* «MES COMPLETO» (Créditos pete, 10 nov 2026): con esa opción el abierto SÍ
+   * lleva día de corte, sin prorrateo. El primer corte es el próximo día de corte
+   * y cobra el mes entero (`primerCorteMesCompleto`): así presta él. Solo mensual
+   * y con un día; sin la opción, este rechazo sigue igual para todos. */
+  const mesCompletoDb = esAbierto && interesMesCompleto === true
+  const corteMesCompleto = mesCompletoDb && freq === 'mensual' && Number.isInteger(diaCobroMesDb) && !diaCobroMes2Db
+  const primerCorteAbierto = corteMesCompleto
+    ? primerCorteMesCompleto(new Date(`${fechaInicio}T05:00:00.000Z`), diaCobroMesDb)
+    : null
+  if (esAbierto && (diaCobroMes || diaCobroMes2) && !corteMesCompleto) {
     return Response.json({
       error: 'Un préstamo abierto todavía no admite día de corte fijo. Quita el día de corte o ponle un plazo.',
     }, { status: 400 })
@@ -838,7 +847,9 @@ export async function POST(request) {
     ...(cuotaManualNum > 0 && { cuotaManual: cuotaManualNum }),
     interesAdelantado: modoValido === 'solo_interes' && !!interesAdelantado,
     ...(Array.isArray(capitalExtra) && capitalExtra.length > 0 && { capitalExtra }),
-    diaCobroMes: diaCobroMesDb,
+    // En el abierto «mes completo» el primer corte lo pone `primerCorteAbierto`:
+    // pasarle el día a la cuenta general lo correría con su medio período mínimo.
+    diaCobroMes: corteMesCompleto ? null : diaCobroMesDb,
     diaCobroMes2: diaCobroMes2Db,
     /* ⚠ El abierto no: cobra interés POR PERÍODO, y con períodos de 14 días serían
        26 intereses al año en vez de 24. Sigue con su quincena. */
@@ -874,7 +885,9 @@ export async function POST(request) {
   const { totalAPagar, cuotaDiaria, fechaFin: fechaFinCalc } = calc
   /* En un abierto, el «fin» es el primer corte de interés. Ver la nota de
      `diasPlazo` más abajo. */
-  const fechaFin = esAbierto
+  const fechaFin = primerCorteAbierto
+    ? primerCorteAbierto
+    : esAbierto
     ? fechaDePeriodo(1, {
         fechaInicio: new Date(`${fechaInicio}T05:00:00.000Z`),
         freq, diasPeriodo: calc.diasPeriodo,
@@ -913,7 +926,7 @@ export async function POST(request) {
         frecuencia: freq, fechaInicio,
         diaCobroMes: diaCobroMesDb, diaCobroMes2: diaCobroMes2Db,
         diaCobroSemana: diaCobroSemanaDb,
-        primerCobro: calc.primerCobro ?? null,
+        primerCobro: primerCorteAbierto ?? calc.primerCobro ?? null,
         pagos: [], devengos: [], cuotasAmortizacion: [],
       })
       const techo = corridos.reduce((a, d) => a + (Number(d.interes) || 0), 0)
@@ -1016,6 +1029,7 @@ export async function POST(request) {
         frecuencia:    freq,
         modoInteres:   modoInteresFinal,
         interesPorMes: interesPorMesDb,
+        interesMesCompleto: mesCompletoDb,
         interesAdelantado: modoInteresFinal === 'solo_interes' && !!interesAdelantado && !esAbierto,
         sinPlazo: esAbierto,
         ...(typeof nombreProducto === 'string' && nombreProducto.trim() && { nombreProducto: nombreProducto.trim().slice(0, 100) }),
@@ -1027,6 +1041,7 @@ export async function POST(request) {
         // entrego el dinero, y despues anclado al dia de corte— y el prestamo
         // tendria dos verdades: una en su tabla y otra en «proximo cobro».
         ...(calc.primerCobro ? { primerCobro: calc.primerCobro } : {}),
+        ...(primerCorteAbierto ? { primerCobro: primerCorteAbierto } : {}),
         ...(socioId && { socioId }),
         ...(Array.isArray(calc.capitalExtra) && calc.capitalExtra.length > 0 && { capitalExtra: calc.capitalExtra }),
         /* ⚠ EN UN ABIERTO, `diasPlazo` Y `fechaFin` SON EL PRIMER PERÍODO, no

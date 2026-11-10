@@ -22,6 +22,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatMoney, soloDecimal } from '@/lib/i18n'
 import { calcularPrestamo } from '@/lib/calculos'
 import { MODOS_EN_ORDEN, etiquetaModo } from '@/lib/dinero/modos'
+import { Toggle } from '@/components/ui/Toggle'
 
 const FRECUENCIAS = [
   { valor: '', nombre: 'Sin preferencia' },
@@ -172,6 +173,7 @@ export default function ComoPrestas({ inicial = {}, onGuardar, pais }) {
   const [dia, setDia] = useState(() => {
     try { return (JSON.parse(inicial.diasSinCobro || '[]')[0]) ?? '' } catch { return '' }
   })
+  const [mesCompleto, setMesCompleto] = useState(!!inicial.interesMesCompletoDefault)
   const [estado, setEstado] = useState(null)   // 'guardando' | 'guardado' | mensaje de error
   // La firma de lo que ya está guardado. Se siembra con lo que llegó, para que
   // el primer efecto no vea diferencia y no dispare nada.
@@ -184,6 +186,7 @@ export default function ComoPrestas({ inicial = {}, onGuardar, pais }) {
     diasSinCobro: JSON.stringify((() => {
       try { const d = JSON.parse(inicial.diasSinCobro || '[]')[0]; return d ? [d] : [] } catch { return [] }
     })()),
+    interesMesCompletoDefault: !!inicial.interesMesCompletoDefault,
   }))
   const temporizador = useRef(null)
 
@@ -229,13 +232,14 @@ export default function ComoPrestas({ inicial = {}, onGuardar, pais }) {
       modoInteresDefault: modo || null,
       tasaDefault: String(tasa).trim() === '' ? null : Number(String(tasa).replace(',', '.')),
       diasSinCobro: JSON.stringify(dia ? [dia] : []),
+      interesMesCompletoDefault: mesCompleto,
     }
     const firma = JSON.stringify(campos)
     if (firma === ultimo.current) return
     clearTimeout(temporizador.current)
     temporizador.current = setTimeout(() => { ultimo.current = firma; guardar(campos) }, 500)
     return () => clearTimeout(temporizador.current)
-  }, [frecuencia, tasa, modo, dia, guardar])
+  }, [frecuencia, tasa, modo, dia, mesCompleto, guardar])
 
   // El «guardado» se retira solo: un aviso que se queda para siempre deja de
   // significar «acabas de guardar».
@@ -306,6 +310,28 @@ export default function ComoPrestas({ inicial = {}, onGuardar, pais }) {
             {DIAS.map((d) => <option key={d.valor} value={d.valor}>{d.nombre}</option>)}
           </select>
         </label>
+      </div>
+
+      {/* ── EL ABIERTO «MES COMPLETO», A LA VISTA ──
+          «La opción no puede quedar súper escondida» (el dueño, 10 nov 2026):
+          va aquí, con lo demás de cómo presta el negocio, y la misma pregunta
+          sale en el formulario al elegir el préstamo abierto. Apagado = lo de
+          siempre, por días. */}
+      <div style={{
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14,
+        marginTop: 16, paddingTop: 15, borderTop: '1px solid var(--cf-hairline)',
+      }}>
+        <div style={{ minWidth: 0 }}>
+          <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)' }}>
+            Préstamo abierto: cobro el mes completo
+          </span>
+          <span style={{ display: 'block', fontSize: 13, color: 'var(--cf-ink-3)', marginTop: 3, lineHeight: 1.5 }}>
+            El primer interés se cobra el próximo día de cobro, aunque falten pocos días, y
+            si te pagan todo antes de cumplir el mes, se cobra el mes entero. Apagado, se
+            cuenta por días.
+          </span>
+        </div>
+        <Toggle checked={mesCompleto} onChange={setMesCompleto} />
       </div>
 
       <p style={{ fontSize: 12.5, color: 'var(--cf-ink-3)', margin: '15px 0 0', lineHeight: 1.5 }}>

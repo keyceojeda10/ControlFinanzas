@@ -1602,6 +1602,7 @@ function ConfiguracionContent() {
                 tasaDefault: org?.tasaDefault ?? null,
                 modoInteresDefault: org?.modoInteresDefault ?? '',
                 diasSinCobro: org?.diasSinCobro ?? '[]',
+                interesMesCompletoDefault: !!org?.interesMesCompletoDefault,
               }}
               pais={org?.country}
             />

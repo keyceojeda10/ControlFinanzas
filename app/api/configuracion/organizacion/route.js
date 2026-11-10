@@ -18,6 +18,7 @@ const ETIQUETA_CAMPO = {
   frecuenciaDefault: 'Frecuencia por defecto',
   tasaDefault: 'Tasa por defecto (%)',
   modoInteresDefault: 'Modo de interés por defecto',
+  interesMesCompletoDefault: 'Préstamo abierto: cobrar el mes completo',
   capitalEsEfectivo: 'Capital en ruta = efectivo en mano',
   renovacionesEnCobrado: 'Contar renovaciones en el cobrado',
   modoAbreviado: 'Modo abreviado de montos',
@@ -66,7 +67,7 @@ export async function GET() {
 
   const org = await prisma.organization.findUnique({
     where: { id: orgId },
-    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true, frecuenciaDefault: true, tasaDefault: true, modoInteresDefault: true, country: true, timezone: true, createdAt: true, activo: true, capitalEsEfectivo: true, renovacionesEnCobrado: true, modoAbreviado: true, ocultarSaldoWA: true, reciboCliente: true, tasaMoratorio: true, diasGraciaMoratorio: true, requiereAprobacionPrestamos: true, permisoParaPrestarConDeuda: true, portalDatosCompletos: true, camposRecibo: true, plantillasWA: true },
+    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true, frecuenciaDefault: true, tasaDefault: true, modoInteresDefault: true, interesMesCompletoDefault: true, country: true, timezone: true, createdAt: true, activo: true, capitalEsEfectivo: true, renovacionesEnCobrado: true, modoAbreviado: true, ocultarSaldoWA: true, reciboCliente: true, tasaMoratorio: true, diasGraciaMoratorio: true, requiereAprobacionPrestamos: true, permisoParaPrestarConDeuda: true, portalDatosCompletos: true, camposRecibo: true, plantillasWA: true },
   })
 
   const sub = await prisma.suscripcion.findFirst({
@@ -123,7 +124,7 @@ export async function PATCH(req) {
   // NOTA: `country` y `timezone` NO se aceptan desde este endpoint.
   // Cambios de pais solo pueden hacerse desde superadmin para evitar corrupcion
   // de calculos de mora/timezone y precios de planes en organizaciones con datos.
-  const { nombre, telefono, ciudad, diasSinCobro, frecuenciaDefault, tasaDefault, modoInteresDefault, capitalEsEfectivo, renovacionesEnCobrado, modoAbreviado, ocultarSaldoWA, reciboCliente, tasaMoratorio, diasGraciaMoratorio, requiereAprobacionPrestamos, permisoParaPrestarConDeuda, portalDatosCompletos, camposRecibo, plantillasWA } = await req.json()
+  const { nombre, telefono, ciudad, diasSinCobro, frecuenciaDefault, tasaDefault, modoInteresDefault, interesMesCompletoDefault, capitalEsEfectivo, renovacionesEnCobrado, modoAbreviado, ocultarSaldoWA, reciboCliente, tasaMoratorio, diasGraciaMoratorio, requiereAprobacionPrestamos, permisoParaPrestarConDeuda, portalDatosCompletos, camposRecibo, plantillasWA } = await req.json()
 
   if (nombre !== undefined && !nombre?.trim()) {
     return NextResponse.json({ error: 'El nombre es obligatorio' }, { status: 400 })
@@ -185,6 +186,7 @@ export async function PATCH(req) {
     ...(telefono !== undefined && { telefono: telefono?.trim() || null }),
     ...(ciudad !== undefined && { ciudad: ciudad?.trim() || null }),
     ...(diasSinCobroVal !== undefined && { diasSinCobro: diasSinCobroVal }),
+    ...(interesMesCompletoDefault !== undefined && { interesMesCompletoDefault: !!interesMesCompletoDefault }),
     ...(capitalEsEfectivo !== undefined && { capitalEsEfectivo: !!capitalEsEfectivo }),
     ...(renovacionesEnCobrado !== undefined && { renovacionesEnCobrado: !!renovacionesEnCobrado }),
     ...(modoAbreviado !== undefined && { modoAbreviado: !!modoAbreviado }),
@@ -202,7 +204,7 @@ export async function PATCH(req) {
   const org = await prisma.organization.update({
     where: { id: orgId },
     data: datosActualizados,
-    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true, country: true, timezone: true, capitalEsEfectivo: true, renovacionesEnCobrado: true, modoAbreviado: true, ocultarSaldoWA: true, reciboCliente: true, tasaMoratorio: true, diasGraciaMoratorio: true, requiereAprobacionPrestamos: true, permisoParaPrestarConDeuda: true, portalDatosCompletos: true, camposRecibo: true, plantillasWA: true },
+    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true, interesMesCompletoDefault: true, country: true, timezone: true, capitalEsEfectivo: true, renovacionesEnCobrado: true, modoAbreviado: true, ocultarSaldoWA: true, reciboCliente: true, tasaMoratorio: true, diasGraciaMoratorio: true, requiereAprobacionPrestamos: true, permisoParaPrestarConDeuda: true, portalDatosCompletos: true, camposRecibo: true, plantillasWA: true },
   })
 
   // Solo se registra si algo cambio de verdad: guardar sin tocar nada no ensucia

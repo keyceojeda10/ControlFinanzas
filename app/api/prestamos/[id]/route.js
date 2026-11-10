@@ -1,6 +1,6 @@
 // app/api/prestamos/[id]/route.js
 
-import { esSemanaPorMedio, primerCobroElegido, fechaDePeriodo } from '@/lib/dinero/calendario'
+import { esSemanaPorMedio, primerCobroElegido, fechaDePeriodo, primerCorteMesCompleto } from '@/lib/dinero/calendario'
 import { parejaDeLaEdicion } from '@/lib/dinero/editar-monto'
 import { pagosEnOrden } from '@/lib/dinero/orden-de-pagos'
 import { getServerSession }    from 'next-auth'
@@ -910,8 +910,13 @@ export async function PATCH(request, { params }) {
       // Los modos sin tabla (`fijo`, `unico`, `manual`) derivan sus fechas al
       // LEER, asi que aqui no hay filas que correr: basta con dejar la columna
       // en su sitio y el calendario sale solo.
+      /* El abierto «mes completo» corta en el PRÓXIMO día de corte, igual que al
+         crearlo (ver POST /api/prestamos). Los demás, con su medio período. */
+      const mesCompleto = p.sinPlazo === true && p.modoInteres === 'solo_interes' && p.interesMesCompleto === true
       dataUpdate.primerCobro = Number.isInteger(dataUpdate.diaCobroMes)
-        ? primerCobroMensual(new Date(p.fechaInicio), dataUpdate.diaCobroMes)
+        ? (mesCompleto
+            ? primerCorteMesCompleto(new Date(p.fechaInicio), dataUpdate.diaCobroMes)
+            : primerCobroMensual(new Date(p.fechaInicio), dataUpdate.diaCobroMes))
         : null
     }
 
