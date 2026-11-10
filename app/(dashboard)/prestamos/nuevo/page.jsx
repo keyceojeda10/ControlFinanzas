@@ -12,7 +12,7 @@ import { enviarConfirmandoPerdidos } from '@/lib/confirmar-perdidos'
 import { Button }                                  from '@/components/ui/Button'
 import { Input }                                   from '@/components/ui/Input'
 import MoneyInput                                  from '@/components/ui/MoneyInput'
-import { calcularPrestamo, devengosPendientes } from '@/lib/calculos'
+import { calcularPrestamo, devengosPendientes, periodoEnCursoAbierto } from '@/lib/calculos'
 import { fechaDePeriodo, primerCobroElegido, primerCorteMesCompleto } from '@/lib/dinero/calendario'
 import { abonoSinResolver } from '@/lib/dinero/monto-raro'
 import PreguntaAbonoRaro from '@/components/prestamos/PreguntaAbonoRaro'
@@ -374,6 +374,36 @@ function NuevoPrestamo() {
      diga otra cosa o la persona ya lo haya tocado aquí. */
   const [interesMesCompleto, setInteresMesCompleto] = useState(() => deLaUrl('mesCompleto', '') === '1')
   const mesCompletoTocado = useRef(searchParams.get('mesCompleto') != null)
+  /* ══ «EL PORCENTAJE ES AL MES» EN EL ABIERTO QUINCENAL (10 nov 2026) ════════
+     Créditos pete piensa el % AL MES también en quincenal («12 %» = 6 % cada
+     quincena), y el abierto lo cobra POR QUINCENA: le salían 300.000 donde él
+     cobra 150.000. Se resuelve AQUÍ, al escribirlo: `tasa` sigue siendo la del
+     período —lo que guarda el servidor y lo que leen todas las cuentas— y el
+     campo enseña y recibe el doble. Cambiar entre «por quincena» y «al mes» NO
+     mueve plata: 6 por quincena se lee 12 al mes. La preferencia se recuerda en
+     el teléfono y se lee DESPUÉS de montar (leerla al arrancar daría un #418). */
+  const [pctAlMes, setPctAlMes] = useState(false)
+  useEffect(() => {
+    try { if (localStorage.getItem('cf-abierto-quincenal-pct') === 'mes') setPctAlMes(true) } catch {}
+  }, [])
+  const elegirPctAlMes = (v) => {
+    setPctAlMes(v)
+    try { localStorage.setItem('cf-abierto-quincenal-pct', v ? 'mes' : 'quincena') } catch {}
+  }
+  const tasaTexto = (x) => String(Math.round(Number(x) * 1000) / 1000)
+  const [tasaMesTexto, setTasaMesTexto] = useState('')
+  // ⚠ DESPUÉS de `pctAlMes` y de `esAbierto`: leer un `const` antes de declararlo deja la pantalla en blanco.
+  const pctAlMesActivo = esAbierto && frecuencia === 'quincenal' && pctAlMes
+  // Lo que enseña el campo «al mes» sigue a `tasa` cuando cambia por otro lado
+  // (atajos, repetir el anterior) sin pisar lo que se está escribiendo («7.»).
+  useEffect(() => {
+    if (!pctAlMesActivo) return
+    const t = Number(String(tasa).replace(',', '.'))
+    setTasaMesTexto((txt) => {
+      if (tasa === '') return ''
+      return Number(txt) / 2 === t ? txt : tasaTexto(t * 2)
+    })
+  }, [tasa, pctAlMesActivo])
   const elegirMesCompleto = (v) => { mesCompletoTocado.current = true; setInteresMesCompleto(v) }
   useEffect(() => {
     let vivo = true
@@ -1938,6 +1968,33 @@ function NuevoPrestamo() {
                           </p>
                         </div>
                       )}
+                      {/* EL ABIERTO QUINCENAL CON DÍAS: solo con «Mes completo» y con
+                          los dos días; si no, el servidor no lo acepta y se dice aquí. */}
+                      {esAbierto && (diaCobroMes !== '' || diaCobroMes2 !== '') && (() => {
+                        if (!interesMesCompleto) {
+                          return (
+                            <p className="text-[11px] mt-2" style={{ color: 'var(--cf-red-dark)' }}>
+                              Un préstamo abierto por días cobra cada 15 días desde que prestas. Deja
+                              los días vacíos, o elige «Mes completo» para cobrar siempre en estos días.
+                            </p>
+                          )
+                        }
+                        if (diaCobroMes === '' || diaCobroMes2 === '') {
+                          return (
+                            <p className="text-[11px] mt-2" style={{ color: 'var(--cf-red-dark)' }}>
+                              Pon los dos días de cobro (por ejemplo el 5 y el 20).
+                            </p>
+                          )
+                        }
+                        const interes = Math.round((Number(monto) || 0) * ((Number(tasa) || 0) / 100))
+                        return interes > 0 && dosPrimerosCobros?.[0] ? (
+                          <p className="text-[11px] mt-2" style={{ color: 'var(--cf-ink-3)' }}>
+                            La primera quincena se cobra completa el {dosPrimerosCobros[0]}:{' '}
+                            <span className="font-mono-display font-semibold" style={{ color: 'var(--cf-ink-2)' }}>{formatMoney(interes)}</span>, aunque
+                            sean menos de 15 días. Después, {formatMoney(interes)} en cada día de cobro.
+                          </p>
+                        ) : null
+                      })()}
                     </>
                   )}
                 </div>
@@ -2038,7 +2095,9 @@ function NuevoPrestamo() {
                       {/* En un abierto el % se cobra CADA período de la frecuencia (decisión
                           del dueño, 17 oct 2026): «Interés mensual» sobre un diario hacía
                           leer 20 % al mes donde se cobra 20 % al día. (DETALLES-PRESTAMOS #5.) */}
-                      {pesos.enPesos || esAbierto ? rotuloCuotaEnPesos(frecuencia, esAbierto) : (sufijoDeLaTasa ? `Interés ${sufijoDeLaTasa}` : 'Interés')}
+                      {pctAlMesActivo && !pesos.enPesos
+                        ? 'Interés al mes'
+                        : pesos.enPesos || esAbierto ? rotuloCuotaEnPesos(frecuencia, esAbierto) : (sufijoDeLaTasa ? `Interés ${sufijoDeLaTasa}` : 'Interés')}
                     </label>
                     {puedeEnPesos && <SelectorPorcentajePesos enPesos={pesos.enPesos} onElegir={pesos.elegir} />}
                   </div>
@@ -2051,8 +2110,13 @@ function NuevoPrestamo() {
                   <div className="mt-1.5 relative flex items-center h-[68px] rounded-[14px] px-4"
                     style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
                     <input
-                      type="text" inputMode="decimal" value={tasa}
-                      onChange={(e) => setTasa(soloDecimal(e.target.value))}
+                      type="text" inputMode="decimal" value={pctAlMesActivo ? tasaMesTexto : tasa}
+                      onChange={(e) => {
+                        const v = soloDecimal(e.target.value)
+                        if (!pctAlMesActivo) { setTasa(v); return }
+                        setTasaMesTexto(v)
+                        setTasa(v === '' ? '' : tasaTexto(Number(v) / 2))
+                      }}
                       placeholder="20"
                       className="cf-campo-grande bg-transparent border-0 outline-none w-[92px] text-[30px] font-semibold tracking-[-.02em]"
                       style={{ color: 'var(--cf-ink)' }}
@@ -2071,15 +2135,37 @@ function NuevoPrestamo() {
                   </div>
                   <div className="flex gap-1.5 mt-2 flex-wrap">
                     {[5, 10, 15, 20, 25, 30].map(v => (
-                      <button key={v} type="button" onClick={() => setTasa(String(v))}
+                      <button key={v} type="button" onClick={() => setTasa(pctAlMesActivo ? tasaTexto(v / 2) : String(v))}
                         className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all"
-                        style={String(v) === tasa
+                        style={(pctAlMesActivo ? tasaTexto(v / 2) === tasa : String(v) === tasa)
                           ? { background: 'var(--cf-gold)', color: '#000' }
                           : { background: 'var(--cf-card)', color: 'var(--cf-ink-3)', border: '1px solid var(--cf-border)' }
                         }
                       >{v}%</button>
                     ))}
                   </div>
+                  {esAbierto && frecuencia === 'quincenal' && (
+                    <div className="mt-2.5">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>El porcentaje es</p>
+                      <div className="mt-1.5">
+                        <GrupoSegmentado
+                          opciones={[
+                            { id: 'quincena', nombre: 'Por quincena' },
+                            { id: 'mes', nombre: 'Al mes' },
+                          ]}
+                          valor={pctAlMes ? 'mes' : 'quincena'}
+                          onElegir={(v) => elegirPctAlMes(v === 'mes')}
+                        />
+                      </div>
+                      {Number(tasa) > 0 && (
+                        <p className="text-[11px] mt-1.5 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
+                          {pctAlMes
+                            ? `${formatearTasa(tasaTexto(Number(tasa) * 2))} % al mes: se cobra la mitad, ${formatearTasa(tasa)} %, cada quincena.`
+                            : `${formatearTasa(tasa)} % cada quincena: son ${formatearTasa(tasaTexto(Number(tasa) * 2))} % al mes.`}
+                        </p>
+                      )}
+                    </div>
+                  )}
                   </>)}
                 </div>
 
@@ -2176,7 +2262,7 @@ function NuevoPrestamo() {
 
               {Number(monto) > 0 && Number(tasa) > 0 && (
                 <p className="text-[12px] -mt-2" style={{ color: 'var(--cf-ink-3)' }}>
-                  Al {formatearTasa(tasa)}% sobre {formatMoney(Number(monto))} = {formatMoney(Math.round(Number(monto) * Number(tasa) / 100))} de interés {esAbierto ? `cada ${PERIODO_ABIERTO[frecuencia] ?? 'mes'}` : 'por mes'}
+                  {pctAlMesActivo && `${formatearTasa(tasaTexto(Number(tasa) * 2))} % al mes · `}Al {formatearTasa(tasa)}% sobre {formatMoney(Number(monto))} = {formatMoney(Math.round(Number(monto) * Number(tasa) / 100))} de interés {esAbierto ? `cada ${PERIODO_ABIERTO[frecuencia] ?? 'mes'}` : 'por mes'}
                   {esAbierto
                     ? `${frecuencia !== 'mensual' ? ` · unos ${formatMoney(Math.round(Number(monto) * Number(tasa) / 100 * (POR_MES[frecuencia] ?? 1)))} al mes` : ''} · sin fecha de vencimiento`
                     : (frecuencia !== 'diario' && plazoUnidades ? ` · ${plazo} días en total` : '')}
@@ -2311,7 +2397,9 @@ function NuevoPrestamo() {
                         {interesMesCompleto
                           ? (frecuencia === 'mensual'
                               ? 'Si pones día de cobro, el primer interés se cobra ese día aunque falten pocos, y es el mes entero. Si te paga todo antes de cumplir el mes, paga el mes completo.'
-                              : 'Si te paga todo antes de cumplir el período, paga el período completo de interés.')
+                              : frecuencia === 'quincenal'
+                                ? 'Si pones los dos días de cobro (por ejemplo el 5 y el 20), la primera quincena se cobra completa aunque falten pocos días. Si te paga todo antes de cumplir la quincena, paga la quincena completa.'
+                                : 'Si te paga todo antes de cumplir el período, paga el período completo de interés.')
                           : 'Cada mes cuenta desde el día en que prestas. Si te paga todo antes, paga solo los días que corrieron.'}
                       </p>
                     </div>
@@ -2499,14 +2587,21 @@ function NuevoPrestamo() {
                        mismo que el servidor usa para asentarlo y para el techo de
                        «Interés», así que la frase y lo guardado no pueden discrepar. */
                     const conCorte = interesMesCompleto && frecuencia === 'mensual' && diaCobroMes !== '' && fechaInicio
-                    const corrido = fechaInicio ? Math.round(devengosPendientes({
+                    const conDosDias = interesMesCompleto && frecuencia === 'quincenal' && modoDiaCobro === 'mes' && diaCobroMes !== '' && diaCobroMes2 !== ''
+                    const comoSeGuarda = {
                       modoInteres: 'solo_interes', sinPlazo: true,
                       montoPrestado: cap, tasaInteres: Number(tasa) || 0,
                       frecuencia, fechaInicio,
-                      diaCobroMes: conCorte ? Number(diaCobroMes) : null,
+                      diaCobroMes: conCorte || conDosDias ? Math.min(Number(diaCobroMes), conDosDias ? Number(diaCobroMes2) : 99) : null,
+                      diaCobroMes2: conDosDias ? Math.max(Number(diaCobroMes), Number(diaCobroMes2)) : null,
                       primerCobro: conCorte ? primerCorteMesCompleto(new Date(`${fechaInicio}T05:00:00.000Z`), Number(diaCobroMes)) : null,
-                      pagos: [], devengos: [], cuotasAmortizacion: [],
-                    }).reduce((acc, d) => acc + (Number(d.interes) || 0), 0)) : 0
+                      pagos: [], cuotasAmortizacion: [],
+                    }
+                    const cerrados = fechaInicio ? devengosPendientes({ ...comoSeGuarda, devengos: [] }) : []
+                    const corrido = Math.round(cerrados.reduce((acc, d) => acc + (Number(d.interes) || 0), 0))
+                    // El período que va corriendo: el abono «Interés» lo puede traer pagado por adelantado.
+                    const enCursoAbono = fechaInicio ? periodoEnCursoAbierto({ ...comoSeGuarda, devengos: cerrados }) : null
+                    const delQueCorre = Math.round(enCursoAbono?.interesPeriodo ?? 0)
                     const aCapital = Math.max(0, ab - corrido)
                     const consecuencia = {
                       completo: aCapital <= 0
@@ -2515,13 +2610,15 @@ function NuevoPrestamo() {
                           ? `Hasta hoy corrieron ${formatMoney(corrido)} de interés; los otros ${formatMoney(aCapital)} van a capital y te queda debiendo ${formatMoney(cap - aCapital)}.`
                           : `Todavía no ha cerrado ningún mes de interés, así que todo va a capital: te queda debiendo ${formatMoney(cap - aCapital)}.`,
                       capital: `Bajó lo que te debe a ${formatMoney(cap - ab)}. El mes pasa de ${formatMoney(mes)} a ${formatMoney(mesNuevo)}.`,
-                      intereses: ab > corrido
-                        ? (corrido > 0
-                            ? `De interés solo han corrido ${formatMoney(corrido)} hasta hoy: no se puede guardar más que eso como interés.`
-                            : 'Todavía no ha cerrado ningún mes de interés, así que no se puede guardar como interés.')
-                        : `Solo te pagó la ganancia. Te sigue debiendo ${formatMoney(cap)} y el mes sigue en ${formatMoney(mes)}.`,
+                      intereses: ab > corrido + delQueCorre
+                        ? (corrido + delQueCorre > 0
+                            ? `De interés caben ${formatMoney(corrido + delQueCorre)}: lo que corrió hasta hoy${delQueCorre > 0 ? ' más el período que va corriendo' : ''}. No se puede guardar más que eso como interés.`
+                            : 'Todavía no ha cerrado ningún período de interés, así que no se puede guardar como interés.')
+                        : ab > corrido
+                          ? `Paga lo que corrió (${formatMoney(corrido)}) y deja pagado por adelantado el período que va corriendo (${formatMoney(delQueCorre)}). Te sigue debiendo ${formatMoney(cap)}.`
+                          : `Solo te pagó la ganancia. Te sigue debiendo ${formatMoney(cap)} y el mes sigue en ${formatMoney(mes)}.`,
                     }[tipoAbonoPrevio]
-                    const avisoRojo = tipoAbonoPrevio === 'intereses' && ab > corrido
+                    const avisoRojo = tipoAbonoPrevio === 'intereses' && ab > corrido + delQueCorre
                     return (
                       <div className="mt-3">
                         <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>¿A qué se abonó?</label>

@@ -27,9 +27,9 @@ import { registrarMovimientoCapital, asegurarCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
 import { trackEvent } from '@/lib/analytics'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
-import { devengarAlCrear } from '@/lib/dinero/devengar'
+import { devengarAlCrear, asentarPeriodoPagadoAlCrear } from '@/lib/dinero/devengar'
 import { TIPOS_ABONO_PREVIO, sePreguntaElTipo, NOTA_ABONO_PREVIO_MANUAL } from '@/lib/dinero/abono-previo'
-import { devengosPendientes } from '@/lib/calculos'
+import { devengosPendientes, periodoEnCursoAbierto } from '@/lib/calculos'
 import { getLocalDateStr, inicioDelDiaLocal, getLocalDayRange } from '@/lib/i18n'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { rutaPermitida } from '@/lib/limites-plan'
@@ -826,13 +826,24 @@ export async function POST(request) {
    * ignora: el primer período es un período entero desde que se entregó. */
   /* «MES COMPLETO» (Créditos pete, 10 nov 2026): con esa opción el abierto SÍ
    * lleva día de corte, sin prorrateo. El primer corte es el próximo día de corte
-   * y cobra el mes entero (`primerCorteMesCompleto`): así presta él. Solo mensual
-   * y con un día; sin la opción, este rechazo sigue igual para todos. */
+   * y cobra el mes entero (`primerCorteMesCompleto`): así presta él. Sin la
+   * opción, este rechazo sigue igual para todos.
+   *   · Mensual: un día; el primer corte se guarda en `primerCobro`.
+   *   · Quincenal: LOS DOS días («los 5 y los 20»). El calendario de quincena con
+   *     días del mes ya cae en el próximo de los dos aunque esté cerca, así que
+   *     no hace falta guardar nada más; con un solo día cortaría una vez al mes. */
   const mesCompletoDb = esAbierto && interesMesCompleto === true
-  const corteMesCompleto = mesCompletoDb && freq === 'mensual' && Number.isInteger(diaCobroMesDb) && !diaCobroMes2Db
-  const primerCorteAbierto = corteMesCompleto
+  const corteMensualMC = mesCompletoDb && freq === 'mensual' && Number.isInteger(diaCobroMesDb) && !diaCobroMes2Db
+  const corteQuincenalMC = mesCompletoDb && freq === 'quincenal' && Number.isInteger(diaCobroMesDb) && Number.isInteger(diaCobroMes2Db)
+  const corteMesCompleto = corteMensualMC || corteQuincenalMC
+  const primerCorteAbierto = corteMensualMC
     ? primerCorteMesCompleto(new Date(`${fechaInicio}T05:00:00.000Z`), diaCobroMesDb)
     : null
+  if (mesCompletoDb && freq === 'quincenal' && (Number.isInteger(diaCobroMesDb) !== Number.isInteger(diaCobroMes2Db))) {
+    return Response.json({
+      error: 'En quincenal pon los dos días de cobro (por ejemplo el 5 y el 20), o ninguno.',
+    }, { status: 400 })
+  }
   if (esAbierto && (diaCobroMes || diaCobroMes2) && !corteMesCompleto) {
     return Response.json({
       error: 'Un préstamo abierto todavía no admite día de corte fijo. Quita el día de corte o ponle un plazo.',
@@ -850,7 +861,7 @@ export async function POST(request) {
     // En el abierto «mes completo» el primer corte lo pone `primerCorteAbierto`:
     // pasarle el día a la cuenta general lo correría con su medio período mínimo.
     diaCobroMes: corteMesCompleto ? null : diaCobroMesDb,
-    diaCobroMes2: diaCobroMes2Db,
+    diaCobroMes2: corteMesCompleto ? null : diaCobroMes2Db,
     /* ⚠ El abierto no: cobra interés POR PERÍODO, y con períodos de 14 días serían
        26 intereses al año en vez de 24. Sigue con su quincena. */
     ...(primerCobroSemana && !esAbierto && { diaCobroSemana: diaCobroSemanaDb, primerCobro: primerCobroSemana }),
@@ -891,6 +902,8 @@ export async function POST(request) {
     ? fechaDePeriodo(1, {
         fechaInicio: new Date(`${fechaInicio}T05:00:00.000Z`),
         freq, diasPeriodo: calc.diasPeriodo,
+        // El quincenal «Mes completo» corta en sus dos días (ver arriba).
+        ...(corteQuincenalMC && { diaCobroMes: diaCobroMesDb, diaCobroMes2: diaCobroMes2Db }),
       })
     : fechaFinCalc
   const modoInteresFinal = calc.modoInteres  // 'manual' si hubo cuotaManual
@@ -912,6 +925,7 @@ export async function POST(request) {
    *     Lo que ha corrido se pregunta a `devengosPendientes`, que es la misma
    *     función que va a asentar esos períodos un momento después
    *     (`devengarAlCrear`), así que la guardia y el hecho no pueden discrepar. */
+  let abonoPagaElPeriodoEnCurso = false
   if (esAbierto && abono > 0 && tipoAbono !== 'completo') {
     const capital = Number(montoPrestado)
     if (tipoAbono === 'capital' && abono > capital) {
@@ -929,14 +943,30 @@ export async function POST(request) {
         primerCobro: primerCorteAbierto ?? calc.primerCobro ?? null,
         pagos: [], devengos: [], cuotasAmortizacion: [],
       })
-      const techo = corridos.reduce((a, d) => a + (Number(d.interes) || 0), 0)
+      const cerrado = corridos.reduce((a, d) => a + (Number(d.interes) || 0), 0)
+      /* ⚠ Y EL PERÍODO QUE CORRE, SI YA LO PAGÓ POR ADELANTADO (10 nov 2026).
+         «El 5 me abonó el total de los intereses, para dar la quincena del 20»
+         (Créditos pete). La hoja de pago ya lo acepta y asienta ese período;
+         al pasar el préstamo se rechazaba. Se admite UN período por delante,
+         entero, y se asienta después de crear (`asentarPeriodoPagadoAlCrear`). */
+      const enCurso = periodoEnCursoAbierto({
+        modoInteres: 'solo_interes', sinPlazo: true,
+        montoPrestado: capital, tasaInteres: Number(tasaInteres),
+        frecuencia: freq, fechaInicio,
+        diaCobroMes: diaCobroMesDb, diaCobroMes2: diaCobroMes2Db,
+        diaCobroSemana: diaCobroSemanaDb,
+        primerCobro: primerCorteAbierto ?? calc.primerCobro ?? null,
+        pagos: [], devengos: corridos.map((d) => ({ periodo: d.periodo, interes: d.interes })), cuotasAmortizacion: [],
+      })
+      const techo = cerrado + (enCurso?.interesPeriodo ?? 0)
       if (abono > techo) {
         return Response.json({
           error: techo > 0
-            ? `De interés solo han corrido $${Math.round(techo).toLocaleString('es-CO')} desde el ${fechaInicio}. Si le pagó más, parte fue a capital.`
+            ? `De interés solo cabe $${Math.round(techo).toLocaleString('es-CO')}: lo que ha corrido desde el ${fechaInicio}${enCurso ? ' más el período que va corriendo' : ''}. Si le pagó más, parte fue a capital.`
             : `Todavía no ha corrido ningún período de interés desde el ${fechaInicio}, así que ese abono no pudo ser de interés.`,
         }, { status: 400 })
       }
+      abonoPagaElPeriodoEnCurso = abono > cerrado
     }
   }
 
@@ -1219,6 +1249,10 @@ export async function POST(request) {
    * No revienta la creación si falla: el préstamo ya está guardado y el cron lo
    * recoge esa noche. Ver lib/dinero/devengar.js. */
   if (esAbierto && !esPendiente) await devengarAlCrear(prisma, prestamo.id)
+  // El abono previo ya pagó el período que corre: se asienta como en la hoja de pago.
+  if (esAbierto && !esPendiente && abonoPagaElPeriodoEnCurso) {
+    try { await asentarPeriodoPagadoAlCrear(prisma, prestamo.id) } catch (e) { console.error('[devengo] período pagado al crear ' + prestamo.id + ':', e?.message) }
+  }
 
   logActividad({ session, accion: esPendiente ? 'solicitar_prestamo' : 'crear_prestamo', entidadTipo: 'prestamo', entidadId: prestamo.id, detalle: `${esPendiente ? 'Solicitud de préstamo' : 'Préstamo'} $${Number(montoPrestado).toLocaleString('es-CO')} a ${cliente.nombre}${abono > 0 ? ` (en curso, abono previo $${abono.toLocaleString('es-CO')})` : ''}`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
   trackEvent({ organizationId, userId: session.user.id, evento: esPendiente ? 'solicitar_prestamo' : 'crear_prestamo', metadata: { monto: Number(montoPrestado) } })

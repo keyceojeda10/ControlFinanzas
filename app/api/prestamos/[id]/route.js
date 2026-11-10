@@ -809,7 +809,14 @@ export async function PATCH(request, { params }) {
         }, { status: 400 })
       }
       const pideDia = (body?.diaCobroMes != null && body.diaCobroMes !== '') || (body?.diaCobroMes2 != null && body.diaCobroMes2 !== '')
-      if (pideDia && !(p.interesMesCompleto === true && (p.frecuencia || 'diario') === 'mensual')) {
+      // Quincenal «Mes completo»: los dos días o ninguno, como al crearlo.
+      const dosDias = body?.diaCobroMes != null && body.diaCobroMes !== '' && body?.diaCobroMes2 != null && body.diaCobroMes2 !== ''
+      const admiteDia = p.interesMesCompleto === true
+        && ((p.frecuencia || 'diario') === 'mensual' || ((p.frecuencia || 'diario') === 'quincenal' && dosDias))
+      if (pideDia && p.interesMesCompleto === true && (p.frecuencia || 'diario') === 'quincenal' && !dosDias) {
+        return Response.json({ error: 'En quincenal pon los dos días de cobro (por ejemplo el 5 y el 20), o ninguno.' }, { status: 400 })
+      }
+      if (pideDia && !admiteDia) {
         return Response.json({
           error: 'Un préstamo abierto por días cobra cada mes desde el día en que se prestó. Para cobrar siempre el mismo día, el préstamo tiene que ser «Mes completo».',
         }, { status: 400 })
