@@ -3,7 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, calcularProximoCobro, calcularEstadoCliente, calcularLiquidacionAnticipada } from '@/lib/calculos'
+import { calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, calcularProximoCobro, calcularEstadoCliente, calcularLiquidacionAnticipada, conCierreDelNegocio } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
 import { geocodeAddress }   from '@/lib/geocoding'
@@ -93,7 +93,7 @@ export async function GET(request, { params }) {
     const [org, festivos] = await Promise.all([
       prisma.organization.findUnique({
         where: { id: session.user.organizationId },
-        select: { diasSinCobro: true },
+        select: { diasSinCobro: true, interesMesCompletoDefault: true },
       }),
       prisma.festivo.findMany({
         where: { organizationId: session.user.organizationId },
@@ -108,7 +108,7 @@ export async function GET(request, { params }) {
        el saldo pelado: nunca una cifra inventada. */
     const cierreHoyDe = (p, diasExcluidos, festivos) => {
       try {
-        const liq = calcularLiquidacionAnticipada(p, new Date(), diasExcluidos, festivos)
+        const liq = conCierreDelNegocio(calcularLiquidacionAnticipada(p, new Date(), diasExcluidos, festivos), !!org?.interesMesCompletoDefault)
         // `porDefecto`: el abierto «mes completo» cierra con el mes entero.
         const v = Math.round(liq?.porDefecto?.restanteHoy ?? liq?.proporcional?.restanteHoy ?? liq?.restanteHoy ?? 0)
         return Number.isFinite(v) && v > 0 ? v : Math.round(calcularSaldoPendiente(p))

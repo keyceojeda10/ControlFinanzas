@@ -2696,10 +2696,12 @@ function NuevoPrestamo() {
                           ? `Hasta hoy corrieron ${formatMoney(corrido)} de interés; los otros ${formatMoney(aCapital)} van a capital y te queda debiendo ${formatMoney(cap - aCapital)}.`
                           : `Todavía no ha cerrado ningún mes de interés, así que todo va a capital: te queda debiendo ${formatMoney(cap - aCapital)}.`,
                       capital: `Bajó lo que te debe a ${formatMoney(cap - ab)}. El mes pasa de ${formatMoney(mes)} a ${formatMoney(mesNuevo)}.`,
+                      /* ⚠ LO QUE ÉL DICE QUE FUE INTERÉS, SE GUARDA (11 nov 2026). Aquí
+                         se le prohibía pasar del calendario y tenía que mandar la
+                         diferencia a capital. Ahora el servidor lo apunta como interés
+                         ya cobrado (`NOTA_INTERES_YA_COBRADO`): se le cuenta, no se le frena. */
                       intereses: ab > corrido + delQueCorre
-                        ? (corrido + delQueCorre > 0
-                            ? `De interés caben ${formatMoney(corrido + delQueCorre)}: lo que corrió hasta hoy${delQueCorre > 0 ? ' más el período que va corriendo' : ''}. No se puede guardar más que eso como interés.`
-                            : 'Todavía no ha cerrado ningún período de interés, así que no se puede guardar como interés.')
+                        ? `Su calendario cuenta ${formatMoney(corrido + delQueCorre)} de interés hasta hoy; los otros ${formatMoney(ab - corrido - delQueCorre)} se guardan como interés que ya cobró. Te sigue debiendo ${formatMoney(cap)}.`
                         : ab > corrido
                           ? `Paga lo que corrió (${formatMoney(corrido)}) y deja pagado por adelantado el período que va corriendo (${formatMoney(delQueCorre)}). Te sigue debiendo ${formatMoney(cap)}.`
                           : `Solo te pagó la ganancia. Te sigue debiendo ${formatMoney(cap)} y el mes sigue en ${formatMoney(mes)}.`,
@@ -2708,11 +2710,10 @@ function NuevoPrestamo() {
                         : !fechaAbonoCapital && deCapital > 0
                         ? 'Pon la fecha en que le abonó el capital.'
                         : deInteres > corrido + delQueCorre
-                          ? `De interés caben ${formatMoney(corrido + delQueCorre)}: lo que corrió hasta hoy${delQueCorre > 0 ? ' más el período que va corriendo' : ''}.`
+                          ? `${formatMoney(deInteres)} de interés (su calendario cuenta ${formatMoney(corrido + delQueCorre)}; lo demás queda como interés que ya cobró) y ${formatMoney(deCapital)} a capital. Te queda debiendo ${formatMoney(cap - deCapital)}.`
                           : `${formatMoney(deInteres)} de interés y ${formatMoney(deCapital)} a capital. Te queda debiendo ${formatMoney(cap - deCapital)}.`,
                     }[tipoAbonoPrevio]
-                    const avisoRojo = (tipoAbonoPrevio === 'intereses' && ab > corrido + delQueCorre)
-                      || (tipoAbonoPrevio === 'separado' && (!(deInteres > 0) || (!fechaAbonoCapital && deCapital > 0) || deInteres > corrido + delQueCorre))
+                    const avisoRojo = tipoAbonoPrevio === 'separado' && (!(deInteres > 0) || (!fechaAbonoCapital && deCapital > 0))
                     return (
                       <div className="mt-3">
                         <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>¿A qué se abonó?</label>

@@ -6,7 +6,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { calcularLiquidacionAnticipada } from '@/lib/calculos'
+import { calcularLiquidacionAnticipada, conCierreDelNegocio } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 
 export async function GET(request, { params }) {
@@ -26,7 +26,7 @@ export async function GET(request, { params }) {
       devengos: { select: { periodo: true, interes: true } },
       cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
       cliente: { select: { rutaId: true, diasSinCobro: true, ruta: { select: { diasSinCobro: true } } } },
-      organization: { select: { diasSinCobro: true } },
+      organization: { select: { diasSinCobro: true, interesMesCompletoDefault: true } },
     },
   })
   // Un cobrador solo ve los préstamos de sus rutas, igual que la ficha
@@ -47,6 +47,9 @@ export async function GET(request, { params }) {
     ) || []
   } catch {}
 
-  const calc = calcularLiquidacionAnticipada(prestamo, new Date(), diasExcluidos, [])
+  const calc = conCierreDelNegocio(
+    calcularLiquidacionAnticipada(prestamo, new Date(), diasExcluidos, []),
+    !!prestamo.organization?.interesMesCompletoDefault,
+  )
   return Response.json(calc)
 }

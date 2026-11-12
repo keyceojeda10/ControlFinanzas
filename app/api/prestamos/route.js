@@ -28,7 +28,7 @@ import { logActividad } from '@/lib/activity-log'
 import { trackEvent } from '@/lib/analytics'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { devengarAlCrear, asentarPeriodoPagadoAlCrear } from '@/lib/dinero/devengar'
-import { TIPOS_ABONO_PREVIO, sePreguntaElTipo, NOTA_ABONO_PREVIO_MANUAL } from '@/lib/dinero/abono-previo'
+import { TIPOS_ABONO_PREVIO, sePreguntaElTipo, NOTA_ABONO_PREVIO_MANUAL, NOTA_INTERES_YA_COBRADO } from '@/lib/dinero/abono-previo'
 import { devengosPendientes, periodoEnCursoAbierto } from '@/lib/calculos'
 import { getLocalDateStr, inicioDelDiaLocal, getLocalDayRange } from '@/lib/i18n'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
@@ -944,6 +944,8 @@ export async function POST(request) {
    *     función que va a asentar esos períodos un momento después
    *     (`devengarAlCrear`), así que la guardia y el hecho no pueden discrepar. */
   let abonoPagaElPeriodoEnCurso = false
+  // Lo que puso como interés por encima del calendario: ver `NOTA_INTERES_YA_COBRADO`.
+  let interesYaCobrado = 0
   /* ⚠ PARTIDO, COMO EN LA TARJETA (10 nov 2026). «El 31 me pagó 15 mil de
      interés y 160 de capital» (Créditos pete). Un solo pago «Cuotas» dejaba al
      sistema adivinar el reparto —y adivinaba otro— y su capital no bajaba el
@@ -957,6 +959,21 @@ export async function POST(request) {
      (la normal y la que espera aprobación): partido, el interés con la fecha del
      préstamo y el capital con la suya; si no, un solo pago del tipo elegido. Las
      dos llevan la nota de abono previo, que es lo que lo marca como migrado. */
+  /* El recargo que sube la deuda en el interés de más (ver `interesYaCobrado`).
+     El mismo movimiento que un recargo de la hoja de pago: fila `recargo` y
+     `totalAPagar` arriba. Con fecha del préstamo: no es de ningún día de caja. */
+  const apuntarInteresYaCobrado = async (tx, prestamoId) => {
+    if (!(interesYaCobrado > 0)) return
+    await tx.pago.create({
+      data: {
+        prestamoId, organizationId, cobradorId: session.user.id,
+        montoPagado: interesYaCobrado, tipo: 'recargo',
+        fechaPago: new Date(`${fechaInicio}T05:00:00.000Z`),
+        nota: NOTA_INTERES_YA_COBRADO,
+      },
+    })
+    await tx.prestamo.update({ where: { id: prestamoId }, data: { totalAPagar: { increment: interesYaCobrado } } })
+  }
   const partesDelAbono = separado
     ? [
         { monto: abonoInteres, tipo: 'intereses', fecha: fechaInicio },
@@ -1021,14 +1038,14 @@ export async function POST(request) {
         pagos: pagosDelAbono, devengos: corridos.map((d) => ({ periodo: d.periodo, interes: d.interes })), cuotasAmortizacion: [],
       })
       const techo = cerrado + (enCurso?.interesPeriodo ?? 0)
-      if (abonoInteres > techo) {
-        return Response.json({
-          error: techo > 0
-            ? `De interés solo cabe $${Math.round(techo).toLocaleString('es-CO')}: lo que ha corrido desde el ${fechaInicio}${enCurso ? ' más el período que va corriendo' : ''}. Si le pagó más, parte fue a capital.`
-            : `Todavía no ha corrido ningún período de interés desde el ${fechaInicio}, así que ese abono no pudo ser de interés.`,
-        }, { status: 400 })
-      }
-      abonoPagaElPeriodoEnCurso = abonoInteres > cerrado
+      /* ⚠ ÉL DICE CUÁNTO FUE INTERÉS (11 nov 2026). Aquí se rechazaba lo que
+         pasara del calendario («De interés solo cabe…»), y el prestamista tenía
+         que mandar la diferencia a capital: el capital le quedaba más bajo que
+         en su tarjeta. «Que yo ponga mi vaina: tanto interés y tanto capital»
+         (Créditos pete). Lo de más se apunta como interés ya cobrado: sube la
+         deuda en lo mismo que la paga, y el capital queda como lo escribió. */
+      if (abonoInteres > techo) interesYaCobrado = Math.round(abonoInteres - techo)
+      abonoPagaElPeriodoEnCurso = (enCurso?.interesPeriodo ?? 0) > 0 && abonoInteres > cerrado
     }
   }
 
@@ -1225,6 +1242,7 @@ export async function POST(request) {
             },
           })
         }
+        await apuntarInteresYaCobrado(tx, nuevo.id)
         await refrescarTotalesPrestamo(tx, nuevo.id)
         await registrarMovimientoCapital(tx, {
           organizationId,
@@ -1275,6 +1293,7 @@ export async function POST(request) {
           },
         })
       }
+      await apuntarInteresYaCobrado(tx, nuevo.id)
       await refrescarTotalesPrestamo(tx, nuevo.id)
     }
 
