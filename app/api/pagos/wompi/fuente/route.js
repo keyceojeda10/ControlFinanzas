@@ -53,6 +53,11 @@ export async function GET() {
     ultimaSuscripcion(session.user.organizationId),
   ])
   const cobro = org ? resumenCobro(org, sub?.fechaVencimiento ?? null) : null
+  /* ⚠ EL RECHAZO SOLO SE ENSEÑA CUANDO YA VENCIÓ (13 nov 2026). Antes, el cron
+     sigue cobrando de noche, y un «no pudimos cobrar» en «Mi plan» solo lo
+     pone en guardia para quitar el medio. Vencido, el acceso ya está cerrado y
+     esta pantalla es por donde paga: ahí sí sirve con su botón. */
+  const vencio = Boolean(sub?.fechaVencimiento) && new Date(sub.fechaVencimiento) <= new Date()
   return NextResponse.json({
     configurado: wompiConfigurado(),
     publicKey:   wompiPublicKey(),
@@ -61,8 +66,8 @@ export async function GET() {
     esDueno:     session.user.rol === 'owner',
     fuente: org?.wompiFuenteRotulo
       ? { rotulo: org.wompiFuenteRotulo, tipo: org.wompiFuenteTipo,
-          activo: org.cobroAutomatico, fallos: org.cobroFallos,
-          rechazo: cobro.rechazo, pendiente: cobro.pendiente }
+          activo: org.cobroAutomatico, fallos: vencio ? org.cobroFallos : 0,
+          rechazo: vencio ? cobro.rechazo : null, pendiente: cobro.pendiente }
       : null,
   })
 }

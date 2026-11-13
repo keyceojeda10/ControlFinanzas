@@ -7,7 +7,7 @@ import { enviarEmail, emailAvisoVencimiento, emailSuscripcionVencida } from '@/l
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
 import { notificar } from '@/lib/notificar'
 import { registrarAdminLog } from '@/lib/admin-log'
-import { whereCobroSinRechazo, HORAS_DE_GRACIA } from '@/lib/cobro-automatico'
+import { whereCobroSinRechazo, whereReintentandoCobro, reintentandoCobro, HORAS_DE_GRACIA } from '@/lib/cobro-automatico'
 import { adicionalesAlCambiarA } from '@/lib/planes'
 
 const CRON_SECRET = process.env.CRON_SECRET
@@ -66,9 +66,10 @@ export async function POST(req) {
         estado: 'activa',
         fechaVencimiento: { gte: desde, lte: hasta },
         /* Con el Nequi o la tarjeta guardados no se avisa mientras la pasarela
-           lo intenta (lib/cobro-automatico.js). Con un rechazo apuntado entra
-           aquí como cualquiera. */
-        organization: { is: { NOT: whereCobroSinRechazo } },
+           lo intenta, AUNQUE LO HAYA RECHAZADO: el cron insiste de noche y el
+           aviso lo pone en guardia para quitar el medio (13 nov 2026,
+           lib/cobro-automatico.js). */
+        organization: { is: { NOT: whereReintentandoCobro(ahora) } },
         // No avisar a suscripciones recurrentes autorizadas — MP cobra automáticamente
         NOT: {
           AND: [
@@ -165,6 +166,10 @@ export async function POST(req) {
       where: { id: sub.id },
       data: { estado: 'vencida' },
     })
+
+    /* Se marca vencida, pero sin correo ni push mientras el cron le cobra:
+       al abrir la app ya ve la pantalla de vencida (13 nov 2026). */
+    if (reintentandoCobro(sub.organization, sub.fechaVencimiento, ahora)) continue
 
     const owner = sub.organization?.users?.[0]
     if (!owner) continue

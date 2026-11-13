@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import * as wa from '@/lib/bot/whatsapp-cloud'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
-import { whereCobroSinRechazo } from '@/lib/cobro-automatico'
+import { whereReintentandoCobro } from '@/lib/cobro-automatico'
 import { whereSinPruebaSiete } from '@/lib/seguimiento/prueba'
 
 const CRON_SECRET = process.env.CRON_SECRET
@@ -36,9 +36,10 @@ export async function POST(req) {
         activo: true,
         ...whereSinPruebaSiete, // los de 7 + 7: el motor de seguimiento
         waRecoverySent: false,
-        /* Con el cobro automático puesto no se le pide pagar: ver
-           lib/cobro-automatico.js. Con un rechazo apuntado vuelve a entrar. */
-        NOT: whereCobroSinRechazo,
+        /* Con el cobro automático puesto no se le pide pagar, y tampoco si
+           la pasarela lo rechazó: el cron sigue intentando de noche y avisar
+           lo pone en guardia (13 nov 2026, lib/cobro-automatico.js). */
+        NOT: whereReintentandoCobro(ahora),
         suscripciones: {
           every: {
             OR: [

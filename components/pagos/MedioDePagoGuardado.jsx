@@ -13,9 +13,11 @@
 // hay un medio guardado — porque entonces sí es información: con qué se va a
 // cobrar y cómo quitarlo.
 //
-// ⚠ CON UN COBRO RECHAZADO SÍ ES UN AVISO, Y CON BOTONES. Desde el 12 sep 2026
-// el rechazo cierra el acceso al vencer (ver `lib/cobro-automatico.js`). Quien
-// lo ve aquí todavía está a tiempo: recarga y reintenta, o cambia el medio.
+// ⚠ CON UN COBRO RECHAZADO Y EL PLAN YA VENCIDO SÍ ES UN AVISO, Y CON BOTONES.
+// El rechazo cierra el acceso al vencer (ver `lib/cobro-automatico.js`) y esta
+// pantalla es por donde se paga: recarga y reintenta, o cambia el medio. Antes
+// de vencer /api/pagos/wompi/fuente no manda el rechazo: el cron sigue cobrando
+// de noche y avisarlo solo lo pone en guardia (13 nov 2026).
 
 import { useEffect, useState } from 'react'
 import { useReintentarCobro } from '@/components/pagos/useReintentarCobro'
@@ -85,7 +87,7 @@ export default function MedioDePagoGuardado({ onCambiar } = {}) {
           No pudimos cobrar tu plan
         </p>
         <p className="text-[12px] mt-0.5" style={{ color: 'var(--cf-ink-2)' }}>
-          {f.rechazo.motivo} Si no se paga antes de que venza, se cierra el acceso.
+          {f.rechazo.motivo} Cuando haya saldo, toca «Reintentar el cobro».
         </p>
         {estado.esDueno && (
           <>

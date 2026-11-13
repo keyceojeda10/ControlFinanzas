@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import * as wa from '@/lib/bot/whatsapp-cloud'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
-import { whereCobroSinRechazo } from '@/lib/cobro-automatico'
+import { whereReintentandoCobro } from '@/lib/cobro-automatico'
 import { plantillaAprobada } from '@/lib/seguimiento/meta'
 import { fechaLarga } from '@/lib/seguimiento/motor'
 import { PLANES_CONFIG } from '@/lib/planes'
@@ -88,9 +88,10 @@ export async function POST(req) {
       where: {
         activo: true,
         ...puedeRecibir('waPreVencSentAt'),
-        /* Con el cobro automático puesto no se le pide pagar: ver
-           lib/cobro-automatico.js. Con un rechazo apuntado vuelve a entrar. */
-        NOT: whereCobroSinRechazo,
+        /* Con el cobro automático puesto no se le pide pagar, y tampoco si
+           la pasarela lo rechazó: el cron sigue intentando de noche y avisar
+           lo pone en guardia (13 nov 2026, lib/cobro-automatico.js). */
+        NOT: whereReintentandoCobro(ahora),
         users: { none: { email: { in: EMAILS_INTERNOS } } },
         suscripciones: {
           some: {
@@ -160,9 +161,10 @@ export async function POST(req) {
       where: {
         activo: true,
         ...puedeRecibir('waChurnSentAt'),
-        /* Con el cobro automático puesto no se le pide pagar: ver
-           lib/cobro-automatico.js. Con un rechazo apuntado vuelve a entrar. */
-        NOT: whereCobroSinRechazo,
+        /* Con el cobro automático puesto no se le pide pagar, y tampoco si
+           la pasarela lo rechazó: el cron sigue intentando de noche y avisar
+           lo pone en guardia (13 nov 2026, lib/cobro-automatico.js). */
+        NOT: whereReintentandoCobro(ahora),
         users: { none: { email: { in: EMAILS_INTERNOS } } },
         suscripciones: {
           some: {

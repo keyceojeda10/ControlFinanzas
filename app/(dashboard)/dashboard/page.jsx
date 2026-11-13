@@ -1229,16 +1229,14 @@ function BandaSuscripcion({ dias, cobro }) {
   if (dias === null || dias === undefined || dias > 30) return null
   /* Con el Nequi o la tarjeta guardados no hay nada que renovar: pedírselo es
      el «que debo pagar, que debo pagar» del 12 sep 2026. Se le dice a dónde se
-     cobra, sin rojo y sin botón de renovar. Con el cobro rechazado es al revés:
-     rojo siempre, porque al vencer se cierra el acceso. */
-  const automatico = cobro?.activo === true
-  const rechazado = Boolean(cobro?.rechazo)
-  const urgente = rechazado || (!automatico && dias <= 7)
+     cobra, sin rojo y sin botón de renovar. Y desde el 13 nov 2026 igual con
+     el cobro rechazado: el cron insiste de noche, y una banda roja de «no
+     pudimos cobrar» solo lo pone en guardia para quitar el medio. */
+  const automatico = cobro?.activo === true || cobro?.conFuente === true
+  const urgente = !automatico && dias <= 7
   const pct = Math.max(4, Math.round((Math.max(dias, 0) / 30) * 100))
 
-  const mensaje = rechazado
-    ? `No pudimos cobrar a ${cobro.rotulo || 'tu medio de pago'}. Al vencer se cierra el acceso.`
-    : automatico
+  const mensaje = automatico
     ? `Se cobra solo a ${cobro.rotulo || 'tu medio de pago'}`
     : urgente
       ? 'Renueva para seguir creciendo'
@@ -1279,7 +1277,7 @@ function BandaSuscripcion({ dias, cobro }) {
         <span className="text-[11px] font-semibold px-3 py-1.5 rounded-full shrink-0 transition-all"
           style={{ background: `color-mix(in srgb, ${accentColor} 12%, transparent)`, color: accentColor }}
         >
-          {rechazado ? 'Reintentar' : automatico ? 'Automático' : 'Renovar'}
+          {automatico ? 'Automático' : 'Renovar'}
         </span>
       </div>
     </a>

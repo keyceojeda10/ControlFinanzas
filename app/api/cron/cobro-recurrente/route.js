@@ -29,14 +29,21 @@
 //
 // **Un rechazo cierra.** Quien tenía el cobro puesto y la pasarela dijo que no
 // se queda sin acceso a la hora exacta del vencimiento, como quien paga a mano.
-// Se sigue intentando hasta `MAX_FALLOS`, con la pantalla de vencida delante y
-// su botón de «Reintentar».
+//
+// ══ Y DESDE EL 13 NOV 2026: LOS REINTENTOS, DE NOCHE Y HASTA 15 DÍAS ═══════
+//
+// Dos pasadas (`quePasaEnLaPasada`, lib/cobro-automatico.js):
+//   · sin parámetro, a las 08:00 de Colombia (13:00 UTC): el cobro normal, como
+//     siempre. Un periodo que ya tiene rechazo no lo toca.
+//   · `?pasada=noche`, a las 22:00 (03:00 UTC): solo los reintentos, la misma
+//     noche del rechazo y luego las del calendario, hasta 15 días. De noche
+//     hay plata en el Nequi, y no es una hora «visual»: no se avisa a nadie.
 
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { wompiConfigurado } from '@/lib/wompi'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
-import { MAX_FALLOS, HORAS_DE_ANTICIPO, HORAS_DE_REINTENTO, rechazoVigente } from '@/lib/cobro-automatico'
+import { MAX_FALLOS, HORAS_DE_ANTICIPO, HORAS_DE_REINTENTO, rechazoVigente, quePasaEnLaPasada } from '@/lib/cobro-automatico'
 import { lanzarCobro, reconciliar } from '@/lib/cobro-intento'
 import { montoDelCobro, selectPrecio, selectPago } from '@/lib/precio-plan'
 
@@ -47,14 +54,14 @@ const CRON_SECRET = process.env.CRON_SECRET
    tarjeta de verdad: un cron que cobra no se estrena a ciegas. */
 const ENCENDIDO = process.env.COBRO_RECURRENTE_ACTIVO === '1'
 
-/* Tres rechazos y se para (`MAX_FALLOS`, en lib/cobro-automatico.js). Para
-   entonces el cliente ya está delante de la pantalla de vencida, y seguir
-   intentando contra un Nequi sin saldo solo suma rechazos, que ensucian la
-   reputación del comercio. Él puede reintentar desde ahí cuando recargue. */
+/* El tope de rechazos es `MAX_FALLOS` y las noches las elige `tocaIntentar`
+   (lib/cobro-automatico.js): espaciadas, porque un Nequi sin saldo rechazado
+   todos los días ensucia la reputación del comercio. */
 
-/* Un intento al día como mucho. Sin esto, dos ejecuciones del cron en el mismo
-   día cobrarían dos veces. */
-const HORAS_ENTRE_INTENTOS = 20
+/* Un intento por pasada como mucho. Sin esto, dos ejecuciones de la misma
+   pasada cobrarían dos veces. Son 12 h y no 20 desde el 13 nov 2026: el
+   reintento de las 22:00 sale 14 h después del cobro de las 08:00. */
+const HORAS_ENTRE_INTENTOS = 12
 
 export async function POST(req) {
   const secret = req.headers.get('x-cron-secret')
@@ -71,11 +78,13 @@ export async function POST(req) {
     return NextResponse.json({ error: 'Wompi no configurado' }, { status: 500 })
   }
 
+  /* Sin parámetro, la de la mañana: es la línea del crontab de siempre. */
+  const pasada = new URL(req.url).searchParams.get('pasada') === 'noche' ? 'noche' : 'manana'
   const ahora = new Date()
   const desdeIntento = new Date(ahora.getTime() - HORAS_ENTRE_INTENTOS * 3600000)
   const hastaVence = new Date(ahora.getTime() + HORAS_DE_ANTICIPO * 3600000)
   const desdeVence = new Date(ahora.getTime() - HORAS_DE_REINTENTO * 3600000)
-  const res = { candidatos: 0, cobrados: 0, rechazados: 0, errores: 0, saltados: 0, enCurso: 0, agotados: 0 }
+  const res = { pasada, candidatos: 0, cobrados: 0, rechazados: 0, errores: 0, saltados: 0, enCurso: 0, agotados: 0, hoyNo: 0, otraPasada: 0 }
 
   try {
     const orgs = await prisma.organization.findMany({
@@ -149,7 +158,12 @@ export async function POST(req) {
       }
 
       const vigente = rechazoVigente(org, sub.fechaVencimiento)
-      if (vigente && org.cobroFallos >= MAX_FALLOS) { res.agotados++; continue }
+      /* La mañana cobra lo normal; la noche, solo los reintentos y en las
+         noches del calendario. El tope de `MAX_FALLOS` va ahí dentro. */
+      const toca = quePasaEnLaPasada({ pasada, vigente, fallos: org.cobroFallos, vence, ahora })
+      if (toca === 'agotado') { res.agotados++; continue }
+      if (toca === 'hoy-no') { res.hoyNo++; continue }
+      if (toca !== 'cobrar') { res.otraPasada++; continue }
       res.candidatos++
 
       /* ⚠ UN MES, AL PRECIO DE ESE MES. Hasta el 12 sep 2026 aquí iba
