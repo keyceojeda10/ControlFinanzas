@@ -870,6 +870,23 @@ export async function POST(request) {
      sobre el capital al empezar el mes, en dos mitades (`capitalAlEmpezarElPeriodo`).
      La cuenta general no lo usa en el abierto: no tiene tabla. */
   const interesPorMesDb = interesPorMes === true && freq === 'quincenal' && (modoValido === 'lineal' || esAbierto)
+  /* EL PRIMER COBRO EN QUINCENAL POR DÍAS DEL MES (13 nov 2026). «Hoy es 13
+     de noviembre […] su primer cuota queda para el 30» y con días 15 y 30 el
+     calendario caía el 15, a dos días. El formulario deja elegir entre el
+     primer corte y el siguiente; aquí se valida contra el mismo calendario
+     (`fechaDePeriodo`). El primero es el de siempre: no se guarda nada. */
+  let primerCobroQuincenaMes = null
+  if (diaPedido && freq === 'quincenal' && !esAbierto && !mesCompletoDb && diaCobroSemanaDb == null
+      && Number.isInteger(diaCobroMesDb) && Number.isInteger(diaCobroMes2Db) && fechaInicio) {
+    const args = { fechaInicio: new Date(`${fechaInicio}T05:00:00.000Z`), freq, diasPeriodo: 15, diaCobroMes: diaCobroMesDb, diaCobroMes2: diaCobroMes2Db }
+    const [c1, c2] = [1, 2].map((n) => fechaDePeriodo(n, args))
+    const iso = (f) => f.toISOString().slice(0, 10)
+    if (diaPedido === iso(c2)) primerCobroQuincenaMes = c2
+    else if (diaPedido !== iso(c1)) {
+      return Response.json({ error: `El primer cobro tiene que ser el ${iso(c1)} o el ${iso(c2)}.` }, { status: 400 })
+    }
+  }
+
   const calc = calcularPrestamo({
     ...(esAbierto && { sinPlazo: true }),
     montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia: freq, modoInteres: modoValido,
@@ -883,6 +900,7 @@ export async function POST(request) {
     /* ⚠ El abierto no: cobra interés POR PERÍODO, y con períodos de 14 días serían
        26 intereses al año en vez de 24. Sigue con su quincena. */
     ...(primerCobroSemana && !esAbierto && { diaCobroSemana: diaCobroSemanaDb, primerCobro: primerCobroSemana }),
+    ...(primerCobroQuincenaMes && { primerCobro: primerCobroQuincenaMes }),
     interesPorMes: interesPorMesDb && !esAbierto,
   })
   // Sobre saldo con una cuota que no cubre ni el interes del primer periodo: el

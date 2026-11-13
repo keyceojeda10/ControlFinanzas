@@ -337,6 +337,8 @@ function NuevoPrestamo() {
   const [modoDiaCobro, setModoDiaCobro]     = useState('semana') // 'semana' | 'mes'
   // Quincenal con día de la semana: el primer cobro que eligió ('' = el de siempre).
   const [primerCobroSemana, setPrimerCobroSemana] = useState('')
+  /* Quincenal por días del mes: '' = el primer corte del calendario; si no, el ISO del siguiente. */
+  const [primerCobroQuincenaMes, setPrimerCobroQuincenaMes] = useState('')
   // Dias totales derivados de plazoUnidades × diasPorPeriodo
   const plazo = String((Number(plazoUnidades) || 0) * (DIAS_POR_PERIODO[frecuencia] || 1))
   const [fechaInicio,  setFechaInicio]  = useState(hoyISO())
@@ -863,6 +865,34 @@ function NuevoPrestamo() {
    *
    * Las fechas se leen en UTC porque asi se guardan (T05:00Z = medianoche en
    * Bogota); con la zona del navegador un cobro del dia 1 se lee dia 31. */
+  /* EL PRIMER COBRO EN QUINCENAL POR DÍAS DEL MES (13 nov 2026). «Hoy es 13 de
+   * noviembre […] su primer cuota queda para el 30 de noviembre» y el sistema
+   * se lo ponía el 15, a dos días. Se le dan a elegir los dos primeros cortes
+   * del calendario: el que viene, o saltárselo. Salen de `fechaDePeriodo` y el
+   * servidor valida la elegida contra lo mismo. El abierto «Mes completo»
+   * tiene su propio selector, y el día de la semana el suyo. */
+  const cortesQuincenaMes = useMemo(() => {
+    if (frecuencia !== 'quincenal' || modoDiaCobro !== 'mes' || esAbierto) return null
+    const d1 = Number(diaCobroMes), d2 = Number(diaCobroMes2)
+    if (diaCobroMes === '' || diaCobroMes2 === '' || !Number.isInteger(d1) || !Number.isInteger(d2)) return null
+    const inicio = new Date(`${fechaInicio}T05:00:00.000Z`)
+    if (Number.isNaN(inicio.getTime())) return null
+    const args = { fechaInicio: inicio, freq: 'quincenal', diasPeriodo: 15, diaCobroMes: Math.min(d1, d2), diaCobroMes2: Math.max(d1, d2) }
+    try {
+      const opciones = [1, 2].map((n) => {
+        const f = fechaDePeriodo(n, args)
+        const dias = Math.round((f - inicio) / 86400000)
+        return {
+          iso: f.toISOString().slice(0, 10),
+          corto: f.toLocaleDateString('es-CO', { timeZone: 'UTC', day: 'numeric', month: 'short' }),
+          falta: dias === 1 ? 'mañana' : `en ${dias} días`,
+        }
+      })
+      const saltado = primerCobroQuincenaMes === opciones[1].iso
+      return { opciones, saltado, elegido: saltado ? opciones[1].iso : opciones[0].iso }
+    } catch { return null }
+  }, [frecuencia, modoDiaCobro, esAbierto, diaCobroMes, diaCobroMes2, fechaInicio, primerCobroQuincenaMes])
+
   const dosPrimerosCobros = useMemo(() => {
     if (frecuencia !== 'quincenal' || modoDiaCobro !== 'mes') return null
     /* ⚠ VALE CUALQUIERA DE LOS DOS CAMPOS. Antes se exigía el primero, así que
@@ -884,13 +914,14 @@ function NuevoPrestamo() {
     const args = {
       fechaInicio: inicio, freq: 'quincenal', diasPeriodo: 15,
       ...(esAbierto && interesMesCompleto && primerCobroElegidoAb && { primerCobro: new Date(`${primerCobroElegidoAb}T05:00:00.000Z`) }),
+      ...(cortesQuincenaMes?.saltado && { primerCobro: new Date(`${cortesQuincenaMes.elegido}T05:00:00.000Z`) }),
       diaCobroMes: d1,
       ...(Number.isInteger(d2) && d2 >= 1 && d2 <= 31 ? { diaCobroMes2: d2 } : {}),
     }
     try {
       return [escribir(fechaDePeriodo(1, args)), escribir(fechaDePeriodo(2, args))]
     } catch { return null }
-  }, [frecuencia, modoDiaCobro, diaCobroMes, diaCobroMes2, fechaInicio, esAbierto, interesMesCompleto, primerCobroElegidoAb])
+  }, [frecuencia, modoDiaCobro, diaCobroMes, diaCobroMes2, fechaInicio, esAbierto, interesMesCompleto, primerCobroElegidoAb, cortesQuincenaMes])
 
   /* UN SÁBADO SÍ Y OTRO NO (6 nov 2026): «a los albañiles les pagan un sábado sí y
    * un sábado no». Quincenal con día de la semana son 14 días exactos desde el
@@ -964,8 +995,10 @@ function NuevoPrestamo() {
          era el que había revisado. */
       ...((frecuencia === 'mensual' || (frecuencia === 'quincenal' && modoDiaCobro === 'mes')) && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
       ...(frecuencia === 'quincenal' && modoDiaCobro === 'mes' && diaCobroMes2 !== '' && { diaCobroMes2: Number(diaCobroMes2) }),
+      /* La misma fecha que se manda al guardar: la tabla que revisa es la que nace. */
+      ...(cortesQuincenaMes?.saltado && { primerCobro: new Date(`${cortesQuincenaMes.elegido}T05:00:00.000Z`) }),
     })
-  }, [monto, plazo, fechaInicio, frecuencia, modo, modoInteres, interesPorMesActivo, cuotaManualActiva, cuotaManual, precioVenta, numCuotas, interesAdelantado, esAbierto, capitalExtra, modoDiaCobro, diaCobroMes, diaCobroMes2])
+  }, [monto, plazo, fechaInicio, frecuencia, modo, modoInteres, interesPorMesActivo, cuotaManualActiva, cuotaManual, precioVenta, numCuotas, interesAdelantado, esAbierto, capitalExtra, modoDiaCobro, diaCobroMes, diaCobroMes2, cortesQuincenaMes])
 
   const calculo = useMemo(() => {
     if (!Number(monto) || (tasa === '' || tasa == null) || !Number(plazo) || !fechaInicio) return lastValidCalculo.current
@@ -1018,6 +1051,7 @@ function NuevoPrestamo() {
     ...(cobroSemanaPorMedio && { primerCobro: cobroSemanaPorMedio.elegido }),
     ...((frecuencia === 'mensual' || (frecuencia === 'quincenal' && modoDiaCobro === 'mes')) && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
     ...(frecuencia === 'quincenal' && modoDiaCobro === 'mes' && diaCobroMes2 !== '' && { diaCobroMes2: Number(diaCobroMes2) }),
+    ...(cortesQuincenaMes?.saltado && { primerCobro: cortesQuincenaMes.elegido }),
     ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
     ...(esEnCurso && Number(yaAbonado) > 0 && esAbierto && { tipoAbonoPrevio }),
     ...(esEnCurso && Number(yaAbonado) > 0 && esAbierto && tipoAbonoPrevio === 'separado' && {
@@ -1985,10 +2019,10 @@ function NuevoPrestamo() {
                       <div className="grid grid-cols-2 gap-3">
                       <Input type="number" inputMode="numeric" value={diaCobroMes}
                         onChange={(e) => { const v = e.target.value; if (v === '' || (Number(v) >= 1 && Number(v) <= 31)) setDiaCobroMes(v) }}
-                        label="Primer cobro" placeholder="Ej: 5" min={1} max={31} />
+                        label="Cobra el día" placeholder="Ej: 15" min={1} max={31} />
                       <Input type="number" inputMode="numeric" value={diaCobroMes2}
                         onChange={(e) => { const v = e.target.value; if (v === '' || (Number(v) >= 1 && Number(v) <= 31)) setDiaCobroMes2(v) }}
-                        label="Segundo cobro" placeholder="Ej: 20" min={1} max={31} />
+                        label="Y el día" placeholder="Ej: 30" min={1} max={31} />
                       </div>
                       {/* ── LOS DOS PRIMEROS COBROS, ESCRITOS ─────────────────
                           «Escogía el día, el primer día, escogía el segundo día
@@ -2017,6 +2051,26 @@ function NuevoPrestamo() {
                           <p className="text-[10px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
                             Cuenta desde el día que entregas. Si el mes no tiene ese día, se cobra el último.
                           </p>
+                          {/* «Hoy es 13 […] su primer cuota queda para el 30»: el
+                              primer corte puede estar a dos días. Lo elige él. */}
+                          {cortesQuincenaMes && (
+                            <>
+                              <p className="text-[11px] font-semibold mt-2.5" style={{ color: 'var(--cf-ink-2)' }}>
+                                ¿Cuál es el primer cobro?
+                              </p>
+                              <div className="grid grid-cols-2 gap-1 mt-1.5">
+                                {cortesQuincenaMes.opciones.map((o, i) => (
+                                  <button key={o.iso} type="button"
+                                    onClick={() => setPrimerCobroQuincenaMes(i === 0 ? '' : o.iso)}
+                                    className="h-11 rounded-[10px] border text-[12px] font-semibold transition-all leading-tight"
+                                    style={estiloOpcionMenor(cortesQuincenaMes.elegido === o.iso)}>
+                                    {o.corto}
+                                    <span className="block text-[10px] font-medium opacity-70">{o.falta}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </>
+                          )}
                         </div>
                       )}
                       {/* EL ABIERTO QUINCENAL CON DÍAS: solo con «Mes completo» y con
