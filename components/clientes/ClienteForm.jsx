@@ -785,7 +785,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                 <MoneyInput
                   value={form.montoMaximoPrestamo}
                   onChange={(e) => setForm({ ...form, montoMaximoPrestamo: e.target.value })}
-                  placeholder="Sin limite"
+                  placeholder="Sin límite"
                 />
               </div>
             )}

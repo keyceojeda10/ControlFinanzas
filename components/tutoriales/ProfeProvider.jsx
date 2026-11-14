@@ -58,6 +58,19 @@ export default function ProfeProvider({ rol, usuario, children }) {
   const rolConVideos = Boolean(rol) && rol !== 'superadmin'
   const [estado, setEstado] = useState(INICIAL)
   const [abierto, setAbierto] = useState(null)
+  /* ══ SILENCIO MIENTRAS SE CREA LA CUENTA (14 nov 2026) ═══════════════════
+   * El asistente de la cuenta nueva se pinta dentro de /dashboard y heredaba
+   * su pastilla: «▶ 3 · 3 videos por ver · El profe te explica esta pantalla»
+   * (Tu Inicio, Cómo moverte, Instalar) encima de «¿Quién cobra?». El dueño:
+   * «salen videos tutoriales que molestan a la vista, que no son para una
+   * persona que está creando por primera vez una cuenta». Una pantalla de
+   * tarea pide silencio con `useSilencioProfe()`; es un contador para que dos
+   * a la vez no se pisen. */
+  const [silencio, setSilencio] = useState(0)
+  const silenciar = useCallback(() => {
+    setSilencio((n) => n + 1)
+    return () => setSilencio((n) => Math.max(0, n - 1))
+  }, [])
   const [ayudaAbierta, setAyudaAbierta] = useState(false)
   // La pestaña de la pantalla abierta (la Caja tiene un video por pestaña).
   const [pestana, setPestana] = useState(null)
@@ -183,9 +196,12 @@ export default function ProfeProvider({ rol, usuario, children }) {
   const valor = useMemo(() => ({
     activo, cargado: estado.cargado, visibles, vistos, guardados, ayuda,
     botonVisible: estado.botonVisible, paraCobradores: estado.paraCobradores,
+    // Con silencio pedido no se pinta la pastilla de arriba ni su aviso. Los
+    // enlaces chicos dentro de una tarjeta («¿Cómo se hace? 1:58») sí quedan.
+    silencio: silencio > 0, silenciar,
     mostrarAvisos: estado.mostrarAvisos, descartados: estado.descartados,
     abrir, abrirAyuda, marcarGuardado, cambiarPreferencia, descartarAviso, volverAMostrarAvisos, avisoDe, setPestana,
-  }), [activo, estado.cargado, visibles, vistos, guardados, ayuda, estado.botonVisible, estado.paraCobradores,
+  }), [activo, estado.cargado, visibles, vistos, guardados, ayuda, estado.botonVisible, silencio, silenciar, estado.paraCobradores,
     estado.mostrarAvisos, estado.descartados, abrir, abrirAyuda, marcarGuardado, cambiarPreferencia, descartarAviso,
     volverAMostrarAvisos, avisoDe])
 
@@ -225,6 +241,12 @@ export default function ProfeProvider({ rol, usuario, children }) {
 /** El contexto, o null fuera del proveedor (nada del profe se pinta). */
 export function useProfe() {
   return useContext(Contexto)
+}
+
+/** Mientras la pantalla esté montada, sin pastilla ni avisos del profe. */
+export function useSilencioProfe() {
+  const silenciar = useContext(Contexto)?.silenciar
+  useEffect(() => (silenciar ? silenciar() : undefined), [silenciar])
 }
 
 /** La pantalla dice en qué pestaña está, para que la pastilla abra su video. */

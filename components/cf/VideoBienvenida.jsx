@@ -267,4 +267,40 @@ export function AvisoLeccion({ leccion, origen, completa = false }) {
   )
 }
 
+/** «Mira la clase de 2 minutos»: la ÚNICA ayuda de video en el arranque de una
+ *  cuenta nueva (14 nov 2026). El dueño: «el video que realmente importa
+ *  pusimos a que no se le abriera en la cara […] pero sí hay que señalarlo de
+ *  alguna manera, si sea unos segundos […] pero no abrírselo arbitrariamente».
+ *  Al aparecer se ilumina tres veces (~5 s) y luego se queda quieto y discreto.
+ *  Sin movimiento si el teléfono lo pide (`prefers-reduced-motion`). */
+export function AvisoClase({ origen }) {
+  const [abierta, setAbierta] = useState(false)
+  return (
+    <>
+      <button type="button" onClick={() => setAbierta(true)} className="cf-aviso-clase" style={{
+        display: 'inline-flex', alignItems: 'center', gap: 8, height: 36, padding: '0 14px 0 8px',
+        borderRadius: 999, border: '1px solid var(--cf-gold-border)', background: 'var(--cf-gold-tint)',
+        cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 700, color: 'var(--cf-ink)', whiteSpace: 'nowrap',
+      }}>
+        <span aria-hidden style={{
+          width: 22, height: 22, borderRadius: 999, background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none',
+        }}>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z" /></svg>
+        </span>
+        Mira la clase de 2 minutos
+      </button>
+      <style>{`
+        @keyframes cfAvisoClase {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(231,164,0,0); }
+          50% { box-shadow: 0 0 0 7px rgba(231,164,0,.22); }
+        }
+        .cf-aviso-clase { animation: cfAvisoClase 1.6s ease-in-out 0.6s 3; }
+        @media (prefers-reduced-motion: reduce) { .cf-aviso-clase { animation: none; } }
+      `}</style>
+      {abierta && <VideoBienvenida origen={origen} onCerrar={() => setAbierta(false)} />}
+    </>
+  )
+}
+
 export default VideoBienvenida

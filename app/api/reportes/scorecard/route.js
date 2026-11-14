@@ -6,7 +6,6 @@ import { prisma }           from '@/lib/prisma'
 import { calcularDiasMora } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
-import { exigeNivelReportes } from '@/lib/plan-servidor'
 import { esperadoDelDia, selectPrestamoDelDia } from '@/lib/dinero/esperado'
 import { SIN_ABONO_PREVIO } from '@/lib/dinero/abono-previo'
 
@@ -67,8 +66,12 @@ export async function GET(req) {
      * La pantalla que llama aqui enseña <PlanGate/> al ver `motivo: 'plan'`.
      * Sin eso decia «revisa tu conexion», que le echa la culpa al internet
      * del cliente por algo que es de su plan. */
-    const veto = await exigeNivelReportes(session, 1)
-    if (veto) return veto
+    /* ⚠ ABIERTO A PROPÓSITO, SIN BARRERA DE PLAN (14 nov 2026). El 8 ago 2026 («Los
+     * reportes ya no se regalan», 8fa1d526) se le puso candado a esto, que hasta
+     * entonces estaba abierto para todos —prueba e Inicial incluidos—. Esa misma
+     * semana la conversión de registro a pago cayó de 13 % a 3 %. El dueño decidió
+     * volver EXACTAMENTE al punto de antes y medirlo 6 semanas: abierto para todos,
+     * sin quitarle nada a quien paga. Ver memoria `quiebre_conversion_1ago`. */
 
 
     const orgId = session.user.organizationId

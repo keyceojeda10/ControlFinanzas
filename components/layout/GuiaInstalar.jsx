@@ -153,7 +153,9 @@ export default function GuiaInstalar({ camino, onCerrar }) {
           <button type="button" onClick={onCerrar} aria-label="Cerrar" style={{ width: 36, height: 36, border: 0, background: 'none', cursor: 'pointer', color: '#4A4E57', fontSize: 22, lineHeight: 1 }}>×</button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ width: 52, height: 52, borderRadius: 14, background: '#F3F3EF', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none', color: '#15161A' }}>{p.icono}</span>
+          {/* minWidth y no width: el paso de «Agregar» es una PALABRA, no un ícono, y a
+              52 px fijos se salía de la cajita (lo vio el agente de los videos, 13 nov). */}
+          <span style={{ minWidth: 52, height: 52, padding: '0 8px', borderRadius: 14, background: '#F3F3EF', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none', color: '#15161A' }}>{p.icono}</span>
           <span style={{ fontSize: 19, fontWeight: 700, lineHeight: 1.25 }}>{p.titulo}</span>
         </div>
         <p style={{ margin: 0, fontSize: 15, lineHeight: 1.5, color: '#4A4E57' }}>{p.texto}</p>

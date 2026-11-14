@@ -99,7 +99,8 @@ export function PastillaProfe({ lateral = false }) {
   const profe = useProfe()
   const [llamando, setLlamando] = useState(false)
   const todos = profe?.ayuda?.todos ?? []
-  const activa = usaBotones(profe) && todos.length > 0
+  // `silencio`: una pantalla de tarea (el asistente de la cuenta nueva) la pidió.
+  const activa = usaBotones(profe) && !profe?.silencio && todos.length > 0
   const porVer = activa ? todos.filter((v) => !profe.vistos.has(v.id)).length : 0
   const clave = todos.map((v) => v.id).join(',')
   const cargado = Boolean(profe?.cargado)

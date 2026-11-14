@@ -7,7 +7,6 @@ import { repartoSql, capitalEnCalle as capitalEnCalleDe, capitalDelPrestamo } fr
 import { correccionDelReparto } from '@/lib/dinero/interes-cobrado'
 import { abrirDocumento, respuestaPdf, F } from '@/lib/papel/documento'
 import { COLOR, TIPO } from '@/lib/papel/tokens'
-import { exigeNivelReportes } from '@/lib/plan-servidor'
 import { rotulo } from '@/lib/dinero/definiciones'
 import { parsearDiasSinCobro, obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { cuotaDelPeriodo, tocaCobrarEn } from '@/lib/dinero/esperado'
@@ -43,8 +42,12 @@ export async function GET() {
    * La pantalla que llama aqui enseña <PlanGate/> al ver `motivo: 'plan'`.
    * Sin eso decia «revisa tu conexion», que le echa la culpa al internet
    * del cliente por algo que es de su plan. */
-  const veto = await exigeNivelReportes(session, 1)
-  if (veto) return veto
+  /* ⚠ ABIERTO A PROPÓSITO, SIN BARRERA DE PLAN (14 nov 2026). El 8 ago 2026 («Los
+   * reportes ya no se regalan», 8fa1d526) se le puso candado a esto, que hasta
+   * entonces estaba abierto para todos —prueba e Inicial incluidos—. Esa misma
+   * semana la conversión de registro a pago cayó de 13 % a 3 %. El dueño decidió
+   * volver EXACTAMENTE al punto de antes y medirlo 6 semanas: abierto para todos,
+   * sin quitarle nada a quien paga. Ver memoria `quiebre_conversion_1ago`. */
 
 
   const country = session.user.country ?? 'co'

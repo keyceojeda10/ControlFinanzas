@@ -13,7 +13,7 @@ import WizardCapital from '@/components/onboarding/wizard/WizardCapital'
 import WizardMetodoCarga from '@/components/onboarding/wizard/WizardMetodoCarga'
 import WizardProgress from '@/components/onboarding/wizard/WizardProgress'
 import WizardExito from '@/components/onboarding/wizard/WizardExito'
-import WizardPlan from '@/components/onboarding/wizard/WizardPlan'
+import WizardElegirPlan from '@/components/onboarding/wizard/WizardElegirPlan'
 
 function Paso({ n, titulo, children }) {
   return (
@@ -47,14 +47,14 @@ export default function PreviaOnboarding() {
         <Paso n={1} titulo="01 · Perfil">
           <WizardWelcome nombre="Carlos Andrés Ojeda" onSelect={() => {}} onMinimize={() => {}} />
         </Paso>
+        <Paso n={1} titulo="01 · Elige tu plan">
+          <WizardElegirPlan perfil="solo" onElegido={() => {}} onVolver={() => {}} onPagar={() => {}} />
+        </Paso>
+        <Paso n={1} titulo="01 · Elige tu plan · CON COBRADORES">
+          <WizardElegirPlan perfil="equipo" onElegido={() => {}} onVolver={() => {}} onPagar={() => {}} />
+        </Paso>
         <Paso n={2} titulo="02 · Capital">
           <WizardCapital onComplete={() => {}} alreadyDone savedMonto={3000000} />
-        </Paso>
-        <Paso n={3} titulo="02 · Elegir plan (invertido)">
-          <WizardPlan perfil="solo" hasta="12 de agosto" onCargar={() => {}} onPagar={() => {}} />
-        </Paso>
-        <Paso n={3} titulo="02 · Elegir plan · CON COBRADORES">
-          <WizardPlan perfil="equipo" hasta="12 de agosto" onCargar={() => {}} onPagar={() => {}} />
         </Paso>
         <Paso n={3} titulo="03 · Método de carga">
           <WizardMetodoCarga onElegir={() => {}} onSaltar={() => {}} />

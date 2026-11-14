@@ -1706,7 +1706,7 @@ function TopePrestamoCard({ tope, onSave }) {
               inputMode="numeric"
               value={displayValor}
               onChange={handleChange}
-              placeholder="Sin limite"
+              placeholder="Sin límite"
               autoFocus
               className="w-full h-9 rounded-[12px] border text-sm pl-9 pr-3 bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.08)] text-[var(--cf-ink)] placeholder-[var(--cf-ink-3)] focus:outline-none focus:border-[var(--cf-gold)] focus:ring-1 focus:ring-[rgba(245,197,24,0.2)] transition-all"
             />
@@ -1754,7 +1754,7 @@ function TopePrestamoCard({ tope, onSave }) {
       <div className="flex-1 min-w-0">
         <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-3)' }}>Tope de préstamo</p>
         <p className="text-sm font-semibold font-mono-display mt-0.5" style={{ color: tope > 0 ? 'var(--cf-gold-dark)' : 'var(--cf-ink-3)' }}>
-          {tope > 0 ? `$${formatDisplay(tope)}` : 'Sin limite'}
+          {tope > 0 ? `$${formatDisplay(tope)}` : 'Sin límite'}
         </p>
       </div>
       {editable && (

@@ -10,13 +10,13 @@ import { ListoParaCobrar } from '@/components/pantallas/Onboarding'
 import { formatMoney } from '@/lib/i18n'
 import WizardMetodoCarga from './wizard/WizardMetodoCarga'
 import WizardExcel from './wizard/WizardExcel'
-import WizardPlan from './wizard/WizardPlan'
-import { DIAS_PRUEBA_BASE } from '@/lib/planes'
+import WizardElegirPlan from './wizard/WizardElegirPlan'
 import WizardExito      from './wizard/WizardExito'
 import WizardAyuda      from './wizard/WizardAyuda'
 import { useCabecera } from '@/components/armazon/Armazon'
-import { VideoBienvenida, AvisoLeccion } from '@/components/cf/VideoBienvenida'
-import { debeAbrirseSola, leccionDelPaso } from '@/lib/video-bienvenida'
+import { VideoBienvenida, AvisoClase } from '@/components/cf/VideoBienvenida'
+import { useSilencioProfe } from '@/components/tutoriales/ProfeProvider'
+import { debeAbrirseSola } from '@/lib/video-bienvenida'
 import { PLANES_CONFIG } from '@/lib/planes'
 import { escaleraPara } from '@/lib/adaptadores/planes'
 
@@ -31,13 +31,6 @@ import { escaleraPara } from '@/lib/adaptadores/planes'
   Capital se agrega porque sin él el dashboard arranca en negativo
   desde el primer préstamo. Skipeable, pero con advertencia clara.
 */
-
-/** «hasta el 27 de agosto»: la fecha concreta, no «en N días». */
-function finDePrueba() {
-  const d = new Date()
-  d.setDate(d.getDate() + DIAS_PRUEBA_BASE)
-  return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })
-}
 
 const persistStep = (step, flujo) => {
   fetch('/api/onboarding/progreso', {
@@ -107,14 +100,24 @@ export default function OnboardingWizard({
    * heredaba su pastilla. `armazon.js` ya dice que una tarea no la lleva
    * —«salirse a medias pierde datos»—; solo faltaba declararlo. */
   useCabecera({ tarea: true })
+  /* Y SIN LOS VIDEOS DEL INICIO (14 nov 2026). El asistente vive en /dashboard
+   * y heredaba su pastilla del profe con «3 videos por ver», más una lección
+   * en cada paso. Al que crea su cuenta solo se le señala la clase de 2
+   * minutos (`AvisoClase`, en el primer paso), sin abrírsela. */
+  useSilencioProfe()
 
   // El método de carga es un SUB-ESTADO del paso 2, no un paso nuevo. Meter un
   // paso corre la numeración y deja a medias a quien tenga progreso guardado
   // («step: 2» pasaría a significar otra pantalla de la que dejó).
   const [metodo, setMetodo] = useState(null)
-  // El plan va ANTES de cargar la cartera y no es un paso propio: no se elige
-  // nada en él, así que no merece un punto en la espina.
-  const [vioPlan, setVioPlan] = useState(false)
+  /* ══ «ELIGE TU PLAN», COMO ANTES DEL 1 AGO (14 nov 2026) ══════════════════
+   * El paso 0 vuelve a ser lo que era: «¿quién cobra?» y en seguida ELEGIR EL
+   * PLAN, con su precio. Es un sub-estado del paso 0, no un paso nuevo: la
+   * numeración guardada (`onboardingStep`) sigue significando lo mismo.
+   * Sustituye a la pantalla «Empieza sin pagar nada» que iba antes de la
+   * cartera (WizardPlan): ver `WizardElegirPlan` y la memoria
+   * `quiebre_conversion_1ago`. */
+  const [perfilPendiente, setPerfilPendiente] = useState(null)
 
   const bounce = (cb) => {
     setShowBounce(true)
@@ -133,7 +136,9 @@ export default function OnboardingWizard({
      * 45 tenía un cobrador. Y con «Explorar la app primero» se puede salir
      * antes de ver los planes. Se guarda aquí, al contestar; solo sube, nunca
      * baja a quien ya eligió uno con cobradores. */
-    const sinCobradores = (PLANES_CONFIG[currentPlan]?.maxUsuarios ?? 1) <= 1
+    /* ⚠ Con el plan RECIÉN ELEGIDO, no con el de antes: con `currentPlan` (aún
+       sin actualizar) quien eligiera Profesional bajaba a Crecimiento. */
+    const sinCobradores = (PLANES_CONFIG[nuevoPlan ?? currentPlan]?.maxUsuarios ?? 1) <= 1
     if (tipo === 'equipo' && sinCobradores) {
       const plan = escaleraPara('equipo')[0]
       setCurrentPlan(plan)
@@ -192,14 +197,14 @@ export default function OnboardingWizard({
   const [saliendo, setSaliendo] = useState(false)
   const explorar = useCallback(async () => {
     setSaliendo(true)
-    marcar('onb_explorar', { step, pantalla: step === 2 ? (!vioPlan ? 'plan' : metodo || 'traer_cartera') : 'capital', flujo })
+    marcar('onb_explorar', { step, pantalla: step === 2 ? (metodo || 'traer_cartera') : 'capital', flujo })
     await fetch('/api/onboarding/progreso', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'progress', step: 50, flujo }),
     }).catch(() => {})
     onComplete?.()
-  }, [step, vioPlan, metodo, flujo, onComplete])
+  }, [step, metodo, flujo, onComplete])
 
   // Back
   const handleBack = useCallback(() => {
@@ -223,14 +228,13 @@ export default function OnboardingWizard({
      decidir si esa pantalla sobra. Un evento al mostrarse, una vez por
      pantalla, y la cuenta sale sola: vistos − siguieron = los que se van ahí. */
   useEffect(() => {
-    if (step === 2 && flujo && !vioPlan) marcar('onb_plan_visto', { flujo })
-  }, [step, flujo, vioPlan])
+    if (step === 0 && perfilPendiente) marcar('onb_plan_visto', { flujo: perfilPendiente })
+  }, [step, perfilPendiente])
   useEffect(() => {
-    if (step === 2 && flujo && vioPlan && !metodo) marcar('onb_cartera_vista', { flujo })
-  }, [step, flujo, vioPlan, metodo])
+    if (step === 2 && flujo && !metodo) marcar('onb_cartera_vista', { flujo })
+  }, [step, flujo, metodo])
 
   const progressInfo = step <= 2 ? { current: step + 1, total: 4 } : null
-  const leccionActual = leccionDelPaso({ step, vioPlan })
 
   if (showBounce) {
     return (
@@ -258,7 +262,6 @@ export default function OnboardingWizard({
   // al capital y se pierde la pantalla que se acaba de contestar.
   const volver = () => {
     if (step === 2 && metodo)  { setMetodo(null);  return }
-    if (step === 2 && vioPlan) { setVioPlan(false); return }
     handleBack()
   }
 
@@ -283,24 +286,48 @@ export default function OnboardingWizard({
       {/* «Volver» y, a la derecha, la lección del video que toca a ESTA
           pantalla: quien se traba en el capital no tiene que acordarse de lo
           que dijo la clase del principio, ve sus 26 segundos y sigue. */}
-      {(BackButton || leccionActual) && (
+      {BackButton && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
           {BackButton}
-          <div style={{ marginLeft: 'auto' }}>
-            <AvisoLeccion leccion={leccionActual} origen={`asistente_paso_${step}`} completa={step === 0} />
-          </div>
+        </div>
+      )}
+
+      {/* La única ayuda de video del arranque: la clase de 2 minutos, señalada
+          unos segundos y nunca abierta sola (el dueño, 14 nov 2026). */}
+      {step === 0 && (
+        <div style={{ marginBottom: 18 }}>
+          <AvisoClase origen="asistente_paso_0" />
         </div>
       )}
 
       {clase && <VideoBienvenida origen="primera_entrada" solo onCerrar={() => setClase(false)} />}
 
-      {step === 0 && (
+      {step === 0 && !perfilPendiente && (
         <WizardWelcome
           nombre={nombre}
           inicial={flujo}
           plan={currentPlan}
-          onSelect={handleWelcomeDone}
+          onSelect={(perfil) => setPerfilPendiente(perfil)}
           onMinimize={onMinimize}
+        />
+      )}
+
+      {/* «Elige tu plan»: tocar la tarjeta guarda el plan y sigue al capital. */}
+      {step === 0 && perfilPendiente && (
+        <WizardElegirPlan
+          perfil={perfilPendiente}
+          onVolver={() => setPerfilPendiente(null)}
+          onElegido={(plan) => {
+            marcar('onb_plan_seguir', { flujo: perfilPendiente, plan })
+            const perfil = perfilPendiente
+            setPerfilPendiente(null)
+            handleWelcomeDone(perfil, plan)
+          }}
+          onPagar={() => {
+            // Se van del asistente a pagar desde ya.
+            marcar('onb_plan_pagar', { flujo: perfilPendiente })
+            window.location.href = '/configuracion/plan'
+          }}
         />
       )}
 
@@ -309,23 +336,6 @@ export default function OnboardingWizard({
           onComplete={handleCapitalDone}
           alreadyDone={capitalDone}
           savedMonto={capitalMonto}
-        />
-      )}
-
-      {/* «El cambio de fondo del turno»: aquí ya no se elige plan, se informa.
-          Va justo antes de cargar la cartera porque su acción ES cargarla. */}
-      {step === 2 && flujo && !vioPlan && (
-        <WizardPlan
-          perfil={flujo}
-          actual={currentPlan}
-          hasta={finDePrueba()}
-          onCargar={() => { marcar('onb_plan_seguir', { flujo }); setVioPlan(true) }}
-          onPagar={() => {
-            // Se van del asistente a pagar. Si muchos salen por aquí y no
-            // vuelven, la pantalla de planes está puesta demasiado pronto.
-            marcar('onb_plan_pagar', { flujo })
-            window.location.href = '/configuracion/plan'
-          }}
         />
       )}
 
@@ -345,7 +355,7 @@ export default function OnboardingWizard({
           Foto y Excel SE QUEDAN DENTRO del asistente: quien sale de un flujo de
           tres minutos para aterrizar en otra pantalla no vuelve. Solo «empezar
           de cero» sale, porque ahi el trabajo es crear el primer prestamo. */}
-      {step === 2 && flujo && vioPlan && !metodo && (
+      {step === 2 && flujo && !metodo && (
         <TraerCartera
           nombre={nombre}
           onFoto={() => { marcar('onb_metodo', { metodo: 'foto', flujo }); setMetodo('foto') }}
@@ -385,7 +395,7 @@ export default function OnboardingWizard({
         />
       )}
 
-      {step === 2 && flujo && vioPlan && metodo === 'excel' && (
+      {step === 2 && flujo && metodo === 'excel' && (
         <WizardExcel
           onComplete={handleCartullinaDone}
           onSkip={handleCartulinaSkip}
@@ -413,7 +423,7 @@ export default function OnboardingWizard({
           solo 29 (28%) consiguen cargar; poner ese paso de primeras sería
           mudar el muro, no quitarlo. Lo que se arregla es que quien ELIGE la
           foto reciba el lector que cumple lo que la tarjeta le prometió. */}
-      {step === 2 && flujo && vioPlan && metodo === 'foto' && (
+      {step === 2 && flujo && metodo === 'foto' && (
         <LoteFotos
           onSalir={handleCartulinaSkip}
           /* `quedanFilas` es «algunas no se guardaron y siguen en pantalla»:
@@ -438,7 +448,7 @@ export default function OnboardingWizard({
           se queda sin puerta, que es cómo un rediseño pierde funciones sin que
           nadie lo note. Va al paso de Excel del propio asistente, no a
           /carga-masiva: salir del arranque es de donde no se vuelve. */}
-      {step === 2 && flujo && vioPlan && metodo === 'foto' && (
+      {step === 2 && flujo && metodo === 'foto' && (
         <button
           type="button"
           onClick={() => { marcar('onb_metodo', { metodo: 'excel', flujo, desde: 'foto' }); setMetodo('excel') }}
