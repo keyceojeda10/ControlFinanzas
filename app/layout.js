@@ -1,4 +1,4 @@
-import { Manrope, Space_Grotesk } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import SessionProvider from "@/components/providers/SessionProvider";
 import { getServerSession } from "next-auth";
@@ -18,16 +18,27 @@ import { SCRIPT_CAPTURA_INSTALAR } from '@/lib/instalar'
 // (dark/system) la conserva.
 const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('cf-theme')||'light';var r=t==='system'?(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):t;var h=document.documentElement;h.setAttribute('data-theme',r);h.style.colorScheme=r;var bg=r==='light'?'#f4f4f1':'#0c0d11';var fg=r==='light'?'#15161a':'#f3f3f6';h.style.backgroundColor=bg;h.style.color=fg;if(document.body){document.body.style.backgroundColor=bg;document.body.style.color=fg;}var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',bg);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();`;
 
-const manrope = Manrope({
+/* ⚠ LAS FUENTES VIVEN AQUÍ, NO EN GOOGLE (14 nov 2026).
+ * Con `next/font/google` el build las bajaba en cada despliegue, y CUATRO
+ * despliegues fallaron (cf-v1263, cf-v1267, cf-v1270 y cf-v1271) con
+ * «Cannot read properties of null (reading '1')»: a veces Google le sirve al
+ * servidor direcciones de archivo sin «.woff2» y el cargador de Next revienta
+ * (`loader.js`, la regex de la extensión). Son los MISMOS archivos que Google
+ * servía para `subsets: ["latin"]`: uno variable por familia que cubre todos
+ * los grosores (comprobado: el bloque latino usa un solo archivo para 400–800
+ * y 400–700). Mismas variables CSS, así que nada más cambia. */
+const manrope = localFont({
+  src: "./fuentes/manrope-latin.woff2",
   variable: "--font-manrope",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: "400 800",
+  display: "swap",
 });
 
-const spaceGrotesk = Space_Grotesk({
+const spaceGrotesk = localFont({
+  src: "./fuentes/space-grotesk-latin.woff2",
   variable: "--font-space-grotesk",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: "400 700",
+  display: "swap",
 });
 
 const SITE_URL = process.env.NEXTAUTH_URL || 'https://app.control-finanzas.com'
