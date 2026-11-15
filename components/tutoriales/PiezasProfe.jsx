@@ -84,13 +84,6 @@ const ANIMACION = `
 @media (prefers-reduced-motion: reduce) { .cf-profe-llama, .cf-profe-burbuja { animation: none } }
 `
 
-const Punto = ({ style }) => (
-  <span aria-hidden style={{
-    position: 'absolute', width: 10, height: 10, borderRadius: 999, background: 'var(--cf-gold)',
-    border: '2px solid var(--cf-surface)', ...style,
-  }} />
-)
-
 /**
  * La pastilla de la pantalla. `lateral`: la versión de la barra de escritorio,
  * con su nombre al lado (allí sobra sitio y no hay cabecera).
@@ -141,19 +134,27 @@ export function PastillaProfe({ lateral = false }) {
       </button>
     )
   }
+  /* Compacta (Carlos, 14 nov 2026: «más compacto, minimalista y bonito»): una
+   * cápsula de 32px dentro de un área de toque de 44, el play en un círculo y
+   * el número al lado. Lo que falta por ver se dice con el punto DENTRO de la
+   * cápsula, no con una insignia que se sale del borde. */
   return (
     <span style={{ position: 'relative', display: 'inline-flex', flex: 'none' }}>
       <style>{ANIMACION}</style>
       <button type="button" onClick={abrir} aria-label={porVer ? `${titulo}, ${porVer} por ver` : titulo} title={titulo}
-        className={llamando ? 'cf-profe-llama' : undefined} style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8, height: 44, padding: '0 14px 0 8px', flex: 'none',
-          borderRadius: 12, background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
-          cursor: 'pointer', font: 'inherit',
+        style={{
+          display: 'inline-flex', alignItems: 'center', height: 44, padding: '0 2px', flex: 'none',
+          background: 'none', border: 0, cursor: 'pointer', font: 'inherit',
         }}>
-        <IconoPlay visto={todosVistos} />
-        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--cf-ink)', fontVariantNumeric: 'tabular-nums' }}>{etiqueta}</span>
+        <span className={llamando ? 'cf-profe-llama' : undefined} style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 10px 0 4px',
+          borderRadius: 999, background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+        }}>
+          <IconoPlay tam={24} radio={999} visto={todosVistos} />
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--cf-ink-2)', fontVariantNumeric: 'tabular-nums' }}>{etiqueta}</span>
+          {porVer > 0 && <span aria-hidden style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--cf-gold)', flex: 'none' }} />}
+        </span>
       </button>
-      {porVer > 0 && <Punto style={{ top: -3, right: -3 }} />}
       {llamando && (
         <button type="button" onClick={abrir} className="cf-profe-burbuja" style={{
           position: 'absolute', top: 'calc(100% + 10px)', right: 0, zIndex: 1,
@@ -181,21 +182,26 @@ export function BotonMinutoProfe({ id, junto, oscuro = false, style }) {
   return (
     <button
       type="button"
-      aria-label={`Ver el video: ${video.titulo}`}
-      title={`Ver el video: ${video.titulo}`}
+      aria-label={`Ver el video: ${video.titulo}, ${reloj(duracionDe(video, junto))}`}
+      title={`Ver el video: ${video.titulo} · ${reloj(duracionDe(video, junto))}`}
       onClick={(e) => { e.preventDefault(); e.stopPropagation(); profe.abrir(id, { desde: desdeDe(video, junto), via: 'minuto' }) }}
       style={{
-        display: 'inline-flex', alignItems: 'center', gap: 6, height: 44, padding: '0 11px', flex: 'none',
-        borderRadius: 12, cursor: 'pointer', font: 'inherit',
-        // Sobre el bloque oscuro (el menú del +): claro sobre carbón, 4,5:1 o más.
-        ...(oscuro
-          ? { background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.14)', color: '#D5D8DE' }
-          : { background: 'var(--cf-fill)', border: '1px solid var(--cf-border-soft, var(--cf-border))', color: 'var(--cf-ink-2)' }),
-        ...style,
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, padding: 0, flex: 'none',
+        background: 'none', border: 0, cursor: 'pointer', font: 'inherit', ...style,
       }}
     >
-      {visto ? <Check tam={11} /> : <Triangulo tam={9} color="currentColor" />}
-      <span style={{ fontSize: 12, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{reloj(duracionDe(video, junto))}</span>
+      {/* Un círculo de 28 dentro del área de 44 (Carlos, 14 nov 2026: la cajita
+          «▶ 1:28» ocupaba mucho y estorbaba en el menú del + y en Gestión).
+          La duración sigue en la ayuda de la pantalla y en el reproductor. */}
+      <span aria-hidden style={{
+        width: 28, height: 28, borderRadius: 999, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        // Sobre el bloque oscuro (el menú del +): claro sobre carbón.
+        ...(oscuro
+          ? { background: 'rgba(255,255,255,.08)', color: visto ? '#8C9099' : 'var(--cf-gold)' }
+          : { background: 'var(--cf-fill)', color: visto ? 'var(--cf-ink-4)' : 'var(--cf-ink-2)' }),
+      }}>
+        {visto ? <Check tam={12} /> : <Triangulo tam={10} color="currentColor" />}
+      </span>
     </button>
   )
 }

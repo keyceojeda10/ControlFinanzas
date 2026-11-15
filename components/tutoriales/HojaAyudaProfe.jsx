@@ -11,7 +11,8 @@
  * Los vistos llevan check verde y el texto apagado: se pueden volver a ver,
  * pero dejan de pedir atención.
  *
- * En el Inicio, además, «Ocultar todos los tutoriales» (Carlos, 20 oct 2026):
+ * En TODAS las pantallas (antes solo en el Inicio; 14 nov 2026), «Ocultar todos
+ * los tutoriales» (Carlos, 20 oct 2026):
  * «con una confirmación que le diga que van a desaparecer todos los tutoriales
  * por el momento, y darle la ruta de donde los puede volver a aprender». Son
  * tres pasos en la MISMA hoja —la lista, la confirmación, el «listo» con la

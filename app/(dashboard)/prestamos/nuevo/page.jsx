@@ -2280,7 +2280,10 @@ function NuevoPrestamo() {
                     dice en una línea qué va a pasar. */}
                 {esAbierto ? (
                   <div className="rounded-[14px] p-3.5" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
-                    <p className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink)' }}>Sin fecha de vencimiento</p>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                      <p className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink)' }}>Sin fecha de vencimiento</p>
+                      <EnlaceProfe id="prestamos-abierto" junto="Sin fecha de vencimiento" pregunta="¿Cómo funciona?" />
+                    </div>
                     <p className="text-[11px] mt-1 leading-relaxed" style={{ color: 'var(--cf-ink-3)' }}>
                       {{ diario: 'Cada día', semanal: 'Cada semana', quincenal: 'Cada quincena', mensual: 'Cada mes' }[frecuencia] || 'Cada mes'} se le cobra el interés
                       {calculo?.cuotaDiaria ? ` de ${formatMoney(calculo.cuotaDiaria)}` : ''} y el capital queda quieto.
@@ -2361,6 +2364,7 @@ function NuevoPrestamo() {
                     Si no sabes cuándo te paga, toca <span style={{ fontWeight: 600 }}>No sé</span>: el
                     préstamo queda sin fecha de vencimiento y solo cobra el interés de cada {PERIODO_ABIERTO[frecuencia] ?? 'mes'}.
                   </p>
+                  <EnlaceProfe id="prestamos-abierto" junto="No sé" pregunta="¿Cómo funciona?" style={{ margin: '0 0 -12px -8px' }} />
                 </div>
                 )}
               </div>
@@ -2683,6 +2687,7 @@ function NuevoPrestamo() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>Ya había pagado algo antes</p>
                   <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Migrar un préstamo con abonos previos</p>
+                  <EnlaceProfe id="prestamos-ya-venia" junto="Ya había pagado algo antes" pregunta="¿Cómo se pasa?" style={{ margin: '-4px 0 -12px -8px' }} />
                 </div>
                 <input type="checkbox" checked={esEnCurso} onChange={(e) => setEsEnCurso(e.target.checked)} className="w-5 h-5 accent-[var(--cf-gold)]" />
               </label>

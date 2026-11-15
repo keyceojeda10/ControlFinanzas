@@ -12,6 +12,7 @@ import { getPlataformaInfo, PlataformaIcon } from '@/components/ui/LogoPlataform
 import { BotonSecundario } from '@/components/cf/primitivos'
 import CuadrarCuentas from '@/components/caja/CuadrarCuentas'
 import PasarEntreCuentas from '@/components/caja/PasarEntreCuentas'
+import { EnlaceProfe } from '@/components/tutoriales/PiezasProfe'
 
 /* `total`: lo que dice la cifra grande. Con «Todo» ES el saldo —desde
    DETALLES-CAJA #31 cuenta también los ajustes y suma lo mismo que «Saldo en
@@ -165,6 +166,9 @@ export default function DesglosePorCuenta() {
         </svg>
         Pasar plata entre cuentas
       </BotonSecundario>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <EnlaceProfe id="caja-cuentas" junto="Pasar plata entre cuentas" pregunta="¿Cómo funcionan las cuentas?" style={{ margin: 0 }} />
+      </div>
       <PasarEntreCuentas
         abierta={pasando}
         onCerrar={() => setPasando(false)}

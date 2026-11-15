@@ -1,5 +1,5 @@
 {
- "actualizado": "2026-10-19",
+ "actualizado": "2026-11-14",
  "videos": [
   {
    "id": "inicio-bienvenida",
@@ -413,7 +413,7 @@
    "titulo": "Instalar la app",
    "estado": "listo",
    "destino": "/videos/inicio/instalar.mp4",
-   "duracion": 80,
+   "duracion": 83,
    "capitulos": [
     {
      "t": 0,
@@ -432,7 +432,7 @@
      "titulo": "En iPhone"
     },
     {
-     "t": 57.9,
+     "t": 60.9,
      "titulo": "Consejo del profe"
     }
    ],
@@ -453,7 +453,7 @@
     "cobrador"
    ],
    "tarea": "Instalar en este dispositivo",
-   "nota": "v3 del 19 oct en la noche (cf-v1187, instalar de un toque): Más → «Cuenta» → «Instalar la app». Android: la ventana del teléfono (dibujada, con la descripción y las capturas del manifiesto) → «Instalar»; desde Facebook o Instagram, «Abrir en Chrome». iPhone (Safari): la guía de la app con la flecha a «Compartir», «Agregar a inicio» y «Agregar».",
+   "nota": "Rehecho el 13 nov (cf-v1268): en iPhone, Safari 26 guarda «Compartir» en los ···; la flecha va a los tres puntos y son 4 pasos (cf-v1249). Más regrabado (fila Historial). No montar hasta la entrega completa.",
    "src": "/videos/profe/inicio/instalar.mp4",
    "poster": "/videos/profe/inicio/instalar.jpg"
   },
@@ -514,7 +514,7 @@
    "titulo": "La caja",
    "estado": "listo",
    "destino": "/videos/caja/caja.mp4",
-   "duracion": 197,
+   "duracion": 201.8,
    "capitulos": [
     {
      "t": 0,
@@ -533,19 +533,19 @@
      "titulo": "Efectivo y transferencias"
     },
     {
-     "t": 82.3,
+     "t": 87.1,
      "titulo": "Los gastos"
     },
     {
-     "t": 102.2,
+     "t": 107,
      "titulo": "Días anteriores"
     },
     {
-     "t": 124.7,
+     "t": 129.5,
      "titulo": "Cerrar y reabrir"
     },
     {
-     "t": 161.4,
+     "t": 166.2,
      "titulo": "Consejo del profe"
     }
    ],
@@ -559,9 +559,53 @@
     "dueno"
    ],
    "tarea": null,
-   "nota": "Regrabado el 19 oct con cf-v1180 (v3): llegar, el saldo, efectivo y transferencias, gastos, días anteriores, cerrar y reabrir. Falta que Carlos lo vea.",
+   "nota": "v4 del 14 nov: la lección «Efectivo y transferencias» termina en la pestaña «Cuentas» de hoy y remite al video «Tus cuentas». El resto sigue igual a v3 (19 oct, cf-v1180): la Caja del día no cambió de forma. No montar hasta la entrega completa.",
    "src": "/videos/profe/caja/caja.mp4",
    "poster": "/videos/profe/caja/caja.jpg"
+  },
+  {
+   "id": "caja-cuentas",
+   "serie": "caja",
+   "titulo": "Tus cuentas",
+   "estado": "listo",
+   "destino": "/videos/caja/cuentas.mp4",
+   "duracion": 90.1,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 15.1,
+     "titulo": "Dónde la ves"
+    },
+    {
+     "t": 31,
+     "titulo": "Cuadrar con lo que tengo"
+    },
+    {
+     "t": 52.5,
+     "titulo": "Pasar entre cuentas"
+    },
+    {
+     "t": 68.7,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/caja",
+     "tipo": "E2",
+     "junto_a": "Pasar plata entre cuentas"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Nuevo del 14 nov (cf-v1269): Caja → Cuentas; «Cuadrar con lo que tengo»; «Pasar plata entre cuentas»; el capital no cambia; las cuentas se agregan en Configuración → Tu negocio. No montar hasta la entrega completa.",
+   "src": "/videos/profe/caja/cuentas.mp4",
+   "poster": "/videos/profe/caja/cuentas.jpg"
   },
   {
    "id": "caja-caja-ruta",
@@ -968,7 +1012,7 @@
    "titulo": "Crear un préstamo",
    "estado": "listo",
    "destino": "/videos/prestamos/crear.mp4",
-   "duracion": 139.8,
+   "duracion": 152.3,
    "capitulos": [
     {
      "t": 0,
@@ -979,23 +1023,23 @@
      "titulo": "Cómo llegar"
     },
     {
-     "t": 30.9,
+     "t": 35.3,
      "titulo": "Cuánto le prestas"
     },
     {
-     "t": 50.9,
+     "t": 55.3,
      "titulo": "Cada cuánto cobras"
     },
     {
-     "t": 70.3,
+     "t": 80.3,
      "titulo": "Interés y cuotas"
     },
     {
-     "t": 99.4,
+     "t": 109.3,
      "titulo": "Revisar y entregar"
     },
     {
-     "t": 124.2,
+     "t": 136.7,
      "titulo": "Consejo del profe"
     }
    ],
@@ -1009,9 +1053,102 @@
     "dueno"
    ],
    "tarea": null,
-   "nota": "Formulario recapturado el 19 oct con cf-v1181 («Días sin cobro» con tilde); antes, lección 3 regrabada el 18 oct (Mié/Sáb).",
+   "nota": "Rehecho el 14 nov (cf-v1269) sobre la demo nueva: reporte del cliente, quincenal «Cobra el día / Y el día» + «¿Cuál es el primer cobro?» y «un sábado sí y otro no», y cuánto hay en la cuenta de la que sale. No montar hasta la entrega completa.",
    "src": "/videos/profe/prestamos/crear.mp4",
    "poster": "/videos/profe/prestamos/crear.jpg"
+  },
+  {
+   "id": "prestamos-abierto",
+   "serie": "prestamos",
+   "titulo": "El préstamo abierto",
+   "estado": "listo",
+   "destino": "/videos/prestamos/abierto.mp4",
+   "duracion": 81.7,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 13.2,
+     "titulo": "Cómo se crea"
+    },
+    {
+     "t": 26.2,
+     "titulo": "Cómo cuentas el mes"
+    },
+    {
+     "t": 48.3,
+     "titulo": "Los abonos"
+    },
+    {
+     "t": 64.7,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/prestamos/nuevo",
+     "tipo": "E2",
+     "junto_a": "No sé"
+    },
+    {
+     "pantalla": "/prestamos/nuevo",
+     "tipo": "E2",
+     "junto_a": "Sin fecha de vencimiento"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Nuevo del 14 nov (cf-v1269): «No sé» → sin fecha de vencimiento; «Por días» o «Mes completo»; % por quincena o al mes; los abonos. No montar hasta la entrega completa.",
+   "src": "/videos/profe/prestamos/abierto.mp4",
+   "poster": "/videos/profe/prestamos/abierto.jpg"
+  },
+  {
+   "id": "prestamos-ya-venia",
+   "serie": "prestamos",
+   "titulo": "Pasar un préstamo que ya venía",
+   "estado": "listo",
+   "destino": "/videos/prestamos/ya-venia.mp4",
+   "duracion": 84.2,
+   "capitulos": [
+    {
+     "t": 0,
+     "titulo": "Presentación"
+    },
+    {
+     "t": 13.2,
+     "titulo": "La fecha"
+    },
+    {
+     "t": 30.1,
+     "titulo": "Lo que ya te pagó"
+    },
+    {
+     "t": 44.5,
+     "titulo": "A qué se abonó"
+    },
+    {
+     "t": 67.7,
+     "titulo": "Consejo del profe"
+    }
+   ],
+   "donde": [
+    {
+     "pantalla": "/prestamos/nuevo",
+     "tipo": "E2",
+     "junto_a": "Ya había pagado algo antes"
+    }
+   ],
+   "para": [
+    "dueno"
+   ],
+   "tarea": null,
+   "nota": "Nuevo del 14 nov (cf-v1269): fecha de inicio, «Ya había pagado algo antes» y, en el abierto, Capital / Interés / Ambos; el interés de más queda como interés ya cobrado. No montar hasta la entrega completa.",
+   "src": "/videos/profe/prestamos/ya-venia.mp4",
+   "poster": "/videos/profe/prestamos/ya-venia.jpg"
   },
   {
    "id": "prestamos-modos",
@@ -1019,7 +1156,7 @@
    "titulo": "Los modos de interés",
    "estado": "listo",
    "destino": "/videos/prestamos/modos.mp4",
-   "duracion": 114.6,
+   "duracion": 131.9,
    "capitulos": [
     {
      "t": 0,
@@ -1038,11 +1175,11 @@
      "titulo": "Sobre saldo y globo"
     },
     {
-     "t": 72.1,
+     "t": 81,
      "titulo": "Los avanzados"
     },
     {
-     "t": 98.7,
+     "t": 116,
      "titulo": "Consejo del profe"
     }
    ],
@@ -1057,7 +1194,7 @@
     "dueno"
    ],
    "tarea": null,
-   "nota": "Revisado el 18 oct contra cf-v1170: la pantalla no cambió.",
+   "nota": "v2 del 14 nov (cf-v1269): el abierto ya no se explica como globo, va con «No sé» en las cuotas y remite a su video (cf-v1219); Decreciente quincenal «Cada mes»: % del mes y cada quincena paga la mitad (cf-v1251). Las tarjetas de modos no cambiaron. No montar hasta la entrega completa.",
    "src": "/videos/profe/prestamos/modos.mp4",
    "poster": "/videos/profe/prestamos/modos.jpg"
   },
@@ -1133,15 +1270,15 @@
      "titulo": "Cómo llegar"
     },
     {
-     "t": 24.7,
+     "t": 22.1,
      "titulo": "El monto"
     },
     {
-     "t": 37.6,
+     "t": 34.9,
      "titulo": "Cómo te pagó"
     },
     {
-     "t": 50.7,
+     "t": 48.1,
      "titulo": "Confirmar y recibo"
     },
     {
@@ -1161,7 +1298,7 @@
     "cobrador"
    ],
    "tarea": null,
-   "nota": "Retocado el 18 oct: «si va muy atrasado, sale en rojo» (rojo = mora grave).",
+   "nota": "Rehecho el 13 nov (cf-v1268) sobre la demo montada de nuevo: sin el ejemplo en rojo; «Ver el recibo» lo muestra antes de mandarlo. No montar hasta la entrega completa.",
    "src": "/videos/profe/prestamos/registrar-pago.mp4",
    "poster": "/videos/profe/prestamos/registrar-pago.jpg"
   },

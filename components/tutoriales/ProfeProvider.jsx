@@ -22,7 +22,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAcciones, ejecutarAccion } from '@/components/acciones/AccionesProvider'
-import { videosPara, videoPorId, ayudaDeLaPantalla, PRIMERA_VEZ, volverDe, VIDEO_INSTALAR } from '@/lib/tutoriales/profe'
+import { videosPara, videoPorId, ayudaDeLaPantalla, PRIMERA_VEZ, volverDe, VIDEO_INSTALAR, segundoDelCapitulo } from '@/lib/tutoriales/profe'
 import { isStandalone } from '@/components/layout/InstallButton'
 import { salirDeHojaHacia } from '@/components/cf/HojaInferior'
 import ReproductorProfe from './ReproductorProfe'
@@ -163,8 +163,9 @@ export default function ProfeProvider({ rol, usuario, children }) {
     enviar({ tipo, valor })
   }, [])
 
-  /** «Ocultar todos los tutoriales», desde la ayuda del Inicio (Carlos, 20 oct
-   *  2026): apaga lo que está a la vista —pastillas, enlaces, minutos— y los
+  /** «Ocultar todos los tutoriales», desde la ayuda de CUALQUIER pantalla.
+   *  Antes solo en el Inicio; Carlos, 14 nov 2026: «si está en un préstamo y se
+   *  fastidió… no los va a poder quitar». Desde la ayuda (20 oct 2026): apaga lo que está a la vista —pastillas, enlaces, minutos— y los
    *  avisos de primera vez. No borra nada: la biblioteca sigue en Tutoriales,
    *  con los dos interruptores para volver a prenderlos. */
   const ocultarTodo = useCallback(() => {
@@ -179,7 +180,7 @@ export default function ProfeProvider({ rol, usuario, children }) {
     if (!a || !activo || !estado.mostrarAvisos || !estado.primeraVez?.[a.clave]) return null
     const video = visibles.find((v) => v.id === a.video)
     if (!video || vistos.has(video.id) || estado.descartados.includes(video.id)) return null
-    return { ...a, video }
+    return { ...a, video, desde: segundoDelCapitulo(video, a.capitulo) }
   }, [activo, estado.mostrarAvisos, estado.primeraVez, estado.descartados, visibles, vistos])
 
   const hacerTarea = useCallback((video, tarea) => {
@@ -219,7 +220,7 @@ export default function ProfeProvider({ rol, usuario, children }) {
           onBiblioteca={() => { setAyudaAbierta(false); salirDeHojaHacia(router, '/tutoriales') }}
           onCerrar={() => setAyudaAbierta(false)}
           // Solo en el Inicio, donde lo pidió Carlos.
-          onOcultarTodo={pathname === '/dashboard' ? ocultarTodo : undefined}
+          onOcultarTodo={ocultarTodo}
         />
       )}
       {video && (
