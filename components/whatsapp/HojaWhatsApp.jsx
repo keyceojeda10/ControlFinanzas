@@ -356,6 +356,8 @@ export default function HojaWhatsApp({
             prestamo?.saldoPendiente > 0 ? `Debe ${formatMoney(Math.round(prestamo.saldoPendiente), pais)}` : null,
             prestamo?.diasMora > 0 ? `${prestamo.diasMora} días de atraso` : null,
           ].filter(Boolean).join(' · ') || (cliente?.telefono ?? null)}
+          // Lo pactado, para leerlo antes de escribirle (no va en el mensaje).
+          nota={prestamo?.nota || null}
           familias={familias}
           // `familiaViva`, no `familia`: si la elegida se quedó sin plantillas
           // se está pintando otra, y marcar la pestaña vacía diría que la lista

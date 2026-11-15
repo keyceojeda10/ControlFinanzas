@@ -42,7 +42,7 @@ const BURBUJA = '#DCF8C6'
 const BURBUJA_DATO = '#C3ECAB'
 
 export function Plantillas({
-  cliente, detalle,
+  cliente, detalle, nota = null,
   familias = [], familia, onFamilia,
   plantillas = [], elegida, onElegir,
   telefono,
@@ -111,6 +111,18 @@ export function Plantillas({
               <span className="cf-num" style={{ fontSize: 13, color: 'var(--cf-ink-3)' }}>
                 {detalle || 'Se abre WhatsApp con el mensaje listo'}
               </span>
+              {/* La nota del préstamo (15 nov 2026): «tener en cuenta antes de
+                  enviarle un mensaje de cobro». Es para quien escribe; NO va
+                  dentro del mensaje. */}
+              {nota && (
+                <span style={{
+                  marginTop: 6, fontSize: 13, lineHeight: 1.35, color: 'var(--cf-ink)',
+                  background: 'var(--cf-fill)', border: '1px solid var(--cf-border)', borderRadius: 10,
+                  padding: '7px 10px', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere',
+                }}>
+                  <span style={{ fontWeight: 700, color: 'var(--cf-ink-2)' }}>Tu nota: </span>{nota}
+                </span>
+              )}
             </div>
             {onCerrar && (
               <button type="button" onClick={onCerrar} aria-label="Cerrar" style={{

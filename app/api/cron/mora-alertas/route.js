@@ -43,6 +43,7 @@
 // avisar. La llave lleva la fecha de la cuota que disparó la mora, así que un
 // atraso nuevo es un aviso nuevo y el mismo atraso no suena dos veces.
 
+import { conNota } from '@/lib/prestamos/nota'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
@@ -95,6 +96,8 @@ export async function POST(req) {
         frecuencia: true, fechaInicio: true, diasPlazo: true, modoInteres: true,
         diaCobroSemana: true, diaCobroMes: true, diaCobroMes2: true,
         primerCobro: true, interesPorMes: true,
+        // La nota del préstamo va en el aviso (lib/prestamos/nota.js).
+        nota: true,
         proximoCobroManual: true, proximoCobroPorInteres: true, esClavo: true, diasSinCobro: true,
         /* ⚠ SIN ESTO UN PRÉSTAMO ABIERTO SALE «AL DÍA» SIEMPRE: su mora es el
            interés devengado sin pagar, y un campo que no se pide vale `undefined`
@@ -210,9 +213,10 @@ export async function POST(req) {
           filas.push({
             organizationId: orgId, userId, tipo: 'mora',
             titulo: `${nombre} se atrasó`,
-            mensaje: x.dias === 1
+            // Con la nota del préstamo detrás: «no se le ha vencido, queda de pagar después».
+            mensaje: conNota(x.dias === 1
               ? `Tenía que pagar ayer y no pagó. Debe ${dinero(x.monto)}.`
-              : `Lleva ${x.dias} días de atraso. Debe ${dinero(x.monto)}.`,
+              : `Lleva ${x.dias} días de atraso. Debe ${dinero(x.monto)}.`, x.prestamo.nota),
             datos: JSON.stringify({
               llave: x.llave, clienteId: x.prestamo.clienteId,
               prestamoId: x.prestamo.id, dias: x.dias, monto: Math.round(x.monto),
@@ -225,9 +229,10 @@ export async function POST(req) {
           filas.push({
             organizationId: orgId, userId: cobradorId, tipo: 'mora',
             titulo: `${x.prestamo.cliente?.nombre || 'Un cliente'} se atrasó`,
-            mensaje: x.dias === 1
+            // Con la nota del préstamo detrás: «no se le ha vencido, queda de pagar después».
+            mensaje: conNota(x.dias === 1
               ? `Tenía que pagar ayer y no pagó. Debe ${dinero(x.monto)}.`
-              : `Lleva ${x.dias} días de atraso. Debe ${dinero(x.monto)}.`,
+              : `Lleva ${x.dias} días de atraso. Debe ${dinero(x.monto)}.`, x.prestamo.nota),
             datos: JSON.stringify({
               llave: x.llave, clienteId: x.prestamo.clienteId,
               prestamoId: x.prestamo.id, dias: x.dias, monto: Math.round(x.monto),

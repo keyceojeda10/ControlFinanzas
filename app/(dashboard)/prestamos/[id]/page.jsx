@@ -19,6 +19,7 @@ import { Modal }                      from '@/components/ui/Modal'
 import { Skeleton, SkeletonPrestamoDetalle } from '@/components/ui/Skeleton'
 import MonedaCF                       from '@/components/ui/MonedaCF'
 import RegistrarPago                  from '@/components/prestamos/RegistrarPago'
+import NotaDelPrestamo                from '@/components/prestamos/NotaDelPrestamo'
 import MetodoPagoSelector             from '@/components/pagos/MetodoPagoSelector'
 // AjusteSaldo absorbido por RegistrarPago via prop tabInicial.
 import RenovarPrestamo                from '@/components/prestamos/RenovarPrestamo'
@@ -213,6 +214,19 @@ function PrestamoDetalleContenido({ params }) {
   const [cancelando,   setCancelando]   = useState(false)
   const [confirmCancel, setConfirmCancel] = useState(false)
   const [confirmEliminar, setConfirmEliminar] = useState(false)
+  /* ¿Se puede CORREGIR en vez de borrar? Se pregunta al abrir el modal: borrar
+     un préstamo de otro día y crearlo de nuevo sacaba la plata dos veces de la
+     bolsa (lib/dinero/corregir-prestamo.js, 15 nov 2026). */
+  const [corregible, setCorregible] = useState(null)
+  useEffect(() => {
+    if (!confirmEliminar || !esOwner) { setCorregible(null); return }
+    let vivo = true
+    fetch(`/api/prestamos/${id}/corregir`, { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (vivo) setCorregible(d) })
+      .catch(() => {})
+    return () => { vivo = false }
+  }, [confirmEliminar, esOwner, id])
   const [eliminando, setEliminando] = useState(false)
   const [anulando,     setAnulando]     = useState(null)   // pagoId que se está anulando
   const [confirmAnularPago, setConfirmAnularPago] = useState(null) // { pagoId, monto }
@@ -2044,6 +2058,14 @@ function PrestamoDetalleContenido({ params }) {
             y esto es el atajo para quien no los va a abrir. Escribe «quiero
             renovar este préstamo» y se abre la hoja de renovar, sin pasar por
             el chip ni por el menú. */}
+        {/* La nota del crédito: lo pactado, lo primero que se lee antes de cobrar. */}
+        <NotaDelPrestamo
+          key={prestamo?.nota ?? ''}
+          prestamoId={id}
+          nota={prestamo?.nota ?? null}
+          puedeEditar={esOwner || puedeGestionarPrestamos}
+          onGuardada={(n) => setPrestamo((p) => (p ? { ...p, nota: n } : p))}
+        />
         <RegistrarAcciones clave="prestamo" acciones={accionesBuscables} />
         <QueNecesitas ejemplos={['renovar', 'pagar todo hoy', 'cambiar el plazo']} />
 
@@ -2648,6 +2670,36 @@ function PrestamoDetalleContenido({ params }) {
             </div>
           )}
 
+          {/* ¿LO VA A VOLVER A CREAR? Borrar y crear de nuevo contaba la plata dos
+              veces: 238 préstamos en 90 días, 32 negocios (15 nov 2026). */}
+          {salioOtroDia && corregible && (
+            <div
+              className="rounded-[14px] px-3 py-2.5 space-y-2"
+              style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}
+            >
+              <p className="text-xs font-semibold text-[var(--cf-ink)]">
+                ¿Lo vas a volver a crear con otros datos?
+              </p>
+              <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug">
+                {corregible.puede
+                  ? 'Corrígelo en vez de borrarlo: lo cambias todo y la plata no se cuenta dos veces.'
+                  : corregible.motivo}
+              </p>
+              {corregible.puede && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfirmEliminar(false)
+                    router.push(`/prestamos/nuevo?clienteId=${encodeURIComponent(prestamo?.cliente?.id ?? '')}&corrige=${encodeURIComponent(id)}`)
+                  }}
+                  className="w-full h-11 rounded-[12px] text-sm font-bold text-[var(--cf-ink)] bg-[var(--cf-surface)] border border-[var(--cf-border-strong)] hover:bg-[color-mix(in_srgb,var(--cf-ink)_6%,var(--cf-surface))] transition-colors"
+                >
+                  Corregir el préstamo
+                </button>
+              )}
+            </div>
+          )}
+
           {hayCobrosRegistrados && (
             <div
               className="rounded-[14px] px-3 py-2.5 space-y-1.5"
@@ -2931,6 +2983,22 @@ function PrestamoDetalleContenido({ params }) {
             className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--cf-green-dark)] bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.25)] hover:bg-[rgba(34,197,94,0.15)] transition-all"
           >
             Hacer abono extraordinario
+          </button>
+
+          {/* «Abonar a capital» AL LADO, no en vez de. Créditos pete, 15 nov 2026:
+              cobró el interés y no encontró por dónde meter los $100.000 de
+              capital —«abono extraordinario» no le dijo que era eso—. El dueño:
+              «no cambiar uno por otro porque le cambiaríamos las cosas a otras
+              personas». Abre la hoja ya en Capital, en cualquier préstamo. */}
+          <button
+            onClick={() => {
+              setModalAtajosCobro(false)
+              setPresetPago({ tipo: 'capital' })
+              setModalPago(true)
+            }}
+            className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--cf-ink)] bg-[var(--cf-fill)] border border-[var(--cf-border)] hover:bg-[color-mix(in_srgb,var(--cf-ink)_6%,var(--cf-fill))] transition-all"
+          >
+            Abonar a capital
           </button>
         </div>
       </Modal>

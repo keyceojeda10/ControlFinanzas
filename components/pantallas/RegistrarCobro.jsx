@@ -237,6 +237,10 @@ export default function RegistrarCobro({
      ubicación»). Va abajo, donde no compite con el monto. Lo compone quien monta
      la hoja; aquí no se sabe qué puede fallarle al aparato. */
   aviso = null,
+  /* La nota del préstamo (15 nov 2026): lo que se pactó —«paga los 20»—. Va
+     ARRIBA, antes del monto: es lo que hay que leer antes de cobrar. Es otra
+     cosa que `nota`, que es la del pago que se está registrando. */
+  notaPrestamo = null,
 }) {
   const campoMonto = useRef(null)
   /* El lápiz pone el cursor en el número y lo deja seleccionado: «a la gente no
@@ -249,6 +253,20 @@ export default function RegistrarCobro({
   }
   return (
     <>
+      {notaPrestamo && (
+        <div style={{
+          flex: 'none', display: 'flex', gap: 8, alignItems: 'flex-start',
+          background: 'var(--cf-fill)', border: '1px solid var(--cf-border)',
+          borderRadius: 12, padding: '10px 12px', color: 'var(--cf-ink)',
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
+            strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flex: 'none', marginTop: 2, color: 'var(--cf-ink-3)' }}>
+            <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+            <path d="M19.5 7.125L16.862 4.487M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+          </svg>
+          <p style={{ margin: 0, fontSize: 14, lineHeight: 1.35, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{notaPrestamo}</p>
+        </div>
+      )}
       {/* ── 1 · EL MONTO ───────────────────────────────────────────────────
           El anillo dorado va aquí y en ningún otro sitio de la hoja: es el único
           campo que hay que teclear, y en una pantalla que se opera de pie con sol

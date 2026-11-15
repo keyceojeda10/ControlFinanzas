@@ -1666,6 +1666,7 @@ export default function RegistrarPago({
           // Si el teléfono no va a dar la ubicación, se dice ANTES de cobrar.
           // Un recargo o un descuento no llevan ubicación: tampoco su aviso.
           aviso={<AvisoUbicacion activo={open && !['recargo', 'descuento'].includes(tipo)} />}
+          notaPrestamo={prestamo?.nota || null}
           // Se VE agrupado y se GUARDA crudo: el estado va al servidor con
           // `Number(monto)`, y con puntos dentro eso daría NaN. El campo enseñaba
           // «20000», y con seis cifras seguidas —«1250000»— nadie distingue un

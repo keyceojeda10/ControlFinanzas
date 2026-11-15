@@ -29,6 +29,8 @@ import { trackEvent } from '@/lib/analytics'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { devengarAlCrear, asentarPeriodoPagadoAlCrear } from '@/lib/dinero/devengar'
 import { TIPOS_ABONO_PREVIO, sePreguntaElTipo, NOTA_ABONO_PREVIO_MANUAL, NOTA_INTERES_YA_COBRADO } from '@/lib/dinero/abono-previo'
+import { evaluarCorreccion, MARCA_CORREGIDO, PREFIJO_CORRECCION } from '@/lib/dinero/corregir-prestamo'
+import { limpiarNota } from '@/lib/prestamos/nota'
 import { devengosPendientes, periodoEnCursoAbierto } from '@/lib/calculos'
 import { getLocalDateStr, inicioDelDiaLocal, getLocalDayRange } from '@/lib/i18n'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
@@ -695,6 +697,27 @@ export async function POST(request) {
   })
   if (!cliente) return Response.json({ error: 'Cliente no encontrado' }, { status: 404 })
 
+  /* ⚠ CORREGIR UN PRÉSTAMO DE OTRO DÍA EN VEZ DE BORRARLO Y CREARLO (15 nov
+     2026). El viejo se borra sin tocar sus asientos y este nace sin mover la
+     bolsa: su plata ya se contó. Ver lib/dinero/corregir-prestamo.js. */
+  const corrigeA = typeof body.corrigeA === 'string' && body.corrigeA ? body.corrigeA : null
+  let correccion = null
+  if (corrigeA) {
+    if (rol !== 'owner') {
+      return Response.json({ error: 'Solo el dueño puede corregir un préstamo.' }, { status: 403 })
+    }
+    correccion = await evaluarCorreccion(prisma, { id: corrigeA, organizationId, pais: session.user.country || 'co' })
+    if (!correccion.puede) return Response.json({ error: correccion.motivo }, { status: 400 })
+    if (correccion.prestamo.clienteId !== clienteId) {
+      return Response.json({ error: 'El préstamo corregido tiene que ser del mismo cliente.' }, { status: 400 })
+    }
+    if (Math.round(abono) !== correccion.cobrado) {
+      return Response.json({
+        error: `De ese préstamo ya se cobraron $${correccion.cobrado.toLocaleString('es-CO')}: el corregido los lleva como «ya había pagado».`,
+      }, { status: 400 })
+    }
+  }
+
   if (cliente.rutaId && !await rutaPermitida(organizationId, cliente.rutaId)) {
     return Response.json({ error: 'La ruta de este cliente excede el limite de tu plan. Mejora tu plan o desactiva rutas que no uses.' }, { status: 403 })
   }
@@ -1134,7 +1157,8 @@ export async function POST(request) {
         saldoCap += inyeccionMonto
       }
 
-      if (modoEstricto && tieneCapital) {
+      // Al corregir no sale plata: la del préstamo viejo ya salió en su día.
+      if (modoEstricto && tieneCapital && !correccion) {
         const neto = Number(montoPrestado) - abono
         if (saldoCap < neto) {
           faltanteCapital = neto - saldoCap
@@ -1160,6 +1184,8 @@ export async function POST(request) {
         interesAdelantado: modoInteresFinal === 'solo_interes' && !!interesAdelantado && !esAbierto,
         sinPlazo: esAbierto,
         ...(typeof nombreProducto === 'string' && nombreProducto.trim() && { nombreProducto: nombreProducto.trim().slice(0, 100) }),
+        // Lo pactado que no cabe en los números (15 nov 2026). Ver `Prestamo.nota`.
+        ...(limpiarNota(body.nota) && { nota: limpiarNota(body.nota) }),
         diaCobroSemana: diaCobroSemanaDb,
         diaCobroMes:    diaCobroMesDb,
         diaCobroMes2:   diaCobroMes2Db,
@@ -1233,7 +1259,9 @@ export async function POST(request) {
            préstamos entregados $700.000». «(carga masiva)» es la marca que ya
            leen `prestamosMigrados` y `esAsientoDeMigracion` (abono-previo.js),
            la misma de la importación de Excel. */
-        descripcion: body.yaEstabaEnLaCalle === true
+        descripcion: correccion
+          ? `Desembolso ${MARCA_CORREGIDO} - ${cliente.nombre}`
+          : body.yaEstabaEnLaCalle === true
           ? `Desembolso (carga masiva) - ${cliente.nombre}`
           : `Desembolso préstamo a ${cliente.nombre}`,
         referenciaId: nuevo.id,
@@ -1242,7 +1270,34 @@ export async function POST(request) {
         creadoPorId: session.user.id,
         metodoPago: cuentaDesembolso,
         metodoPagoId: cuentaDesembolsoId,
+        // Corregido: esa plata salió con el préstamo viejo y sigue contada.
+        noMueveCapital: !!correccion,
       })
+
+      if (correccion) {
+        /* Solo la diferencia de monto mueve la bolsa, y no el fajo: salió (o
+           no salió) el día del préstamo viejo. `CORRIGEN_EL_LIBRO` la reconoce
+           por el prefijo. */
+        const diferencia = Math.round(Number(montoPrestado)) - correccion.salio
+        if (diferencia !== 0) {
+          await registrarMovimientoCapital(tx, {
+            organizationId,
+            tipo: 'ajuste',
+            monto: Math.abs(diferencia),
+            direccion: diferencia > 0 ? 'egreso' : 'ingreso',
+            descripcion: `${PREFIJO_CORRECCION} - ${cliente.nombre}: era de $${correccion.salio.toLocaleString('es-CO')} y es de $${Math.round(Number(montoPrestado)).toLocaleString('es-CO')}`,
+            referenciaId: nuevo.id,
+            referenciaTipo: 'prestamo_corregido',
+            rutaId: rutaIdCapital,
+            creadoPorId: session.user.id,
+            metodoPago: cuentaDesembolso,
+            metodoPagoId: cuentaDesembolsoId,
+          })
+        }
+        // El viejo se va SIN reversos: sus asientos se quedan en su día.
+        await tx.pago.deleteMany({ where: { prestamoId: corrigeA } })
+        await tx.prestamo.delete({ where: { id: corrigeA } })
+      }
 
       if (abono > 0) {
         for (const parte of partesDelAbono) {
@@ -1292,6 +1347,8 @@ export async function POST(request) {
            * le habían pagado también lo tiene en efectivo. */
           metodoPago: cuentaDesembolso,
           metodoPagoId: cuentaDesembolsoId,
+          // Corregido: esos cobros ya entraron con el préstamo viejo.
+          noMueveCapital: !!correccion,
         })
       }
     } else if (abono > 0) {
@@ -1358,6 +1415,9 @@ export async function POST(request) {
   }
 
   logActividad({ session, accion: esPendiente ? 'solicitar_prestamo' : 'crear_prestamo', entidadTipo: 'prestamo', entidadId: prestamo.id, detalle: `${esPendiente ? 'Solicitud de préstamo' : 'Préstamo'} $${Number(montoPrestado).toLocaleString('es-CO')} a ${cliente.nombre}${abono > 0 ? ` (en curso, abono previo $${abono.toLocaleString('es-CO')})` : ''}`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
+  if (correccion) {
+    logActividad({ session, accion: 'eliminar_prestamo', entidadTipo: 'prestamo', entidadId: corrigeA, detalle: `Préstamo de ${cliente.nombre} corregido: lo reemplaza ${prestamo.id}. Su plata no se vuelve a contar`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
+  }
   trackEvent({ organizationId, userId: session.user.id, evento: esPendiente ? 'solicitar_prestamo' : 'crear_prestamo', metadata: { monto: Number(montoPrestado) } })
 
   if (esPendiente) {

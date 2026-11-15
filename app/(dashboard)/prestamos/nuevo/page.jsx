@@ -20,6 +20,7 @@ import EleccionInteresPorMes from '@/components/prestamos/EleccionInteresPorMes'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { usePantallaAncha } from '@/hooks/usePantallaAncha'
 import { formatMoney, soloDecimal } from '@/lib/i18n'
+import { NOTA_MAX } from '@/lib/prestamos/nota'
 import { MODOS_CUOTA_PAREJA } from '@/lib/dinero/interes-en-pesos'
 import { useCuotaEnPesos } from '@/hooks/useCuotaEnPesos'
 import { SelectorPorcentajePesos, CampoCuotaEnPesos, rotuloCuotaEnPesos } from '@/components/prestamos/InteresEnPesos'
@@ -239,6 +240,8 @@ function NuevoPrestamo() {
   const { puedeCrearPrestamos, esOwner, esCobrador, puedePrestarConPrestamoActivo, loading: authLoading } = useAuth()
 
   const clienteIdParam = searchParams.get('clienteId') ?? ''
+  // El préstamo de otro día que este reemplaza (lib/dinero/corregir-prestamo.js).
+  const corrigeParam = searchParams.get('corrige') ?? ''
 
   const [clienteId,    setClienteId]    = useState(clienteIdParam)
   const [clientes,     setClientes]     = useState([])
@@ -360,6 +363,8 @@ function NuevoPrestamo() {
   const [precioVenta, setPrecioVenta] = useState('')
   // Mercancia: nombre del producto (gorra, reloj...) para dar referencia. Opcional.
   const [nombreProducto, setNombreProducto] = useState('')
+  // Lo pactado que no cabe en los números (lib/prestamos/nota.js).
+  const [nota, setNota] = useState('')
   // Préstamo en curso (migración)
   const [esEnCurso, setEsEnCurso] = useState(false)
   /* A qué se abonó ese pago previo. Solo se pregunta en el préstamo abierto,
@@ -760,6 +765,61 @@ function NuevoPrestamo() {
     if (u.interesMesCompleto != null) elegirMesCompleto(Boolean(u.interesMesCompleto))
   }
 
+  /* ══ CORREGIR UN PRÉSTAMO DE OTRO DÍA (15 nov 2026) ═══════════════════════
+     Se llega desde «¿Eliminar este préstamo?» → «Corregir el préstamo». El
+     formulario nace con los datos del viejo y lo ya cobrado como «Ya había
+     pagado algo antes»; al guardar, el servidor borra el viejo sin tocar sus
+     asientos y este nace sin mover la bolsa. Lo ya cobrado no se puede cambiar
+     aquí: es plata que ya entró, y el servidor lo exige igual. */
+  const [correccion, setCorreccion] = useState(null)
+  useEffect(() => {
+    if (!corrigeParam) return
+    let vivo = true
+    fetch(`/api/prestamos/${encodeURIComponent(corrigeParam)}/corregir`, { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!vivo) return
+        if (!d?.puede) { setError(d?.motivo || 'Este préstamo no se puede corregir.'); return }
+        const u = d.prestamo
+        setCorreccion(d)
+        setMonto(String(Math.round(u.montoPrestado)))
+        setTasa(String(u.tasaInteres))
+        const freq = u.frecuencia || 'diario'
+        setFrecuencia(freq)
+        setModoDiaCobro(freq === 'mensual' || (freq === 'quincenal' && (u.diaCobroMes != null || u.diaCobroMes2 != null)) ? 'mes' : 'semana')
+        setDiaCobroSemana(u.diaCobroSemana != null ? String(u.diaCobroSemana) : '')
+        setDiaCobroMes(u.diaCobroMes != null ? String(u.diaCobroMes) : '')
+        setDiaCobroMes2(u.diaCobroMes2 != null ? String(u.diaCobroMes2) : '')
+        const diasPorPer = DIAS_POR_PERIODO[freq] || 1
+        setPlazoUnidades(String(Math.max(1, Math.round((u.diasPlazo || 0) / diasPorPer))))
+        if (u.modoInteres) setModoInteres(u.modoInteres)
+        if (u.modoInteres === 'manual' && u.cuotaDiaria) setCuotaManual(String(Math.round(u.cuotaDiaria)))
+        setSinPlazo(Boolean(u.sinPlazo && u.modoInteres === 'solo_interes'))
+        setInteresAdelantado(Boolean(u.interesAdelantado))
+        setInteresPorMes(Boolean(u.interesPorMes))
+        if (u.interesMesCompleto != null) elegirMesCompleto(Boolean(u.interesMesCompleto))
+        if (u.nombreProducto) setNombreProducto(u.nombreProducto)
+        if (u.nota) setNota(u.nota)
+        if (u.seguro) { setSeguro(true); if (u.montoSeguro) setMontoSeguro(String(Math.round(u.montoSeguro))) }
+        if (u.socioId) setSocioId(u.socioId)
+        setFechaInicio(u.fechaInicio)
+        if (d.cobrado > 0) {
+          setEsEnCurso(true)
+          setYaAbonado(String(d.cobrado))
+          const deCapital = d.cobrado - (d.deInteres || 0)
+          if (u.sinPlazo) {
+            if (d.deInteres > 0 && deCapital > 0) {
+              setTipoAbonoPrevio('separado'); setAbonoDeInteres(String(d.deInteres))
+              if (d.fechaAbonoCapital) setFechaAbonoCapital(d.fechaAbonoCapital)
+            } else if (d.deInteres > 0) setTipoAbonoPrevio('intereses')
+          }
+        }
+      })
+      .catch(() => { if (vivo) setError('No se pudo cargar el préstamo a corregir. Revisa la señal.') })
+    return () => { vivo = false }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [corrigeParam])
+
   // Guard de permiso
   useEffect(() => {
     if (!authLoading && !puedeCrearPrestamos) router.replace('/prestamos')
@@ -1074,6 +1134,8 @@ function NuevoPrestamo() {
     ...(socioId && { socioId }),
     metodoPago: cuentaDesembolso.metodoPago,
     ...(cuentaDesembolso.metodoPago === 'transferencia' && cuentaDesembolso.metodoPagoId && { metodoPagoId: cuentaDesembolso.metodoPagoId }),
+    ...(correccion && { corrigeA: corrigeParam }),
+    ...(nota.trim() && { nota: nota.trim() }),
   })
 
   const crearPrestamoRequest = async (inyeccionPrevia = null) => {
@@ -1226,6 +1288,13 @@ function NuevoPrestamo() {
     // Volvemos a /prestamos (que ya está cacheado) en vez de al detalle por
     // tempId — esa URL no está en cache del SW y mostraría "Sin conexion".
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      /* Corregir borra el préstamo viejo en el servidor: sin señal no se
+         encola, o quedarían los dos. */
+      if (correccion) {
+        setError('Para corregir el préstamo necesitas señal. Inténtalo cuando vuelva.')
+        setLoading(false)
+        return
+      }
       try {
         await guardarPrestamoPendiente(payloadOffline)
         try { sessionStorage.setItem('cf-toast', 'Préstamo guardado. Se sincronizará al volver online.') } catch {}
@@ -1436,6 +1505,19 @@ function NuevoPrestamo() {
             Solo desde `xl`: en el teléfono la pantalla YA es la hoja, y meter
             una tarjeta dentro de otra añade un borde que no separa nada. */}
         <div className="min-w-0 xl:rounded-[16px] xl:p-6 xl:border xl:bg-[var(--cf-card)] xl:border-[var(--cf-border)]">
+
+      {correccion && (
+        <div className="mt-4 rounded-[12px] px-4 py-3 space-y-1"
+          style={{ background: 'var(--cf-gold-bg)', border: '1px solid var(--cf-gold-border)' }}>
+          <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>
+            Corrigiendo el préstamo de {correccion.prestamo?.cliente?.nombre}
+          </p>
+          <p className="text-[12px] leading-snug" style={{ color: 'var(--cf-ink-2)' }}>
+            Cambia lo que esté mal y guarda. Este reemplaza al anterior y la plata no se cuenta dos veces
+            {correccion.cobrado > 0 ? `: los ${formatMoney(correccion.cobrado)} que ya te pagó siguen contados.` : '.'}
+          </p>
+        </div>
+      )}
 
       {error && (
         <div className="mt-6 rounded-[12px] px-4 py-3 text-sm"
@@ -2682,6 +2764,22 @@ function NuevoPrestamo() {
                 </div>
               )}
 
+              {/* ══ LA NOTA DEL CRÉDITO (15 nov 2026) ══
+                  «Se hacen negocios a veces y a uno se le olvida»: lo que se
+                  pactó y no cabe en los números. Sale al cobrar, en el préstamo
+                  y en el aviso de vencido. */}
+              <div>
+                <label htmlFor="nota-prestamo" className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Nota (opcional)</label>
+                <textarea id="nota-prestamo" value={nota} onChange={(e) => setNota(e.target.value.slice(0, NOTA_MAX))}
+                  rows={2} maxLength={NOTA_MAX}
+                  placeholder="Ej: paga los 20. Diciembre no paga, está fuera del país."
+                  className="mt-1.5 w-full rounded-xl px-3 py-2.5 text-base resize-none focus:outline-none"
+                  style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }} />
+                <p className="mt-1 text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
+                  Te sale al cobrarle y cuando se le vence.
+                </p>
+              </div>
+
               <label className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border cursor-pointer"
                 style={{ background: 'var(--cf-fill)', borderColor: 'var(--cf-border)' }}>
                 <div className="flex-1 min-w-0">
@@ -2689,12 +2787,16 @@ function NuevoPrestamo() {
                   <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Migrar un préstamo con abonos previos</p>
                   <EnlaceProfe id="prestamos-ya-venia" junto="Ya había pagado algo antes" pregunta="¿Cómo se pasa?" style={{ margin: '-4px 0 -12px -8px' }} />
                 </div>
-                <input type="checkbox" checked={esEnCurso} onChange={(e) => setEsEnCurso(e.target.checked)} className="w-5 h-5 accent-[var(--cf-gold)]" />
+                <input type="checkbox" checked={esEnCurso} disabled={!!correccion} onChange={(e) => setEsEnCurso(e.target.checked)} className="w-5 h-5 accent-[var(--cf-gold)]" />
               </label>
               {esEnCurso && (
                 <div>
                   <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Monto ya abonado</label>
-                  <div className="mt-1.5"><MoneyInput value={yaAbonado} onChange={(e) => setYaAbonado(e.target.value)} placeholder="0" /></div>
+                  {/* Al corregir es lo que ya entró con el préstamo viejo: no se toca. */}
+                  <div className="mt-1.5"><MoneyInput value={yaAbonado} readOnly={!!correccion} onChange={(e) => { if (!correccion) setYaAbonado(e.target.value) }} placeholder="0" /></div>
+                  {correccion && (
+                    <p className="mt-1 text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Lo que ya te pagó en el préstamo que estás corrigiendo.</p>
+                  )}
                   <PreguntaAbonoRaro abono={yaAbonado} montoPrestado={monto} totalAPagar={calculo?.totalAPagar}
                     confirmado={abonoConfirmado} onCorregir={setYaAbonado} onConfirmar={setAbonoConfirmado} />
 

@@ -31,6 +31,9 @@ import { logActividad } from '@/lib/activity-log'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { revivirPrestamoRenovado, efectivoQueSalio, capitalYaDevuelto, vuelveACajaAlAnular, queHaceAnular, pasarLoCobradoDeMasAlAnterior } from '@/lib/dinero/revertir-renovacion'
 import { esDelDiaAbierto } from '@/lib/dinero/reverso-del-dia'
+import { esDesembolsoCorregido } from '@/lib/dinero/corregir-prestamo'
+import { esAbonoPrevio } from '@/lib/dinero/abono-previo'
+import { limpiarNota } from '@/lib/prestamos/nota'
 import { getLocalDayRange, getLocalDateStr, getUtcOffset } from '@/lib/i18n'
 import { getCachedMutation, setCachedMutation, buildMutationKey } from '@/lib/mutation-idempotency'
 import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
@@ -410,9 +413,11 @@ export async function PATCH(request, { params }) {
           tipo: 'desembolso',
         },
         orderBy: { createdAt: 'asc' },
-        select: { createdAt: true },
+        select: { createdAt: true, descripcion: true },
       })
-      const salioHoy = esDelDiaAbierto(desembolsoMov?.createdAt ?? p.createdAt, session.user.country || 'co')
+      // El corregido no salió hoy: salió con el préstamo que reemplazó.
+      const salioHoy = !esDesembolsoCorregido(desembolsoMov)
+        && esDelDiaAbierto(desembolsoMov?.createdAt ?? p.createdAt, session.user.country || 'co')
 
       const devolveria = modoReversionSolicitado === 'devolver_todo' ? salio : saldoNoRecuperado
       montoReversion = salioHoy ? devolveria : 0
@@ -691,6 +696,29 @@ export async function PATCH(request, { params }) {
   // La hoja de la ficha mandaba `{ diasSinCobro }` sin modo y ninguna rama lo
   // recibía: «Operación no válida», siempre (DETALLES-PRESTAMOS #2, 17 oct 2026).
   // Vacío = hereda del cliente, la ruta o el negocio (null), como dice la hoja.
+  /* La nota del crédito (15 nov 2026): se escribe al prestar y se cambia
+     cuando haga falta, con pagos o sin ellos. No toca ninguna cifra. */
+  if (modo === 'nota') {
+    const puedeGestionar = session.user.rol === 'owner'
+      ? true
+      : (session.user.rol === 'cobrador' && await cobradorPuedeGestionarPrestamos(session.user.id))
+    if (!puedeGestionar) {
+      return Response.json({ error: 'No tienes permiso para cambiar la nota' }, { status: 403 })
+    }
+    const nota = limpiarNota(body.nota)
+    const actualizado = await prisma.prestamo.update({ where: { id }, data: { nota } })
+    logActividad({
+      session,
+      accion: 'editar_prestamo',
+      entidadTipo: 'prestamo',
+      entidadId: id,
+      detalle: nota ? `Nota del préstamo: «${nota.slice(0, 120)}»` : 'Nota del préstamo borrada',
+      ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+    })
+    if (idempKey) setCachedMutation(idempKey, actualizado)
+    return Response.json(actualizado)
+  }
+
   if (modo === 'diasSinCobro') {
     const puedeGestionar = session.user.rol === 'owner'
       ? true
@@ -1411,9 +1439,12 @@ export async function DELETE(request, { params }) {
     const desembolso = await tx.movimientoCapital.findFirst({
       where: { organizationId, referenciaId: id, referenciaTipo: 'prestamo', tipo: 'desembolso' },
       orderBy: { createdAt: 'asc' },
-      select: { createdAt: true },
+      select: { createdAt: true, descripcion: true },
     })
-    const salioHoy = esDelDiaAbierto(desembolso?.createdAt ?? p.createdAt, pais)
+    /* El préstamo CORREGIDO nace hoy, pero su plata salió con el que reemplazó,
+       otro día: borrarlo no la devuelve (lib/dinero/corregir-prestamo.js). */
+    const salioHoy = !esDesembolsoCorregido(desembolso)
+      && esDelDiaAbierto(desembolso?.createdAt ?? p.createdAt, pais)
 
     const salio = await efectivoQueSalio(tx, p)
     const yaDevuelto = await capitalYaDevuelto(tx, p)
@@ -1444,8 +1475,12 @@ export async function DELETE(request, { params }) {
        caja de ese día. Quitarlo hoy le baja el capital al prestamista por plata
        que sí recibió. Si el préstamo es de junio y le entró un pago hoy, se
        quita el pago de hoy y no se devuelve el desembolso de junio. */
+    /* El abono previo de un CORREGIDO nació sin mover la bolsa (esos cobros
+       entraron con el préstamo que reemplazó): quitarlo no devuelve nada. */
+    const corregido = esDesembolsoCorregido(desembolso)
     const pagosReales = p.pagos
       .filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
+      .filter(pg => !(corregido && esAbonoPrevio(pg)))
       .filter(pg => esDelDiaAbierto(pg.createdAt ?? pg.fechaPago, pais))
     for (const pg of pagosReales) {
       await registrarMovimientoCapital(tx, {

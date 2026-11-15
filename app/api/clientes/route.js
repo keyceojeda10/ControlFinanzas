@@ -183,6 +183,8 @@ export async function GET(request) {
           totalAPagar: true,
           montoPrestado: true, ...CAMPOS_DEL_REPARTO,
           modoInteres: true,
+          // La nota del crédito: la hoja de cobro rápido la enseña arriba.
+          nota: true,
           // Para el desglose: sin la tasa, la ficha de cada prestamo no puede
           // decir en que se pacto, y el mismo «20%» significa cosas distintas
           // segun el modo.
