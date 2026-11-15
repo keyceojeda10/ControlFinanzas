@@ -809,6 +809,20 @@ function PrestamoDetalleContenido({ params }) {
       && Math.round(saldoPendiente ?? 0) > Math.round(cuotaQueToca)
       ? Math.round(cuotaQueToca) : 0
   const mostrarAtajosCobro = estaActivo && !completado && saldoPendiente > 0
+  /* ── YA COBRÓ HOY, PERO TODAVÍA DEBE (Créditos pete, 15 nov 2026) ──
+     «Fidel me acaba de cancelar la totalidad del crédito pero me sale que debe
+     20 mil, todavía quiero efectuarle el cobro de los 20 y no me deja». Cobró
+     la cuota del día ($170.000) y quedaban $20.000 vencidos: el botón de pagar
+     se cambiaba por el letrero verde «Cobrado hoy» y no había por dónde cobrar
+     (solo el chip «Abonos», que no se ve como la salida). Si queda algo VENCIDO,
+     o lo que falta es menos de una cuota —lo último del préstamo—, el letrero
+     ofrece cobrarlo. Con cuotas futuras y nada vencido sigue siendo solo verde:
+     adelantar va por «Abonos». */
+  const saldoRedondo = Math.round(saldoPendiente ?? 0)
+  const cobrarTrasHoy = estaActivo && yaPagoHoy && !completado && !(restaDeLaCuota > 0) && saldoRedondo > 0
+    ? (hayMontoMora ? Math.min(Math.round(montoEnMora), saldoRedondo)
+      : saldoRedondo <= Math.round(cuotaDiaria || 0) ? saldoRedondo : 0)
+    : 0
 
   // ── Lo que pide la ficha de T41-01 ──
   //
@@ -1890,7 +1904,8 @@ function PrestamoDetalleContenido({ params }) {
       {/* ── PAGÓ HOY (banner verde con misma estructura que el boton de pago) ── */}
       {estaActivo && yaPagoHoy && !completado && !(restaDeLaCuota > 0) && (
         <div
-          className="w-full h-16 rounded-[16px] flex items-center px-4"
+          {...(cobrarTrasHoy > 0 ? { role: 'button', tabIndex: 0, onClick: () => abrirPagoConMonto(cobrarTrasHoy), onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirPagoConMonto(cobrarTrasHoy) } } } : {})}
+          className={`w-full h-16 rounded-[16px] flex items-center px-4${cobrarTrasHoy > 0 ? ' cursor-pointer' : ''}`}
           style={{
             background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.18), rgba(22, 163, 74, 0.10))',
             border: '1px solid rgba(34, 197, 94, 0.35)',
@@ -1925,6 +1940,14 @@ function PrestamoDetalleContenido({ params }) {
               {formatMoney(cobradoHoyPrestamo)}
             </span>
           </span>
+          {cobrarTrasHoy > 0 && (
+            <span className="shrink-0 flex flex-col items-end leading-tight text-right">
+              <span className="text-[11px] font-semibold" style={{ color: hayMontoMora ? 'var(--cf-red-dark)' : 'var(--cf-ink-2)' }}>
+                {hayMontoMora ? 'Debe vencido' : 'Le falta'} <span className="cf-fig">{formatMoney(cobrarTrasHoy)}</span>
+              </span>
+              <span className="text-[14px] font-bold mt-0.5" style={{ color: 'var(--cf-green-dark)' }}>Cobrar ›</span>
+            </span>
+          )}
         </div>
       )}
 
