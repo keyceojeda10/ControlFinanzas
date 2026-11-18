@@ -35,44 +35,60 @@ import Link from 'next/link'
 import { INFORMES, informeBloqueado, destinoDe } from '@/lib/reportes/catalogo'
 
 const Flecha = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-3)"
-    strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
-    <path d="M9 5l7 7-7 7" />
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink)"
+    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flex: 'none' }}>
+    <path d="M9 5.5l6.5 6.5L9 18.5" />
   </svg>
 )
 
 const Candado = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-3)"
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-3)"
     strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
     <path d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75" />
     <rect x="4.5" y="10.5" width="15" height="10.5" rx="2" />
   </svg>
 )
 
-function Renglon({ informe, bloqueado }) {
+/* ══ ESTILO «MI CUENTA» (18 nov 2026) ════════════════════════════════════════
+ * Eran dieciséis renglones seguidos en una caja: había que leerlos todos para
+ * dar con el que se buscaba. Ahora van en grupos con título gris, como el índice
+ * de Configuración que el dueño pidió llevar a todo, y cada fila con el nombre
+ * grande y debajo lo que contesta.
+ *
+ * Los grupos son SOLO de esta pantalla: el catálogo no se toca. Un informe nuevo
+ * que no esté en ninguno cae en «Otros», nunca desaparece. */
+const GRUPOS = [
+  { titulo: 'La plata', ids: ['entro', 'calle', 'cobros-mes', 'dia', 'cuentas'] },
+  { titulo: 'Cómo va el negocio', ids: ['rendimiento', 'cobradores', 'seguros', 'contador'] },
+  { titulo: 'Para imprimir o mandar', ids: ['resumen', 'listado-cobros'] },
+  { titulo: 'Listas completas en Excel', ids: ['cartera', 'volcado-clientes', 'volcado-pagos', 'volcado-cobradores', 'crudo'] },
+]
+
+function Renglon({ informe, bloqueado, primero }) {
   const destino = bloqueado ? '/configuracion/plan' : destinoDe(informe)
 
   return (
     <Link
       href={destino}
       style={{
-        display: 'flex', alignItems: 'center', gap: 12,
-        padding: '11px 14px', textDecoration: 'none',
-        borderTop: '1px solid var(--cf-hairline)',
+        display: 'flex', alignItems: 'center', gap: 14,
+        padding: '16px 20px', minHeight: 72, textDecoration: 'none',
+        background: 'var(--cf-card)',
+        borderTop: primero ? 0 : '1px solid var(--cf-border)',
         // Apagado, no escondido: se lee que existe y que hace falta otro plan.
         opacity: bloqueado ? 0.55 : 1,
       }}
     >
-      <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)' }}>
+      <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 19, fontWeight: 500, letterSpacing: '-.01em', color: 'var(--cf-ink)', lineHeight: 1.2 }}>
             {informe.titulo}
           </span>
           {bloqueado && <Candado />}
         </span>
         {/* Lo que contesta. Envuelve, no se recorta: recortarlo devuelve el
             problema —hay que abrirlo para saber si es el que se buscaba. */}
-        <span style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--cf-ink-3)' }}>
+        <span style={{ fontSize: 14, lineHeight: 1.35, color: 'var(--cf-ink-3)' }}>
           {bloqueado ? `Con otro plan · ${informe.contesta}` : informe.contesta}
         </span>
       </span>
@@ -90,31 +106,44 @@ export default function IndiceDeInformes({ nivel = 0 }) {
   const lista = INFORMES.filter((i) => !i.pendiente)
   if (!lista.length) return null
 
+  const enGrupo = new Set(GRUPOS.flatMap((g) => g.ids))
+  const grupos = [
+    ...GRUPOS.map((g) => ({ titulo: g.titulo, informes: g.ids.map((id) => lista.find((i) => i.id === id)).filter(Boolean) })),
+    { titulo: 'Otros', informes: lista.filter((i) => !enGrupo.has(i.id)) },
+  ].filter((g) => g.informes.length > 0)
+
   return (
-    <section
-      style={{
-        background: 'var(--cf-card)',
-        border: '1px solid var(--cf-border)',
-        borderRadius: 'var(--cf-r-card)',
-        overflow: 'hidden',
-      }}
-    >
-      <header style={{ padding: '13px 14px 11px' }}>
-        <h2 style={{ fontSize: 14, fontWeight: 800, color: 'var(--cf-ink)' }}>
+    /* En el teléfono va de borde a borde (los −20px del <main>), como el índice
+       de Configuración. En el PC, en su tarjeta y a dos columnas, así no hay que
+       deslizar para llegar al último. */
+    <section className="cf-indice-informes" style={{ background: 'var(--cf-surface)' }}>
+      {/* Con su propia regla y no con `-mx-5 lg:mx-0`: la clase no llegaba a
+          aplicarse y el índice quedaba con los 20 px de cada lado. */}
+      <style>{`
+        .cf-indice-informes { margin-left: -20px; margin-right: -20px; }
+        @media (min-width: 1024px) {
+          .cf-indice-informes { margin-left: 0; margin-right: 0; border-radius: 16px; overflow: hidden; border: 1px solid var(--cf-border); }
+        }
+      `}</style>
+      <header style={{ padding: '6px 20px 4px' }}>
+        <h2 style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)' }}>
           ¿Qué necesitas sacar?
         </h2>
-        <p style={{ fontSize: 12, color: 'var(--cf-ink-3)', marginTop: 2 }}>
+        <p style={{ fontSize: 15, color: 'var(--cf-ink-3)', marginTop: 4 }}>
           Todos los informes del negocio, en un solo sitio.
         </p>
       </header>
 
-      {/* En PC caben en dos columnas y así no hay que deslizar para llegar al
-          último. En el teléfono, uno debajo de otro. */}
-      <div className="lg:grid lg:grid-cols-2">
-        {lista.map((i) => (
-          <Renglon key={i.id} informe={i} bloqueado={informeBloqueado(i, nivel)} />
-        ))}
-      </div>
+      {grupos.map((g) => (
+        <div key={g.titulo}>
+          <div style={{ padding: '18px 20px 10px', fontSize: 16, color: 'var(--cf-ink-3)' }}>{g.titulo}</div>
+          <div className="lg:grid lg:grid-cols-2" style={{ background: 'var(--cf-card)', borderTop: '1px solid var(--cf-border)', borderBottom: '1px solid var(--cf-border)' }}>
+            {g.informes.map((i, n) => (
+              <Renglon key={i.id} informe={i} primero={n === 0} bloqueado={informeBloqueado(i, nivel)} />
+            ))}
+          </div>
+        </div>
+      ))}
     </section>
   )
 }
