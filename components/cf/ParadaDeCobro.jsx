@@ -18,7 +18,7 @@
 // Lo de aqui son E07 (la tarjeta), E08 (el carril numerado) y E09 (los que
 // estan en la ruta pero no son visita de hoy).
 
-import { useState } from 'react'
+import { createContext, useContext, useState } from 'react'
 import { EtiquetaClavo, TiraCifras, EstrellaCliente } from '@/components/cf/primitivos'
 import { TEXTO as TEXTO_CALIFICACION } from '@/lib/calificacion'
 
@@ -69,6 +69,40 @@ export const COLOR_ZONA = {
    `--cf-ink-2` y no en gris claro a propósito: son los que el cobrador mira
    POR DELANTE para saber cuánto le falta, y en gris claro quedan a 3,12:1 y no
    se leen bajo sol. */
+/* El número de la parada, que `Carril` le pasa a la tarjeta que lleva dentro.
+   Fuera de un carril (otras pantallas que usan `FilaCobro`) no hay número. */
+const NumeroContexto = createContext(null)
+
+/* La pastilla del número, en la esquina de abajo a la derecha del avatar.
+   `anillo` es el color del fondo de la tarjeta: la separa del avatar sin una
+   raya. Ancho mínimo y no fijo: en una ruta de 300 el número tiene tres
+   cifras. ⚠ El `display` en la CLASE: en línea le ganaría al `lg:hidden`. */
+function NumeroDeParada({ anillo = 'var(--cf-card)' }) {
+  const n = useContext(NumeroContexto)
+  if (!n || n.orden == null) return null
+  const tono = n.cobrada
+    ? { bg: 'var(--cf-green)', fg: '#FFF' }
+    : n.actual
+      ? { bg: 'var(--cf-ink)', fg: 'var(--cf-card)' }
+      : n.tenue
+        ? { bg: 'var(--cf-fill-2)', fg: 'var(--cf-ink-3)' }
+        : { bg: 'var(--cf-ink-2)', fg: 'var(--cf-card)' }
+  return (
+    <span className={`${n.siempre ? '' : 'lg:hidden '}cf-num inline-flex items-center justify-center`}
+      aria-label={`Parada ${n.orden}`}
+      style={{
+        position: 'absolute', right: -7, bottom: -5,
+        height: 20, minWidth: 20, padding: '0 5px', borderRadius: 999,
+        background: tono.bg, color: tono.fg,
+        boxShadow: `0 0 0 2px ${anillo}`,
+        fontSize: 12, fontWeight: 700, lineHeight: 1,
+        fontVariantNumeric: 'tabular-nums',
+      }}>
+      {n.orden}
+    </span>
+  )
+}
+
 export function Carril({
   orden, cobrada, actual, ultima, ancla, resaltada, tenue = false,
   // Los dos estados del arrastre por pulsación larga. `resto` recoge los
@@ -100,17 +134,21 @@ export function Carril({
      caminando, y una parada hecha sigue ocupando su sitio en el recorrido.
      Que está hecha lo dice el VERDE del círculo, el check del avatar, el nombre
      tachado y el monto en verde. El número no le quitaba sitio a nada. */
-  const circulo = cobrada
-    ? { w: 30, bg: 'var(--cf-green)', bd: 'none', fg: '#FFF' }
-    : actual
-      ? { w: 34, bg: 'var(--cf-ink)', bd: 'none', fg: 'var(--cf-card)' }
-      : tenue
-        ? { w: 26, bg: 'var(--cf-fill)', bd: 'none', fg: 'var(--cf-ink-3)' }
-        : { w: 30, bg: 'var(--cf-card)', bd: '2px solid var(--cf-border-strong)', fg: 'var(--cf-ink-2)' }
+  /* ══ EL NÚMERO, EN EL AVATAR (18 nov 2026) ════════════════════════════════
+     Primero fue una columna de 44 px por tarjeta («consume mucho espacio»).
+     Luego un círculo montado medio por fuera de la esquina, y el dueño lo
+     rechazó con razón: «sale por debajo de la tarjeta y el número no alcanza a
+     verse» —el contenido de la tarjeta está posicionado y se le pintaba encima—.
+     Ahora el número va DENTRO de la tarjeta, como pastilla en la esquina del
+     avatar: no puede quedar tapado, no cuesta ancho y se lee junto al nombre.
+     Lo pinta `FilaCobro` (`NumeroDeParada`); el carril solo se lo pasa. Se
+     conserva lo que el dueño pidió: sale siempre, también en el cobrado, con su
+     color (verde cobrado, negro el actual, gris el que no toca hoy). */
+  const numero = { orden, cobrada, actual, tenue, siempre: carrilSiempre }
 
   return (
     <div id={ancla} className={carrilSiempre ? 'flex' : 'flex lg:contents'} {...resto} style={{
-      gap: 10, alignItems: 'stretch',
+      position: 'relative', alignItems: 'stretch',
       // El aterrizaje al volver de cobrar. `scroll-margin` para que no quede
       // pegada al borde de arriba cuando el navegador la trae a la vista.
       scrollMarginTop: 90, scrollMarginBottom: 90,
@@ -132,42 +170,13 @@ export function Carril({
       ...style,
       ...(resto.style ?? null),
     }}>
-      {/* ⚠ `flex flex-col items-center` EN LA CLASE, NO EN EL `style`.
-          Un `display` en línea SIEMPRE gana a una clase, así que con
-          `display: 'flex'` en el `style` el `lg:hidden` no hacía nada y el
-          carril se pintaba también en escritorio —729 círculos donde no hay una
-          sola secuencia—.
-
-          Es la TERCERA vez hoy: antes fue `display:'grid'` comiéndose un
-          `hidden sm:grid`, y luego `display:'flex'` en la caja del panel
-          duplicando la gráfica en el teléfono. Hay una prueba que lo barre
-          entero para que no haya una cuarta. */}
-      <div className={`${carrilSiempre ? '' : 'lg:hidden '}flex flex-col items-center`} style={{ width: 34, flex: 'none' }}>
-        <span className="cf-num" style={{
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          width: circulo.w, height: circulo.w, minWidth: circulo.w, minHeight: circulo.w,
-          aspectRatio: '1', borderRadius: 999, flex: 'none',
-          background: circulo.bg, border: circulo.bd, color: circulo.fg,
-          fontSize: actual ? 16 : tenue ? 12.5 : 14, fontWeight: 700,
-        }}>
-          {orden}
-        </span>
-        {/* El conector no va en la última: una línea que sale de la última
-            parada y no llega a nada dice que falta algo. */}
-        {!ultima && !carrilSiempre && (
-          <span aria-hidden style={{
-            flex: 1, width: 2, minHeight: 8, marginTop: 4,
-            borderRadius: 999, background: 'var(--cf-border-strong)',
-          }} />
-        )}
-      </div>
       <div style={{
         flex: 1, minWidth: 0, borderRadius: 'var(--cf-r-card)',
         // Dos segundos de halo al volver: dice CUÁL era sin tener que releer
         // nombres en una lista de doscientas iguales.
         boxShadow: resaltada ? '0 0 0 3px var(--cf-gold-focus)' : undefined,
         transition: 'box-shadow .25s',
-      }}>{children}</div>
+      }}><NumeroContexto.Provider value={numero}>{children}</NumeroContexto.Provider></div>
     </div>
   )
 }
@@ -420,14 +429,17 @@ export function FilaCobro({
           flex: 'none', cursor: 'pointer', overflow: 'hidden',
         }}
       >
-        <span style={{
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          width: 34, height: 34, minWidth: 34, minHeight: 34, aspectRatio: '1',
-          borderRadius: 999, flex: 'none',
-          background: 'var(--cf-fill)', fontSize: 12, fontWeight: 700,
-          color: 'var(--cf-ink-3)',
-          border: `1.5px solid ${color}`,
-        }}>{iniciales}</span>
+        <span style={{ position: 'relative', flex: 'none', display: 'inline-flex' }}>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            width: 34, height: 34, minWidth: 34, minHeight: 34, aspectRatio: '1',
+            borderRadius: 999, flex: 'none',
+            background: 'var(--cf-fill)', fontSize: 12, fontWeight: 700,
+            color: 'var(--cf-ink-3)',
+            border: `1.5px solid ${color}`,
+          }}>{iniciales}</span>
+          <NumeroDeParada anillo="var(--cf-surface)" />
+        </span>
 
         <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
           {/* El nombre entero. Con 143 clientes en una ruta, un apellido
@@ -528,6 +540,7 @@ export function FilaCobro({
 
       {/* El avatar del cobrado es un CHECK, no sus iniciales: la fila ya está
           tachada, y un avatar normal invita a volver a tocarla. */}
+      <span style={{ position: 'relative', flex: 'none', display: 'inline-flex' }}>
       {cobrada ? (
         <span aria-hidden style={{
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -555,6 +568,8 @@ export function FilaCobro({
             cursor: irAFicha ? 'pointer' : undefined,
           }}>{iniciales}</span>
       )}
+      <NumeroDeParada />
+      </span>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 0 }}>
         {/* ── ⚠ EL NOMBRE NO SE CORTA NUNCA ────────────────────────────────

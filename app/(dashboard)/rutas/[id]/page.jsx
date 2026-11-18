@@ -30,6 +30,8 @@ import { useOffline }                from '@/components/providers/OfflineProvide
 import { obtenerRutaOffline, guardarOrdenPendiente, guardarPagoPendiente, guardarEnCache, leerDeCache } from '@/lib/offline'
 import { nuevaClaveCobro } from '@/lib/pagos-sin-senal'
 import { useCabecera } from '@/components/armazon/Armazon'
+import { CabeceraDetalle } from '@/components/armazon/CabeceraInicio'
+import { PastillaProfe } from '@/components/tutoriales/PiezasProfe'
 import { obtenerCoordsRapido, calentarCoords, completarUbicacionDelPago } from '@/lib/geo'
 import { useProcesando } from '@/components/cf/Procesando'
 // Las mismas que usa el servidor para el «3,4 km» de la cabecera.
@@ -70,7 +72,13 @@ import { frenteACuotaDe } from '@/lib/dinero/cuota-de-referencia'
 import { BotonMinutoProfe } from '@/components/tutoriales/PiezasProfe'
 
 // Cargar mapa dinámicamente (evitar SSR con Leaflet)
-const RouteMap = dynamic(() => import('@/components/rutas/RouteMap'), { ssr: false })
+/* El hueco del mapa mientras llega su código (18 nov 2026): sin él no ocupaba
+   nada, todo subía y al cargar la pantalla daba un salto de 300 px —con señal
+   lenta, en la calle—. Mismo alto que el `RouteMap grande` de arriba. */
+const RouteMap = dynamic(() => import('@/components/rutas/RouteMap'), {
+  ssr: false,
+  loading: () => <div aria-hidden style={{ height: 300, background: 'var(--cf-fill)' }} />,
+})
 
 /**
  * La capa del modo recorrido: pantalla completa POR ENCIMA del armazón.
@@ -85,6 +93,44 @@ const RouteMap = dynamic(() => import('@/components/rutas/RouteMap'), { ssr: fal
  * completa, sin pastilla ni cabecera. Quien está de pie con una mano no navega
  * a otra sección — sale por la flecha de atrás.
  */
+/* ══ LOS ACCESOS DE LA RUTA, REDONDOS Y A LA VISTA (18 nov 2026) ══════════════
+ * Eran una fila de botoncitos de 11 px que se desplazaba en horizontal: en un
+ * teléfono de 390 px «Optimizar», «Google Maps» y los demás nacían fuera de la
+ * pantalla. Ahora son círculos de 56 px con su nombre debajo, como los accesos
+ * de la cabecera, en una cuadrícula de cuatro: todos se ven sin arrastrar.
+ * Cada acceso lleva `onClick` o `href`; los `false` (sin permiso, sin
+ * ubicaciones) no se pintan. */
+function AccesosDeRuta({ accesos = [] }) {
+  const lista = accesos.filter(Boolean)
+  if (lista.length === 0) return null
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '16px 6px', padding: '20px 16px 4px' }}>
+      {lista.map((a) => {
+        const dentro = (
+          <>
+            <span aria-hidden style={{
+              width: 56, height: 56, borderRadius: 999, display: 'grid', placeItems: 'center',
+              background: 'var(--cf-card)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)',
+              boxShadow: '0 2px 8px rgba(20,20,28,.06)',
+            }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{a.icono}</svg>
+            </span>
+            <span style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.2, textAlign: 'center', color: 'var(--cf-ink-2)' }}>{a.texto}</span>
+          </>
+        )
+        const estilo = {
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, minWidth: 0,
+          background: 'none', border: 0, padding: 0, font: 'inherit', cursor: 'pointer', textDecoration: 'none',
+          opacity: a.deshabilitado ? 0.5 : 1,
+        }
+        return a.href
+          ? <Link key={a.id} href={a.href} style={estilo}>{dentro}</Link>
+          : <button key={a.id} type="button" onClick={a.onClick} disabled={a.deshabilitado} style={estilo}>{dentro}</button>
+      })}
+    </div>
+  )
+}
+
 function CapaRecorrido({ children }) {
   return (
     <div style={{
@@ -1604,7 +1650,8 @@ export default function RutaDetallePage({ params }) {
       ejecutar: () => setConfirmOptimizar(true) },
     { id: 'ruta-mapa', label: 'Ver la ruta en el mapa', pista: 'En esta ruta',
       sinonimos: ['mapa', 'ver en el mapa', 'google maps', 'como llego'],
-      ejecutar: () => setShowMap((v) => !v) },
+      // El mapa ya está siempre arriba (18 nov 2026): se sube hasta él.
+      ejecutar: () => { setShowMap(true); window.scrollTo({ top: 0, behavior: 'smooth' }) } },
     { id: 'ruta-empezar', label: 'Empezar el recorrido', pista: 'Cliente por cliente',
       sinonimos: ['empezar', 'salir a cobrar', 'recorrido', 'arrancar la ruta'],
       ejecutar: () => setEnRecorrido(true) },
@@ -2297,9 +2344,9 @@ export default function RutaDetallePage({ params }) {
           aria-label="Agregar cliente a la ruta"
           title="Agregar cliente"
           style={{
-            width: 40, height: 40, borderRadius: 12, border: 0, background: 'none',
+            width: 42, height: 42, borderRadius: 999, border: '1px solid rgba(255,255,255,.08)', background: '#24252B',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', color: 'var(--cf-ink-3)', flex: 'none',
+            cursor: 'pointer', color: 'rgba(255,255,255,.85)', flex: 'none',
           }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -2315,9 +2362,9 @@ export default function RutaDetallePage({ params }) {
           aria-label="Editar la ruta"
           title={ruta.cobrador ? 'Nombre y cobrador de la ruta' : 'Nombre de la ruta y asignar cobrador'}
           style={{
-            width: 40, height: 40, borderRadius: 12, border: 0, background: 'none',
+            width: 42, height: 42, borderRadius: 999, border: '1px solid rgba(255,255,255,.08)', background: '#24252B',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', color: ruta.cobrador ? 'var(--cf-ink-3)' : 'var(--cf-gold-dark)', flex: 'none',
+            cursor: 'pointer', color: ruta.cobrador ? 'rgba(255,255,255,.85)' : '#E7A400', flex: 'none',
           }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -2329,21 +2376,27 @@ export default function RutaDetallePage({ params }) {
     ) : null
   ), [esOwner, ruta, editandoNombre])
 
-  useCabecera({
-    titulo: ruta?.nombre,
-    subtitulo: ruta ? [
+  const subtituloRuta = ruta ? [
       ruta.cobrador?.nombre ?? 'sin cobrador',
       `${ruta.clientes?.length ?? 0} ${(ruta.clientes?.length ?? 0) === 1 ? 'cliente' : 'clientes'}`,
       // Solo si se pudo medir: con menos de dos clientes con coordenadas la API
       // devuelve null, y «0 km» se leería como que están todos en el mismo portal.
       kmDeLaRuta(ruta.distanciaMetros),
-    ].filter(Boolean).join(' · ') : null,
+    ].filter(Boolean).join(' · ') : null
+
+  useCabecera({
+    titulo: ruta?.nombre,
+    subtitulo: subtituloRuta,
     acciones: accionesCabecera,
   })
 
-  if (loading) return <SkeletonRutaDetalle />
+  /* Con la franja negra propia, el armazón ya no pinta la cabecera vieja: la de
+     detalle sale también mientras carga y si falla, o no habría por dónde volver. */
+  if (loading) return <><CabeceraDetalle titulo="Ruta" profe={<PastillaProfe />} /><SkeletonRutaDetalle /></>
 
   if (error || !ruta) return (
+    <>
+    <CabeceraDetalle titulo="Ruta" profe={<PastillaProfe />} />
     <div className="flex flex-col items-center justify-center py-16 text-center max-w-2xl mx-auto">
       <div className="mb-4"><MonedaCF pose="busca" size={100} /></div>
       <p className="text-sm font-medium text-[var(--cf-ink)]">No pudimos cargar la ruta</p>
@@ -2353,6 +2406,7 @@ export default function RutaDetallePage({ params }) {
         <Button size="sm" variant="ghost" onClick={() => router.back()}>Volver</Button>
       </div>
     </div>
+    </>
   )
 
     // ── LAS PARADAS, EN EL ORDEN DEL RECORRIDO ──
@@ -3171,6 +3225,71 @@ export default function RutaDetallePage({ params }) {
           En escritorio esto ya se resolvía (`modoVista === 'ordenar' ? 'hidden'`
           en la rama de PC); en móvil se quedó sin hacer, que es justo donde el
           cobrador ordena su ruta. */}
+      {/* ══ EL MAPA ARRIBA, COMO MERCADO LIBRE (18 nov 2026) ══════════════════
+          El dueño, con la captura del seguimiento de un envío: «que se viera el
+          mapa abierto… grande, elegante… la ficha de abajo, casi flotando
+          encima, para números destacados… y abajo unos botones grandes con los
+          accesos que más se usen». Tres piezas:
+            · el mapa de la ruta (`RouteMap grande`), que ya existía detrás de
+              «Ver mapa»: clientes numerados como en la lista, cobros de hoy por
+              distancia, el cobrador en vivo y su recorrido. Los clientes sin
+              ubicación guardada salen donde se les cobró la última vez con GPS,
+              marcados «aproximado» (lib/rutas/ubicacion-aproximada.js);
+            · «Lo de hoy» flotando sobre su borde de abajo;
+            · los accesos que eran una fila de botoncitos que se salía de la
+              pantalla, ahora redondos y en cuadrícula: todos a la vista.
+          «Empezar recorrido» sigue en su barra fija de abajo. */}
+      {/* ══ LA FRANJA NEGRA, TAMBIÉN DENTRO DE LA RUTA (18 nov 2026) ═════════
+          «Dentro de la ruta se pierde mucho el look» y «las esquinas del mapa
+          hay que redondearlas»: la cabecera de detalle con el mapa como su
+          hoja, con las mismas esquinas de 26 px. Ordenando no hay mapa: queda
+          la franja y el borde redondeado. */}
+      <CabeceraDetalle
+        titulo={ruta.nombre}
+        subtitulo={subtituloRuta}
+        acciones={accionesCabecera}
+        profe={<PastillaProfe />}
+      >
+        {modoVista !== 'ordenar' && (
+          <RouteMap grande alto={300} clientes={ruta.clientes} cobrosGeoHoy={ruta.cobrosGeoHoy ?? []} cobrador={cobradorUbi} trail={cobradorTrail} />
+        )}
+      </CabeceraDetalle>
+      {modoVista !== 'ordenar' && (
+        <section style={{ margin: '0 -20px' }}>
+          <div style={{
+            position: 'relative', zIndex: 1, margin: '-52px 16px 0',
+            borderRadius: 'var(--cf-r-card)', boxShadow: '0 10px 28px rgba(20,20,28,.16)',
+          }}>
+            <LoDeHoy {...loDeHoy({
+              esperadoHoy: ruta.esperadoHoy,
+              recaudadoHoy: ruta.recaudadoHoy,
+              faltaHoy: ruta.faltaHoy,
+              clientesConCobroHoy: ruta.clientesConCobroHoy,
+              clientesPagaronHoy: ruta.clientesPagaronHoy,
+              clientesVisitadosHoy: visitadasHoy,
+              recaudadoEfectivoHoy: ruta.recaudadoEfectivoHoy,
+              recaudadoDigitalHoy: ruta.recaudadoDigitalHoy,
+            }, (n) => formatMoney(n))} />
+          </div>
+          <AccesosDeRuta accesos={[
+            puedeGestionarRutas && { id: 'agregar', texto: 'Agregar', onClick: abrirModalClientes,
+              icono: <path d="M12 5v14M5 12h14" /> },
+            (ruta.clientes?.length ?? 0) >= 2 && clientesConCoords >= 2 && { id: 'optimizar', texto: optimizando ? 'Optimizando' : 'Optimizar', onClick: () => setConfirmOptimizar(true), deshabilitado: optimizando,
+              icono: <><path d="M4 19c4-1 5-6 8-7s4 2 8-6" /><circle cx="4" cy="19" r="1.6" /><circle cx="20" cy="6" r="1.6" /></> },
+            clientesConCoords >= 2 && { id: 'gmaps', texto: 'Google Maps', onClick: abrirGoogleMaps,
+              icono: <><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0113 0c0 5.4-6.5 11-6.5 11z" /><circle cx="12" cy="10" r="2.3" /></> },
+            (ruta.clientes?.length ?? 0) > 0 && { id: 'imprimir', texto: 'Imprimir hoja', onClick: () => window.print(),
+              icono: <path d="M6 9V3h12v6M6 18H4.5A1.5 1.5 0 013 16.5v-5A2.5 2.5 0 015.5 9h13a2.5 2.5 0 012.5 2.5v5a1.5 1.5 0 01-1.5 1.5H18M7 14h10v7H7z" /> },
+            { id: 'prestamos', texto: 'Préstamos', href: `/prestamos?rutaId=${ruta.id}`,
+              icono: <><rect x="2.5" y="6" width="19" height="12" rx="2.5" /><circle cx="12" cy="12" r="2.5" /></> },
+            { id: 'clientes', texto: 'Clientes', href: `/clientes?rutaId=${ruta.id}`,
+              icono: <><circle cx="9" cy="8" r="3.2" /><path d="M3 19.5c.6-3.3 3-5 6-5s5.4 1.7 6 5M16 5.2a3 3 0 010 5.6M18 14.6c1.8.6 2.8 2.2 3 4.9" /></> },
+            (esOwner || puedeVerCapitalRuta) && { id: 'capital', texto: 'Capital', onClick: () => setFichaCapital(true),
+              icono: <path d="M3 9.5L12 4l9 5.5M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18" /> },
+          ]} />
+        </section>
+      )}
+
       {modoVista !== 'ordenar' && (esOwner || puedeVerCapitalRuta) && (
       <div
         onClick={(esOwner || puedeVerCapitalRuta) ? () => setFichaCapital(true) : undefined}
@@ -3187,30 +3306,7 @@ export default function RutaDetallePage({ params }) {
       </div>
       )}
 
-      {modoVista !== 'ordenar' && (
-      <LoDeHoy {...loDeHoy({
-        esperadoHoy: ruta.esperadoHoy,
-        recaudadoHoy: ruta.recaudadoHoy,
-        // #62: lo que de verdad falta, sumado cliente por cliente en el
-        // servidor. Sin esto `loDeHoy` resta y un pago grande tapa al resto.
-        faltaHoy: ruta.faltaHoy,
-        clientesConCobroHoy: ruta.clientesConCobroHoy,
-        clientesPagaronHoy: ruta.clientesPagaronHoy,
-        clientesVisitadosHoy: visitadasHoy,
-        // ── «efectivo $34.500 · digital $0» (T27-02) ──
-        // La API los calcula y los devuelve, y `loDeHoy` sabe pintarlos desde
-        // que se escribió. Solo faltaba pasárselos: la banda decía «0 de 1
-        // cobros» a secas.
-        //
-        // Y es lo que el pie de la lámina llama esencial: «la banda de hoy suma
-        // efectivo y digital, que es lo que hace posible cuadrar la caja de la
-        // noche». Sin el desglose, el cobrador entrega un fajo y nadie sabe
-        // cuánto de lo recaudado entró por transferencia y NO tiene que venir
-        // en ese fajo.
-        recaudadoEfectivoHoy: ruta.recaudadoEfectivoHoy,
-        recaudadoDigitalHoy: ruta.recaudadoDigitalHoy,
-      }, (n) => formatMoney(n))} />
-      )}
+      {/* «Lo de hoy» flota ahora sobre el mapa, arriba (18 nov 2026). */}
 
       {/* Acciones rápidas.
           "Hoja para salir a cobrar" estaba de quinta en esta fila con scroll
@@ -3228,57 +3324,9 @@ export default function RutaDetallePage({ params }) {
       <RegistrarAcciones clave="ruta" acciones={accionesRuta} />
       <QueNecesitas ejemplos={['agregar clientes', 'optimizar', 'cerrar la caja']} />
 
-      <div className={`flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 ${modoVista === 'ordenar' ? 'hidden' : ''}`}>
-        {puedeGestionarRutas && (
-          <button onClick={abrirModalClientes} className="shrink-0 h-10 px-3.5 rounded-[12px] border border-[#222] bg-[var(--cf-card)] text-[11px] text-[var(--cf-ink-2)] font-medium active:scale-95 transition-transform">
-            + Agregar
-          </button>
-        )}
-        {(ruta.clientes?.length ?? 0) > 0 && (
-          <button onClick={() => window.print()} className="shrink-0 h-10 px-3.5 rounded-[12px] border border-[#222] bg-[var(--cf-card)] text-[11px] text-[var(--cf-ink-2)] font-medium active:scale-95 transition-transform inline-flex items-center gap-1.5">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 9V2h12v7m-12 0h12m-12 0a2 2 0 00-2 2v5a2 2 0 002 2h1m11-9a2 2 0 012 2v5a2 2 0 01-2 2h-1m-10 0v4h8v-4m-8 0h8" />
-            </svg>
-            Imprimir hoja
-          </button>
-        )}
-        {(ruta.clientes?.length ?? 0) >= 2 && clientesConCoords >= 2 && (
-          <button onClick={() => setConfirmOptimizar(true)} disabled={optimizando} className="shrink-0 h-10 px-3.5 rounded-[12px] border border-[#222] bg-[var(--cf-card)] text-[11px] text-[var(--cf-ink-2)] font-medium active:scale-95 transition-transform disabled:opacity-50">
-            {optimizando ? 'Optimizando...' : 'Optimizar'}
-          </button>
-        )}
-        {clientesConCoords >= 2 && (
-          <>
-            <button onClick={abrirGoogleMaps} className="shrink-0 h-10 px-3.5 rounded-[12px] border border-[rgba(66,133,244,0.2)] bg-[rgba(66,133,244,0.06)] text-[11px] text-[#4285f4] font-medium active:scale-95 transition-transform">
-              Google Maps
-            </button>
-            <button onClick={() => setShowMap((v) => !v)} className="shrink-0 h-10 px-3.5 rounded-[12px] border border-[#222] bg-[var(--cf-card)] text-[11px] text-[var(--cf-ink-2)] font-medium active:scale-95 transition-transform">
-              {showMap ? 'Ocultar mapa' : 'Ver mapa'}
-            </button>
-          </>
-        )}
-        {/* La ruta era un callejon: se entraba y no habia forma de saltar a su
-            cartera. Ahora que los filtros viven en la URL, estos dos links
-            existen. Un grep de "?rutaId=" en el repo daba cero resultados. */}
-        <Link
-          href={`/prestamos?rutaId=${ruta.id}`}
-          className="shrink-0 h-10 px-3.5 rounded-[12px] border border-[#222] bg-[var(--cf-card)] text-[11px] text-[var(--cf-ink-2)] font-medium active:scale-95 transition-transform inline-flex items-center gap-1.5"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Préstamos de esta ruta
-        </Link>
-        <Link
-          href={`/clientes?rutaId=${ruta.id}`}
-          className="shrink-0 h-10 px-3.5 rounded-[12px] border border-[#222] bg-[var(--cf-card)] text-[11px] text-[var(--cf-ink-2)] font-medium active:scale-95 transition-transform inline-flex items-center gap-1.5"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
-          </svg>
-          Clientes de esta ruta
-        </Link>
-      </div>
+      {/* Los botoncitos de esta fila son ahora los accesos redondos de arriba,
+          debajo del mapa: Agregar, Optimizar, Google Maps, Imprimir hoja,
+          Préstamos y Clientes de esta ruta (18 nov 2026). */}
 
       {/* Resultado de optimización */}
       {optimResult && (
@@ -3289,12 +3337,6 @@ export default function RutaDetallePage({ params }) {
         </div>
       )}
 
-      {/* Mini-mapa */}
-      {showMap && ruta.clientes && (
-        <div className="rounded-[12px] overflow-hidden border border-[#222]">
-          <RouteMap clientes={ruta.clientes} cobrosGeoHoy={ruta.cobrosGeoHoy ?? []} cobrador={cobradorUbi} trail={cobradorTrail} />
-        </div>
-      )}
 
       {/* La ruta pasada del límite del plan lo dice aquí, no solo en la lista
           de rutas (DETALLES-RUTAS #22). */}
@@ -3319,8 +3361,8 @@ export default function RutaDetallePage({ params }) {
       {/* Lista de clientes */}
       <div>
         <div className="flex items-center justify-between mb-2 sticky top-0 z-10 bg-[var(--cf-surface)] py-2 -mx-1 px-1">
-          <span className="text-[11px] font-medium text-[var(--cf-ink-3)] uppercase tracking-wide">
-            Clientes ({clientesFiltrados.length})
+          <span className="text-[15px] font-semibold text-[var(--cf-ink-3)]">
+            Clientes · {clientesFiltrados.length}
             {procedenciaFiltro && (
               <button type="button" onClick={() => setProcedenciaFiltro(null)}
                 className="ml-2 normal-case tracking-normal underline underline-offset-2 text-[var(--cf-ink-2)]">
@@ -3348,8 +3390,10 @@ export default function RutaDetallePage({ params }) {
               type="text"
               value={busquedaRuta}
               onChange={(e) => setBusquedaRuta(e.target.value)}
-              placeholder="Buscar cliente por nombre o cédula..."
-              className="w-full h-9 pl-9 pr-8 rounded-[12px] text-[12px] bg-[var(--cf-surface)] border border-[var(--cf-border)] text-[var(--cf-ink)] placeholder:text-[var(--cf-ink-3)] focus:outline-none focus:border-[var(--cf-gold)] transition-colors"
+              placeholder="Buscar cliente por nombre o cédula"
+              /* 48 px y 16 px de letra (18 nov 2026): a 12 px el iPhone hacía
+                 zoom al tocarlo, y era el control más chico de la pantalla. */
+              className="w-full h-12 pl-10 pr-9 rounded-[14px] text-[16px] bg-[var(--cf-card)] border border-[var(--cf-border)] text-[var(--cf-ink)] placeholder:text-[var(--cf-ink-3)] focus:outline-none focus:border-[var(--cf-gold)] transition-colors"
             />
             {busquedaRuta && (
               <button
@@ -3373,9 +3417,15 @@ export default function RutaDetallePage({ params }) {
 
 
         {/* Toggle de vista: Trabajo del dia (3 secciones) vs Ordenar ruta (drag) vs Auditoria (admin) */}
+        {/* ══ EL BLOQUE DE FILTROS, CON AIRE (18 nov 2026) ═══════════════════
+            El dueño: «es un desorden… cómo se organiza la ruta visualmente no se
+            entiende». Eran cuatro controles en una fila de 393 px. Ahora son dos
+            renglones: el modo (Cobros · Ordenar · Auditoría) a todo el ancho, y
+            debajo —solo en Cobros— «Solo los de hoy» y «Lista | Por estado»,
+            escritos con palabras en vez de dos iconos. No se quita nada. */}
         {ruta.clientes?.length > 0 && (
-          <div className="flex items-center gap-2 mb-3">
-            <div className="flex gap-1 p-1 rounded-[12px] flex-1 min-w-0 shrink-0 basis-[58%]" style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}>
+          <div className="flex flex-col gap-2.5 mb-3">
+            <div className="flex gap-1 p-1 rounded-[14px] w-full" style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}>
               {[
                 { key: 'trabajo', label: 'Cobros' },
                 { key: 'ordenar', label: 'Ordenar' },
@@ -3385,7 +3435,7 @@ export default function RutaDetallePage({ params }) {
                   key={t.key}
                   type="button"
                   onClick={() => setModoVista(t.key)}
-                  className="flex-1 py-2 text-xs font-semibold rounded-[8px] transition-all"
+                  className="flex-1 h-10 text-[14px] font-semibold rounded-[10px] transition-all"
                   style={modoVista === t.key
                     ? { background: 'var(--cf-card)', color: 'var(--cf-ink)', boxShadow: '0 1px 3px rgba(20,20,28,.10)' }
                     : { color: 'var(--cf-ink-3)' }}
@@ -3404,6 +3454,8 @@ export default function RutaDetallePage({ params }) {
                 aparece»: no existía.
                 Se recuerda entre visitas: quien trabaja así lo quiere siempre. */}
             {modoVista === 'trabajo' && (
+            <div className="flex items-center justify-between gap-2">
+            {modoVista === 'trabajo' && (
               <button
                 type="button"
                 onClick={() => setSoloHoy(v => {
@@ -3411,7 +3463,7 @@ export default function RutaDetallePage({ params }) {
                   try { localStorage.setItem('cf-ruta-soloHoy', nuevo ? '1' : '0') } catch {}
                   return nuevo
                 })}
-                className="shrink-0 h-10 px-2.5 rounded-[12px] border text-[12px] font-semibold transition-colors inline-flex items-center gap-1.5"
+                className="shrink-0 h-10 px-3.5 rounded-[12px] border text-[14px] font-semibold transition-colors inline-flex items-center gap-2"
                 title={soloHoy ? 'Mostrando solo los de hoy' : 'Mostrar todos los clientes'}
                 aria-pressed={soloHoy}
                 style={{
@@ -3425,11 +3477,13 @@ export default function RutaDetallePage({ params }) {
                     «Cobros · Ordenar · Auditoría» se apretaba hasta no leerse.
                     El icono de reloj y el estado encendido/apagado dicen lo
                     mismo que la palabra «solo», y el `title` lo explica. */}
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                {/* Con su propio renglón (18 nov 2026) ya cabe la palabra entera:
+                    «Hoy» a secas se leía como una fecha, no como un filtro. */}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                   strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
                 </svg>
-                Hoy
+                Solo los de hoy
               </button>
             )}
             {modoVista === 'trabajo' && (
@@ -3437,32 +3491,32 @@ export default function RutaDetallePage({ params }) {
                 <button
                   type="button"
                   onClick={() => setVistaPlana(v => { if (v) return v; try { localStorage.setItem('cf-ruta-vistaPlana', 'plana') } catch {} return true })}
-                  className="h-10 w-10 flex items-center justify-center transition-colors"
+                  className="h-10 px-3 flex items-center justify-center transition-colors text-[14px] font-semibold"
                   title="Lista completa"
+                  aria-pressed={vistaPlana}
                   style={{
                     background: vistaPlana ? 'var(--cf-fill-2)' : 'transparent',
                     color: vistaPlana ? 'var(--cf-ink)' : 'var(--cf-ink-3)',
                   }}
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                  </svg>
+                  Lista
                 </button>
                 <button
                   type="button"
                   onClick={() => setVistaPlana(v => { if (!v) return v; try { localStorage.setItem('cf-ruta-vistaPlana', 'agrupada') } catch {} return false })}
-                  className="h-10 w-10 flex items-center justify-center transition-colors"
+                  className="h-10 px-3 flex items-center justify-center transition-colors text-[14px] font-semibold"
                   title="Agrupados por estado"
+                  aria-pressed={!vistaPlana}
                   style={{
                     background: !vistaPlana ? 'var(--cf-fill-2)' : 'transparent',
                     color: !vistaPlana ? 'var(--cf-ink)' : 'var(--cf-ink-3)',
                   }}
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6z" />
-                  </svg>
+                  Por estado
                 </button>
               </div>
+            )}
+            </div>
             )}
           </div>
         )}

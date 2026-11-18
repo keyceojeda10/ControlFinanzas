@@ -8,8 +8,23 @@ if (typeof window !== 'undefined') {
   require('leaflet/dist/leaflet.css')
 }
 
-function createNumberedIcon(number) {
+function createNumberedIcon(number, aproximado = false) {
   if (!L) return null
+  /* APROXIMADO (18 nov 2026): el cliente no tiene ubicación guardada y se pinta
+     donde fue su último cobro con GPS. Blanco con borde dorado punteado: se lee
+     que está ahí más o menos, no que esa sea su dirección. */
+  if (aproximado) {
+    return L.divIcon({
+      className: '',
+      html: `<div style="
+        width:26px;height:26px;background:#FFF;border:2px dashed var(--cf-gold-dark);
+        border-radius:50%;display:flex;align-items:center;justify-content:center;
+        font-size:11px;font-weight:800;color:#3a2900;box-shadow:0 2px 6px rgba(0,0,0,0.25);
+      ">${number}</div>`,
+      iconSize: [26, 26],
+      iconAnchor: [13, 13],
+    })
+  }
   return L.divIcon({
     className: '',
     html: `<div style="
@@ -81,13 +96,26 @@ function tiempoDesde(fecha) {
   return `Hace ${hrs}h ${mins % 60}m`
 }
 
-export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador, trail = [] }) {
+/**
+ * `grande`: la versión de la cabecera de la ruta (18 nov 2026) —sin borde, a todo
+ * el ancho y con la leyenda encima—. `alto` en px.
+ */
+export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador, trail = [], grande = false, alto = 300 }) {
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
   const cobradorMarkerRef = useRef(null)
   const trailLayerRef = useRef(null)
 
   const conCoords = (clientes ?? []).filter((c) => c.latitud != null && c.longitud != null)
+  // Los que no tienen ubicación guardada pero sí un cobro con GPS (lo manda el
+  // API en `ubicacionAproximada`, ver lib/rutas/ubicacion-aproximada.js).
+  const aproximados = (clientes ?? []).filter((c) => (c.latitud == null || c.longitud == null)
+    && c.ubicacionAproximada?.latitud != null && c.ubicacionAproximada?.longitud != null)
+  // Todos los que se pueden poner en el mapa, en el orden de la ruta.
+  const enMapa = (clientes ?? []).map((c) => (c.latitud != null && c.longitud != null)
+    ? { c, lat: c.latitud, lng: c.longitud, aprox: false }
+    : (c.ubicacionAproximada?.latitud != null ? { c, lat: c.ubicacionAproximada.latitud, lng: c.ubicacionAproximada.longitud, aprox: true } : null))
+    .filter(Boolean)
   // El número del pin es el PUESTO EN LA RUTA, el mismo de la lista (#17): se
   // contaba solo entre los que tienen ubicación y el 7 del mapa era el 9 de la ruta.
   const puestoEnRuta = new Map((clientes ?? []).map((c, i) => [c.id, i + 1]))
@@ -105,7 +133,7 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador, trail 
 
   useEffect(() => {
     if (!L || !mapRef.current) return
-    if (conCoords.length === 0 && (cobrosGeoHoy?.length ?? 0) === 0 && !cobradorConCoords) return
+    if (enMapa.length === 0 && (cobrosGeoHoy?.length ?? 0) === 0 && !cobradorConCoords) return
 
     if (mapInstanceRef.current) {
       mapInstanceRef.current.remove()
@@ -127,12 +155,12 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador, trail 
 
     const bounds = []
 
-    conCoords.forEach((c, i) => {
+    enMapa.forEach(({ c, lat, lng, aprox }, i) => {
       const puesto = puestoEnRuta.get(c.id) ?? i + 1
-      const marker = L.marker([c.latitud, c.longitud], { icon: createNumberedIcon(puesto) })
-      marker.bindPopup(`<b style="color:var(--cf-ink)">${puesto}. ${c.nombre}</b>${c.direccion ? `<br><span style="color:var(--cf-ink-2);font-size:11px">${c.direccion}</span>` : ''}`)
+      const marker = L.marker([lat, lng], { icon: createNumberedIcon(puesto, aprox) })
+      marker.bindPopup(`<b style="color:var(--cf-ink)">${puesto}. ${c.nombre}</b>${c.direccion ? `<br><span style="color:var(--cf-ink-2);font-size:11px">${c.direccion}</span>` : ''}${aprox ? '<br><span style="color:var(--cf-gold-dark);font-size:11px">Ubicación aproximada: donde se le cobró la última vez</span>' : ''}`)
       marker.addTo(map)
-      bounds.push([c.latitud, c.longitud])
+      bounds.push([lat, lng])
     })
 
     ;(cobrosGeoHoy ?? []).forEach((p) => {
@@ -197,9 +225,9 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador, trail 
       }
     }
 
-    if (conCoords.length >= 2) {
+    if (enMapa.length >= 2) {
       L.polyline(
-        conCoords.map((c) => [c.latitud, c.longitud]),
+        enMapa.map((p) => [p.lat, p.lng]),
         { color: 'var(--cf-ink-2)', weight: 2, opacity: 0.4, dashArray: '6, 8' }
       ).addTo(map)
     }
@@ -257,10 +285,49 @@ export default function RouteMap({ clientes, cobrosGeoHoy = [], cobrador, trail 
     `)
   }, [cobrador?.latitud, cobrador?.longitud, cobrador?.ubicacionUpdatedAt])
 
-  if (conCoords.length === 0 && (cobrosGeoHoy?.length ?? 0) === 0 && !cobradorConCoords) {
+  if (enMapa.length === 0 && (cobrosGeoHoy?.length ?? 0) === 0 && !cobradorConCoords) {
+    if (grande) {
+      // En la cabecera, un hueco con lo que falta en vez de un mapa en blanco.
+      return (
+        <div style={{ height: Math.round(alto * 0.6), background: 'var(--cf-fill)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 32px' }}>
+          <p style={{ margin: 0, textAlign: 'center', fontSize: 14, lineHeight: 1.45, color: 'var(--cf-ink-3)' }}>
+            Esta ruta todavía no tiene clientes en el mapa. Aparecen cuando guardas su ubicación o les cobras con el GPS del teléfono encendido.
+          </p>
+        </div>
+      )
+    }
     return (
       <div className="h-[200px] rounded-xl border border-[var(--cf-border)] bg-[var(--cf-card)] flex items-center justify-center">
         <p className="text-xs text-[var(--cf-ink-3)]">Sin clientes con ubicación para mostrar</p>
+      </div>
+    )
+  }
+
+  if (grande) {
+    return (
+      /* `isolation`: las capas de Leaflet van a z-index 400+, y sin un contexto
+         propio taparían la tarjeta que flota encima del mapa. */
+      <div style={{ position: 'relative', isolation: 'isolate' }}>
+        {/* Los + / − de Leaflet salen a 10 px del borde; la hoja redondeada (26 px)
+            se comía su esquina. Se separan igual que la leyenda. */}
+        <style>{'.cf-mapa-grande .leaflet-top.leaflet-right{top:6px;right:8px}'}</style>
+        <div ref={mapRef} className="cf-mapa-grande" style={{ width: '100%', height: alto, background: 'var(--cf-fill)' }} />
+        <span className="cf-num" style={{
+          // Separada de la esquina: el mapa va dentro de la hoja redondeada (26 px).
+          position: 'absolute', top: 16, left: 18, zIndex: 500,
+          display: 'inline-flex', alignItems: 'center', gap: 6, height: 30, padding: '0 12px', borderRadius: 999,
+          background: 'var(--cf-card)', color: 'var(--cf-ink-2)', fontSize: 12, fontWeight: 600,
+          boxShadow: '0 2px 8px rgba(20,20,28,.14)',
+        }}>
+          {conCoords.length} en el mapa{aproximados.length > 0 ? ` · ${aproximados.length} aproximado${aproximados.length === 1 ? '' : 's'}` : ''}
+          {cobradorConCoords && <> · <span style={{ color: 'var(--cf-gold-dark)' }}>cobrador {estadoCobradorLabel.toLowerCase()}</span></>}
+        </span>
+        <style jsx global>{`
+          @keyframes cf-pulse {
+            0% { transform: scale(1); opacity: 0.7; }
+            100% { transform: scale(2.2); opacity: 0; }
+          }
+        `}</style>
       </div>
     )
   }

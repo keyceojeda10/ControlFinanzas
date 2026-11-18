@@ -15,7 +15,7 @@
 // cumpliría en las pantallas que alguien recordó y en las demás no.
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { CON_CABECERA_PROPIA, MEDIA_MOVIL, NEGRO_FRANJA, pintarBarraDelSistema } from '@/lib/franja'
+import { tieneCabeceraPropia, MEDIA_MOVIL, NEGRO_FRANJA, pintarBarraDelSistema } from '@/lib/franja'
 import { usePathname, useRouter } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import { CABECERA, resolverArmazon, iniciales, rolEnEspanol, volverA, puedeRetroceder } from '@/lib/armazon'
@@ -238,7 +238,7 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
   /* INICIO TRAE SU PROPIA CABECERA (17 nov 2026): la negra de `CabeceraInicio`,
      con las cifras del día, que la pinta la página. Se decide por la ruta y no en
      un efecto: así no parpadea la vieja al cargar. */
-  const cabeceraPropia = CON_CABECERA_PROPIA.includes(pathname)
+  const cabeceraPropia = tieneCabeceraPropia(pathname)
 
   /* La barra del teléfono (hora, batería) se funde con la franja negra en las
      pantallas que la llevan; en las demás vuelve al fondo del tema. El script

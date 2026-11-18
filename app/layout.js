@@ -8,7 +8,7 @@ import OfflineProvider from "@/components/providers/OfflineProvider";
 import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 import Script from "next/script";
 import { SCRIPT_CAPTURA_INSTALAR } from '@/lib/instalar'
-import { CON_CABECERA_PROPIA, MEDIA_MOVIL, NEGRO_FRANJA } from '@/lib/franja'
+import { CON_CABECERA_PROPIA, DETALLES_CON_CABECERA_PROPIA, MEDIA_MOVIL, NEGRO_FRANJA } from '@/lib/franja'
 
 // Script anti-FOUC: corre antes de cualquier render y setea data-theme + background
 // inline para que incluso cuando el HTML viene cacheado por SW con el data-theme
@@ -17,7 +17,7 @@ import { CON_CABECERA_PROPIA, MEDIA_MOVIL, NEGRO_FRANJA } from '@/lib/franja'
 // cuando la hoja de estilos aun no cargo (offline / cache miss).
 // Default de marca: claro. Solo quien guardo una preferencia explicita
 // (dark/system) la conserva.
-const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('cf-theme')||'light';var r=t==='system'?(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):t;var h=document.documentElement;h.setAttribute('data-theme',r);h.style.colorScheme=r;var bg=r==='light'?'#f4f4f1':'#0c0d11';var fg=r==='light'?'#15161a':'#f3f3f6';h.style.backgroundColor=bg;h.style.color=fg;if(document.body){document.body.style.backgroundColor=bg;document.body.style.color=fg;}var neg=${JSON.stringify(CON_CABECERA_PROPIA)}.indexOf(location.pathname.replace(/\\/$/,''))>=0&&window.matchMedia('${MEDIA_MOVIL}').matches;if(neg)h.setAttribute('data-franja','negra');var ms=document.querySelectorAll('meta[name="theme-color"]');for(var i=0;i<ms.length;i++)ms[i].setAttribute('content',neg?'${NEGRO_FRANJA}':bg);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();`;
+const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('cf-theme')||'light';var r=t==='system'?(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):t;var h=document.documentElement;h.setAttribute('data-theme',r);h.style.colorScheme=r;var bg=r==='light'?'#f4f4f1':'#0c0d11';var fg=r==='light'?'#15161a':'#f3f3f6';h.style.backgroundColor=bg;h.style.color=fg;if(document.body){document.body.style.backgroundColor=bg;document.body.style.color=fg;}var pa=location.pathname.replace(/\\/$/,'');var neg=(${JSON.stringify(CON_CABECERA_PROPIA)}.indexOf(pa)>=0||new RegExp(${JSON.stringify(DETALLES_CON_CABECERA_PROPIA)}).test(pa))&&window.matchMedia('${MEDIA_MOVIL}').matches;if(neg)h.setAttribute('data-franja','negra');var ms=document.querySelectorAll('meta[name="theme-color"]');for(var i=0;i<ms.length;i++)ms[i].setAttribute('content',neg?'${NEGRO_FRANJA}':bg);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();`;
 
 /* ⚠ LAS FUENTES VIVEN AQUÍ, NO EN GOOGLE (14 nov 2026).
  * Con `next/font/google` el build las bajaba en cada despliegue, y CUATRO

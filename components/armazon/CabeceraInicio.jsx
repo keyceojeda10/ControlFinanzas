@@ -28,7 +28,8 @@ import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { useHayAvisos, useAvatarArmazon } from '@/components/armazon/Armazon'
 import { getAvatarById } from '@/lib/avatars'
-import { useRouter } from 'next/navigation'
+import { puedeRetroceder, volverA } from '@/lib/armazon'
+import { useRouter, usePathname } from 'next/navigation'
 import { Chip as ChipFiltro } from '@/components/cf/primitivos'
 
 const NEGRO = '#15161A'       // fijo: en modo oscuro `--cf-ink` se vuelve claro
@@ -509,6 +510,66 @@ export function CabeceraSeccion({
 
       <TintaDeLaBarra ver={tinta} />
       <Compacta visible={abajo} accesos={accesos.filter((a) => !a.destacado)} arriba={buscador} abajo={filtros} />
+    </div>
+  )
+}
+
+/* ══ LA CABECERA DE UN DETALLE: LA RUTA POR DENTRO (18 nov 2026) ═════════════
+ * El dueño, con la captura de la ruta: «dentro de la ruta se pierde mucho el
+ * look, el feeling» y «las esquinas del mapa hay que redondearlas para que haga
+ * sentido con las nuevas cabeceras». La misma franja negra con su brillo
+ * dorado que las secciones, con lo que tiene un detalle —volver, el nombre, el
+ * subtítulo y las acciones DE ESE objeto— y debajo la hoja redondeada. La hoja
+ * no es blanca: es lo que la pantalla le pase (en la ruta, el mapa), recortado
+ * a las esquinas de 26 px de todas las cabeceras. Solo en el móvil. */
+export function CabeceraDetalle({ titulo, subtitulo = null, acciones = null, profe = null, onVolver, children = null }) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const [bordeHoja, tinta] = useTintaDeLaBarra()
+  const volver = onVolver ?? (() => (puedeRetroceder() ? router.back() : router.push(volverA(pathname))))
+  return (
+    <div className="lg:hidden" style={{ margin: '-20px -20px 0' }}>
+      <style>{ESTILO}</style>
+      <div style={{ background: `${BRILLO_FRANJA}, ${NEGRO}`, paddingBottom: RADIO_HOJA + 18, color: '#fff' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: 'max(10px, env(safe-area-inset-top)) 8px 0 8px' }}>
+          <button type="button" onClick={volver} aria-label="Volver" className="cf-cab-toque" style={{
+            width: 42, height: 42, borderRadius: 999, flex: 'none', border: '1px solid rgba(255,255,255,.08)',
+            background: NEGRO_2, color: '#fff', display: 'grid', placeItems: 'center', cursor: 'pointer',
+          }}>
+            <Ic d={<path d="M15 5l-7 7 7 7" />} tam={22} />
+          </button>
+          <span style={{ flex: 1 }} />
+          {profe}
+          <Campana />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, padding: '12px 12px 0 20px' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {/* El nombre baja de renglón, no se recorta: es lo que identifica. */}
+            <h1 style={{
+              margin: 0, fontFamily: "var(--font-space-grotesk), 'Space Grotesk', system-ui, sans-serif",
+              fontSize: 20, fontWeight: 600, letterSpacing: '-.02em', lineHeight: 1.2, overflowWrap: 'anywhere',
+            }}>{titulo}</h1>
+            {subtitulo && (
+              <p style={{ margin: '4px 0 0', fontSize: 13, lineHeight: 1.35, color: 'rgba(255,255,255,.62)', display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+                <span aria-hidden style={{ width: 6, height: 6, borderRadius: 999, background: ORO, flex: 'none' }} />
+                {subtitulo}
+              </p>
+            )}
+          </div>
+          {acciones}
+        </div>
+      </div>
+      <div style={{
+        position: 'relative', marginTop: -RADIO_HOJA, borderRadius: `${RADIO_HOJA}px ${RADIO_HOJA}px 0 0`,
+        // `isolation` y `overflow`: el mapa (Leaflet) trae capas con z-index 400+
+        // y esquinas rectas; así se quedan dentro de la hoja y con su redondeo.
+        overflow: 'hidden', isolation: 'isolate', background: 'var(--cf-surface)',
+        minHeight: children ? undefined : RADIO_HOJA,
+      }}>
+        <span ref={bordeHoja} aria-hidden style={{ position: 'absolute', top: 0, left: 0, width: 1, height: 1 }} />
+        {children}
+      </div>
+      <TintaDeLaBarra ver={tinta} />
     </div>
   )
 }

@@ -199,6 +199,9 @@ function RutaSinCobrador({ nombre, clientes = 0, hoy = null, onAsignar, onAbrir 
 export default function ListaRutas({
   rutas = [],
   sinTitulo = false,
+  /* Con la cabecera negra (`sinTitulo`), «Ordenar» va en el título de la lista
+     en vez de en la fila de arriba. */
+  onOrdenar = null,
   // «4 rutas · $34.500 de $207.500 hoy»
   resumen,
   // La banda ámbar de T04-01: { esperado, recaudado, detalle }
@@ -248,6 +251,9 @@ export default function ListaRutas({
           día. El botón dice «Hoy» porque esta pantalla es SOLO de hoy — el
           acumulado de cada ruta vive en su detalle. */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 11, flex: 'none' }}>
+        {/* Con la cabecera negra esta fila no va: el nombre lo dice el chip, el
+            «+» está en los accesos y «Hoy» en la tarjeta negra (18 nov 2026). */}
+        {!sinTitulo && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {/* Con la cabecera nueva (17 nov 2026) el nombre ya lo dice el chip
               «Rutas · N»: aquí sobraba. Queda el hueco para empujar los botones. */}
@@ -268,6 +274,7 @@ export default function ListaRutas({
           }}>Hoy</span>
           {acciones}
         </div>
+        )}
         {/* Con banda, el detalle va DENTRO de ella: repetir «4 rutas · 20
             cobros» arriba y abajo es decir lo mismo dos veces. */}
         {/* Con banda, aquí va su detalle —«4 rutas · 20 cobros hoy»—; sin
@@ -352,6 +359,18 @@ export default function ListaRutas({
         </div>
       )}
 
+      {/* El título de la lista, con «Ordenar» a la derecha (estilo «Mi cuenta»). */}
+      {sinTitulo && (activas.length + tranquilas.length + huerfanas.length) > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '8px 2px 0', flex: 'none' }}>
+          <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-.01em', color: 'var(--cf-ink-3)' }}>Tus rutas</span>
+          {onOrdenar && (
+            <button type="button" onClick={onOrdenar} style={{
+              minHeight: 40, padding: '0 4px', border: 0, background: 'none', cursor: 'pointer',
+              font: 'inherit', fontSize: 15, fontWeight: 700, color: 'var(--cf-gold-dark)',
+            }}>Ordenar</button>
+          )}
+        </div>
+      )}
       {activas.map((r) => <RutaActiva key={r.id} {...r} onAbrir={() => onAbrir?.(r)} />)}
       {tranquilas.map((r) => <RutaTranquila key={r.id} {...r} onAbrir={() => onAbrir?.(r)} />)}
       {huerfanas.map((r) => (

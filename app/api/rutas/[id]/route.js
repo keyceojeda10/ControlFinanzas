@@ -37,6 +37,7 @@ import { esFinanciacion } from '@/lib/financiar'
 import { vieneDePorCliente, compararProcedencias } from '@/lib/rutas/procedencia'
 import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
 import { jsonComprimido } from '@/lib/http/json-comprimido'
+import { conUbicacionAproximada } from '@/lib/rutas/ubicacion-aproximada'
 
 const hoy = (country = 'co') => {
   const now = new Date()
@@ -940,7 +941,8 @@ export async function GET(request, { params }) {
     cobrador:    ruta.cobrador,
     // Pasada del límite del plan: no admite clientes ni préstamos nuevos (#22).
     soloLectura: !(await rutaPermitida(organizationId, id)),
-    clientes:    clientesEnriquecidos,
+    // Con la ubicación de su último cobro con GPS, para el mapa (solo se enseña).
+    clientes:    await conUbicacionAproximada(prisma, clientesEnriquecidos, ruta.clientes, organizationId),
     esperadoHoy: Math.round(esperadoHoy),
     faltaHoy: Math.round(faltaHoy),
     recaudadoHoy: Math.round(recaudadoHoy),

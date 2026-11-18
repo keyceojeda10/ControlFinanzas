@@ -807,7 +807,14 @@ export default function RutasPage() {
             // el FAB de la pastilla NO ofrece «nueva ruta» todavia: quitarlo
             // dejaria la pantalla sin forma de crear una. Cuando MenuCrear se
             // rehaga contra su lamina (T43), la ruta entra ahi y este se va.
-            acciones={accionesRutas}
+            /* ⚠ EN EL MÓVIL YA NO (18 nov 2026). Con la cabecera negra el «+»
+               repetía «Nueva ruta» de los accesos (el mismo `setShowForm`), y
+               «Hoy» era un letrero que la tarjeta negra ya dice («Recaudado
+               hoy»). La fila quedaba suelta encima de todo —el dueño, con la
+               captura—. «Ordenar» se queda, como título de la lista. En el PC
+               no hay cabecera negra: allí siguen los dos botones. */
+            acciones={null}
+            onOrdenar={rutas.length > 1 ? () => setModoOrdenar(true) : null}
             onAbrir={(r) => { window.location.href = `/rutas/${r.id}` }}
             onAsignar={(r) => {
               // Dos agujeros distintos: la ruta SIN COBRADOR se resuelve
