@@ -110,7 +110,7 @@ export default function ParticipacionSocios({ socios = [], totalIntereses = 0, o
           >
             {editando ? (
               <div className="space-y-2">
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
+                <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>
                   Meta de la sociedad
                 </label>
                 <MoneyInput value={metaInput} onChange={(e) => setMetaInput(e.target.value)} placeholder="Ej: 10.000.000" />

@@ -181,10 +181,7 @@ export default function EditarProximoCobro({
           T13-02 vino a arreglar. */}
       {cuando === 'otra' && (
         <label style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 'none' }}>
-          <span style={{
-            fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
-            textTransform: 'uppercase', color: 'var(--cf-ink-3)',
-          }}>¿Qué día?</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--cf-ink-2)' }}>¿Qué día?</span>
           <input
             type="date"
             value={fecha}

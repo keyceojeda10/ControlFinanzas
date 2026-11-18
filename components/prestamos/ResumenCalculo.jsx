@@ -53,7 +53,7 @@ export default function ResumenCalculo({ calculo, visible = true, onCuotaQueCuad
   return (
     <div className="border border-[var(--cf-border)] rounded-[12px] p-4 space-y-3" style={{ background: 'var(--cf-card)' }}>
       <div className="flex items-center justify-between gap-2">
-        <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
+        <p className="text-[15px] font-semibold text-[var(--cf-ink-3)]" style={{ color: 'var(--cf-ink-3)' }}>
           Resumen del préstamo
         </p>
         {labelModo && (

@@ -311,7 +311,7 @@ export default function ModificarPlazo({
       <div className="space-y-4">
         {/* Toggle de modo */}
         <div>
-          <label className="block text-[11px] font-medium text-[var(--cf-ink-3)] uppercase tracking-[0.05em] mb-1.5">
+          <label className="block mb-1.5 text-[13px] font-semibold text-[var(--cf-ink-2)]">
             ¿Qué quieres hacer?
           </label>
           <div className="grid grid-cols-3 gap-2">

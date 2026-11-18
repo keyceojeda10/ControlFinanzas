@@ -96,7 +96,7 @@ export default function RepartirUtilidades({ open, onClose, onListo }) {
           {/* Sugerencia del periodo */}
           {datos?.sugerido && (
             <div className="rounded-[12px] p-3" style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)' }}>
-              <p className="text-[10px] font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--cf-ink-3)' }}>
+              <p className="mb-2 text-[15px] font-semibold text-[var(--cf-ink-3)]" style={{ color: 'var(--cf-ink-3)' }}>
                 Utilidad de {datos.periodo}
               </p>
               <div className="space-y-1 text-[12px]">
@@ -126,13 +126,13 @@ export default function RepartirUtilidades({ open, onClose, onListo }) {
           {/* Monto y fondo */}
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-2">
-              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Monto a repartir</label>
+              <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>Monto a repartir</label>
               <div className="mt-1.5">
                 <MoneyInput value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="0" />
               </div>
             </div>
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Fondo pérdidas</label>
+              <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>Fondo pérdidas</label>
               <div className="mt-1.5 relative">
                 <input
                   type="text" inputMode="decimal" value={fondoPct}
@@ -181,7 +181,7 @@ export default function RepartirUtilidades({ open, onClose, onListo }) {
           )}
 
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Nota (opcional)</label>
+            <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>Nota (opcional)</label>
             <input
               type="text" value={nota} onChange={(e) => setNota(e.target.value)}
               placeholder="Ej: utilidades de julio"

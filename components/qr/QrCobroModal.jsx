@@ -161,7 +161,7 @@ export default function QrCobroModal({ open, onClose, clienteId }) {
             </div>
           ) : (
             <div className="flex flex-col gap-2.5">
-              <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--cf-ink-4)' }}>
+              <p className="text-[15px] font-semibold text-[var(--cf-ink-3)]" style={{ color: 'var(--cf-ink-3)' }}>
                 {activos.length === 1 ? '1 préstamo activo' : `${activos.length} préstamos activos`}
               </p>
               {activos.map(p => {

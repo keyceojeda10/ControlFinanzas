@@ -459,7 +459,7 @@ export default function RenovarPrestamo({
             pedía al cobrador un fajo que nunca tuvo. */}
         {metodosPago.length > 0 && enMano > 0 && (
           <div>
-            <label className="block text-[11px] font-medium uppercase tracking-[0.05em] mb-1.5" style={{ color: 'var(--cf-ink-3)' }}>
+            <label className="block mb-1.5 text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>
               ¿Por dónde le entregas los {formatMoney(enMano)}?
             </label>
             <MetodoPagoSelector
@@ -523,7 +523,7 @@ export default function RenovarPrestamo({
 
         {/* Frecuencia */}
         <div>
-          <label className="block text-[11px] font-medium uppercase tracking-[0.05em] mb-1.5" style={{ color: 'var(--cf-ink-3)' }}>
+          <label className="block mb-1.5 text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>
             Frecuencia de cobro
           </label>
           <div className="grid grid-cols-4 gap-1.5">
@@ -552,7 +552,7 @@ export default function RenovarPrestamo({
             viendo sin bajar. El pie queda solo para Cancelar y Renovar. */}
         {!soloModo && (
           <div>
-            <label className="block text-[11px] font-medium uppercase tracking-[0.05em] mb-1.5" style={{ color: 'var(--cf-ink-3)' }}>
+            <label className="block mb-1.5 text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>
               Fecha del renove
             </label>
             <FechaALaVista rotulo="Fecha del renove" mostrarRotulo={false} valor={fechaInicio} hoy={hoyISO()} onCambiar={setFechaInicio} />

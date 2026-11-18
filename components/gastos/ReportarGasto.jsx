@@ -138,7 +138,7 @@ export default function ReportarGasto({ open, onClose, onSuccess, fecha, cobrado
         </div>
 
         <div>
-          <p className="text-[11px] font-medium text-[var(--cf-ink-3)] uppercase tracking-[0.05em] mb-2">
+          <p className="mb-2 text-[13px] font-semibold text-[var(--cf-ink-2)]">
             Tipo de gasto
           </p>
           <div className="grid grid-cols-2 gap-2">
@@ -171,7 +171,7 @@ export default function ReportarGasto({ open, onClose, onSuccess, fecha, cobrado
 
         {cobradores.length > 0 && (
           <div>
-            <p className="text-[11px] font-medium text-[var(--cf-ink-3)] uppercase tracking-[0.05em] mb-2">
+            <p className="mb-2 text-[13px] font-semibold text-[var(--cf-ink-2)]">
               Cobrador (opcional)
             </p>
             <select

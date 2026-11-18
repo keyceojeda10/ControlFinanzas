@@ -502,7 +502,7 @@ export default function FirmaDigital({ prestamo, onSave }) {
           <div className="flex-1 min-w-0">
             {firmaUrl ? (
               <div className="flex items-center justify-between gap-2">
-                <p className="text-[10px] font-bold uppercase tracking-[.06em]" style={{ color: 'var(--cf-ink-3)' }}>Firma del cliente</p>
+                <p className="text-[15px] font-semibold text-[var(--cf-ink-3)]" style={{ color: 'var(--cf-ink-3)' }}>Firma del cliente</p>
                 <Pastilla tono="aldia">Firmado</Pastilla>
               </div>
             ) : (

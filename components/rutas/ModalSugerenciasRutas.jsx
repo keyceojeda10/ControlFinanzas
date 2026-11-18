@@ -186,7 +186,7 @@ export default function ModalSugerenciasRutas({ open, onClose, onSuccess }) {
                 />
                 {cobradores.length > 0 && (
                   <div>
-                    <label className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
+                    <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>
                       Cobrador
                     </label>
                     <select
@@ -225,7 +225,7 @@ export default function ModalSugerenciasRutas({ open, onClose, onSuccess }) {
               className="rounded-[12px] border p-3 space-y-2"
               style={{ borderColor: 'var(--cf-border)', background: 'var(--cf-card)' }}
             >
-              <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
+              <p className="text-[15px] font-semibold text-[var(--cf-ink-3)]" style={{ color: 'var(--cf-ink-3)' }}>
                 Agregar a rutas existentes
               </p>
               <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>

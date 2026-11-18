@@ -228,7 +228,7 @@ export default function ModoInteresSelector({ interesPorMes = false, modoInteres
     const ej = calcularEjemplo(sugerido, ctx)
     return (
       <div className="rounded-[16px] p-4" style={{ background: 'color-mix(in srgb, var(--cf-gold) 8%, var(--cf-surface))', border: '1.5px solid var(--cf-gold)' }}>
-        <p className="text-[11px] font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--cf-ink-3)' }}>Tu modo ideal es</p>
+        <p className="mb-1 text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>Tu modo ideal es</p>
         <p className="text-lg font-bold" style={{ color: 'var(--cf-ink)' }}>{md?.label}{md?.frase ? <span className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}> · {md.frase}</span> : null}</p>
         {md?.base && <p className="text-[11px] font-semibold mt-0.5" style={{ color: BASES[md.base].color }}>{BASES[md.base].texto}</p>}
         <p className="text-[12px] mt-1.5 leading-snug" style={{ color: 'var(--cf-ink-2)' }}>{md?.desc}</p>
@@ -325,7 +325,7 @@ export default function ModoInteresSelector({ interesPorMes = false, modoInteres
 
   return (
     <div>
-      <label className="block text-[11px] font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--cf-ink-3)' }}>
+      <label className="block mb-2 text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>
         Modo de interés
       </label>
 

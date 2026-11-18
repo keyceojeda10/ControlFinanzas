@@ -51,7 +51,7 @@ export default function NotaDelPrestamo({ prestamoId, nota, puedeEditar = false,
   if (editando) {
     return (
       <div className="rounded-[16px] p-3 space-y-2" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
-        <label htmlFor="nota-del-prestamo" className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
+        <label htmlFor="nota-del-prestamo" className="text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>
           Nota del préstamo
         </label>
         <textarea id="nota-del-prestamo" value={texto} autoFocus rows={3} maxLength={NOTA_MAX}

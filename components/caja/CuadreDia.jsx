@@ -183,7 +183,7 @@ export default function CuadreDia({ fecha, abrirCobradorId = null }) {
       {/* Banner global */}
       <Card>
         <div className="flex items-center justify-between gap-2 mb-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Cuadre del día</p>
+          <p className="text-[15px] font-semibold text-[var(--cf-ink-3)]">Cuadre del día</p>
           <span className="text-[11px] text-[var(--cf-ink-3)]">
             <span className="font-bold" style={{ color: g.cuadraron === g.total ? 'var(--cf-green-dark)' : 'var(--cf-gold)' }}>{g.cuadraron}/{g.total}</span> cuadraron
           </span>

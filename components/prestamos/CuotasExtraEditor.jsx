@@ -57,7 +57,7 @@ export default function CuotasExtraEditor({ extras = [], onChange, numPeriodos, 
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
+        <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>
           Cuotas extra
         </label>
         {!agregando && (

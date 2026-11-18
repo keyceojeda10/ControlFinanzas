@@ -204,7 +204,7 @@ export default function EditarPrestamo({
         {!hayPagos && (<>
         {/* Monto */}
         <div>
-          <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Monto prestado</label>
+          <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]">Monto prestado</label>
           <MoneyInput
             value={monto}
             onChange={(e) => setMonto(e.target.value)}
@@ -217,7 +217,7 @@ export default function EditarPrestamo({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <FilaRotulo accion={puedeEnPesos && <SelectorPorcentajePesos enPesos={pesos.enPesos} onElegir={pesos.elegir} />}>
-              <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">
+              <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]">
                 {pesos.enPesos ? rotuloCuotaEnPesos(frecuencia, esAbierto) : 'Tasa (%)'}
               </label>
             </FilaRotulo>
@@ -236,7 +236,7 @@ export default function EditarPrestamo({
           </div>
           <div>
             <FilaRotulo>
-              <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Fecha de inicio</label>
+              <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]">Fecha de inicio</label>
             </FilaRotulo>
             <input
               type="date"
@@ -263,7 +263,7 @@ export default function EditarPrestamo({
         />
         {modoInteres === 'manual' && (
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Cuota de cada cobro</label>
+            <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]">Cuota de cada cobro</label>
             <MoneyInput value={cuotaManual} onChange={(e) => setCuotaManual(e.target.value)} placeholder="Cuota por período" />
           </div>
         )}
@@ -295,7 +295,7 @@ export default function EditarPrestamo({
         {/* Plazo y frecuencia */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Plazo (períodos)</label>
+            <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]">Plazo (períodos)</label>
             <Input
               type="number"
               value={periodos}
@@ -305,7 +305,7 @@ export default function EditarPrestamo({
             />
           </div>
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Frecuencia de cobro</label>
+            <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]">Frecuencia de cobro</label>
             <select
               value={frecuencia}
               onChange={(e) => { setFrecuencia(e.target.value); setDiaCobroSem(''); setDiaCobroMes('') }}
@@ -322,7 +322,7 @@ export default function EditarPrestamo({
         {/* Día ancla */}
         {(frecuencia === 'semanal' || frecuencia === 'quincenal') && (
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Día de cobro (opcional)</label>
+            <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]">Día de cobro (opcional)</label>
             <select
               value={diaCobroSem}
               onChange={(e) => setDiaCobroSem(e.target.value)}
@@ -337,7 +337,7 @@ export default function EditarPrestamo({
         )}
         {frecuencia === 'mensual' && (
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Día del mes (opcional)</label>
+            <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]">Día del mes (opcional)</label>
             <Input
               type="number"
               value={diaCobroMes}
@@ -368,7 +368,7 @@ export default function EditarPrestamo({
         {/* Nombre producto (si es mercancía) */}
         {p.nombreProducto != null && (
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Nombre del producto</label>
+            <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]">Nombre del producto</label>
             <Input value={nombreProd} onChange={(e) => setNombreProd(e.target.value)} placeholder="Ej: Televisor" />
           </div>
         )}
@@ -376,7 +376,7 @@ export default function EditarPrestamo({
         {/* Socio */}
         {socios.length > 0 && (
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Socio (opcional)</label>
+            <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]">Socio (opcional)</label>
             <select
               value={socioId}
               onChange={(e) => setSocioId(e.target.value)}
@@ -393,7 +393,7 @@ export default function EditarPrestamo({
         {/* Resumen en vivo — solo cuando se editan campos de cálculo (sin pagos) */}
         {!hayPagos && resumen && (
           <div className="rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-card)] p-3 space-y-1.5">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Resumen nuevo</p>
+            <p className="text-[15px] font-semibold text-[var(--cf-ink-3)]">Resumen nuevo</p>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
                 <p className="text-[10px] text-[var(--cf-ink-3)]">Cuota</p>

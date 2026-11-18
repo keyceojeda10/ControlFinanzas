@@ -133,7 +133,7 @@ export default function ReagendarVisitaModal({ open, onClose, clienteId, cliente
 
         {/* Motivo */}
         <div>
-          <label className="text-[10px] font-semibold uppercase tracking-wider block mb-2" style={{ color: 'var(--cf-ink-3)' }}>
+          <label className="block mb-2 text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>
             Motivo
           </label>
           <div className="space-y-1.5">
@@ -163,7 +163,7 @@ export default function ReagendarVisitaModal({ open, onClose, clienteId, cliente
         {/* Detalle (solo para "otro") */}
         {motivo === 'otro' && (
           <div>
-            <label className="text-[10px] font-semibold uppercase tracking-wider block mb-2" style={{ color: 'var(--cf-ink-3)' }}>
+            <label className="block mb-2 text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>
               Detalle
             </label>
             <textarea
@@ -178,7 +178,7 @@ export default function ReagendarVisitaModal({ open, onClose, clienteId, cliente
 
         {/* Fecha */}
         <div>
-          <label className="text-[10px] font-semibold uppercase tracking-wider block mb-2" style={{ color: 'var(--cf-ink-3)' }}>
+          <label className="block mb-2 text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>
             Reagendar para
           </label>
           <div className="grid grid-cols-2 gap-2">

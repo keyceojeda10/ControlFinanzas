@@ -663,7 +663,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
               />
             </div>
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
+              <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>
                 Ubicación en el mapa (opcional)
               </label>
               <div className="mt-2">
@@ -765,7 +765,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
             )}
 
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
+              <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>
                 Días sin cobro (opcional)
               </label>
               <p className="text-[11px] leading-snug mt-1 mb-2" style={{ color: 'var(--cf-ink-3)' }}>
@@ -776,7 +776,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
 
             {esOwner && (
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
+                <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>
                   Tope maximo de prestamo
                 </label>
                 <p className="text-[11px] leading-snug mt-1 mb-2" style={{ color: 'var(--cf-ink-3)' }}>
@@ -791,7 +791,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
             )}
 
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
+              <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>
                 Notas
               </label>
               <textarea

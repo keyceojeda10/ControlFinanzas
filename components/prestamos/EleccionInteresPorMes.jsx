@@ -13,7 +13,7 @@ function estilo(activo) {
 export default function EleccionInteresPorMes({ porMes, onElegir, tabla }) {
   return (
     <div>
-      <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>¿Cada cuánto baja el interés?</label>
+      <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>¿Cada cuánto baja el interés?</label>
       <div className="grid grid-cols-2 gap-2 mt-1.5">
         <button type="button" onClick={() => onElegir(false)}
           className="h-11 rounded-[10px] border text-[13px] font-semibold transition-all"

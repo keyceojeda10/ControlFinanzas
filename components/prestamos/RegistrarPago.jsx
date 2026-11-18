@@ -1871,7 +1871,7 @@ export default function RegistrarPago({
           const labelP = LABEL_FREQ[prestamo.frecuencia] || 'Per'
           return (
             <div className="rounded-[10px] border border-[var(--cf-border)] bg-[var(--cf-surface)] p-2.5 space-y-1.5">
-              <p className="text-[10px] font-semibold text-[var(--cf-ink-3)] uppercase tracking-wide">
+              <p className="text-[15px] font-semibold text-[var(--cf-ink-3)]">
                 Próximas cuotas pendientes
               </p>
               {filas.map(f => {
@@ -1975,7 +1975,7 @@ export default function RegistrarPago({
           return (
           <div className="border-t border-[var(--cf-border)] pt-4">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-[11px] font-medium text-[var(--cf-ink-3)] uppercase tracking-[0.05em]">
+              <p className="text-[15px] font-semibold text-[var(--cf-ink-3)]">
                 Abono rápido por días
               </p>
               {diasAbonados && (
@@ -2059,7 +2059,7 @@ export default function RegistrarPago({
           />
 
           <div className="flex flex-col gap-1.5">
-            <span className="text-[11px] font-medium text-[var(--cf-ink-3)] uppercase tracking-[0.05em]">Tipo</span>
+            <span className="text-[13px] font-semibold text-[var(--cf-ink-2)]">Tipo</span>
             <div className="grid grid-cols-3 gap-2">
               {[
                 { key: 'completo', label: 'Completo',  color: 'var(--cf-gold)' },
@@ -2207,7 +2207,7 @@ export default function RegistrarPago({
           {/* Método de pago — solo para pagos reales, no ajustes */}
           {!['recargo', 'descuento'].includes(tipo) && (
             <div className="flex flex-col gap-1.5">
-              <span className="text-[11px] font-medium text-[var(--cf-ink-3)] uppercase tracking-[0.05em]">Metodo de pago</span>
+              <span className="text-[13px] font-semibold text-[var(--cf-ink-2)]">Metodo de pago</span>
               <MetodoPagoSelector
                 metodosPago={metodosPago}
                 compact

@@ -207,7 +207,7 @@ export default function ModalWhatsAppTemplates({
         )}
 
         <div>
-          <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-2" style={{ color: 'var(--cf-ink-3)' }}>
+          <p className="mb-2 text-[15px] font-semibold text-[var(--cf-ink-3)]" style={{ color: 'var(--cf-ink-3)' }}>
             Elige una plantilla
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -250,7 +250,7 @@ export default function ModalWhatsAppTemplates({
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
-              <span className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-3)' }}>
+              <span className="text-[15px] font-semibold text-[var(--cf-ink-3)]" style={{ color: 'var(--cf-ink-3)' }}>
                 Personalizar secciones
               </span>
               <span className="text-[11px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)', color: 'var(--cf-gold)' }}>
@@ -274,7 +274,7 @@ export default function ModalWhatsAppTemplates({
 
         <div>
           <div className="flex items-center justify-between mb-2">
-            <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-3)' }}>
+            <p className="text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>
               Mensaje (puedes editarlo)
             </p>
             <div className="flex items-center gap-2">

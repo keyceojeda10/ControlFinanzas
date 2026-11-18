@@ -347,7 +347,7 @@ export default function ReporteDia({ open, onClose, rutasDisponibles = [], fecha
             {/* Por ruta (si hay más de 1) */}
             {data.porRuta.length > 1 && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)] mb-1.5">Por ruta</p>
+                <p className="mb-1.5 text-[15px] font-semibold text-[var(--cf-ink-3)]">Por ruta</p>
                 <div className="space-y-1.5">
                   {data.porRuta.map(rr => (
                     <div key={rr.id} className="flex items-center justify-between rounded-[8px] px-2.5 py-1.5" style={{ background: 'var(--cf-fill)' }}>
@@ -367,7 +367,7 @@ export default function ReporteDia({ open, onClose, rutasDisponibles = [], fecha
 
             {/* Pagos del día */}
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)] mb-1.5">
+              <p className="mb-1.5 text-[15px] font-semibold text-[var(--cf-ink-3)]">
                 Pagos del día ({data.pagos.length})
               </p>
               {data.pagos.length > 0 ? (
@@ -393,7 +393,7 @@ export default function ReporteDia({ open, onClose, rutasDisponibles = [], fecha
             {/* No pagaron */}
             {data.pendientes.length > 0 && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)] mb-1.5">
+                <p className="mb-1.5 text-[15px] font-semibold text-[var(--cf-ink-3)]">
                   No pagaron ({data.pendientes.length})
                 </p>
                 <div className="space-y-0.5 max-h-[200px] overflow-y-auto">
@@ -416,7 +416,7 @@ export default function ReporteDia({ open, onClose, rutasDisponibles = [], fecha
             {/* Gastos */}
             {data.gastos.length > 0 && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)] mb-1.5">
+                <p className="mb-1.5 text-[15px] font-semibold text-[var(--cf-ink-3)]">
                   Gastos ({data.gastos.length})
                 </p>
                 <div className="space-y-0.5">

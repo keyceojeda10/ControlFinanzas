@@ -45,7 +45,7 @@ const dondeEsta = (ruta) => (ruta ? (/^\s*ruta\b/i.test(ruta) ? ruta : `la ruta 
 
 function Etiqueta({ children }) {
   return (
-    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
+    <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--cf-ink-2)' }}>
       {children}
     </span>
   )

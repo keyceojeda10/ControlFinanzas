@@ -35,10 +35,8 @@ const DIAS = [
 
 function Rotulo({ children }) {
   return (
-    <span style={{
-      fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
-      textTransform: 'uppercase', color: 'var(--cf-ink-3)',
-    }}>{children}</span>
+    // Estilo «Mi cuenta» (18 nov 2026): la pregunta como se dice, no 10px en mayúsculas.
+    <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--cf-ink-2)' }}>{children}</span>
   )
 }
 

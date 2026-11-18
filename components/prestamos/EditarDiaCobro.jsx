@@ -251,7 +251,7 @@ export default function EditarDiaCobro({
         {modo === 'mes' && esQuincenal ? (
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-medium text-[var(--cf-ink-3)] uppercase tracking-[0.05em]">
+              <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]">
                 Primer cobro
               </label>
               <select
@@ -266,7 +266,7 @@ export default function EditarDiaCobro({
               </select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-medium text-[var(--cf-ink-3)] uppercase tracking-[0.05em]">
+              <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]">
                 Segundo cobro
               </label>
               <select
@@ -283,7 +283,7 @@ export default function EditarDiaCobro({
           </div>
         ) : (
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium text-[var(--cf-ink-3)] uppercase tracking-[0.05em]">
+            <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]">
               {modo === 'semana' ? 'Día de la semana' : 'Día del mes'}
             </label>
             <select
