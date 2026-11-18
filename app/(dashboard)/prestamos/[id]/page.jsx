@@ -977,9 +977,10 @@ function PrestamoDetalleContenido({ params }) {
   // una cuota hace 3 dias» en vez de dejar el numero solo. Y solo cuando el
   // atraso es CORTO sobre su propio ciclo: si ya es mora grave, el rojo de arriba
   // lo dice de sobra y esta frase suavizaria.
-  const notaDelHistorial = (!esUnicoModo && diasMora > 0 && !moraEsGrave({ diasMora, frecuencia }))
-    ? `Le vence una cuota hace ${diasMora} día${diasMora === 1 ? '' : 's'}.`
-    : null
+  /* ⚠ YA NO SE PINTA (18 nov 2026): la ficha decía el atraso cinco veces y el
+     dueño pidió dejar la cabecera y la franja de arriba, que trae días, cuotas y
+     plata. Se deja la variable (y su prop) por si vuelve con otra cosa que decir. */
+  const notaDelHistorial = null
 
   // La tabla, recortada a las 4 primeras como en la lamina: mas abajo no cabe sin
   // que la ficha se vuelva un scroll infinito, y el aviso «Ves 4 de las 6» lleva a
@@ -2357,7 +2358,7 @@ function PrestamoDetalleContenido({ params }) {
           onClick={() => setHistorialOpen(v => !v)}
           className="w-full flex items-center justify-between gap-2 focus-visible:outline-none"
         >
-          <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em]">
+          <p className="text-[15px] font-semibold text-[var(--cf-ink-3)]">
             Gestionar los pagos ({pagos.length})
           </p>
           <svg

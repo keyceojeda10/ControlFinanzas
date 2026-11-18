@@ -337,6 +337,12 @@ export function HeaderClienteContexto({ cliente, prestamo, statsCliente, onWhats
             las tarjetas: rojo mora, ámbar atraso, verde al día, gris terminado. */}
         {/* «Por aprobar» antes que la mora: un préstamo sin aprobar decía «Al día»
             (DETALLES-PRESTAMOS #22). El mismo tono que en la lista. */}
+        {/* ⚠ SIN EL ATRASO (18 nov 2026). La ficha decía el atraso CINCO veces
+            —la cabecera, la franja de arriba, esta pastilla, «Le vence una cuota
+            hace 4 días» y «Va atrasado»— y el dueño pidió dejar las dos que
+            importan: la cabecera y la franja, que dice días, cuotas y plata.
+            Los demás estados (Completado, Anulado, Por aprobar, Al día) siguen. */}
+        {!(['activo', undefined, null].includes(prestamo?.estado) && (prestamo?.diasMora ?? 0) > 0) && (
         <Pastilla numerica tono={
           prestamo?.estado === 'completado' || prestamo?.estado === 'cancelado' ? 'neutro'
             : prestamo?.estado === 'pendiente_aprobacion' ? 'atraso'
@@ -351,6 +357,7 @@ export function HeaderClienteContexto({ cliente, prestamo, statsCliente, onWhats
            (prestamo?.diasMora ?? 0) > 0 ? `${prestamo.diasMora}d vencido` :
            'Al día'}
         </Pastilla>
+        )}
       </div>
     </div>
   )
@@ -730,7 +737,7 @@ export function TimelinePrestamo({
     // de `return (` es error de sintaxis — la trampa nº1 de este proyecto.)
     <div className="rounded-[20px] p-4" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
       <div className="flex items-center justify-between mb-3">
-        <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-3)' }}>
+        <p className="text-[15px] font-semibold" style={{ color: 'var(--cf-ink-3)' }}>
           Cómo va
         </p>
         {diasRestantes > 0 && (
@@ -808,7 +815,9 @@ export function TimelinePrestamo({
       {(adelantado || atrasado || cuotasQueFaltan > 0) && (
         <p className="text-[11px] mt-3 pt-3 leading-snug" style={{ color: 'var(--cf-ink-2)', borderTop: '1px solid var(--cf-border)' }}>
           {adelantado && <span className="font-semibold" style={{ color: 'var(--cf-green-dark)' }}>Va adelantado. </span>}
-          {atrasado && <span className="font-semibold" style={{ color: 'var(--cf-gold-dark)' }}>Va atrasado. </span>}
+          {/* «Va atrasado» se fue (18 nov 2026): ya lo dicen la cabecera y la
+              franja de arriba, con los días. «Va adelantado» se queda: no lo
+              dice nadie más. */}
           {cuotasQueFaltan > 0 && (
             <>Le falta{cuotasQueFaltan === 1 ? '' : 'n'} {cuotasQueFaltan} cuota{cuotasQueFaltan === 1 ? '' : 's'}
               {porcentajePagado >= 80 ? ' y ya casi termina.' : '.'}</>

@@ -78,7 +78,7 @@ function Historial({ pagos = [], total, montoOculto, onVerTodos, notaPie, esUnic
     return (
       <Tarjeta>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
+          <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-.01em', color: 'var(--cf-ink-3)' }}>
             {rotulo}
           </span>
           <span style={{ fontSize: 11, color: 'var(--cf-ink-3)', flex: 'none' }}>ninguno</span>
@@ -109,7 +109,7 @@ function Historial({ pagos = [], total, montoOculto, onVerTodos, notaPie, esUnic
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         gap: 12, padding: '14px 18px 11px', flex: 'none',
       }}>
-        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
+        <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-.01em', color: 'var(--cf-ink-3)' }}>
           {rotulo}
         </span>
         {total > 0 && (
@@ -404,7 +404,9 @@ export default function FichaPrestamo({
             gap 12) las tres lineas quedan separadas como si no se leyeran juntas
             — y se leen juntas: son una frase. */}
         <Tarjeta style={{ padding: '15px 18px', gap: 3 }}>
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
+          {/* Título de bloque, como los grupos de Configuración (18 nov 2026). Los
+              rótulos SOBRE una cifra («Le presté») siguen en mayúscula pequeña. */}
+          <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-.01em', color: 'var(--cf-ink-3)' }}>
             Cómo se pactó
           </span>
 
