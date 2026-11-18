@@ -51,6 +51,7 @@ export const ICONOS = {
   rutas: <><path d="M9 4.5L3.5 6.5v13L9 17.5l6 2 5.5-2v-13L15 6.5z" /><path d="M9 4.5v13M15 6.5v13" /></>,
   simulador: <><rect x="5" y="3" width="14" height="18" rx="2.5" /><path d="M8.5 7h7M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01M8.5 15h.01M12 15h.01M15.5 15v2.5" /></>,
   reportes: <path d="M4 20V10M10 20V4M16 20v-7M21 20H3" />,
+  calendario: <><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" /><path d="M3.5 10h17M8 3v4M16 3v4M8 14h.01M12 14h.01M16 14h.01M8 17.5h.01M12 17.5h.01" /></>,
   mas: <><rect x="4" y="4" width="6.5" height="6.5" rx="1.8" /><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.8" /><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.8" /><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.8" /></>,
   lista: <path d="M8 6.5h12M8 12h12M8 17.5h12M4 6.5h.01M4 12h.01M4 17.5h.01" />,
   buscar: <><circle cx="11" cy="11" r="6.5" /><path d="M20 20l-4.2-4.2" /></>,
@@ -62,6 +63,10 @@ export function accesosDeInicio({ esOwner = false } = {}) {
   return [
     { id: 'hoy', nombre: 'Hoy', href: '/dashboard', activo: true },
     { id: 'cobrar', nombre: 'Cobrar hoy', href: '/cobros-hoy' },
+    /* Junto a «Cobrar hoy», a la vista sin deslizar (18 nov 2026). El dueño:
+       «es muy útil pero no se ve casi». Vivía solo dentro de «Más». Lo ven
+       dueño y cobrador (la pantalla ya distingue con `esCobrador`). */
+    { id: 'calendario', nombre: 'Calendario', href: '/calendario' },
     { id: 'clientes', nombre: 'Clientes', href: '/clientes' },
     { id: 'prestamos', nombre: 'Préstamos', href: '/prestamos' },
     { id: 'caja', nombre: 'Caja', href: '/caja' },

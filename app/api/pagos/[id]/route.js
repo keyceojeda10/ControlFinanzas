@@ -446,8 +446,13 @@ export async function DELETE(request, { params }) {
     entidadTipo: 'pago',
     entidadId: pagoId,
     detalle: `Anuló pago de ${pago.montoPagado} (${pago.tipo}) del préstamo ${pago.prestamoId}`
+      /* SIN CIFRA con «$»: el Historial saca el importe de la columna del texto
+         (`montoDeDetalle`, que toma la ÚNICA cifra con «$») y esta nota lo ponía
+         a la derecha como si fuera plata que se movió. El monto ya va al principio.
+         Y la lee `leerAnulacion` (lib/adaptadores/actividad.js): cambiar esta
+         frase sin cambiar aquella la deja en crudo, con el id del préstamo. */
       + (capitalNoQuitado > 0
-        ? `. NO se quitaron $${capitalNoQuitado.toLocaleString('es-CO')} del capital: el cobro entró otro día y esa caja ya se cuadró`
+        ? '. NO se quitó del capital: el cobro entró otro día y esa caja ya se cuadró'
         : ''),
     ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
   })
