@@ -380,7 +380,7 @@ export default function CapitalTab() {
                 <span className="w-2 h-2 rounded-full" style={{ background: '#2FBE6A' }} />
                 Lista para prestar
               </span>
-              <span className="cf-fig text-[14px] font-bold">{formatMoney(saldoCapital)}</span>
+              <span className="cf-fig text-[14px] font-bold" style={saldoCapital < 0 ? { color: '#FF8A80' } : undefined}>{formatMoney(saldoCapital)}</span>
             </div>
             <div className="flex items-center justify-between gap-3">
               <span className="text-[13px] flex items-center gap-2" style={{ opacity: .8 }}>
@@ -392,6 +392,13 @@ export default function CapitalTab() {
               </span>
             </div>
           </div>
+          {/* El aviso vivía en «Saldo del capital», que ahora solo sale cuando
+              este bloque no está (18 nov 2026): aquí no se puede perder. */}
+          {saldoCapital < 0 && (
+            <p className="text-[13px] mt-3 font-semibold" style={{ color: '#FF8A80' }}>
+              Capital en negativo: prestaste más de lo que tenías registrado.
+            </p>
+          )}
         </div>
       )}
 
@@ -405,19 +412,21 @@ export default function CapitalTab() {
       <RegistrarAcciones clave="capital" acciones={accionesCapital} />
       <QueNecesitas ejemplos={['sacar plata', 'cuadrar el saldo', 'capital inicial']} />
 
-      <div className="flex justify-end items-center gap-2">
+      {/* A todo el ancho y a 52 px (18 nov 2026): eran dos botones pequeños
+          arrinconados a la derecha, en la pantalla de la plata. */}
+      <div className="grid grid-cols-2 gap-2.5">
         <button
           type="button"
           onClick={() => { setModalTipo('ajuste'); setShowModal(true) }}
           title="Corrige el saldo cuando el real no coincide con el de la app. Queda registrado quién lo hizo y por qué."
-          className="px-4 py-2 text-sm font-semibold rounded-[10px] transition-colors"
-          style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)', color: 'var(--cf-ink-2)' }}
+          className="h-[52px] px-3 text-[15px] font-semibold rounded-[14px] transition-colors"
+          style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)', color: 'var(--cf-ink)' }}
         >
           Cuadrar el saldo
         </button>
         <button
           onClick={() => { setModalTipo('inyeccion'); setShowModal(true) }}
-          className="px-4 py-2 bg-[var(--cf-gold)] text-[var(--cf-gold-ink)] text-sm font-semibold rounded-[10px] hover:opacity-90 transition-opacity"
+          className="h-[52px] px-3 bg-[var(--cf-gold)] text-[var(--cf-gold-ink)] text-[15px] font-bold rounded-[14px] hover:opacity-90 transition-opacity"
         >
           Registrar movimiento
         </button>
@@ -463,7 +472,12 @@ export default function CapitalTab() {
         </div>
       )}
 
-      {resumen?.configurado && (() => {
+      {/* ⚠ SOLO CUANDO NO ESTÁ «TODA TU PLATA» (18 nov 2026). Era la MISMA cifra
+          que su «Lista para prestar» (`saldoCapital` = `resumen.saldo`), otra vez
+          y en grande, justo debajo. Se queda para cuando aquel bloque no sale
+          —sin plata ni préstamos, o con el total en cero o negativo—: entonces
+          es la única que dice el saldo. */}
+      {resumen?.configurado && todaLaPlata <= 0 && (() => {
         const heroColor = resumen.saldo >= 0 ? 'var(--cf-ink-2)' : 'var(--cf-red-dark)'
         return (
           <div
@@ -498,35 +512,29 @@ export default function CapitalTab() {
       })()}
 
       {resumen?.configurado && resumen.cartera && (
-        <div className="rounded-[16px] px-4 py-4"
-          style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
-        >
-          <div className="flex items-center gap-1.5 mb-3">
-            <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 18%, transparent)', color: 'var(--cf-ink-2)' }}>
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
+        /* ── EN LA CALLE, ESTILO «MI CUENTA» (18 nov 2026) ──
+           Antes repetía «Capital prestado», que es el «En la calle» del bloque de
+           arriba (la misma `capitalEnCalle`). Queda solo lo que aquel no dice:
+           cuántos préstamos son y cuánto falta por cobrar CON intereses. Cuando
+           el bloque de arriba no sale, el capital prestado vuelve aquí. */
+        <div className="rounded-[16px] overflow-hidden" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
+          <p className="px-4 pt-4 pb-1 text-[15px] font-semibold" style={{ color: 'var(--cf-ink-3)' }}>En la calle</p>
+          {[
+            todaLaPlata <= 0 && { etiqueta: 'Capital prestado', valor: formatMoney(resumen.cartera.capitalEnCalle) },
+            { etiqueta: 'Préstamos activos', valor: String(resumen.cartera.prestamosActivos ?? 0) },
+            { etiqueta: 'Por cobrar, con intereses', valor: formatMoney(resumen.cartera.total) },
+          ].filter(Boolean).map((f, i) => (
+            <div key={f.etiqueta} className="flex items-baseline justify-between gap-3 px-4 py-3.5"
+              style={{ borderTop: i === 0 ? 0 : '1px solid var(--cf-border)' }}>
+              <span className="text-[16px]" style={{ color: 'var(--cf-ink-2)' }}>{f.etiqueta}</span>
+              <span className="cf-fig text-[16px] font-semibold" style={{ color: 'var(--cf-ink)' }}>{f.valor}</span>
             </div>
-            <span className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-2)' }}>Dinero en la calle</span>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Capital prestado</p>
-              <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--cf-ink)' }}>{formatMoney(resumen.cartera.capitalEnCalle)}</p>
-            </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Por cobrar (cartera)</p>
-              <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--cf-ink-2)' }}>{formatMoney(resumen.cartera.total)}</p>
-            </div>
-          </div>
-          <p className="text-[10px] mt-2" style={{ color: 'var(--cf-ink-3)' }}>
-            {resumen.cartera.prestamosActivos} préstamos activos en todas las rutas
-            {resumen.cartera.sinRuta > 0 && (
-              <span className="block mt-1" style={{ color: 'var(--cf-gold-dark)' }}>
-                {formatMoney(resumen.cartera.sinRuta)} en {resumen.cartera.prestamosSinRuta} préstamo{resumen.cartera.prestamosSinRuta !== 1 ? 's' : ''} de clientes sin ruta asignada
-              </span>
-            )}
-          </p>
+          ))}
+          {resumen.cartera.sinRuta > 0 && (
+            <p className="px-4 pb-4 pt-1 text-[13px] leading-snug" style={{ color: 'var(--cf-gold-dark)' }}>
+              {formatMoney(resumen.cartera.sinRuta)} en {resumen.cartera.prestamosSinRuta} préstamo{resumen.cartera.prestamosSinRuta !== 1 ? 's' : ''} de clientes sin ruta asignada
+            </p>
+          )}
         </div>
       )}
 
