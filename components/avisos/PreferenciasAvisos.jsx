@@ -21,8 +21,10 @@ import { Tarjeta } from '@/components/cf/primitivos'
 import { Toggle } from '@/components/ui/Toggle'
 import { GRUPOS, HORAS_RESUMEN } from '@/lib/avisos-preferencias'
 import { estadoPush, activarPush, desactivarPush } from '@/lib/push-cliente'
+import { ROTULO_GRUPO } from '@/components/cf/ajustes'
 
-const rotulo = { fontSize: 10, fontWeight: 700, letterSpacing: '.07em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }
+// El nombre de cada grupo, en palabras normales (estilo «Mi cuenta», 18 nov 2026).
+const rotulo = ROTULO_GRUPO
 
 function hora12(h) {
   const sufijo = h >= 12 ? 'p. m.' : 'a. m.'

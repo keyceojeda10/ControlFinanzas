@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { NEGRO_FRANJA, pintarBarraDelSistema } from '@/lib/franja'
 
 const ThemeContext = createContext({ theme: 'light', resolvedTheme: 'light', setTheme: () => {} })
 
@@ -46,8 +47,9 @@ function applyTheme(resolved) {
     document.body.style.backgroundColor = bg
     document.body.style.color = fg
   }
-  const meta = document.querySelector('meta[name="theme-color"]')
-  if (meta) meta.setAttribute('content', bg)
+  // En las pantallas con la franja negra la barra del teléfono sigue negra
+  // aunque el tema sea claro (lo marca el armazón con `data-franja`).
+  pintarBarraDelSistema(h.dataset.franja === 'negra' ? NEGRO_FRANJA : bg)
 }
 
 function readStoredTheme() {

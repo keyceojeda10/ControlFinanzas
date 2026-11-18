@@ -74,13 +74,18 @@ import { EnlaceProfe } from '@/components/tutoriales/PiezasProfe'
 
 const ORO = '#E7A400'
 
-/* Etiqueta de sección: 10px, 700, .1em, mayúsculas. Se repite cuatro veces, y
-   escribirla cuatro veces son cuatro sitios donde se desincroniza. */
-function Rotulo({ children }) {
+/* Etiqueta de sección. Se repite cuatro veces, y escribirla cuatro veces son
+   cuatro sitios donde se desincroniza.
+
+   ESTILO «MI CUENTA» (18 nov 2026). Eran 10px en mayúsculas —«¿CÓMO TE
+   PAGÓ?»—; el dueño pidió llevar a los modales lo que hizo legible el índice de
+   Configuración: cada pregunta escrita como se dice, a 15px. `suave` es para la
+   de dentro de la tarjeta del monto, que va sobre la cifra y no compite con ella. */
+function Rotulo({ children, suave = false }) {
   return (
     <span style={{
-      fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
-      textTransform: 'uppercase', color: 'var(--cf-ink-3)', flex: 'none',
+      fontSize: suave ? 13 : 15, fontWeight: 600, letterSpacing: suave ? 0 : '-.01em',
+      color: suave ? 'var(--cf-ink-3)' : 'var(--cf-ink)', flex: 'none',
     }}>{children}</span>
   )
 }
@@ -93,9 +98,17 @@ function Rotulo({ children }) {
      una ayuda para escribir;
    · «¿a qué se aplica?» marca en NEGRO, porque sí es una decisión y cambia dónde
      entra la plata. */
-function Opciones({ opciones = [], activo, onElegir, alto = 40, marca = 'oro' }) {
+function Opciones({ opciones = [], activo, onElegir, alto = 40, marca = 'oro', fmt = null }) {
+  /* «¿A QUÉ SE APLICA?» ES UN SOLO CONTROL (18 nov 2026): una pista gris con el
+     elegido en negro, no tres cajas sueltas. Con tres cajas al lado de los
+     atajos se leían dos filas de «Cuota» —la de dorado y la de negro— y el dueño
+     las veía como la misma pregunta repetida. */
+  const segmentado = marca === 'negro'
   return (
-    <div style={{ display: 'flex', gap: 7, flex: 'none' }}>
+    <div style={{
+      display: 'flex', gap: segmentado ? 4 : 8, flex: 'none',
+      ...(segmentado ? { padding: 4, borderRadius: 16, background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' } : {}),
+    }}>
       {opciones.map((o) => {
         const on = o.id === activo
         return (
@@ -105,9 +118,9 @@ function Opciones({ opciones = [], activo, onElegir, alto = 40, marca = 'oro' })
             onClick={() => onElegir?.(o)}
             aria-pressed={on}
             style={{
-              flex: 1, minWidth: 0, height: alto, borderRadius: 14, cursor: 'pointer',
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              font: 'inherit', fontSize: 13, fontWeight: on ? 700 : 600,
+              flex: 1, minWidth: 0, minHeight: segmentado ? alto - 8 : alto, borderRadius: segmentado ? 12 : 14, cursor: 'pointer',
+              display: 'inline-flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+              font: 'inherit', fontSize: segmentado ? 14 : 13, fontWeight: on ? 700 : 600,
               /* A dos renglones si no cabe: a 412 px «Todo lo que debe» salía
                  cortado por los dos lados (el `ellipsis` no funciona en un
                  `inline-flex`). Cabe en los 40 px de alto. */
@@ -115,10 +128,10 @@ function Opciones({ opciones = [], activo, onElegir, alto = 40, marca = 'oro' })
               // `--cf-surface` es el `#F4F4F1` de la lámina. Mi primera versión puso
               // `--cf-bg`, que NO EXISTE: el CSS lo resuelve a nada y queda el color
               // heredado sobre negro. Una variable inventada no falla en ningún sitio.
-              ...(marca === 'negro'
+              ...(segmentado
                 ? on
-                  ? { background: 'var(--cf-ink)', color: 'var(--cf-surface)', border: 'none' }
-                  : { background: 'var(--cf-card)', color: 'var(--cf-ink-2)', border: '1px solid var(--cf-border)' }
+                  ? { background: 'var(--cf-ink)', color: 'var(--cf-surface)', border: 'none', boxShadow: '0 1px 3px rgba(20,20,28,.18)' }
+                  : { background: 'none', color: 'var(--cf-ink-2)', border: 'none' }
                 : on
                   ? {
                       // ⚠ `--cf-gold-dark`, NO `--cf-gold-ink`.
@@ -133,7 +146,15 @@ function Opciones({ opciones = [], activo, onElegir, alto = 40, marca = 'oro' })
                     }
                   : { background: 'var(--cf-fill)', color: 'var(--cf-ink-2)', border: '1px solid var(--cf-border)' }),
             }}
-          >{o.etiqueta}</button>
+          >
+            <span>{o.etiqueta}</span>
+            {/* LA CIFRA DEBAJO DEL ATAJO, si el atajo la trae y no la dice ya
+                («Interés del mes $50.000» la lleva escrita). Con «Cuota» a secas
+                había que subir la vista al número para saber qué ponía. */}
+            {fmt && Number(o.monto) > 0 && !/\d/.test(String(o.etiqueta)) && (
+              <span className="cf-num" style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-.02em' }}>{fmt(o.monto)}</span>
+            )}
+          </button>
         )
       })}
     </div>
@@ -169,9 +190,13 @@ function Medio({ nombre, inicial, color, plataforma, efectivo, activo, onClick }
       type="button"
       onClick={onClick}
       aria-pressed={activo}
+      /* EN DOS COLUMNAS, el logo al lado del nombre (18 nov 2026). En cuatro
+         casillas de 62px «Bancolombia» salía «Bancolom-bia» partida por el
+         guion: una cuenta que el cobrador lee mal es plata en la cuenta
+         equivocada. A dos columnas caben enteros hasta «Banco de Bogotá». */
       style={{
-        flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column',
-        alignItems: 'center', gap: 7, padding: '13px 8px', borderRadius: 14,
+        minWidth: 0, display: 'flex', flexDirection: 'row',
+        alignItems: 'center', gap: 10, padding: '0 14px', minHeight: 52, borderRadius: 14,
         cursor: 'pointer', font: 'inherit', background: 'var(--cf-card)',
         border: activo ? `1.5px solid ${ORO}` : '1px solid var(--cf-border)',
         boxShadow: activo ? '0 0 0 3px rgba(231,164,0,.13)' : 'none',
@@ -195,13 +220,12 @@ function Medio({ nombre, inicial, color, plataforma, efectivo, activo, onClick }
           ia», que se lee peor que las dos cosas que este comentario evitaba. Con
           el logo encima ya no hace falta romperla: si no cabe, se encoge. */}
       <span style={{
-        fontSize: 11.5, fontWeight: activo ? 700 : 600, lineHeight: 1.15,
+        fontSize: 15, fontWeight: activo ? 700 : 600, lineHeight: 1.2, flex: 1, minWidth: 0,
         // `gold-dark`, no `gold-ink`: la tarjeta del medio de pago es CLARA en
         // tema claro y OSCURA en oscuro, así que el marrón fijo desaparecía.
         // «Efectivo» salía negro sobre negro en la captura del dueño.
         color: activo ? 'var(--cf-gold-dark)' : 'var(--cf-ink-2)',
-        maxWidth: '100%', textAlign: 'center',
-        overflowWrap: 'break-word', hyphens: 'auto',
+        textAlign: 'left', overflowWrap: 'break-word', hyphens: 'none',
       }}>{nombre}</span>
     </button>
   )
@@ -241,6 +265,9 @@ export default function RegistrarCobro({
      ARRIBA, antes del monto: es lo que hay que leer antes de cobrar. Es otra
      cosa que `nota`, que es la del pago que se está registrando. */
   notaPrestamo = null,
+  /* Cómo se escribe una cifra, para poner la de cada atajo debajo de su nombre
+     («Cuota $81.000»). Sin ella los atajos salen como antes, solo el nombre. */
+  fmtAtajo = null,
 }) {
   const campoMonto = useRef(null)
   /* El lápiz pone el cursor en el número y lo deja seleccionado: «a la gente no
@@ -279,7 +306,7 @@ export default function RegistrarCobro({
         {/* El enlace del profe va en la cabecera de la sección, con la pregunta
             de quien duda (Adenda 6, B): el que más lo necesita es el cobrador. */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-          <Rotulo>Monto que recibiste</Rotulo>
+          <Rotulo suave>Monto que recibiste</Rotulo>
           <EnlaceProfe id="prestamos-registrar-pago" junto="el título de la hoja" pregunta="¿Cómo se cobra?" />
         </div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
@@ -342,7 +369,7 @@ export default function RegistrarCobro({
           <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>¿Te pagó otro valor? Toca el número y escríbelo.</span>
         )}
         {atajos.length > 0 && (
-          <Opciones opciones={atajos} activo={atajoActivo} onElegir={onAtajo} alto={40} marca="oro" />
+          <Opciones opciones={atajos} activo={atajoActivo} onElegir={onAtajo} alto={fmtAtajo ? 56 : 40} marca="oro" fmt={fmtAtajo} />
         )}
       </div>
 
@@ -361,7 +388,7 @@ export default function RegistrarCobro({
               pregunta="¿Cuál elijo?"
             />
           </div>
-          <Opciones opciones={aplicaciones} activo={aplicacion} onElegir={onAplicacion} alto={44} marca="negro" />
+          <Opciones opciones={aplicaciones} activo={aplicacion} onElegir={onAplicacion} alto={48} marca="negro" />
         </div>
       )}
 
@@ -376,15 +403,15 @@ export default function RegistrarCobro({
           borderRadius: 'var(--cf-r-card)', padding: '13px 15px',
           display: 'flex', flexDirection: 'column', gap: 5,
         }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--cf-ink)' }}>
+          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--cf-ink)' }}>
             {explicacion.titulo}
           </span>
-          <span style={{ fontSize: 12.5, lineHeight: 1.45, color: 'var(--cf-ink-3)' }}>
+          <span style={{ fontSize: 13, lineHeight: 1.45, color: 'var(--cf-ink-3)' }}>
             {explicacion.texto}
           </span>
           {explicacion.cifra && (
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginTop: 2 }}>
-              <span style={{ fontSize: 12.5, color: 'var(--cf-ink-2)' }}>{explicacion.cifra.etiqueta}</span>
+              <span style={{ fontSize: 13, color: 'var(--cf-ink-2)' }}>{explicacion.cifra.etiqueta}</span>
               <span className="cf-fig" style={{
                 fontSize: 15, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-green-dark)',
               }}>{explicacion.cifra.valor}</span>
@@ -400,7 +427,7 @@ export default function RegistrarCobro({
       {medios.length > 1 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 9, flex: 'none' }}>
           <Rotulo>¿Cómo te pagó?</Rotulo>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
             {medios.map((m) => (
               <Medio
                 key={m.id}
@@ -426,16 +453,20 @@ export default function RegistrarCobro({
           llegó: un «quedará al día» inventado es peor que no decir nada, porque es
           la línea que el cobrador lee para decidir si insiste o se va. */}
       {despues.length > 0 && (
-        <div style={{
-          flex: 'none', background: 'var(--cf-card)', borderRadius: 'var(--cf-r-card)',
-          border: '1px solid var(--cf-border)', padding: '16px 18px',
-          display: 'flex', flexDirection: 'column', gap: 11,
-        }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 9, flex: 'none' }}>
           <Rotulo>Después de este pago</Rotulo>
-          {despues.map((f) => (
-            <div key={f.clave} style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 'none' }}>
+          {/* Filas a lo ancho con su filete, como el índice de Configuración. */}
+          <div style={{
+            background: 'var(--cf-card)', borderRadius: 'var(--cf-r-card)',
+            border: '1px solid var(--cf-border)', overflow: 'hidden',
+          }}>
+          {despues.map((f, i) => (
+            <div key={f.clave} style={{
+              display: 'flex', flexDirection: 'column', gap: 3, flex: 'none',
+              padding: '14px 16px', borderTop: i === 0 ? 0 : '1px solid var(--cf-border)',
+            }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
-                <span style={{ fontSize: 13, color: 'var(--cf-ink-2)', flex: 'none' }}>{f.etiqueta}</span>
+                <span style={{ fontSize: 15, color: 'var(--cf-ink-2)', flex: 'none' }}>{f.etiqueta}</span>
                 <span style={{ display: 'flex', alignItems: 'baseline', gap: 8, flex: 'none' }}>
                   {/* El antes TACHADO. Sin él, el dueño ve un número y no sabe si
                       mejoró ni cuánto. */}
@@ -447,7 +478,7 @@ export default function RegistrarCobro({
                   <span
                     className={f.antes ? 'cf-fig' : undefined}
                     style={{
-                      fontSize: f.antes ? 19 : 14,
+                      fontSize: f.antes ? 19 : 15,
                       fontWeight: f.antes ? 600 : 700,
                       letterSpacing: f.antes ? '-.02em' : undefined,
                       // El estado va en su color; el resto en tinta normal. El tono
@@ -461,12 +492,13 @@ export default function RegistrarCobro({
                 </span>
               </div>
               {f.nota && (
-                <span style={{ fontSize: 11.5, color: 'var(--cf-ink-3)', textAlign: 'right' }}>
+                <span style={{ fontSize: 12, color: 'var(--cf-ink-3)', textAlign: 'right' }}>
                   {f.nota}
                 </span>
               )}
             </div>
           ))}
+          </div>
         </div>
       )}
 
@@ -486,9 +518,9 @@ export default function RegistrarCobro({
             placeholder="Para qué fue este abono"
             aria-label="Nota"
             style={{
-              height: 44, borderRadius: 14, padding: '0 14px', width: '100%',
+              height: 52, borderRadius: 14, padding: '0 16px', width: '100%',
               background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
-              outline: 'none', font: 'inherit', fontSize: 14, color: 'var(--cf-ink)',
+              outline: 'none', font: 'inherit', fontSize: 16, color: 'var(--cf-ink)',
             }}
           />
         </div>
@@ -500,9 +532,9 @@ export default function RegistrarCobro({
           porque son el caso raro y quien los necesita los busca. */}
       {onLoRaro && (
         <button type="button" onClick={onLoRaro} style={{
-          flex: 'none', alignSelf: 'flex-start', padding: '0 2px', border: 0,
+          flex: 'none', alignSelf: 'flex-start', minHeight: 44, padding: '0 2px', border: 0,
           background: 'none', cursor: 'pointer', font: 'inherit',
-          fontSize: 12, fontWeight: 700, color: 'var(--cf-gold-dark)', textAlign: 'left',
+          fontSize: 14, fontWeight: 700, color: 'var(--cf-gold-dark)', textAlign: 'left',
         }}>{textoLoRaro}</button>
       )}
     </>

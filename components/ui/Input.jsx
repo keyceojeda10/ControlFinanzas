@@ -8,7 +8,8 @@ import { forwardRef, useId } from 'react'
    los formularios de la app: 235 usos de tamaños intermedios en el repo, y este
    era el más multiplicador. 12px es el valor de la escala para un metadato o una
    etiqueta de campo. */
-const labelCls = 'text-[12px] font-bold tracking-[0.01em]'
+// 13px semibold: el rótulo de campo del estilo «Mi cuenta» (`components/cf/ajustes.js`).
+const labelCls = 'text-[13px] font-semibold'
 const labelStyle = { color: 'var(--cf-ink-2)' }
 const fieldStyle = {
   background: 'var(--cf-fill)',

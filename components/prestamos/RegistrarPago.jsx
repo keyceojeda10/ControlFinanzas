@@ -1663,6 +1663,7 @@ export default function RegistrarPago({
         }
       >
         <RegistrarCobro
+          fmtAtajo={formatMoney}
           // Si el teléfono no va a dar la ubicación, se dice ANTES de cobrar.
           // Un recargo o un descuento no llevan ubicación: tampoco su aviso.
           aviso={<AvisoUbicacion activo={open && !['recargo', 'descuento'].includes(tipo)} />}

@@ -10,11 +10,11 @@
 // El estado va en la línea del título, que es donde se mira.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { ROTULO_CAMPO } from '@/components/cf/ajustes'
 
-const ROTULO = {
-  display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: '.09em',
-  textTransform: 'uppercase', color: 'var(--cf-ink-3)', marginBottom: 6,
-}
+/* El rótulo de cada campo, el de `components/cf/ajustes.js` (estilo «Mi cuenta»,
+   18 nov 2026): antes 10px en mayúsculas. */
+const ROTULO = ROTULO_CAMPO
 
 const CONTROL = {
   height: 46, padding: '0 13px', borderRadius: 'var(--cf-r-control)',

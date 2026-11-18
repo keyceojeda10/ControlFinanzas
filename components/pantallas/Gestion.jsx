@@ -51,12 +51,15 @@ const ORO = '#E7A400'
 
 /* ══ Piezas compartidas ════════════════════════════════════════════════════ */
 
-/* Etiqueta de sección: 10px, 700, .1em, mayúsculas. */
+/* Etiqueta de sección. ESTILO «MI CUENTA» (18 nov 2026): eran 10px en
+   mayúsculas («¿QUÉ QUIERES CAMBIAR?», «CUOTAS QUE FALTAN»); ahora la pregunta
+   se escribe como se dice, a 14px —sirve igual encima de unas opciones que
+   dentro de una tarjeta—. Es la pieza de TODAS las hojas de Gestión. */
 function Rotulo({ children, style }) {
   return (
     <span style={{
-      fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
-      textTransform: 'uppercase', color: 'var(--cf-ink-3)', flex: 'none', ...style,
+      fontSize: 14, fontWeight: 600, letterSpacing: 0,
+      color: 'var(--cf-ink-2)', flex: 'none', ...style,
     }}>{children}</span>
   )
 }

@@ -23,6 +23,7 @@ import { formatMoney, soloDecimal } from '@/lib/i18n'
 import { calcularPrestamo } from '@/lib/calculos'
 import { MODOS_EN_ORDEN, etiquetaModo } from '@/lib/dinero/modos'
 import { Toggle } from '@/components/ui/Toggle'
+import { ROTULO_CAMPO } from '@/components/cf/ajustes'
 
 const FRECUENCIAS = [
   { valor: '', nombre: 'Sin preferencia' },
@@ -52,10 +53,9 @@ const DIAS = [
   { valor: 'viernes', nombre: 'Viernes' },
 ]
 
-const ROTULO = {
-  display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: '.09em',
-  textTransform: 'uppercase', color: 'var(--cf-ink-3)', marginBottom: 6,
-}
+/* El rótulo de cada campo, el de `components/cf/ajustes.js` (estilo «Mi cuenta»,
+   18 nov 2026): antes 10px en mayúsculas. */
+const ROTULO = ROTULO_CAMPO
 
 const CONTROL = {
   height: 46, padding: '0 13px', borderRadius: 'var(--cf-r-control)',

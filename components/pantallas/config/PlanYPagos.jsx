@@ -1,5 +1,7 @@
 'use client'
 
+import { ROTULO_CAMPO } from '@/components/cf/ajustes'
+
 // components/pantallas/config/PlanYPagos.jsx — sección «Plan y pagos».
 //
 // En la lámina es una sola fila: el plan y su precio a la izquierda, los
@@ -12,10 +14,8 @@
 // PLANES_CONFIG — es la misma regla que ya evitó que se colaran los topes viejos
 // del handoff (20/40/100 cuando el sistema permite 100/450/1.000).
 
-const ROTULO = {
-  display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: '.09em',
-  textTransform: 'uppercase', color: 'var(--cf-ink-3)',
-}
+/* El de `components/cf/ajustes.js` (estilo «Mi cuenta», 18 nov 2026), sin su margen. */
+const ROTULO = { ...ROTULO_CAMPO, marginBottom: 0 }
 
 export default function PlanYPagos({ plan, precio, renueva, clientes = 0, limite, onVerPlanes }) {
   const pct = limite > 0 ? Math.min(100, Math.round((clientes / limite) * 100)) : 0

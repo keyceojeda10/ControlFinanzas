@@ -23,6 +23,7 @@
 // es lo que faltaba: la puerta.
 
 import { BotonMinutoProfe } from '@/components/tutoriales/PiezasProfe'
+import { ROTULO_GRUPO } from '@/components/cf/ajustes'
 
 const ROJO = 'var(--cf-red-dark)'
 
@@ -49,13 +50,10 @@ const MINUTO_DE_FILA = {
   eliminar: ['prestamos-cerrar', 'Eliminar'],
 }
 
+/* El nombre de cada grupo, como los del índice de Configuración (estilo «Mi
+   cuenta», 18 nov 2026): en palabras normales y en gris. */
 function Rotulo({ children }) {
-  return (
-    <span style={{
-      fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
-      textTransform: 'uppercase', color: 'var(--cf-ink-3)',
-    }}>{children}</span>
-  )
+  return <span style={ROTULO_GRUPO}>{children}</span>
 }
 
 function Fila({ id, nombre, valor, peligro, onIr, primera }) {

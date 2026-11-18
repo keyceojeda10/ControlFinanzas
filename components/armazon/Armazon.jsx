@@ -15,6 +15,7 @@
 // cumpliría en las pantallas que alguien recordó y en las demás no.
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { CON_CABECERA_PROPIA, MEDIA_MOVIL, NEGRO_FRANJA, pintarBarraDelSistema } from '@/lib/franja'
 import { usePathname, useRouter } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import { CABECERA, resolverArmazon, iniciales, rolEnEspanol, volverA, puedeRetroceder } from '@/lib/armazon'
@@ -36,7 +37,6 @@ const ArmazonContext = createContext(null)
    (`CabeceraSeccion`). Ruta exacta: `/clientes/nuevo` y las fichas siguen con la
    de siempre. ⚠ Una pantalla de esta lista que NO pinte la suya se queda sin
    perfil ni avisos en el móvil. */
-const CON_CABECERA_PROPIA = ['/dashboard', '/clientes', '/prestamos', '/cobros-hoy', '/rutas', '/caja', '/mas']
 
 /**
  * Lo que una pantalla le dice a su cabecera.
@@ -113,6 +113,11 @@ export function VolverEscritorio() {
 /** ¿Hay avisos sin ver? Para las cabeceras que pinta la propia pantalla. */
 export function useHayAvisos() {
   return Boolean(useContext(ArmazonContext)?.hayAvisos)
+}
+
+/** El ícono de perfil elegido en Configuración (o null), para esas mismas cabeceras. */
+export function useAvatarArmazon() {
+  return useContext(ArmazonContext)?.avatarId ?? null
 }
 
 export function useCabecera({ titulo, subtitulo, acciones, paso, total, onVolver, onCerrar, tarea } = {}) {
@@ -205,8 +210,21 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
   // y a todo el ancho. La barra de volver va dentro de `<main>`.
   // `hayAvisos` también va al contexto: las cabeceras que pinta la propia
   // pantalla (Inicio y las listas) tienen su campana y necesitan su punto.
+  /* El avatar elegido en configuración. Mismo camino que el nombre —del layout
+     servidor— por la misma razón: leerlo solo del cliente parpadea en cada
+     carga. La sesión de cliente queda de respaldo, y así el cambio se ve sin
+     tener que volver a entrar.
+
+     ⚠ `??`, no `||`: `avatarServidor` puede ser `null` a propósito (el usuario
+     le dio a «Quitar») y con `||` se recuperaría el de la sesión vieja, que es
+     justo el que acaba de borrar. */
+  const avatarId = avatarServidor ?? session?.user?.avatarId ?? null
+  /* También al contexto (18 nov 2026): las cabeceras negras que pinta cada
+     pantalla recibían solo las iniciales, y el dueño volvió a ver sus letras en
+     vez del ícono que eligió — el mismo reporte que ya se había arreglado aquí
+     para la cabecera vieja. Lo leen con `usePerfilArmazon()`. */
   const hayAvisosAhora = avisos > 0 || hayAvisos
-  const valor = useMemo(() => ({ registrar, dePantalla, volver, hayAvisos: hayAvisosAhora }), [registrar, dePantalla, volver, hayAvisosAhora])
+  const valor = useMemo(() => ({ registrar, dePantalla, volver, hayAvisos: hayAvisosAhora, avatarId }), [registrar, dePantalla, volver, hayAvisosAhora, avatarId])
 
   // El estado de conexión SE FUE de aquí. Vivía en este componente para pintar
   // el punto verde del avatar móvil, y T40-00-a —la cabecera elegida— quita ese
@@ -221,6 +239,17 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
      con las cifras del día, que la pinta la página. Se decide por la ruta y no en
      un efecto: así no parpadea la vieja al cargar. */
   const cabeceraPropia = CON_CABECERA_PROPIA.includes(pathname)
+
+  /* La barra del teléfono (hora, batería) se funde con la franja negra en las
+     pantallas que la llevan; en las demás vuelve al fondo del tema. El script
+     de `app/layout.js` hace lo mismo antes del primer pintado, y
+     `ThemeProvider` respeta `data-franja` al cambiar de tema. */
+  useEffect(() => {
+    const h = document.documentElement
+    const negra = cabeceraPropia && window.matchMedia(MEDIA_MOVIL).matches
+    h.dataset.franja = negra ? 'negra' : ''
+    pintarBarraDelSistema(negra ? NEGRO_FRANJA : (h.style.backgroundColor || (h.dataset.theme === 'dark' ? NEGRO_FRANJA : '#F4F4F1')))
+  }, [cabeceraPropia])
 
   /* ⚠ UNA TAREA A PANTALLA COMPLETA NO LLEVA PASTILLA, AUNQUE VIVA EN UNA RUTA
    * DE NAVEGACIÓN.
@@ -256,15 +285,6 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
   const puedeEnElMenu = esCobrador && permisos
     ? { prestar: !!permisos.crearPrestamos, clienteNuevo: !!permisos.crearClientes, gasto: !!(permisos.reportarGastos ?? true) }
     : {}
-  /* El avatar elegido en configuración. Mismo camino que el nombre —del layout
-     servidor— por la misma razón: leerlo solo del cliente parpadea en cada
-     carga. La sesión de cliente queda de respaldo, y así el cambio se ve sin
-     tener que volver a entrar.
-
-     ⚠ `??`, no `||`: `avatarServidor` puede ser `null` a propósito (el usuario
-     le dio a «Quitar») y con `||` se recuperaría el de la sesión vieja, que es
-     justo el que acaba de borrar. */
-  const avatarId = avatarServidor ?? session?.user?.avatarId ?? null
 
   return (
     <ArmazonContext.Provider value={valor}>

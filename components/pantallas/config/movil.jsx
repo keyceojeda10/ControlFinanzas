@@ -1,5 +1,7 @@
 'use client'
 
+import { ROTULO_CAMPO } from '@/components/cf/ajustes'
+
 // components/pantallas/config/movil.jsx — turno 10. Configuración en el teléfono.
 //
 // ── POR QUÉ ESTE ARCHIVO EXISTE APARTE DEL DE ESCRITORIO ────────────────────
@@ -37,12 +39,8 @@ const ORO = '#E7A400'
 /* ── Piezas compartidas ─────────────────────────────────────────────────── */
 
 function Rotulo({ children }) {
-  return (
-    <span style={{
-      fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
-      textTransform: 'uppercase', color: 'var(--cf-ink-3)', flex: 'none',
-    }}>{children}</span>
-  )
+  // Estilo «Mi cuenta» (18 nov 2026): palabras normales, no 10px en mayúsculas.
+  return <span style={{ ...ROTULO_CAMPO, marginBottom: 0, flex: 'none' }}>{children}</span>
 }
 
 /* Párrafo de contexto de una sección. Va arriba y una sola vez: repetir la

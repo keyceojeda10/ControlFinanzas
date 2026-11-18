@@ -26,7 +26,8 @@
  */
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
-import { useHayAvisos } from '@/components/armazon/Armazon'
+import { useHayAvisos, useAvatarArmazon } from '@/components/armazon/Armazon'
+import { getAvatarById } from '@/lib/avatars'
 import { useRouter } from 'next/navigation'
 import { Chip as ChipFiltro } from '@/components/cf/primitivos'
 
@@ -73,28 +74,39 @@ export function accesosDeInicio({ esOwner = false } = {}) {
 
 const abrir = (evento) => () => { if (typeof window !== 'undefined') window.dispatchEvent(new Event(evento)) }
 
+/* El ícono que la persona eligió en Configuración; si no eligió, sus iniciales.
+   Sale de `getAvatarById`, la misma lista que la pantalla donde se elige. */
 function Avatar({ iniciales }) {
+  const dibujo = getAvatarById(useAvatarArmazon())
   return (
     <button type="button" onClick={abrir('cf:abrir-cuenta')} aria-label="Tu cuenta" className="cf-cab-toque" style={{
       width: 42, height: 42, borderRadius: 999, flex: 'none', border: `1.5px solid ${ORO}`, background: NEGRO_2,
       color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', boxShadow: '0 0 0 4px rgba(231,164,0,.12)',
-    }}>{iniciales}</button>
+      padding: 0, overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      {dibujo
+        // eslint-disable-next-line @next/next/no-img-element -- SVG local de 42px, como en CabeceraMovil
+        ? <img src={dibujo.src} alt="" aria-hidden style={{ width: '100%', height: '100%', display: 'block' }} />
+        : iniciales}
+    </button>
   )
 }
 
 /* El chip: el nombre y lo cobrado hoy, como «Carlos × 1826 pts» en la referencia.
    Sin datos todavía no dice $0: el cero es un dato y aún no se sabe. */
-function Chip({ nombre, cobrado, fmt }) {
+/* SIN EL NOMBRE (18 nov 2026). Con «Carlos · $200.000 hoy» el «hoy» ya se salía
+   de la píldora, y con un día de $10.000.000 se montaba sobre el profe. El nombre
+   ya lo dice el saludo de abajo («Buenos días, Carlos»); la cifra no se recorta. */
+function Chip({ cobrado, fmt }) {
   return (
     <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 7, height: 34, padding: '0 14px', borderRadius: 999, minWidth: 0,
-      background: NEGRO_2, color: '#fff', fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap',
+      display: 'inline-flex', alignItems: 'center', gap: 7, height: 34, padding: '0 14px', borderRadius: 999,
+      flex: 'none', background: NEGRO_2, color: '#fff', fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap',
       border: '1px solid rgba(255,255,255,.06)',
     }}>
-      {nombre}
-      <span aria-hidden style={{ width: 4, height: 4, borderRadius: 999, background: ORO }} />
+      <span aria-hidden style={{ width: 6, height: 6, borderRadius: 999, background: ORO, flex: 'none' }} />
       <span className="cf-num" style={{ fontWeight: 800, color: cobrado == null ? 'rgba(255,255,255,.5)' : '#fff' }}>{cobrado == null ? '…' : fmt(cobrado)}</span>
-      <span style={{ color: 'rgba(255,255,255,.55)', fontWeight: 500 }}>hoy</span>
+      <span className="cf-cab-chip-hoy" style={{ color: 'rgba(255,255,255,.55)', fontWeight: 500 }}>hoy</span>
     </span>
   )
 }
@@ -206,6 +218,14 @@ const ESTILO = `
 .cf-cab-toque:active, .cf-cab-acceso:active .cf-cab-circulo { transform: scale(.96); }
 .cf-cab-compacta { transition: transform .26s cubic-bezier(.2,.8,.2,1), opacity .2s ease; }
 @media (prefers-reduced-motion: reduce) { .cf-cab-toque, .cf-cab-acceso .cf-cab-circulo, .cf-cab-compacta { transition: none; } }
+/* Teléfonos de 360 px: con un día de $12.345.678 la fila de arriba se pasaba
+   14 px del borde, y «Nuevo préstamo» se partía en dos renglones. Se va la
+   palabra «hoy» (la cifra no se toca) y los dos botones bajan un punto. */
+.cf-cab-boton { white-space: nowrap; }
+@media (max-width: 380px) {
+  .cf-cab-chip-hoy { display: none; }
+  .cf-cab-boton { font-size: 15px !important; gap: 6px !important; }
+}
 `
 
 export default function CabeceraInicio({
@@ -246,7 +266,7 @@ export default function CabeceraInicio({
         {/* Perfil, cobrado hoy, profe y avisos. */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 'max(14px, env(safe-area-inset-top)) 16px 0' }}>
           <Avatar iniciales={iniciales} />
-          <Chip nombre={primero || 'Hoy'} cobrado={hayDatos ? cifras.cobradoHoy : null} fmt={fmt} />
+          <Chip cobrado={hayDatos ? cifras.cobradoHoy : null} fmt={fmt} />
           <span style={{ flex: 1 }} />
           {profe}
           <Campana punto={hayAvisos} />
@@ -271,14 +291,14 @@ export default function CabeceraInicio({
         {(puedePrestar || puedeCrearCliente) && (
           <div style={{ display: 'flex', gap: 10, padding: '18px 16px 0' }}>
             {puedePrestar && (
-              <Link href="/prestamos/nuevo" className="cf-cab-toque" style={{
+              <Link href="/prestamos/nuevo" className="cf-cab-toque cf-cab-boton" style={{
                 flex: 1, height: 54, borderRadius: 16, background: ORO, color: ORO_TINTA, fontWeight: 800, fontSize: 16,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, textDecoration: 'none',
                 boxShadow: '0 8px 22px rgba(231,164,0,.28)',
               }}><Ic d={ICONOS.prestamo} tam={22} />Nuevo préstamo</Link>
             )}
             {puedeCrearCliente && (
-              <Link href="/clientes/nuevo" className="cf-cab-toque" style={{
+              <Link href="/clientes/nuevo" className="cf-cab-toque cf-cab-boton" style={{
                 flex: 1, height: 54, borderRadius: 16, border: '1.5px solid rgba(255,255,255,.22)', color: '#fff', fontWeight: 700, fontSize: 16,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, textDecoration: 'none', background: 'rgba(255,255,255,.03)',
               }}><Ic d={ICONOS.cliente} tam={22} />Nuevo cliente</Link>
