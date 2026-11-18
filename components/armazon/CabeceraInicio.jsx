@@ -90,6 +90,24 @@ const abrir = (evento) => () => { if (typeof window !== 'undefined') window.disp
  * La app instalada no depende de esto: ahí manda `apple-mobile-web-app-status-bar-style`
  * (ver `app/layout.js`). */
 const ALTO_TINTA = 12
+
+/* ══ EL BRILLO DORADO DE LA FRANJA (18 nov 2026) ══════════════════════════════
+ *
+ * No venía de la referencia (allí la franja es de un color liso): fue la manera
+ * de poner «los matices en dorado» que pidió el dueño. La primera versión salía
+ * de la esquina de arriba y bajaba en línea recta hasta transparente al 58 %, y
+ * daba DOS rayas:
+ *   · donde se acababa: «en pantallas más largas se ve la división entre el
+ *     gradiente y lo de abajo» (el dueño, en su Android). Una rampa recta que se
+ *     aplana de golpe es un quiebre que el ojo ve aunque los colores casi no
+ *     cambien;
+ *   · arriba, contra la tira negra fija del iPhone (`TintaDeLaBarra`), que tapaba
+ *     justo la parte más brillante y dejaba un borde oscuro de 12 px.
+ * Ahora nace a la altura de los botones —arriba queda negro puro, igual que la
+ * tira— y se apaga en escalones cada vez más cortos, sin fila donde quebrar. */
+const BRILLO_FRANJA = 'radial-gradient(ellipse 80% 50% at 88% 56%, '
+  + 'rgba(231,164,0,.14) 0%, rgba(231,164,0,.105) 20%, rgba(231,164,0,.068) 40%, '
+  + 'rgba(231,164,0,.036) 60%, rgba(231,164,0,.013) 80%, rgba(231,164,0,0) 100%)'
 function useTintaDeLaBarra() {
   const borde = useRef(null)
   const [ver, setVer] = useState(true)
@@ -140,7 +158,7 @@ function Avatar({ iniciales }) {
    ya lo dice el saludo de abajo («Buenos días, Carlos»); la cifra no se recorta. */
 function Chip({ cobrado, fmt }) {
   return (
-    <span style={{
+    <span className="cf-cab-chip" style={{
       display: 'inline-flex', alignItems: 'center', gap: 7, height: 34, padding: '0 14px', borderRadius: 999,
       flex: 'none', background: NEGRO_2, color: '#fff', fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap',
       border: '1px solid rgba(255,255,255,.06)',
@@ -263,6 +281,17 @@ const ESTILO = `
    14 px del borde, y «Nuevo préstamo» se partía en dos renglones. Se va la
    palabra «hoy» (la cifra no se toca) y los dos botones bajan un punto. */
 .cf-cab-boton { white-space: nowrap; }
+/* ⚠ LA RAYA DE ANDROID (18 nov 2026). Quitar el resplandor del botón no la quitó:
+   es el fallo del GPU Mali (Samsung A13 y otros) que pinta mal lo que tiene
+   esquinas redondeadas y deja rayas horizontales alrededor (ver «Cards: fix de
+   rasterizado GPU en Android» en globals.css). Aquí el redondeo va en línea y
+   el arreglo de globals —que busca clases rounded-[…]— no lo alcanza. El mismo
+   remedio: su propia capa. NO se le pone a la hoja: una capa en un ancestro
+   cambia dónde se pintan sus hijos fijos. El :active (scale) gana por ser más
+   específico y al soltar vuelve aquí. */
+@media (max-width: 1023px) {
+  .cf-cab-toque, .cf-cab-circulo, .cf-cab-chip { transform: translateZ(0); -webkit-transform: translateZ(0); }
+}
 @media (max-width: 380px) {
   .cf-cab-chip-hoy { display: none; }
   .cf-cab-boton { font-size: 15px !important; gap: 6px !important; }
@@ -301,7 +330,7 @@ export default function CabeceraInicio({
     <div className="lg:hidden" style={{ margin: '-20px -20px 0' }}>
       <style>{ESTILO}</style>
       <div style={{
-        background: `radial-gradient(120% 70% at 100% 0%, rgba(231,164,0,.16), transparent 58%), ${NEGRO}`,
+        background: `${BRILLO_FRANJA}, ${NEGRO}`,
         // Lo que la hoja se monta encima (RADIO_HOJA) más el aire de antes.
         paddingBottom: RADIO_HOJA + 10,
       }}>
@@ -418,12 +447,12 @@ export function CabeceraSeccion({
     <div className="lg:hidden" style={{ margin: '-20px -20px 14px' }}>
       <style>{ESTILO}</style>
       <div style={{
-        background: `radial-gradient(120% 90% at 100% 0%, rgba(231,164,0,.14), transparent 60%), ${NEGRO}`,
+        background: `${BRILLO_FRANJA}, ${NEGRO}`,
         paddingBottom: RADIO_HOJA + 14,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 'max(14px, env(safe-area-inset-top)) 16px 0' }}>
           <Avatar iniciales={iniciales} />
-          <span style={{
+          <span className="cf-cab-chip" style={{
             display: 'inline-flex', alignItems: 'center', gap: 8, height: 34, padding: '0 14px', borderRadius: 999, minWidth: 0,
             background: NEGRO_2, color: '#fff', fontSize: 15, fontWeight: 700, whiteSpace: 'nowrap', border: '1px solid rgba(255,255,255,.06)',
           }}>
