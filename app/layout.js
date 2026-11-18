@@ -57,6 +57,14 @@ export const metadata = {
     statusBarStyle: 'black',
     title: 'Control Finanzas',
   },
+  /* ⚠ NEXT 15 YA NO ESCRIBE `apple-mobile-web-app-capable` (18 nov 2026): con
+     `capable: true` pone `mobile-web-app-capable`, que es la de Android. Y iOS
+     solo obedece `apple-mobile-web-app-status-bar-style` cuando está la de Apple:
+     sin ella el «black» de arriba no hacía nada y el iPhone instalado seguía con
+     la barra BLANCA (el dueño, el mismo día que Android ya salía negra). */
+  other: {
+    'apple-mobile-web-app-capable': 'yes',
+  },
   icons: {
     icon: [
       { url: '/icon.svg', type: 'image/svg+xml' },

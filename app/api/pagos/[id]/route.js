@@ -13,6 +13,7 @@ import { reajustarDevengosTrasCambio } from '@/lib/dinero/devengar'
 import { motivoParaNoDeshacerAbono, motivoParaNoDeshacerLiquidacion } from '@/lib/dinero/deshacer-abono'
 import { elInteresSubeLaDeuda } from '@/lib/dinero/modos'
 import { interesQueAhorraUnAbono } from '@/lib/dinero/abono-capital'
+import { esDelDiaAbierto } from '@/lib/dinero/reverso-del-dia'
 
 // ─── PATCH /api/pagos/[id] — Editar fecha del pago (solo owner) ──
 export async function PATCH(request, { params }) {
@@ -185,6 +186,22 @@ export async function DELETE(request, { params }) {
     select: { diasSinCobro: true },
   })
 
+  /* ⚠ UN COBRO DE UN DÍA CERRADO NO SE QUITA DE LA CAJA DE HOY (18 nov 2026).
+     Es la regla de `lib/dinero/reverso-del-dia.js` —«vale para los dos lados:
+     el desembolso que se devuelve y el recaudo que se quita»—, que ya cumplían
+     borrar y anular un préstamo. Esta vía se había quedado sin ella.
+
+     Lo destapó Crediya: renovó un préstamo entregando $200.000 y con esos
+     $200.000 liquidó otro del mismo cliente («Uni una sola cuenta»). Al
+     deshacerlo días después, anular la renovación NO devolvía los $200.000
+     (salieron otro día) pero anular la liquidación SÍ los quitaba hoy: la caja
+     quedaba $200.000 por debajo sin que se moviera un peso. Cada día responde
+     por lo suyo, en las tres vías. */
+  const pais = session.user.country || 'co'
+  const entroHoy = esDelDiaAbierto(pago.createdAt ?? pago.fechaPago, pais)
+  const quitaDelCapital = !['recargo', 'descuento'].includes(pago.tipo)
+  const capitalNoQuitado = quitaDelCapital && !entroHoy ? Math.round(Number(pago.montoPagado) || 0) : 0
+
   try {
     await prisma.$transaction(async (tx) => {
     const prestamo = pago.prestamo
@@ -340,7 +357,7 @@ export async function DELETE(request, { params }) {
     // ruta no baja y la caja del cobrador (modo capital=efectivo) deja el monto
     // anulado como "fantasma".
     const rutaIdReverso = prestamo.cliente?.rutaId || null
-    if (!['recargo', 'descuento'].includes(pago.tipo)) {
+    if (quitaDelCapital && entroHoy) {
       await registrarMovimientoCapital(tx, {
         organizationId,
         tipo: 'ajuste',
@@ -428,9 +445,12 @@ export async function DELETE(request, { params }) {
     accion: 'anular_pago',
     entidadTipo: 'pago',
     entidadId: pagoId,
-    detalle: `Anuló pago de ${pago.montoPagado} (${pago.tipo}) del préstamo ${pago.prestamoId}`,
+    detalle: `Anuló pago de ${pago.montoPagado} (${pago.tipo}) del préstamo ${pago.prestamoId}`
+      + (capitalNoQuitado > 0
+        ? `. NO se quitaron $${capitalNoQuitado.toLocaleString('es-CO')} del capital: el cobro entró otro día y esa caja ya se cuadró`
+        : ''),
     ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
   })
 
-  return Response.json({ ok: true })
+  return Response.json({ ok: true, capitalNoQuitado: capitalNoQuitado || null })
 }

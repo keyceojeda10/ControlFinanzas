@@ -74,6 +74,47 @@ export function accesosDeInicio({ esOwner = false } = {}) {
 
 const abrir = (evento) => () => { if (typeof window !== 'undefined') window.dispatchEvent(new Event(evento)) }
 
+/* ══ LA BARRA DEL IPHONE, NEGRA EN SAFARI (18 nov 2026) ════════════════════════
+ *
+ * El dueño: «en Android ya sale negra; en iPhone la barra de arriba sigue
+ * saliendo blanca». Safari 26 ya no lee `theme-color` (lo que arregló Android):
+ * tiñe la barra con el fondo de un elemento FIJO o PEGAJOSO que toque el borde de
+ * arriba y ocupe al menos el 90 % del ancho; si no hay, con el fondo de la página,
+ * que aquí es el gris claro. La franja negra se desplaza con la página, así que
+ * Safari no la ve.
+ *
+ * Esta tira fija de 12 px (más de 10, o Safari no toma su color) va encima de la
+ * propia franja: negro sobre negro, no se nota. Se va en cuanto la hoja blanca
+ * llega a 12 px del techo, y entonces la barra vuelve a ser clara, como lo que
+ * hay debajo; después sale la compacta, que también es fija y Safari la usa.
+ * La app instalada no depende de esto: ahí manda `apple-mobile-web-app-status-bar-style`
+ * (ver `app/layout.js`). */
+const ALTO_TINTA = 12
+function useTintaDeLaBarra() {
+  const borde = useRef(null)
+  const [ver, setVer] = useState(true)
+  useEffect(() => {
+    const el = borde.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(
+      ([e]) => setVer(e.boundingClientRect.top > ALTO_TINTA),
+      { rootMargin: `-${ALTO_TINTA}px 0px 0px 0px`, threshold: [0, 1] },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+  return [borde, ver]
+}
+function TintaDeLaBarra({ ver }) {
+  if (!ver) return null
+  return (
+    <div aria-hidden style={{
+      position: 'fixed', top: 0, left: 0, right: 0, height: ALTO_TINTA,
+      background: NEGRO, pointerEvents: 'none', zIndex: 30,
+    }} />
+  )
+}
+
 /* El ícono que la persona eligió en Configuración; si no eligió, sus iniciales.
    Sale de `getAvatarById`, la misma lista que la pantalla donde se elige. */
 function Avatar({ iniciales }) {
@@ -244,6 +285,7 @@ export default function CabeceraInicio({
     io.observe(el)
     return () => io.disconnect()
   }, [])
+  const [bordeHoja, tinta] = useTintaDeLaBarra()
 
   const primero = (nombre || '').split(/\s+/)[0] || ''
   const accesos = accesosDeInicio({ esOwner })
@@ -294,7 +336,10 @@ export default function CabeceraInicio({
               <Link href="/prestamos/nuevo" className="cf-cab-toque cf-cab-boton" style={{
                 flex: 1, height: 54, borderRadius: 16, background: ORO, color: ORO_TINTA, fontWeight: 800, fontSize: 16,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, textDecoration: 'none',
-                boxShadow: '0 8px 22px rgba(231,164,0,.28)',
+                /* SIN RESPLANDOR (18 nov 2026). Llevaba un brillo dorado de 22px
+                   que en el navegador del dueño se cortaba en seco a media altura
+                   del botón: «una línea que incomoda a la vista». El dorado ya lo
+                   destaca; la sombra solo podía estorbar. */
               }}><Ic d={ICONOS.prestamo} tam={22} />Nuevo préstamo</Link>
             )}
             {puedeCrearCliente && (
@@ -322,11 +367,13 @@ export default function CabeceraInicio({
         boxShadow: '0 -1px 0 var(--cf-border)',
         padding: '18px 20px 4px', display: 'flex', flexDirection: 'column', gap: 12,
       }}>
+        <span ref={bordeHoja} aria-hidden style={{ position: 'absolute', top: 0, left: 0, width: 1, height: 1 }} />
         <Buscador />
         <span ref={marca} aria-hidden style={{ display: 'block', height: 0 }} />
         <Filtros pildoras={pildoras} />
       </div>
 
+      <TintaDeLaBarra ver={tinta} />
       <Compacta visible={abajo} accesos={accesos} pildoras={pildoras} />
     </div>
   )
@@ -359,6 +406,7 @@ export function CabeceraSeccion({
     io.observe(el)
     return () => io.disconnect()
   }, [])
+  const [bordeHoja, tinta] = useTintaDeLaBarra()
 
   const accesos = [
     // `crear.onClick` para lo que se crea en una hoja de la misma pantalla (Nueva ruta).
@@ -398,6 +446,7 @@ export function CabeceraSeccion({
         // La tira de filtros pinta su botón anclado con este fondo (BarraFiltros).
         '--cf-fondo-tira': 'var(--cf-card)',
       }}>
+        <span ref={bordeHoja} aria-hidden style={{ position: 'absolute', top: 0, left: 0, width: 1, height: 1 }} />
         {buscador}
         <span ref={marca} aria-hidden style={{ display: 'block', height: 0 }} />
         <div style={{ display: 'flex', gap: 2, overflowX: 'auto', scrollbarWidth: 'none', margin: '0 -20px', padding: '0 14px', borderBottom: '1px solid var(--cf-border)' }}>
@@ -424,6 +473,7 @@ export function CabeceraSeccion({
         {filtros}
       </div>
 
+      <TintaDeLaBarra ver={tinta} />
       <Compacta visible={abajo} accesos={accesos.filter((a) => !a.destacado)} arriba={buscador} abajo={filtros} />
     </div>
   )
