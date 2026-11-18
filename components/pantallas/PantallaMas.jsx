@@ -14,7 +14,6 @@
 // ⚠️ EN ESCRITORIO NO EXISTE. La barra lateral ya lista todo con sus grupos.
 
 import { ICONO_DE_RUTA } from '@/components/armazon/iconos'
-import { Tarjeta } from '@/components/cf/primitivos'
 import { useEffect, useState } from 'react'
 import { isStandalone } from '@/components/layout/InstallButton'
 import { pedirInstalar } from '@/components/layout/PuertaInstalacion'
@@ -50,47 +49,94 @@ const TONOS = {
   ambar: 'var(--cf-gold-text-2)',
 }
 
-/* `video`: el minuto del profe a la derecha (Adenda 6, C). */
-function Fila({ icono, nombre, cifra, tono, alto = 56, primera, onIr, video }) {
+/* ══ ESTILO «MI CUENTA» (18 nov 2026) ════════════════════════════════════════
+ * El dueño, con el índice nuevo de Configuración: «me encantó ese estilo visual»,
+ * y pidió llevarlo a Más. Lo mismo que allí: grupos con un título gris sobre el
+ * fondo, y filas de borde a borde con el nombre grande y, debajo, una línea gris
+ * que dice qué hay dentro (o la cifra, cuando la hay: sigue siendo un panel).
+ * Los iconos se quedan —«el cliente busca por el icono»—, más grandes.
+ *
+ * Lo que dice cada fila cuando no tiene cifra. Una fila sin línea es un nombre
+ * suelto; con ella se sabe a qué se entra sin entrar. */
+const QUE_HAY = {
+  plata: 'Tu plata para prestar',
+  caja: 'Lo que entró y salió hoy',
+  negocio: 'Ganancia y cómo rinde la cartera',
+  simulador: 'Cuánto quedaría de cuota',
+  reportes: 'Todos los informes, para ver o imprimir',
+  calendario: 'Qué día le toca a quién',
+  gastos: 'Lo que se gasta en la calle',
+  cobradores: 'Tu equipo y lo que cobra cada uno',
+  perdidos: 'Los préstamos que se quedaron sin pagar',
+  quien: 'Quién hizo qué, en orden',
+  config: 'Tu negocio, cómo prestas y los avisos',
+  soporte: 'Escríbenos o mira tus casos',
+  tutoriales: 'Los videos del profe, por tema',
+  cuaderno: 'Le tomas foto y se pasa solo',
+  excel: 'Si ya lo llevas en el computador',
+}
+
+/* `video`: el minuto del profe a la derecha (Adenda 6, C). `dorado`: los dos de
+   pasar la cartera, que son de un solo uso y no del día a día. `alto` ya no se
+   usa —todas miden lo mismo— y se acepta para no romper a quien lo pase. */
+function Fila({ icono, nombre, cifra, tono, alto, primera, onIr, video, dorado = false }) {
+  const linea = cifra || QUE_HAY[icono] || null
   return (
-    <div style={{ display: 'flex', alignItems: 'center', width: '100%', flex: 'none', borderTop: primera ? 0 : '1px solid var(--cf-hairline)' }}>
+    <div style={{ display: 'flex', alignItems: 'center', width: '100%', flex: 'none', background: 'var(--cf-card)', borderTop: primera ? 0 : '1px solid var(--cf-border)' }}>
     <button type="button" onClick={onIr} style={{
-      display: 'flex', alignItems: 'center', gap: 13, flex: 1, minWidth: 0,
-      minHeight: alto, padding: '0 16px', cursor: 'pointer', textAlign: 'left',
-      background: 'none', border: 0,
+      display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 0,
+      minHeight: 72, padding: '14px 20px', cursor: 'pointer', textAlign: 'left',
+      background: 'none', border: 0, font: 'inherit',
     }}>
       <span style={{
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        width: 34, minWidth: 34, height: 34, borderRadius: 10, flex: 'none',
-        background: 'var(--cf-fill)', color: 'var(--cf-ink-2)',
+        width: 42, minWidth: 42, height: 42, borderRadius: 12, flex: 'none',
+        background: dorado ? 'var(--cf-gold-tint)' : 'var(--cf-fill)',
+        color: dorado ? 'var(--cf-gold-dark)' : 'var(--cf-ink-2)',
       }}>
-        <Icono nombre={icono} />
+        <Icono nombre={icono} tam={22} />
       </span>
 
-      <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <span style={{
-          fontSize: 14.5, fontWeight: 600, color: 'var(--cf-ink)',
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-        }}>{nombre}</span>
-        {/* La cifra es lo que convierte el índice en panel. Sin ella la fila no
-            aporta nada que el nombre no diga ya. */}
-        {cifra && (
-          <span className="cf-num" style={{
-            fontSize: 12, lineHeight: 1.3, color: tono ? TONOS[tono] : 'var(--cf-ink-3)',
-            fontWeight: tono ? 600 : 400,
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          }}>{cifra}</span>
+      <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <span style={{ fontSize: 19, fontWeight: 500, letterSpacing: '-.01em', color: 'var(--cf-ink)', lineHeight: 1.2 }}>{nombre}</span>
+        {/* La cifra es lo que convierte el índice en panel; sin cifra, qué hay. */}
+        {linea && (
+          <span className={cifra ? 'cf-num' : undefined} style={{
+            fontSize: 14, lineHeight: 1.35,
+            color: cifra && tono ? TONOS[tono] : 'var(--cf-ink-3)',
+            fontWeight: cifra && tono ? 600 : 400,
+          }}>{linea}</span>
         )}
       </span>
 
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-4)"
-        strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
-        <path d="M9 5l7 7-7 7" />
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink)"
+        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flex: 'none' }}>
+        <path d="M9 5.5l6.5 6.5L9 18.5" />
       </svg>
     </button>
-    {video && <BotonMinutoProfe id={video} style={{ marginRight: 10 }} />}
+    {video && <BotonMinutoProfe id={video} style={{ marginRight: 14 }} />}
     </div>
   )
+}
+
+/* Lo del cobrador que es de todos los días; el resto va en «Herramientas». */
+const DIA_COBRADOR = ['caja', 'gastos', 'reportes', 'calendario']
+
+/* Un grupo: su título gris sobre el fondo y sus filas a todo el ancho. */
+function Grupo({ titulo, children }) {
+  return (
+    <>
+      <div style={{ padding: '18px 20px 10px', fontSize: 16, color: 'var(--cf-ink-3)', background: 'var(--cf-surface)' }}>{titulo}</div>
+      <div style={{ background: 'var(--cf-card)', borderTop: '1px solid var(--cf-border)', borderBottom: '1px solid var(--cf-border)' }}>
+        {children}
+      </div>
+    </>
+  )
+}
+
+/* Pinta una lista de filas dentro de su grupo. */
+function Filas({ lista, ir }) {
+  return lista.map((h, i) => <Fila key={h.nombre} {...h} primera={i === 0} onIr={ir(h.destino)} />)
 }
 
 /* ── INSTALAR LA APP, A LA VISTA ──
@@ -108,41 +154,8 @@ function FilaInstalar() {
   )
 }
 
-function Rotulo({ children }) {
-  return (
-    <span style={{
-      fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase',
-      color: 'var(--cf-ink-3)', padding: '0 2px', flex: 'none',
-    }}>{children}</span>
-  )
-}
-
-/* Los dos importadores son de UN SOLO USO. Fuera de la lista diaria, porque si
-   compiten con "Mi plata" ganan atención que no merecen todos los días. */
-function TarjetaCarga({ icono, titulo, nota, onIr }) {
-  return (
-    <button type="button" onClick={onIr} style={{
-      flex: 1, minWidth: 0, cursor: 'pointer', textAlign: 'left',
-      display: 'flex', flexDirection: 'column', gap: 8, padding: '15px 15px 16px',
-      background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
-      borderRadius: 'var(--cf-r-card)',
-    }}>
-      <span style={{
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        width: 34, height: 34, borderRadius: 10, flex: 'none',
-        background: 'var(--cf-gold-tint)', color: 'var(--cf-gold-dark)',
-      }}>
-        <Icono nombre={icono} />
-      </span>
-      <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)', lineHeight: 1.25 }}>
-        {titulo}
-      </span>
-      <span style={{ display: 'block', fontSize: 11.5, color: 'var(--cf-ink-3)', lineHeight: 1.35 }}>
-        {nota}
-      </span>
-    </button>
-  )
-}
+/* Los dos importadores son de UN SOLO USO: van en su propio grupo, al final y en
+   dorado, para que no compitan con «Capital» en el día a día. */
 
 export default function PantallaMas({
   plataLista, rendimiento, gastosMes, cobradoresSinRegistrar,
@@ -194,31 +207,26 @@ export default function PantallaMas({
       { icono: 'perdidos',  nombre: 'Clavos',  cifra: 'Los de tu ruta', destino: '/clavos' },
     ].filter(Boolean)
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: sinMargen ? '0' : '8px var(--cf-pad-screen) 0' }}>
-        <Rotulo>Más herramientas</Rotulo>
-        <Tarjeta plana>
-          {suyas.map((h, i) => (
-            <Fila key={h.nombre} {...h} primera={i === 0} onIr={ir(h.destino)} />
-          ))}
-        </Tarjeta>
+      <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--cf-surface)', margin: sinMargen ? '-14px -20px 0' : '0' }}>
+        <Grupo titulo="Tu día">
+          <Filas lista={suyas.filter((h) => DIA_COBRADOR.includes(h.icono))} ir={ir} />
+        </Grupo>
+        <Grupo titulo="Herramientas">
+          <Filas lista={suyas.filter((h) => !DIA_COBRADOR.includes(h.icono))} ir={ir} />
+        </Grupo>
 
         {puedeCrearClientes && (
-          <>
-            <Rotulo>Cargar datos</Rotulo>
-            <div style={{ display: 'flex', gap: 10, flex: 'none' }}>
-              <TarjetaCarga icono="cuaderno" titulo="Pasar mi cuaderno"
-                nota="Le tomas foto y se pasa solo" onIr={ir('/migrador')} />
-            </div>
-          </>
+          <Grupo titulo="Pasar tu cartera">
+            <Fila icono="cuaderno" nombre="Pasar mi cuaderno" dorado primera onIr={ir('/migrador')} />
+          </Grupo>
         )}
 
-        <Rotulo>Cuenta</Rotulo>
-        <Tarjeta plana>
+        <Grupo titulo="Tu cuenta">
           <Fila icono="config"     nombre="Configuración" alto={54} primera onIr={ir('/configuracion')} />
           <Fila icono="soporte"    nombre="Soporte"       alto={54} onIr={ir('/soporte')} />
           <Fila icono="tutoriales" nombre="Tutoriales"    alto={54} onIr={ir('/tutoriales')} />
           <FilaInstalar />
-        </Tarjeta>
+        </Grupo>
         <span aria-hidden style={{ height: 96, flex: 'none' }} />
       </div>
     )
@@ -265,32 +273,29 @@ export default function PantallaMas({
     hayEquipo && { icono: 'quien',  nombre: 'Historial',      cifra: null, destino: '/actividad' },
   ].filter(Boolean)
 
+  /* LOS GRUPOS (18 nov 2026), por la pregunta que responde cada fila. El orden
+     de dentro sigue siendo el de uso: Capital y Caja, las dos de plata, juntas
+     y arriba. */
+  const grupo = (iconos) => herramientas.filter((h) => iconos.includes(h.icono))
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: sinMargen ? '0' : '8px var(--cf-pad-screen) 0' }}>
-      <Rotulo>Más herramientas</Rotulo>
-      <Tarjeta plana>
-        {herramientas.map((h, i) => (
-          <Fila key={h.nombre} {...h} primera={i === 0} onIr={ir(h.destino)} />
-        ))}
-      </Tarjeta>
+    <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--cf-surface)', margin: sinMargen ? '-14px -20px 0' : '0' }}>
+      <Grupo titulo="Tu plata"><Filas lista={grupo(['plata', 'caja', 'gastos'])} ir={ir} /></Grupo>
+      <Grupo titulo="Tu negocio"><Filas lista={grupo(['negocio', 'reportes', 'calendario', 'perdidos', 'simulador'])} ir={ir} /></Grupo>
+      <Grupo titulo="Tu equipo"><Filas lista={grupo(['cobradores', 'socios', 'quien'])} ir={ir} /></Grupo>
 
-      <Rotulo>Cargar datos</Rotulo>
-      <div style={{ display: 'flex', gap: 10, flex: 'none' }}>
-        <TarjetaCarga icono="cuaderno" titulo="Pasar mi cuaderno"
-          nota="Le tomas foto y se pasa solo" onIr={ir('/migrador')} />
-        <TarjetaCarga icono="excel" titulo="Importar Excel"
-          nota="Si ya lo llevas en el computador" onIr={ir('/carga-masiva')} />
-      </div>
+      <Grupo titulo="Pasar tu cartera">
+        <Fila icono="cuaderno" nombre="Pasar mi cuaderno" dorado primera onIr={ir('/migrador')} />
+        <Fila icono="excel"    nombre="Importar Excel"    dorado onIr={ir('/carga-masiva')} />
+      </Grupo>
 
-      <Rotulo>Cuenta</Rotulo>
-      <Tarjeta plana>
+      <Grupo titulo="Tu cuenta">
         {/* El video de Configuración va aquí, en la puerta, y no dentro de
             Configuración (27 oct 2026): se mira antes de entrar a buscar. */}
         <Fila icono="config"     nombre="Configuración" alto={54} primera onIr={ir('/configuracion')} video="inicio-configuracion" />
         <Fila icono="soporte"    nombre="Soporte"       alto={54} onIr={ir('/soporte')} />
         <Fila icono="tutoriales" nombre="Tutoriales"    alto={54} onIr={ir('/tutoriales')} />
         <FilaInstalar />
-      </Tarjeta>
+      </Grupo>
 
       {/* SITIO PARA LA PASTILLA. La regla 2 del armazón dice que ningún texto
           puede quedar detrás de la barra flotante: el contenido pasa por debajo
