@@ -104,7 +104,7 @@ function AccesosDeRuta({ accesos = [] }) {
   const lista = accesos.filter(Boolean)
   if (lista.length === 0) return null
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '16px 6px', padding: '20px 16px 4px' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '16px 6px', padding: '20px 16px 22px' }}>
       {lista.map((a) => {
         const dentro = (
           <>

@@ -8,6 +8,7 @@ import { formatMoney, getUtcOffset } from '@/lib/i18n'
 import { useCountry } from '@/hooks/useCountry'
 import { Pastilla } from '@/components/cf/primitivos'
 import { leerDeCache, guardarEnCache } from '@/lib/offline'
+import { ROTULO_CAMPO, ROTULO_GRUPO } from '@/components/cf/ajustes'
 
 // Lo que el dueño decidió sobre un gasto DESPUÉS de anotarlo (`leerSuceso`). El
 // rechazado y el borrado no son plata que salió: van sin signo y tachados.
@@ -233,17 +234,25 @@ export default function ActividadPage() {
   const grupos = agruparPorDia(items, { offsetHoras })
 
   return (
-    <div className="max-w-2xl lg:max-w-5xl mx-auto px-4 py-6">
+    /* ══ CON EL ESTILO DE CONFIGURACIÓN (18 nov 2026) ══════════════════════
+       Cada día es un grupo: su nombre en gris y sus filas en una tarjeta, como
+       «Mi cuenta». Se fueron el punto de color y la línea de tiempo: el icono
+       ya dice qué tipo de suceso es, y eran dos marcas para lo mismo. Sin el
+       `px-4 py-6`: el <main> ya pone los 20 px, y sumados dejaban un hueco
+       vacío debajo de la cabecera. */
+    <div className="max-w-2xl lg:max-w-5xl mx-auto pb-6">
       {/* El titulo y el subtitulo los pone el armazon (`useCabecera` arriba):
           aqui salian OTRA VEZ, justo debajo de la cabecera que ya los dice. */}
 
       {/* Filtros rapidos — chips */}
-      <div className="flex gap-1.5 overflow-x-auto pb-2 -mx-1 px-1 mb-3" style={{ scrollbarWidth: 'none' }}>
+      {/* Llega a los dos bordes de la pantalla: dentro de la caja, el último
+          filtro («Clientes») salía cortado a medias. */}
+      <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none', margin: '0 -20px 16px', padding: '0 20px 2px' }}>
         {FILTROS_RAPIDOS.map(f => (
           <button
             key={f.value}
             onClick={() => setFiltroTipo(filtroTipo === f.value ? '' : f.value)}
-            className="shrink-0 px-3 py-1.5 text-[11px] font-semibold rounded-full transition-all"
+            className="shrink-0 h-9 px-4 text-[14px] font-semibold rounded-full transition-all"
             style={filtroTipo === f.value
               /* El chip activo es NEGRO: el dorado es para la plata (DESIGN.md · 1). */
               ? { background: 'var(--cf-ink)', color: 'var(--cf-surface)', border: '1px solid var(--cf-ink)' }
@@ -254,14 +263,14 @@ export default function ActividadPage() {
         ))}
         <button
           onClick={() => setMostrarFiltrosAvanzados(!mostrarFiltrosAvanzados)}
-          className="shrink-0 px-2.5 py-1.5 text-[11px] font-semibold rounded-full transition-all flex items-center gap-1"
+          className="shrink-0 h-9 px-3.5 text-[14px] font-semibold rounded-full transition-all flex items-center gap-1.5"
           style={{
             background: hayFiltrosAvanzados ? 'color-mix(in srgb, var(--cf-gold) 15%, transparent)' : 'var(--cf-fill)',
             color: hayFiltrosAvanzados ? 'var(--cf-gold)' : 'var(--cf-ink-3)',
             border: `1px solid ${hayFiltrosAvanzados ? 'var(--cf-gold)' : 'var(--cf-border)'}`,
           }}
         >
-          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
           </svg>
           Filtros
@@ -273,14 +282,14 @@ export default function ActividadPage() {
 
       {/* Filtros avanzados — expandibles */}
       {mostrarFiltrosAvanzados && (
-        <div className="mb-4 p-3 rounded-[12px] space-y-2.5" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
+        <div className="mb-5 p-4 rounded-[16px] space-y-4" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
           {!filtroActivoEnChips && (
             <div>
-              <label className="text-[10px] font-extrabold uppercase tracking-[.07em] block mb-1" style={{ color: 'var(--cf-ink-3)' }}>Tipo de accion</label>
+              <label style={ROTULO_CAMPO}>Tipo de acción</label>
               <select
                 value={filtroTipo}
                 onChange={(e) => setFiltroTipo(e.target.value)}
-                className="w-full text-[12px] rounded-[8px] px-2.5 py-2 focus:outline-none"
+                className="w-full h-12 text-[16px] rounded-[12px] px-3 focus:outline-none"
                 style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }}
               >
                 {FILTROS_COMPLETOS.map(f => (
@@ -291,11 +300,11 @@ export default function ActividadPage() {
           )}
           {usuarios.length > 0 && (
             <div>
-              <label className="text-[10px] font-extrabold uppercase tracking-[.07em] block mb-1" style={{ color: 'var(--cf-ink-3)' }}>Usuario</label>
+              <label style={ROTULO_CAMPO}>Usuario</label>
               <select
                 value={filtroUsuario}
                 onChange={(e) => setFiltroUsuario(e.target.value)}
-                className="w-full text-[12px] rounded-[8px] px-2.5 py-2 focus:outline-none"
+                className="w-full h-12 text-[16px] rounded-[12px] px-3 focus:outline-none"
                 style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }}
               >
                 <option value="">Todos</option>
@@ -307,22 +316,22 @@ export default function ActividadPage() {
           )}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-[10px] font-extrabold uppercase tracking-[.07em] block mb-1" style={{ color: 'var(--cf-ink-3)' }}>Desde</label>
+              <label style={ROTULO_CAMPO}>Desde</label>
               <input
                 type="date"
                 value={desde}
                 onChange={(e) => setDesde(e.target.value)}
-                className="w-full text-[12px] rounded-[8px] px-2.5 py-2 focus:outline-none [color-scheme:dark]"
+                className="w-full h-12 text-[16px] rounded-[12px] px-3 focus:outline-none"
                 style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }}
               />
             </div>
             <div>
-              <label className="text-[10px] font-extrabold uppercase tracking-[.07em] block mb-1" style={{ color: 'var(--cf-ink-3)' }}>Hasta</label>
+              <label style={ROTULO_CAMPO}>Hasta</label>
               <input
                 type="date"
                 value={hasta}
                 onChange={(e) => setHasta(e.target.value)}
-                className="w-full text-[12px] rounded-[8px] px-2.5 py-2 focus:outline-none [color-scheme:dark]"
+                className="w-full h-12 text-[16px] rounded-[12px] px-3 focus:outline-none"
                 style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }}
               />
             </div>
@@ -330,8 +339,8 @@ export default function ActividadPage() {
           {hayFiltrosAvanzados && (
             <button
               onClick={() => { setFiltroUsuario(''); setDesde(''); setHasta('') }}
-              className="text-[11px] font-semibold pt-1"
-              style={{ color: 'var(--cf-gold)' }}
+              className="text-[14px] font-semibold"
+              style={{ color: 'var(--cf-ink-2)', textDecoration: 'underline', textUnderlineOffset: 3 }}
             >
               Limpiar filtros
             </button>
@@ -366,29 +375,19 @@ export default function ActividadPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-6">
           {grupos.map(grupo => (
-            <div key={grupo.key}>
-              {/* Separador de dia */}
-              <div className="flex items-center gap-2.5 mb-2.5">
-                <span className="text-[10px] font-extrabold uppercase tracking-[.07em] shrink-0" style={{ color: 'var(--cf-ink-3)' }}>
-                  {grupo.label}
-                </span>
-                <div className="flex-1 h-px" style={{ background: 'var(--cf-border)' }} />
-              </div>
+            <section key={grupo.key}>
+              {/* El día, en gris y en minúsculas, como los grupos de Configuración. */}
+              <h2 style={{ ...ROTULO_GRUPO, margin: '0 4px 8px' }}>{grupo.label.charAt(0).toUpperCase() + grupo.label.slice(1)}</h2>
 
-              {/* Timeline de items del dia */}
-              <div className="relative pl-5">
-                {/* Linea vertical */}
-                <div className="absolute left-[11px] top-2 bottom-2 w-px" style={{ background: 'var(--cf-border)' }} />
-
-                <div className="space-y-0.5">
+              <div style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)', borderRadius: 16, overflow: 'hidden' }}>
                   {/* ── T32-03 · LAS REPETICIONES, EN UNA FILA ──
                       Trece renglones seguidos diciendo «Carlos Andres registro
                       pago» no informan de nada: lo que hay que saber es que se
                       registraron trece, y en cuanto tiempo. La lamina lo pone en
                       una linea: «Registro 4 pagos en un minuto». */}
-                  {agruparRepetidos(grupo.items, undefined, { offsetHoras }).map((fila) => {
+                  {agruparRepetidos(grupo.items, undefined, { offsetHoras }).map((fila, n) => {
                     const item = fila.items[0]
                     const config = ACCIONES[item.accion] || FRASE_DE_RESERVA(item.accion)
                     const icon = getIcon(item.accion)
@@ -399,35 +398,28 @@ export default function ActividadPage() {
                     const esDestructiva = config.color === '#ef4444'
 
                     return (
-                      <div key={fila.id} className="relative flex items-start gap-2.5 py-2">
-                        {/* Dot en la linea */}
-                        <div
-                          className="absolute -left-5 top-3 w-[9px] h-[9px] rounded-full border-2 shrink-0"
-                          style={{
-                            borderColor: config.color,
-                            background: 'var(--cf-surface)',
-                          }}
-                        />
-
+                      <div key={fila.id} className="flex items-start gap-3" style={{
+                        padding: '14px 16px', borderTop: n === 0 ? 0 : '1px solid var(--cf-border)',
+                      }}>
                         {/* Icono */}
                         <div
-                          className="w-8 h-8 rounded-[12px] flex items-center justify-center shrink-0"
+                          className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
                           style={{ background: `color-mix(in srgb, ${config.color} 12%, transparent)` }}
                         >
                           {icon}
                         </div>
 
                         {/* Contenido */}
-                        <div className="flex-1 min-w-0 pt-0.5">
-                          <p className="text-[12px] leading-snug" style={{ color: 'var(--cf-ink)' }}>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[15px] leading-snug" style={{ color: 'var(--cf-ink)', margin: 0 }}>
                             <span className="font-semibold">{fila.usuario || 'Sistema'}</span>
                             {' '}
-                            <span style={{ color: fila.cuantos > 1 ? 'var(--cf-ink)' : 'var(--cf-ink-3)', fontWeight: fila.cuantos > 1 ? 600 : 400 }}>
+                            <span style={{ color: fila.cuantos > 1 ? 'var(--cf-ink)' : 'var(--cf-ink-2)', fontWeight: fila.cuantos > 1 ? 600 : 400 }}>
                               {textoDeFila(fila, config.label)}
                             </span>
                           </p>
                           {fila.cuantos > 1 ? (
-                            <p className="text-[11px] mt-0.5 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
+                            <p className="text-[13px] mt-1 leading-snug" style={{ color: 'var(--cf-ink-3)', margin: '4px 0 0' }}>
                               {fila.monto > 0
                                 ? `Suman ${formatMoney(fila.monto)}`
                                 : `${fila.cuantos} sucesos seguidos`}
@@ -437,14 +429,14 @@ export default function ActividadPage() {
                                crudo de la base: «inyeccion entrada $500.000 - …»
                                salía tal cual. */
                             <p
-                              className="text-[11px] mt-0.5 leading-snug"
-                              style={{ color: esDestructiva ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)' }}
+                              className="text-[13px] leading-snug"
+                              style={{ color: esDestructiva ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)', margin: '4px 0 0' }}
                             >
                               {fila.detalleTexto}
                             </p>
                           )}
                           {PASTILLA_DE_ESTADO[fila.estado] && (
-                            <div className="mt-1">
+                            <div className="mt-1.5">
                               <Pastilla tono={PASTILLA_DE_ESTADO[fila.estado].tono}>
                                 {PASTILLA_DE_ESTADO[fila.estado].texto}
                               </Pastilla>
@@ -452,7 +444,6 @@ export default function ActividadPage() {
                           )}
                         </div>
 
-                        {/* Hora */}
                         {/* EL MONTO, que no estaba. La lamina le da su columna:
                             «+$71.000» de una tanda de cuatro pagos dice mas que
                             los cuatro renglones sueltos. */}
@@ -461,7 +452,7 @@ export default function ActividadPage() {
                             «Carlos registró 2 pagos en un minuto» le quedaban 80px y
                             bajaba a CUATRO renglones. Apilados dejan la frase en uno o
                             dos, que es lo que se viene a leer (19 sep 2026). */}
-                        <div className="shrink-0 flex flex-col items-end gap-0.5 pt-0.5">
+                        <div className="shrink-0 flex flex-col items-end gap-1">
                           {/* El signo lo decide `sentidoDe`, no el número: un gasto
                               salía «+$31.220» en verde. Verde solo lo que ENTRA; lo
                               que sale va con «−» y lo que ni entra ni sale (un cierre,
@@ -470,7 +461,7 @@ export default function ActividadPage() {
                               sin signo y TACHADO, para que se vea cuál fue y que
                               no cuenta. Antes decía «−$25.000» como cualquier gasto. */}
                           {fila.monto !== 0 && (
-                            <span className="cf-fig text-[13px]" style={{
+                            <span className="cf-fig text-[15px]" style={{
                               color: fila.sentido === 'entra' ? 'var(--cf-green-dark)'
                                 : NO_CUENTA.includes(fila.estado) ? 'var(--cf-ink-3)' : 'var(--cf-ink-2)',
                               textDecoration: NO_CUENTA.includes(fila.estado) ? 'line-through' : 'none',
@@ -478,16 +469,15 @@ export default function ActividadPage() {
                               {fila.sentido === 'entra' ? '+' : fila.sentido === 'sale' ? '−' : ''}{formatMoney(Math.abs(fila.monto))}
                             </span>
                           )}
-                          <span className="text-[10px] tabular-nums whitespace-nowrap" style={{ color: 'var(--cf-ink-3)' }}>
+                          <span className="text-[12px] tabular-nums whitespace-nowrap" style={{ color: 'var(--cf-ink-3)' }}>
                             {fila.horaTexto}
                           </span>
                         </div>
                       </div>
                     )
                   })}
-                </div>
               </div>
-            </div>
+            </section>
           ))}
 
           {/* Loader infinite scroll */}
