@@ -198,6 +198,7 @@ function RutaSinCobrador({ nombre, clientes = 0, hoy = null, onAsignar, onAbrir 
 
 export default function ListaRutas({
   rutas = [],
+  sinTitulo = false,
   // «4 rutas · $34.500 de $207.500 hoy»
   resumen,
   // La banda ámbar de T04-01: { esperado, recaudado, detalle }
@@ -248,11 +249,14 @@ export default function ListaRutas({
           acumulado de cada ruta vive en su detalle. */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 11, flex: 'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <h1 style={{
+          {/* Con la cabecera nueva (17 nov 2026) el nombre ya lo dice el chip
+              «Rutas · N»: aquí sobraba. Queda el hueco para empujar los botones. */}
+          <h1 className={sinTitulo ? 'sr-only' : undefined} style={{
             flex: 1, minWidth: 0, margin: 0,
             fontFamily: 'var(--font-space-grotesk), system-ui',
             fontSize: 20, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)',
           }}>Rutas</h1>
+          {sinTitulo && <span style={{ flex: 1 }} />}
           <span style={{
             display: 'inline-flex', alignItems: 'center', flex: 'none',
             // 11px, no píldora: el 999px es de avatar, punto, pastilla, barra

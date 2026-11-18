@@ -206,7 +206,7 @@ export function BusquedaGlobal({
      más, sin convertir el campo en una lista. */
   /* Corto (19 oct 2026): con el micrófono y «Cerrar» al lado, a 390px se leía
      «Busca un cliente, una pant». Dice lo mismo en lo que cabe. */
-  texto, onTexto, marcador = 'Cliente, pantalla o ajuste',
+  texto, onTexto, marcador = 'Un cliente o qué hacer',
   onCerrar,
   recientesTitulo = 'Últimos que abriste', recientes = [],
   atajosTitulo = 'Ir directo a', atajos = [],

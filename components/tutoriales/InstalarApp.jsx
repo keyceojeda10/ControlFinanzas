@@ -36,6 +36,7 @@ export default function InstalarApp() {
     'un-toque': 'Instalar ahora',
     'ios-safari': 'Cómo instalarla en tu iPhone',
     'ios-safari-puntos': 'Cómo instalarla en tu iPhone',
+    'ios-safari-menu': 'Cómo instalarla en tu iPhone',
     'ios-chrome': 'Cómo instalarla en tu iPhone',
     'ios-dentro': 'Cómo instalarla en tu iPhone',
   }[camino] ?? 'Ver los pasos en este teléfono'

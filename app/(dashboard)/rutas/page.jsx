@@ -3,6 +3,9 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import ListaRutas from '@/components/pantallas/ListaRutas'
+import { CabeceraSeccion, Buscador } from '@/components/armazon/CabeceraInicio'
+import { PastillaProfe } from '@/components/tutoriales/PiezasProfe'
+import { iniciales } from '@/lib/armazon'
 import RutasEscritorio from '@/components/pantallas/RutasEscritorio'
 import HojaInferior, { salirDeHojaHacia } from '@/components/cf/HojaInferior'
 import { useRegistrarAcciones } from '@/components/acciones/AccionesProvider'
@@ -55,7 +58,7 @@ function BotonCopia({ onClick, cargando, texto, d }) {
 
 export default function RutasPage() {
   const router = useRouter()
-  const { esOwner, loading: authLoading } = useAuth()
+  const { session, esOwner, loading: authLoading } = useAuth()
   const montado = useMontado()
   const { country } = useCountry()
 
@@ -455,6 +458,19 @@ export default function RutasPage() {
 
   return (
     <div className="max-w-3xl lg:max-w-6xl mx-auto">
+      {/* La cabecera de las secciones en el móvil (17 nov 2026). Rutas no tiene
+          buscador propio: va el único de la app. «Nueva ruta» abre la hoja de
+          esta misma pantalla, por eso va con `onClick` y no con enlace. */}
+      <CabeceraSeccion
+        activo="rutas"
+        titulo="Rutas"
+        cifra={rutas.length || null}
+        crear={montado && esOwner ? { nombre: 'Nueva ruta', onClick: () => setShowForm(true), icono: 'rutas' } : null}
+        iniciales={iniciales(session?.user?.nombre || session?.user?.name || '')}
+        profe={<PastillaProfe />}
+        esOwner={esOwner}
+        buscador={<Buscador />}
+      />
       {/* La cabecera del armazón ya dice «Rutas»; repetirlo en un <h1> con
           «2 rutas» debajo es decirlo dos veces y cuesta 90px. El botón ancho
           «Nueva ruta» pasa al círculo dorado: son 2-13 rutas, no hace falta un
@@ -767,6 +783,7 @@ export default function RutasPage() {
               lado de "$1.500.000 prestado"— hacia que el ojo se quedara con el
               numero grande, que es el que no importa al salir a cobrar. */}
           <ListaRutas
+            sinTitulo
             // EL MARGEN LO PONE EL ARMAZÓN, NO EL COMPONENTE. Sin esta prop,
             // `ListaRutas` sumaba sus 20px de `--cf-pad-screen` a los 20 que ya
             // da `layout.jsx` con su `px-5`: 40 por lado, y las tarjetas salían

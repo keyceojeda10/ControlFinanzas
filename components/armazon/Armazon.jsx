@@ -31,6 +31,13 @@ import { PastillaProfe } from '@/components/tutoriales/PiezasProfe'
 
 const ArmazonContext = createContext(null)
 
+/* Las pantallas que pintan su propia cabecera en el móvil (17 nov 2026): Inicio
+   la negra con las cifras del día (`CabeceraInicio`) y las listas la de sección
+   (`CabeceraSeccion`). Ruta exacta: `/clientes/nuevo` y las fichas siguen con la
+   de siempre. ⚠ Una pantalla de esta lista que NO pinte la suya se queda sin
+   perfil ni avisos en el móvil. */
+const CON_CABECERA_PROPIA = ['/dashboard', '/clientes', '/prestamos', '/cobros-hoy', '/rutas', '/caja', '/mas']
+
 /**
  * Lo que una pantalla le dice a su cabecera.
  *
@@ -101,6 +108,11 @@ export function VolverEscritorio() {
       )}
     </div>
   )
+}
+
+/** ¿Hay avisos sin ver? Para las cabeceras que pinta la propia pantalla. */
+export function useHayAvisos() {
+  return Boolean(useContext(ArmazonContext)?.hayAvisos)
 }
 
 export function useCabecera({ titulo, subtitulo, acciones, paso, total, onVolver, onCerrar, tarea } = {}) {
@@ -191,7 +203,10 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
   // ir por contexto y no pintarse aquí: este componente envuelve TAMBIÉN a la
   // barra lateral, así que lo que se pinte a este nivel sale por encima de ella
   // y a todo el ancho. La barra de volver va dentro de `<main>`.
-  const valor = useMemo(() => ({ registrar, dePantalla, volver }), [registrar, dePantalla, volver])
+  // `hayAvisos` también va al contexto: las cabeceras que pinta la propia
+  // pantalla (Inicio y las listas) tienen su campana y necesitan su punto.
+  const hayAvisosAhora = avisos > 0 || hayAvisos
+  const valor = useMemo(() => ({ registrar, dePantalla, volver, hayAvisos: hayAvisosAhora }), [registrar, dePantalla, volver, hayAvisosAhora])
 
   // El estado de conexión SE FUE de aquí. Vivía en este componente para pintar
   // el punto verde del avatar móvil, y T40-00-a —la cabecera elegida— quita ese
@@ -201,6 +216,11 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
   // 10px), y desde este cambio se lo detecta ella sola: es su único consumidor.
 
   const armazon = resolverArmazon(pathname)
+
+  /* INICIO TRAE SU PROPIA CABECERA (17 nov 2026): la negra de `CabeceraInicio`,
+     con las cifras del día, que la pinta la página. Se decide por la ruta y no en
+     un efecto: así no parpadea la vieja al cargar. */
+  const cabeceraPropia = CON_CABECERA_PROPIA.includes(pathname)
 
   /* ⚠ UNA TAREA A PANTALLA COMPLETA NO LLEVA PASTILLA, AUNQUE VIVA EN UNA RUTA
    * DE NAVEGACIÓN.
@@ -258,7 +278,7 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
 
           Volver atras es lo mismo en todas: `router.back()`. La pantalla solo lo
           sobreescribe cuando de verdad tiene que ir a otro sitio. */}
-      {armazon.cabecera !== CABECERA.NINGUNA && (
+      {armazon.cabecera !== CABECERA.NINGUNA && !cabeceraPropia && (
         <CabeceraMovil
           variante={armazon.cabecera}
           iniciales={iniciales(nombre)}

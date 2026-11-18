@@ -8,8 +8,10 @@
  *                       enlace ya copiado para pegarlo.
  *   'ios-safari'      — iPhone en Safari hasta el 18: una flecha que apunta al
  *                       botón Compartir de abajo, y después «Agregar a inicio».
- *   'ios-safari-puntos' — Safari 26 en adelante: Compartir está dentro de los ···
- *                       de abajo a la derecha, y ahí apunta la flecha. Ver lib/instalar.js.
+ *   'ios-safari-puntos' — Safari 26: Compartir está dentro de los ··· de abajo a
+ *                       la derecha, y ahí apunta la flecha. Ver lib/instalar.js.
+ *   'ios-safari-menu' — Safari 27 en adelante: los ··· ya no están; Compartir va
+ *                       en el Menú de página (tres rayas), abajo a la IZQUIERDA.
  *   'ios-chrome'      — iPhone en Chrome: igual, pero Compartir va arriba a la
  *                       derecha.
  *
@@ -22,7 +24,7 @@
 
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { enlaceAChrome, detectar, PASOS_SAFARI_PUNTOS } from '@/lib/instalar'
+import { enlaceAChrome, detectar, PASOS_SAFARI_PUNTOS, PASOS_SAFARI_MENU, PASOS_COMPARTIR } from '@/lib/instalar'
 
 const NOMBRE_APP = { facebook: 'Facebook', instagram: 'Instagram', whatsapp: 'WhatsApp', tiktok: 'TikTok' }
 
@@ -34,6 +36,14 @@ const Compartir = ({ tam = 26, color = '#0A84FF' }) => (
 const AgregarInicio = () => (
   <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
     <rect x="4" y="4" width="16" height="16" rx="4" /><path d="M12 8.5v7M8.5 12h7" />
+  </svg>
+)
+
+/* El Menú de página de Safari 27: dos rayas largas y una corta (así lo dibuja
+   Apple en su guía). */
+const TresRayas = () => (
+  <svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke="#0A84FF" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
+    <path d="M4 6.5h16M4 12h16M4 17.5h10" />
   </svg>
 )
 
@@ -118,18 +128,14 @@ export default function GuiaInstalar({ camino, onCerrar }) {
   // ── iPhone: la flecha encima de su propia pantalla ──
   const arriba = camino === 'ios-chrome'
   const puntos = camino === 'ios-safari-puntos'
-  const iconosPuntos = [<TresPuntos key="p" />, <Compartir key="c" />, <AgregarInicio key="a" />, <span key="g" style={{ fontSize: 15, fontWeight: 700, color: '#0A84FF' }}>Agregar</span>]
-  const pasos = puntos ? PASOS_SAFARI_PUNTOS.map((x, i) => ({ ...x, icono: iconosPuntos[i] })) : [
-    {
-      titulo: 'Toca Compartir',
-      texto: arriba
-        ? 'Es este botón, arriba a la derecha, junto a la dirección.'
-        : 'Es este botón, abajo en el centro. Si no lo ves, toca ··· abajo a la derecha y luego Compartir.',
-      icono: <Compartir />,
-    },
-    { titulo: 'Toca «Agregar a inicio»', texto: 'Baja un poco en la lista que se abre. A veces dice «Agregar a la pantalla de inicio».', icono: <AgregarInicio /> },
-    { titulo: 'Toca «Agregar»', texto: 'Arriba a la derecha. La app queda en tu pantalla de inicio, con su icono.', icono: <span style={{ fontSize: 15, fontWeight: 700, color: '#0A84FF' }}>Agregar</span> },
-  ]
+  // Safari 27: el Menú de página (tres rayas) está abajo a la IZQUIERDA (lib/instalar.js).
+  const menu = camino === 'ios-safari-menu'
+  const agregar = <span key="g" style={{ fontSize: 15, fontWeight: 700, color: '#0A84FF' }}>Agregar</span>
+  const pasos = menu
+    ? PASOS_SAFARI_MENU.map((x, i) => ({ ...x, icono: [<TresRayas key="r" />, <Compartir key="c" />, <AgregarInicio key="a" />, agregar][i] }))
+    : puntos
+    ? PASOS_SAFARI_PUNTOS.map((x, i) => ({ ...x, icono: [<TresPuntos key="p" />, <Compartir key="c" />, <AgregarInicio key="a" />, agregar][i] }))
+    : PASOS_COMPARTIR(arriba).map((x, i) => ({ ...x, icono: [<Compartir key="c" />, <AgregarInicio key="a" />, agregar][i] }))
   const p = pasos[paso]
   const ultimo = paso === pasos.length - 1
 
@@ -143,8 +149,8 @@ export default function GuiaInstalar({ camino, onCerrar }) {
       {/* La flecha: solo en el primer paso, que es el que hay que encontrar. */}
       {paso === 0 && (arriba
         ? <svg className="cf-flecha-arriba" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#F5B824" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ position: 'absolute', top: 'max(6px, env(safe-area-inset-top))', right: 18 }}><path d="M12 20V5M5.5 11.5L12 5l6.5 6.5" /></svg>
-        : puntos
-        ? <svg className="cf-flecha-esquina" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#F5B824" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ position: 'absolute', bottom: 22, right: 6 }}><path d="M12 4v15M5.5 12.5L12 19l6.5-6.5" /></svg>
+        : puntos || menu
+        ? <svg className="cf-flecha-esquina" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#F5B824" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ position: 'absolute', bottom: 22, ...(menu ? { left: 6 } : { right: 6 }) }}><path d="M12 4v15M5.5 12.5L12 19l6.5-6.5" /></svg>
         : <svg className="cf-flecha-abajo" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#F5B824" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ position: 'absolute', bottom: 22, left: '50%' }}><path d="M12 4v15M5.5 12.5L12 19l6.5-6.5" /></svg>)}
 
       <div style={{ background: '#fff', color: '#15161A', borderRadius: 18, padding: '18px 18px 14px', display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 440, width: '100%', alignSelf: 'center' }}>

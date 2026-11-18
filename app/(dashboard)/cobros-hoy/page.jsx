@@ -18,6 +18,10 @@ import { tituloFrecuencia } from '@/lib/frecuencia'
 import { obtenerRutasOffline, guardarEnCache, leerDeCache, guardarPagoPendiente, obtenerPagosPendientes } from '@/lib/offline'
 import { nuevaClaveCobro } from '@/lib/pagos-sin-senal'
 import CobrarHoy from '@/components/pantallas/CobrarHoy'
+import { CabeceraSeccion, Buscador } from '@/components/armazon/CabeceraInicio'
+import { PastillaProfe } from '@/components/tutoriales/PiezasProfe'
+import { iniciales } from '@/lib/armazon'
+import { BarraFiltros } from '@/components/pantallas/ListaClientes'
 import HojaWhatsApp from '@/components/whatsapp/HojaWhatsApp'
 import {
   adaptarCobrosHoy, ORDENES, RANGOS_ATRASO, conteosAtraso, resumenSeleccion, inicialesDe, alDiaTrasCobro,
@@ -31,7 +35,7 @@ const ANCLA_CLIENTE = (id) => `cliente-${id}`
 export default function CobrosHoyPage() {
   // `orgNombre` y `ocultarSaldoWA` son para la hoja de WhatsApp: la firma del
   // mensaje y la preferencia de no mandar el saldo por chat.
-  const { user, esOwner, orgNombre, ocultarSaldoWA, organizationId, loading: authLoading } = useAuth()
+  const { session, user, esOwner, orgNombre, ocultarSaldoWA, organizationId, loading: authLoading } = useAuth()
   const [data, setData]           = useState(null)
   const [loading, setLoading]     = useState(true)
   // A quién se le va a escribir. La hoja de plantillas se monta abajo.
@@ -449,14 +453,49 @@ export default function CobrosHoyPage() {
     ancla: ANCLA_CLIENTE,
   })
 
+  /* ── LA CABECERA DE LAS LISTAS, EN EL MÓVIL (17 nov 2026) ──
+      Aquí no hay buscador de lista: va el ÚNICO de la app. Y los filtros son
+      los de esta pantalla —todos o solo los que faltan, que es el mismo
+      interruptor «Ocultar los ya cobrados» de la hoja— y la hoja de
+      «Filtrar y ordenar», con cuántos hay puestos. */
+  const cabecera = (
+    <CabeceraSeccion
+      activo="cobrar"
+      titulo="Cobrar hoy"
+      // Solo el número: con «por cobrar» el chip se montaba sobre el profe a 412px.
+      cifra={data?.resumen ? data.resumen.pendientes : null}
+      // De la sesión, como en las otras listas: el usuario guardado en el teléfono no trae el nombre.
+      iniciales={iniciales(session?.user?.nombre || session?.user?.name || user?.nombre || '')}
+      profe={<PastillaProfe />}
+      esOwner={esOwner}
+      buscador={<Buscador />}
+      filtros={(
+        <BarraFiltros
+          activo={filtros.ocultarCobrados ? 'faltan' : 'todos'}
+          onCambiar={(v) => cambiar('ocultarCobrados', v === 'faltan')}
+          onMasFiltros={() => setHojaFiltros(true)}
+          hayMasFiltros={!!(filtros.atraso || filtros.rutaId)}
+          filtros={[
+            { id: 'todos', nombre: 'Todos', conteo: data?.resumen?.total },
+            { id: 'faltan', nombre: 'Sin cobrar', conteo: data?.resumen?.pendientes },
+          ]}
+        />
+      )}
+    />
+  )
+
   if (authLoading || loading) return (
-    <div className="max-w-2xl lg:max-w-[1180px] mx-auto space-y-3 px-1">
-      <div className="rounded-[20px] h-28 animate-pulse" style={{ background: 'var(--cf-card)' }} />
-      <div className="rounded-[16px] h-16 animate-pulse" style={{ background: 'var(--cf-card)' }} />
-      {[...Array(4)].map((_, i) => (
-        <div key={i} className="rounded-[16px] h-[76px] animate-pulse" style={{ background: 'var(--cf-card)' }} />
-      ))}
-    </div>
+    <>
+      {/* Cargando también lleva la cabecera: el armazón ya no pone la vieja aquí. */}
+      {cabecera}
+      <div className="max-w-2xl lg:max-w-[1180px] mx-auto space-y-3 px-1">
+        <div className="rounded-[20px] h-28 animate-pulse" style={{ background: 'var(--cf-card)' }} />
+        <div className="rounded-[16px] h-16 animate-pulse" style={{ background: 'var(--cf-card)' }} />
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="rounded-[16px] h-[76px] animate-pulse" style={{ background: 'var(--cf-card)' }} />
+        ))}
+      </div>
+    </>
   )
 
   // El muro "solo para cobradores" se quito: el dueño que cobra solo (95% de
@@ -496,6 +535,7 @@ export default function CobrosHoyPage() {
     // medía 302px desde x44 —20 del layout + 4 de acá + 20 de la pantalla— y los
     // nombres se truncaban a «Ana Milena G...». La lámina la pone a 350 desde x20.
     <div className="max-w-2xl lg:max-w-5xl mx-auto">
+      {cabecera}
       {procesando}
 
       {/* ── LA PANTALLA NUEVA, T02-02 «el arreglo del muro» ──
@@ -566,6 +606,8 @@ export default function CobrosHoyPage() {
         orden={orden}
         onOrden={setOrden}
         onFiltros={() => setHojaFiltros(true)}
+        // En el móvil el botón de filtros vive en la cabecera nueva.
+        filtrosEnCabecera
         // La lista de mañana se contesta en Préstamos, con la ventana puesta.
         onManana={() => { window.location.href = '/prestamos?estado=venceManana' }}
         nFiltros={(filtros.atraso ? 1 : 0) + (filtros.rutaId ? 1 : 0) + (filtros.ocultarCobrados ? 1 : 0)}

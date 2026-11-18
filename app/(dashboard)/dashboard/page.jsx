@@ -10,6 +10,9 @@ import { useOffline } from '@/components/providers/OfflineProvider'
 import { useOnboarding } from '@/components/onboarding/useOnboarding'
 import OnboardingChecklist from '@/components/onboarding/OnboardingChecklist'
 import Panel from '@/components/pantallas/Panel'
+import CabeceraInicio from '@/components/armazon/CabeceraInicio'
+import { PastillaProfe } from '@/components/tutoriales/PiezasProfe'
+import { iniciales } from '@/lib/armazon'
 import { adaptarPanel, porRutaHoy } from '@/lib/adaptadores/panel'
 import CacheAge from '@/components/offline/CacheAge'
 
@@ -1527,9 +1530,36 @@ export default function DashboardPage() {
 
   // Wizard: full-screen takeover for users in onboarding (step 0-98)
   // If minimized this session, show a banner instead
+  /* ── LA CABECERA DE INICIO EN EL MÓVIL (17 nov 2026) ──
+     La pinta la página, no el armazón: lleva las cifras del día. Va en las TRES
+     salidas de abajo —el asistente, «trae tu cartera» y el panel—, porque el
+     armazón ya no pone la vieja en Inicio y sin ella no habría perfil ni avisos. */
+  const nombreSesion = session?.user?.nombre || session?.user?.name || ''
+  const cabecera = (
+    <CabeceraInicio
+      nombre={nombreSesion}
+      iniciales={iniciales(nombreSesion)}
+      saludo={saludoPorHora()}
+      fecha={new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })}
+      fmt={(n) => formatMoney(n, session?.user?.country)}
+      profe={<PastillaProfe />}
+      esOwner={esOwner}
+      puedePrestar={!!puedeCrearPrestamos}
+      puedeCrearCliente={!!puedeCrearClientes}
+      cifras={data ? {
+        cobradoHoy: Math.round(data?.cobros?.hoy ?? 0),
+        esperadoHoy: Math.round(data?.prestamos?.esperadoHoy ?? 0),
+        porCobrar: data?.prestamos?.clientesConCobroHoy ?? 0,
+        yaPagaron: data?.prestamos?.clientesCobradosHoy ?? 0,
+        enMora: data?.clientes?.enMora ?? 0,
+      } : {}}
+    />
+  )
+
   if (onboarding.showWizard && esOwner && !onboarding.wizardMinimized) {
     return (
       <div className="max-w-3xl lg:max-w-6xl mx-auto">
+        {cabecera}
         <OnboardingWizard
           nombre={session?.user?.nombre || session?.user?.name}
           initialStep={onboarding.wizardInitialStep}
@@ -1571,6 +1601,7 @@ export default function DashboardPage() {
   if (esOwner && !loading && data && (data.clientes?.total ?? 0) === 0) {
     return (
       <div className="max-w-3xl lg:max-w-6xl mx-auto">
+        {cabecera}
         <TraerCartera
           nombre={session?.user?.nombre || session?.user?.name}
           // LA FOTO, que es el camino rapido: el migrador lee la cartulina.
@@ -1616,6 +1647,7 @@ export default function DashboardPage() {
   return (
     <div className={lucas ? 'xl:flex xl:gap-5 xl:items-start' : undefined}>
     <div className={`max-w-3xl lg:max-w-6xl mx-auto space-y-5${lucas ? ' xl:mx-0 xl:flex-1 xl:min-w-0' : ''}`}>
+      {cabecera}
       {/* Banner: wizard minimizado — click to resume */}
       {onboarding.showWizard && onboarding.wizardMinimized && esOwner && (
         <button
@@ -1788,6 +1820,7 @@ export default function DashboardPage() {
               el titular mira hacia adelante, porque un «recaudado hoy $0» a las
               7 de la mañana es inútil. */}
           <Panel
+            sinSaludo
             {...adaptarPanel(data, {
               nombre: session?.user?.nombre || session?.user?.name,
               hora: new Date().getHours(),

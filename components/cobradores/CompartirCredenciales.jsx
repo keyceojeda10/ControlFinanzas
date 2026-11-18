@@ -16,7 +16,7 @@ function buildMensaje({ nombreCobrador, email, password, nombreOwner }) {
     `🔗 Ingresa aquí: ${LOGIN_URL}\n` +
     `📧 Correo: ${email}\n` +
     `🔑 Contraseña: ${password}\n\n` +
-    `💡 *Tip:* Abre el link desde tu celular y desde el menú de Chrome/Safari selecciona *"Agregar a pantalla de inicio"* para instalar la app y usarla más rápido.${firma}`
+    `💡 *Tip:* Abre el link desde tu celular y desde el menú de Chrome selecciona *"Agregar a pantalla de inicio"* (en iPhone: en Safari, *Compartir* → *"Agregar a Inicio"*) para instalar la app y usarla más rápido.${firma}`
   )
 }
 

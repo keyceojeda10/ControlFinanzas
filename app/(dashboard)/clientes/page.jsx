@@ -29,6 +29,9 @@ import CarteraVacia from '@/components/pantallas/CarteraVacia'
 import { BarraFiltros, EncabezadoLista, BuscadorLista } from '@/components/pantallas/ListaClientes'
 import HojaFiltros, { ConmutadorVista, contarFiltros } from '@/components/pantallas/HojaFiltros'
 import { useRouter } from 'next/navigation'
+import { CabeceraSeccion } from '@/components/armazon/CabeceraInicio'
+import { PastillaProfe } from '@/components/tutoriales/PiezasProfe'
+import { iniciales } from '@/lib/armazon'
 import HojaWhatsApp from '@/components/whatsapp/HojaWhatsApp'
 // El mismo modal de la ficha del préstamo. Ver la nota en la lista de préstamos.
 import RegistrarPago from '@/components/prestamos/RegistrarPago'
@@ -266,7 +269,7 @@ const ANCLA_CLIENTE = (id) => `cliente-${id}`
 
 export default function ClientesPage() {
   const router = useRouter()
-  const { esOwner, puedeCrearClientes, puedeCrearPrestamos, orgNombre, ocultarSaldoWA, organizationId, loading: authLoading } = useAuth()
+  const { session, esOwner, puedeCrearClientes, puedeCrearPrestamos, orgNombre, ocultarSaldoWA, organizationId, loading: authLoading } = useAuth()
   const montado = useMontado()
 
   const { country } = useCountry()
@@ -760,8 +763,89 @@ export default function ClientesPage() {
     ancla: ANCLA_CLIENTE,
   })
 
+  /* ── EL BUSCADOR Y LOS ESTADOS, UNA VEZ ──
+     Se pintan en dos sitios: en PC donde siempre, y en el móvil DENTRO de la
+     cabecera nueva (y otra vez en su versión compacta al bajar). Son los mismos
+     controles con el mismo estado: nada se rehace. */
+  const filaBuscador = (
+    <div className="flex items-center gap-2">
+      <div className="flex-1 min-w-0">
+        <BuscadorLista
+          valor={buscar}
+          onCambiar={(e) => { setBuscar(e.target.value); setPage(1) }}
+          placeholder="Nombre, cédula o teléfono"
+        />
+      </div>
+      {/* ── POR QUÉ VUELVE A ESTAR AQUÍ, TAMBIÉN EN MÓVIL ──
+          Lo bajé a la fila de los estados y quedó peor: `BarraFiltros` sale
+          de su caja a propósito (`margin: 0 calc(-1 * var(--cf-pad-screen))`,
+          20px por lado) para que las pastillas lleguen al borde, así que el
+          conmutador se le montaba encima y «En mora» salía cortada por
+          detrás. Un degradado no lo arregla: el solape es de maquetación.
+          Aquí no se monta con nada. El sitio que hacía falta sale de que
+          «Filtros» pasa a ser solo icono en móvil (ver `BotonFiltros`). */}
+      {/* ── SOLO EL CONMUTADOR ARRIBA. EL FILTRO BAJA A LA TIRA ──────
+          El dueño, con la maqueta al lado: «quisiera dejar el filtro abajo,
+          junto al menú de Todos / Al día / En mora, para que la barra de
+          búsqueda se haga más grande, y las vistas arriba».
+
+          El filtro-chip del final de la tira YA EXISTÍA en `BarraFiltros`
+          (`onMasFiltros`) y es lo que dibuja la maqueta; simplemente estas
+          dos pantallas nunca se lo pasaban. Ahora sí.
+
+          ⚠ Y el conmutador se queda AQUÍ, no baja: `BarraFiltros` se
+          desplaza en horizontal, y una pieza que hay que poder pulsar
+          siempre no puede irse fuera de la pantalla al deslizar. Eso ya
+          pasó con el propio botón de filtros en la versión vieja. */}
+      {/* ⚠ Y NADA MÁS EN ESTA FILA.
+          Aquí hubo un botón «Grupos» de 36px al lado de dos piezas de 46,
+          con radio 12 donde el resto usa 14, y con `shrink-0`: se comía
+          ~93px y al input le quedaban ~124, así que «Nombre o cédula»
+          salía cortado. El canon ya tenía la respuesta —«si algo no cabe,
+          se quita contenido, no se encoge el elemento»— y lo que sobraba
+          era el botón. */}
+      <ConmutadorVista
+        valor={vista === 'lista' ? '' : vista}
+        onCambiar={(v) => cambiarVista(v || 'lista')}
+        opciones={OPCIONES_VISTA}
+      />
+
+    </div>
+  )
+  const barraEstados = (
+    <BarraFiltros
+      activo={estado}
+      onCambiar={(v) => { setEstado(v); setPage(1) }}
+      onMasFiltros={() => setHojaFiltros(true)}
+      hayMasFiltros={nFiltros > 0}
+      filtros={ESTADOS_CLIENTE.map(({ value, label, sinConteo }) => ({
+        id: value,
+        nombre: label,
+        // Mientras carga NO se pone conteo. Un "· 0" que todavia no es
+        // cierto se lee como "no hay ninguno" y hace descartar el filtro
+        // antes de que llegue el dato.
+        // Del servidor, no de la pagina. Sin ellos, sin numero.
+        conteo: sinConteo || !conteos ? undefined : (value === '' ? conteos.total : conteos[value] ?? 0),
+      }))}
+    />
+  )
+
   return (
     <div className="max-w-3xl lg:max-w-6xl mx-auto">
+      {/* La cabecera de las listas en el móvil (17 nov 2026). */}
+      <CabeceraSeccion
+        activo="clientes"
+        titulo="Clientes"
+        cifra={total || null}
+        // La mora no va en el chip: ya la dice «En mora · N» justo debajo, y en
+        // el chip se montaba sobre el botón del profe a 412px.
+        crear={puedeCrearClientes ? { nombre: 'Nuevo cliente', href: '/clientes/nuevo', icono: 'cliente' } : null}
+        iniciales={iniciales(session?.user?.nombre || session?.user?.name || '')}
+        profe={<PastillaProfe />}
+        esOwner={esOwner}
+        buscador={carteraVacia ? null : filaBuscador}
+        filtros={carteraVacia ? null : barraEstados}
+      />
       {/* Cartera vacía DE VERDAD, no "el filtro no devolvió nada". */}
       {/* eslint-disable-next-line no-unused-vars */}
       {null}
@@ -796,11 +880,13 @@ export default function ClientesPage() {
             lleva titulo, asi que la pantalla no decia ni como se llama ni
             cuantos clientes hay. Y ese conteo es la unica cifra que puede
             cambiar lo que el dueño hace al abrirla. */}
+        <div className="hidden lg:block">
         <EncabezadoLista
           titulo="Clientes" total={total} enMora={moraCount}
           crearTexto="Nuevo cliente"
           onCrear={puedeCrearClientes ? () => router.push('/clientes/nuevo') : null}
         />
+        </div>
         {/* Desde el 85 % del cupo: una línea gris y, dos veces, la hoja de subir
             de plan (lib/cupo-clientes.js). Solo el dueño la ve. */}
         <CupoClientes />
@@ -839,67 +925,11 @@ export default function ClientesPage() {
             en una fila, y la tira de estados debajo. Dos pantallas hermanas con
             dos disposiciones distintas obligan a aprender la app dos veces, y la
             de clientes escondía su mitad útil. */}
-        <div className="flex items-center gap-2">
-          <div className="flex-1 min-w-0">
-            <BuscadorLista
-              valor={buscar}
-              onCambiar={(e) => { setBuscar(e.target.value); setPage(1) }}
-              placeholder="Nombre, cédula o teléfono"
-            />
-          </div>
-          {/* ── POR QUÉ VUELVE A ESTAR AQUÍ, TAMBIÉN EN MÓVIL ──
-              Lo bajé a la fila de los estados y quedó peor: `BarraFiltros` sale
-              de su caja a propósito (`margin: 0 calc(-1 * var(--cf-pad-screen))`,
-              20px por lado) para que las pastillas lleguen al borde, así que el
-              conmutador se le montaba encima y «En mora» salía cortada por
-              detrás. Un degradado no lo arregla: el solape es de maquetación.
-              Aquí no se monta con nada. El sitio que hacía falta sale de que
-              «Filtros» pasa a ser solo icono en móvil (ver `BotonFiltros`). */}
-          {/* ── SOLO EL CONMUTADOR ARRIBA. EL FILTRO BAJA A LA TIRA ──────
-              El dueño, con la maqueta al lado: «quisiera dejar el filtro abajo,
-              junto al menú de Todos / Al día / En mora, para que la barra de
-              búsqueda se haga más grande, y las vistas arriba».
-
-              El filtro-chip del final de la tira YA EXISTÍA en `BarraFiltros`
-              (`onMasFiltros`) y es lo que dibuja la maqueta; simplemente estas
-              dos pantallas nunca se lo pasaban. Ahora sí.
-
-              ⚠ Y el conmutador se queda AQUÍ, no baja: `BarraFiltros` se
-              desplaza en horizontal, y una pieza que hay que poder pulsar
-              siempre no puede irse fuera de la pantalla al deslizar. Eso ya
-              pasó con el propio botón de filtros en la versión vieja. */}
-          {/* ⚠ Y NADA MÁS EN ESTA FILA.
-              Aquí hubo un botón «Grupos» de 36px al lado de dos piezas de 46,
-              con radio 12 donde el resto usa 14, y con `shrink-0`: se comía
-              ~93px y al input le quedaban ~124, así que «Nombre o cédula»
-              salía cortado. El canon ya tenía la respuesta —«si algo no cabe,
-              se quita contenido, no se encoge el elemento»— y lo que sobraba
-              era el botón. */}
-          <ConmutadorVista
-            valor={vista === 'lista' ? '' : vista}
-            onCambiar={(v) => cambiarVista(v || 'lista')}
-            opciones={OPCIONES_VISTA}
-          />
-
-        </div>
-
+        {/* En el móvil van dentro de la cabecera (CabeceraSeccion); aquí, en PC. */}
+        <div className="hidden lg:block">{filaBuscador}</div>
         {/* Cada filtro con SU CONTEO: sin el número, elegir es a ciegas y hay
             que aplicarlo para saber si había algo. */}
-        <BarraFiltros
-          activo={estado}
-          onCambiar={(v) => { setEstado(v); setPage(1) }}
-          onMasFiltros={() => setHojaFiltros(true)}
-          hayMasFiltros={nFiltros > 0}
-          filtros={ESTADOS_CLIENTE.map(({ value, label, sinConteo }) => ({
-            id: value,
-            nombre: label,
-            // Mientras carga NO se pone conteo. Un "· 0" que todavia no es
-            // cierto se lee como "no hay ninguno" y hace descartar el filtro
-            // antes de que llegue el dato.
-            // Del servidor, no de la pagina. Sin ellos, sin numero.
-            conteo: sinConteo || !conteos ? undefined : (value === '' ? conteos.total : conteos[value] ?? 0),
-          }))}
-        />
+        <div className="hidden lg:block">{barraEstados}</div>
       </div>
       </>
       )}

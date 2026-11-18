@@ -3,6 +3,9 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
+import { CabeceraSeccion } from '@/components/armazon/CabeceraInicio'
+import { PastillaProfe } from '@/components/tutoriales/PiezasProfe'
+import { iniciales } from '@/lib/armazon'
 import Link                                   from 'next/link'
 import { useAuth }                            from '@/hooks/useAuth'
 import { useOffline }                         from '@/components/providers/OfflineProvider'
@@ -358,7 +361,7 @@ function rotuloDelConteo(estado) {
 }
 
 export default function PrestamosPage() {
-  const { esOwner, puedeCrearPrestamos, orgNombre, ocultarSaldoWA, organizationId, loading: authLoading } = useAuth()
+  const { session, esOwner, puedeCrearPrestamos, orgNombre, ocultarSaldoWA, organizationId, loading: authLoading } = useAuth()
   const { lastSyncedAt } = useOffline()
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -905,8 +908,67 @@ export default function PrestamosPage() {
     ancla: ANCLA_PRESTAMO,
   })
 
+  /* ── EL BUSCADOR Y LOS ESTADOS, UNA VEZ ──
+     En PC donde siempre; en el móvil DENTRO de la cabecera nueva y de su versión
+     compacta. Los mismos controles con el mismo estado: nada se rehace. */
+  const filaBuscador = (
+    <div className="flex items-center gap-2">
+      {/* El buscador de la lamina: radio 14, alto 46. Lo tenia como pildora,
+          que es la forma del buscador de la BARRA LATERAL. Y al lado habia un
+          + dorado con el FAB de la pastilla justo debajo: dos botones de
+          crear en la misma pantalla. Se va el de arriba. */}
+      <div className="flex-1 min-w-0">
+        <BuscadorLista
+          valor={buscar}
+          onCambiar={(e) => { setBuscar(e.target.value); setPage(1) }}
+          placeholder="Nombre o cédula"
+        />
+      </div>
+      {/* En las dos pantallas. Lo bajé a la fila de estados y quedó peor:
+          `BarraFiltros` se sale de su caja 20px por lado a propósito, así
+          que el conmutador se le montaba encima. Ver el comentario largo en
+          clientes. El hueco sale de que «Filtros» es solo icono en móvil. */}
+      <ConmutadorVista
+        valor={vistaP === 'lista' ? '' : vistaP}
+        onCambiar={(v) => cambiarVistaP(v || 'lista')}
+        opciones={OPCIONES_VISTA}
+      />
+    </div>
+  )
+  const barraEstados = (
+    <BarraFiltros
+      activo={estado}
+      onCambiar={(v) => { setEstado(v); setCobraDesde(''); setCobraHasta(''); setPage(1) }}
+      onMasFiltros={() => setHojaFiltros(true)}
+      hayMasFiltros={nFiltros > 0}
+      // `montado &&`: esOwner sale de la sesión, que en el servidor no
+      // existe. Sin esperar al montaje, el servidor pinta menos chips que
+      // el cliente y React repinta el árbol entero.
+      filtros={ESTADOS.filter((e) => !e.ownerOnly || (montado && esOwner)).map(({ value, label }) => ({
+        id: value,
+        nombre: label,
+        conteo: loading ? undefined
+          : value === estado ? total
+          : value === 'mora' && conteoMoraExacto ? enMoraCount
+          : undefined,
+      }))}
+    />
+  )
+
   return (
     <div className="max-w-3xl lg:max-w-6xl mx-auto">
+      {/* La cabecera de las listas en el móvil (17 nov 2026). */}
+      <CabeceraSeccion
+        activo="prestamos"
+        titulo="Préstamos"
+        cifra={total || null}
+        crear={puedeCrearPrestamos ? { nombre: 'Nuevo préstamo', href: '/prestamos/nuevo', icono: 'prestamo' } : null}
+        iniciales={iniciales(session?.user?.nombre || session?.user?.name || '')}
+        profe={<PastillaProfe />}
+        esOwner={esOwner}
+        buscador={filaBuscador}
+        filtros={barraEstados}
+      />
       {/* ── Cabecera de trabajo ──
           Antes de aquí había: título, subtítulo, botón dorado con texto, chip
           de Simulador, CUATRO filas de chips (estado, frecuencia, modo, ruta),
@@ -927,11 +989,13 @@ export default function PrestamosPage() {
             «Prestamos» y a la derecha «68 activos». Faltaba entero, igual que en
             clientes: la cabecera del armazon es la de navegacion y no lleva
             titulo, asi que la pantalla no decia ni como se llama. */}
+        <div className="hidden lg:block">
         <EncabezadoLista
           titulo="Préstamos" total={total != null ? `${total} ${rotuloDelConteo(estado)}` : null}
           crearTexto="Nuevo préstamo"
           onCrear={puedeCrearPrestamos ? () => router.push('/prestamos/nuevo') : null}
         />
+        </div>
 
         {/* LAS TRES CIFRAS. Responden lo que la lista NO puede: recorriendo 68
             tarjetas no se sabe cuanto hay en total en la calle ni cuanto esta
@@ -945,49 +1009,13 @@ export default function PrestamosPage() {
             ? totalesNegocio : null,
         })} />
 
-        <div className="flex items-center gap-2">
-          {/* El buscador de la lamina: radio 14, alto 46. Lo tenia como pildora,
-              que es la forma del buscador de la BARRA LATERAL. Y al lado habia un
-              + dorado con el FAB de la pastilla justo debajo: dos botones de
-              crear en la misma pantalla. Se va el de arriba. */}
-          <div className="flex-1 min-w-0">
-            <BuscadorLista
-              valor={buscar}
-              onCambiar={(e) => { setBuscar(e.target.value); setPage(1) }}
-              placeholder="Nombre o cédula"
-            />
-          </div>
-          {/* En las dos pantallas. Lo bajé a la fila de estados y quedó peor:
-              `BarraFiltros` se sale de su caja 20px por lado a propósito, así
-              que el conmutador se le montaba encima. Ver el comentario largo en
-              clientes. El hueco sale de que «Filtros» es solo icono en móvil. */}
-          <ConmutadorVista
-            valor={vistaP === 'lista' ? '' : vistaP}
-            onCambiar={(v) => cambiarVistaP(v || 'lista')}
-            opciones={OPCIONES_VISTA}
-          />
-        </div>
+        {/* En el móvil van dentro de la cabecera (CabeceraSeccion); aquí, en PC. */}
+        <div className="hidden lg:block">{filaBuscador}</div>
 
         {/* El estado se queda arriba porque es el que se toca todos los días.
             Con su conteo: sin el número hay que aplicar el filtro para saber si
             había algo detrás. */}
-        <BarraFiltros
-          activo={estado}
-          onCambiar={(v) => { setEstado(v); setCobraDesde(''); setCobraHasta(''); setPage(1) }}
-          onMasFiltros={() => setHojaFiltros(true)}
-          hayMasFiltros={nFiltros > 0}
-          // `montado &&`: esOwner sale de la sesión, que en el servidor no
-          // existe. Sin esperar al montaje, el servidor pinta menos chips que
-          // el cliente y React repinta el árbol entero.
-          filtros={ESTADOS.filter((e) => !e.ownerOnly || (montado && esOwner)).map(({ value, label }) => ({
-            id: value,
-            nombre: label,
-            conteo: loading ? undefined
-              : value === estado ? total
-              : value === 'mora' && conteoMoraExacto ? enMoraCount
-              : undefined,
-          }))}
-        />
+        <div className="hidden lg:block">{barraEstados}</div>
       </div>
 
       <HojaFiltros

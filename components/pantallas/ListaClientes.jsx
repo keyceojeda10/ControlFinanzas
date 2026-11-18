@@ -186,10 +186,19 @@ export function BarraFiltros({ filtros = [], activo, onCambiar, onMasFiltros, ha
       {/* Anclado. Lleva su propio fondo porque los chips pasan por DEBAJO al
           deslizar —la tira se sale de su caja 20px por lado a propósito, para
           que las pastillas lleguen al borde— y sin fondo se verían encima. */}
+      {/* ⚠ EL FONDO ES EL DE DONDE ESTÉ LA TIRA, no siempre el de la página.
+          Dentro de la hoja blanca de la cabecera nueva (17 nov 2026) este bloque
+          gris se veía como un parche: «un cuadro gris que se sale completamente
+          del diseño». Quien la pone sobre otro fondo lo dice con
+          `--cf-fondo-tira`. Y entra con un degradado, no con un corte. */}
       <div style={{
-        flex: 'none', display: 'flex', alignItems: 'center',
-        paddingLeft: 6, background: 'var(--cf-surface)',
+        flex: 'none', display: 'flex', alignItems: 'center', position: 'relative',
+        paddingLeft: 6, background: 'var(--cf-fondo-tira, var(--cf-surface))',
       }}>
+        <span aria-hidden style={{
+          position: 'absolute', top: 0, bottom: 0, right: '100%', width: 24, pointerEvents: 'none',
+          background: 'linear-gradient(to right, transparent, var(--cf-fondo-tira, var(--cf-surface)))',
+        }} />
         <Chip onClick={onMasFiltros} activo={hayMasFiltros} aria-label="Más filtros"
           style={{ padding: '0 12px' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"

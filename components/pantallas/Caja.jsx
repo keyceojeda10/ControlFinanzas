@@ -125,6 +125,9 @@ export function CajaDia({
   ajustesManuales = null, onDeshacerAjuste,
   movimientos = [], totalMovimientos = 0,
   onDetalle, onVerMovimientos, onGasto, onCerrarDia, onReporte,
+  /* Con la cabecera nueva (18 nov 2026) el chip «Caja» ya nombra la pantalla:
+     el título queda para el lector de pantalla y el renglón, para «Reporte». */
+  sinTitulo = false,
   /* Los rótulos de la cifra grande y de la lista. En un RANGO la cifra es el
      neto del período, no el saldo, y la lista no es «de hoy»: los decía igual
      (DETALLES-CAJA-Y-CAPITAL #14). */
@@ -174,7 +177,7 @@ export function CajaDia({
             cuadrando. */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flex: 'none' }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h1 style={{
+            <h1 className={sinTitulo ? 'sr-only' : undefined} style={{
               margin: 0,
               fontFamily: 'var(--font-space-grotesk), system-ui',
               fontSize: 22, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)',

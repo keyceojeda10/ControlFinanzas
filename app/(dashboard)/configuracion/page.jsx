@@ -5,7 +5,7 @@ import Configuracion from '@/components/pantallas/Configuracion'
 import TuNegocio from '@/components/pantallas/config/TuNegocio'
 import ComoPrestas from '@/components/pantallas/config/ComoPrestas'
 import PlanYPagos from '@/components/pantallas/config/PlanYPagos'
-import { IndiceConfiguracion } from '@/components/pantallas/config/movil'
+import IndiceNuevo from '@/components/pantallas/config/IndiceNuevo'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { valoresIndice, filasIndice, seccionesConfig } from '@/lib/adaptadores/configuracion'
 import { useState, useEffect, Suspense } from 'react'
@@ -1710,36 +1710,29 @@ function ConfiguracionContent() {
       )
     }
 
+    /* ── EL ÍNDICE, ESTILO «MI CUENTA» (17 nov 2026) ──
+       Tarjetas destacadas arriba, la lista a todo el ancho con lo que hay dentro
+       de cada sección, «En este teléfono» (tema e instalar) y «Salir» aparte.
+       Reemplaza a `IndiceConfiguracion` + `InstallSection` en el móvil: lo que
+       hacía la tarjeta de instalar (decir si ya está instalada, el video del
+       profe) va dentro. Ver components/pantallas/config/IndiceNuevo.jsx. */
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 24 }}>
-        <IndiceConfiguracion
-          negocio={org?.nombre ?? 'Tu negocio'}
-          negocioNota={notaNegocio}
-          iniciales={inicialesNegocio}
-          filas={filas.map((f) => ({ ...f, onIr: () => router.push(`/configuracion?s=${f.id}`) }))}
-          tema={tema}
-          temas={[
-            { id: 'light', etiqueta: 'Claro' },
-            { id: 'dark', etiqueta: 'Oscuro' },
-            { id: 'system', etiqueta: 'Auto' },
-          ]}
-          onTema={cambiarTema}
-        />
-
-        {/* ── INSTALAR VA CON EL TEMA, NO CON «TUS DATOS» ──
-            Estaba al final de «Tus datos», que es nombre, correo y contraseña:
-            instalar la app NO ES UN DATO TUYO, y ahí no lo encuentra nadie.
-
-            El tema y la instalación son las dos cosas que se ajustan DE ESTE
-            TELÉFONO, no del negocio — las ocho secciones de arriba son el
-            negocio, y estas dos son cómo lo ves en este aparato. Por eso van
-            juntas, fuera de la lista.
-
-            En el FAB no: ese menú es «¿qué vas a hacer?», cosas que se hacen a
-            diario y mueven plata. Instalar se hace UNA VEZ, y ponerlo ahí se lo
-            pone delante todos los días a quien ya la instaló. */}
-        <InstallSection />
-      </div>
+      <IndiceNuevo
+        negocio={org?.nombre ?? 'Tu negocio'}
+        iniciales={inicialesNegocio}
+        plan={org?.plan ? PLAN_NAMES[org.plan] ?? org.plan : null}
+        clientesNota={valores.clientesNota}
+        filas={filas.map((f) => ({ ...f, onIr: () => router.push(`/configuracion?s=${f.id}`) }))}
+        onIr={(id) => router.push(`/configuracion?s=${id}`)}
+        esOwner={esOwner}
+        tema={tema}
+        temas={[
+          { id: 'light', etiqueta: 'Claro' },
+          { id: 'dark', etiqueta: 'Oscuro' },
+          { id: 'system', etiqueta: 'Auto' },
+        ]}
+        onTema={cambiarTema}
+      />
     )
   }
 

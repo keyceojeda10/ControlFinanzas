@@ -43,6 +43,61 @@ Antes de dar por terminada cualquier tarea de interfaz, corre los dos checklists
 
 ---
 
+## La cabecera negra y el estilo «Mi cuenta» (17 nov 2026)
+
+El dueño trajo como referencia una app de domicilios y la pidió «tal cual,
+adaptada a nosotros». **Esto manda sobre el handoff donde choquen.**
+
+**Las cabeceras del móvil** viven en `components/armazon/CabeceraInicio.jsx`.
+Son solo para móvil (`lg:hidden`); en PC sigue la barra lateral.
+
+- **Inicio — `CabeceraInicio` (la «B»).** Franja negra `#15161A`, fija en los dos
+  temas, con un brillo dorado suave en la esquina. Lleva:
+  - el perfil, el chip «nombre · cobrado hoy», el profe y la campana;
+  - la fecha, el saludo y «hoy te toca cobrar $X a N clientes»;
+  - «Nuevo préstamo» (dorado) y «Nuevo cliente» (borde), cada uno solo con su permiso;
+  - los accesos en círculos.
+  Debajo, la hoja con el buscador y los atajos del día.
+- **Listas — `CabeceraSeccion` (la «A»):** Clientes, Préstamos y Cobrar hoy.
+  - Franja negra corta con el chip «Pantalla · cifra».
+  - Hoja blanca con las piezas DE LA LISTA (su buscador y sus filtros), los
+    accesos con «Nuevo …» en dorado y la sección actual marcada.
+- **Al bajar**, las dos se compactan: el buscador, los accesos en pequeño y los
+  filtros quedan fijos arriba, con fondo sólido.
+- El Armazón no pinta la cabecera vieja en las rutas de `CON_CABECERA_PROPIA`.
+  ⚠ Una ruta en esa lista que no pinte la suya se queda sin perfil ni avisos.
+
+**Un solo buscador.**
+- El campo de la cabecera abre la búsqueda global, que encuentra clientes,
+  préstamos, acciones y guías, y dice «Busca un cliente o lo que necesitas hacer».
+- En las listas, el campo es el buscador de la propia lista.
+- «¿Qué necesitas hacer aquí?» queda solo en las fichas de detalle.
+
+**Excepciones aprobadas a «un botón nunca es circular»** (`11 §3`):
+- los accesos de la cabecera: círculo de 52–56 px con el nombre debajo;
+- el buscador de la cabecera: píldora;
+- el chip de la franja: píldora.
+No se extienden a nada más: la X de los modales sigue siendo cuadrada (el
+dueño ya reportó la circular como fallo) y los filtros usan el `Chip` del
+sistema, el mismo en Inicio y en las listas.
+
+**Configuración, estilo «Mi cuenta»** (`components/pantallas/config/IndiceNuevo.jsx`):
+- arriba, tarjetas destacadas;
+- la lista a todo el ancho, con título grande y una línea gris que dice qué hay
+  dentro de la sección;
+- grupos con rótulo sobre franja gris;
+- «Salir» en rojo, aparte;
+- al pie, la tarjeta de «el programa no es el acreedor».
+
+**Modales.** La cabecera de `Modal` lleva el título a 20 px con aire, y la X con
+fondo suave, cuadrada.
+
+**`BarraFiltros` sobre otro fondo:** su botón anclado se pinta con
+`--cf-fondo-tira`; quien la pone sobre blanco lo declara. Sin eso sale un
+«cuadro gris».
+
+---
+
 ## Dónde está cada cosa
 
 | Qué | Handoff | Código |
@@ -236,7 +291,7 @@ cartera sana no se ve si el riel de estado o la pastilla de días funcionan.
 | Préstamos · lista | ✅ misma tarjeta |
 | Rutas · lista | ✅ |
 | Caja, Panel, Cobrar hoy | ⬜ componente hecho, sin cablear |
-| Cabeceras de página (filtros con conteo) | ⬜ siguen siendo las viejas |
+| Cabeceras de página (filtros con conteo) | ✅ en el móvil: cabecera negra en Inicio, Clientes, Préstamos y Cobrar hoy (17 nov 2026) |
 | Onboarding | ⬜ sin rediseñar |
 
 Los desajustes de hidratación que quedan están **todos** en páginas sin migrar

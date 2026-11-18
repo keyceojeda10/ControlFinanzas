@@ -354,7 +354,7 @@ export default function HojaWhatsApp({
           // plantilla usar. El teléfono no: ya se sabe a quién se le escribe.
           detalle={[
             prestamo?.saldoPendiente > 0 ? `Debe ${formatMoney(Math.round(prestamo.saldoPendiente), pais)}` : null,
-            prestamo?.diasMora > 0 ? `${prestamo.diasMora} días de atraso` : null,
+            prestamo?.diasMora > 0 ? `${prestamo.diasMora} ${prestamo.diasMora === 1 ? 'día' : 'días'} de atraso` : null,
           ].filter(Boolean).join(' · ') || (cliente?.telefono ?? null)}
           // Lo pactado, para leerlo antes de escribirle (no va en el mensaje).
           nota={prestamo?.nota || null}

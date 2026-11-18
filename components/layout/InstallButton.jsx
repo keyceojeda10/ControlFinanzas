@@ -1,7 +1,7 @@
 'use client'
 
 import { createPortal } from 'react-dom'
-import { detectar, safariEscondeCompartir, PASOS_SAFARI_PUNTOS } from '@/lib/instalar'
+import { detectar, safariEscondeCompartir, safariMenuDePagina, PASOS_SAFARI_PUNTOS, PASOS_SAFARI_MENU, PASOS_COMPARTIR } from '@/lib/instalar'
 
 export function isStandalone() {
   if (typeof window === 'undefined') return false
@@ -68,6 +68,12 @@ const IconDotsHorizontal = () => (
     <circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" />
   </svg>
 )
+// El Menú de página de Safari 27: dos rayas largas y una corta.
+const IconMenuPagina = () => (
+  <svg className="w-7 h-7 text-[var(--cf-ink-3)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round">
+    <path d="M4 6.5h16M4 12h16M4 17.5h10" />
+  </svg>
+)
 // Desplazar abajo (scroll)
 const IconScrollDown = () => (
   <svg className="w-7 h-7 text-[var(--cf-gold)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
@@ -118,6 +124,7 @@ const ICON_MAP = {
   'check': IconCheck,
   'dots-v': IconDotsVertical,
   'dots-h': IconDotsHorizontal,
+  'menu-pagina': IconMenuPagina,
   'install': IconInstall,
   'plus': IconPlus,
   'desktop': IconDesktopInstall,
@@ -131,6 +138,14 @@ function getInstructions() {
 
   // iOS (iPhone / iPad)
   if (device === 'ios') {
+    // Safari 27: Compartir va en el Menú de página, abajo a la izquierda (lib/instalar.js).
+    if (browser === 'safari' && safariMenuDePagina(detectar(navigator.userAgent))) {
+      const iconos = ['menu-pagina', 'share-ios', 'add', 'check']
+      return {
+        title: 'Instalar desde Safari',
+        steps: PASOS_SAFARI_MENU.map((p, i) => ({ icon: iconos[i], text: p.titulo, sub: p.texto })),
+      }
+    }
     // Safari 26 guarda Compartir dentro de los ··· (ver lib/instalar.js).
     if (browser === 'safari' && safariEscondeCompartir(detectar(navigator.userAgent))) {
       const iconos = ['dots-h', 'share-ios', 'add', 'check']
@@ -142,23 +157,14 @@ function getInstructions() {
     if (browser === 'safari') {
       return {
         title: 'Instalar desde Safari',
-        steps: [
-          { icon: 'share-ios', text: 'Toca el icono de **Compartir** en la barra inferior de Safari', sub: 'Es este icono, abajo en el centro de la pantalla. Si no lo ves abajo, está en los tres puntos (···)' },
-          { icon: 'scroll', text: 'Desplaza hacia abajo en el menú que aparece', sub: 'Busca la opción "Agregar a pantalla de inicio"' },
-          { icon: 'add', text: 'Toca **"Agregar a pantalla de inicio"**', sub: null },
-          { icon: 'check', text: 'Toca **"Agregar"** arriba a la derecha', sub: '¡Listo! La app aparecerá en tu pantalla de inicio' },
-        ]
+        // Los mismos pasos que la guía de la flecha (lib/instalar.js, guía de Apple).
+        steps: PASOS_COMPARTIR(false).map((p, i) => ({ icon: ['share-ios', 'add', 'check'][i], text: p.titulo, sub: p.texto })),
       }
     }
     if (browser === 'chrome-ios') {
       return {
         title: 'Instalar desde Chrome',
-        steps: [
-          { icon: 'share-ios', text: 'Toca el icono de **Compartir** en la barra de Chrome', sub: 'Es este icono, está arriba al lado de la barra de direcciones' },
-          { icon: 'scroll', text: 'Desplaza hacia abajo en el menú que aparece', sub: 'Busca la opción "Agregar a pantalla de inicio"' },
-          { icon: 'add', text: 'Toca **"Agregar a pantalla de inicio"**', sub: null },
-          { icon: 'check', text: 'Ponle nombre y toca **"Agregar"**', sub: '¡Listo! La app queda instalada en tu celular' },
-        ]
+        steps: PASOS_COMPARTIR(true).map((p, i) => ({ icon: ['share-ios', 'add', 'check'][i], text: p.titulo, sub: p.texto })),
       }
     }
     if (browser === 'firefox-ios') {

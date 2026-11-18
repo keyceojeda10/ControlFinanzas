@@ -1,6 +1,9 @@
 'use client'
 // app/(dashboard)/caja/page.jsx - Caja del día
 
+import { CabeceraSeccion, Buscador } from '@/components/armazon/CabeceraInicio'
+import { PastillaProfe } from '@/components/tutoriales/PiezasProfe'
+import { iniciales } from '@/lib/armazon'
 import { conPantalla } from '@/components/cf/Procesando'
 import { lineasDeLaBanda } from '@/lib/dinero/conciliacion'
 import DeDondeSale from '@/components/dinero/DeDondeSale'
@@ -655,8 +658,22 @@ const MOVIMIENTOS_MANUALES = [
     }
   }
 
+  /* Mientras carga, o si no cargó, también va la cabecera: el armazón ya no
+     pone la vieja en Caja. Sin pestañas ni período: todavía no hay caja. */
+  const cabeceraSinCaja = (
+    <CabeceraSeccion
+      activo="caja"
+      titulo="Caja"
+      iniciales={iniciales(session?.user?.nombre || session?.user?.name || '')}
+      profe={<PastillaProfe />}
+      esOwner={esOwner}
+      buscador={<Buscador />}
+    />
+  )
+
   if (loading) return (
     <div className="max-w-2xl mx-auto space-y-4">
+      {cabeceraSinCaja}
       <SkeletonCard /><SkeletonCard />
     </div>
   )
@@ -666,6 +683,7 @@ const MOVIMIENTOS_MANUALES = [
      (DETALLES-CAJA-Y-CAPITAL #5). Se dice que no cargó y se ofrece reintentar. */
   if (!cajaData && error) return (
     <div className="max-w-2xl mx-auto space-y-3">
+      {cabeceraSinCaja}
       <div role="alert" className="bg-[var(--cf-red-pill-bg)] border border-[color-mix(in_srgb,var(--cf-red-dark)_30%,transparent)] text-[var(--cf-red-dark)] text-sm rounded-[12px] px-4 py-3">
         {error}
       </div>
@@ -1670,6 +1688,37 @@ const MOVIMIENTOS_MANUALES = [
     // sobraban 262. Reportado con captura de una ventana estrecha en PC.
     // (Comentario con `//`: un `{/* */}` tras `return (` es error de sintaxis.)
     <div className="max-w-2xl md:max-w-3xl lg:max-w-5xl mx-auto space-y-4">
+      {/* La cabecera de las secciones en el móvil (17 nov 2026): el buscador
+          único —encuentra también las acciones de caja, que se registran abajo
+          con `RegistrarAcciones`— y, como filtros, las pestañas y el período.
+          SIN CIFRA en el chip: las dos cajas tienen que decir lo mismo al peso,
+          y un número más es un sitio más donde pueden discrepar. */}
+      <CabeceraSeccion
+        activo="caja"
+        titulo="Caja"
+        iniciales={iniciales(session?.user?.nombre || session?.user?.name || '')}
+        profe={<PastillaProfe />}
+        esOwner={esOwner}
+        buscador={<Buscador />}
+        filtros={(
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <PestanasCaja
+              activa={cajaTab}
+              onCambiar={(p) => setCajaTab(p.id)}
+              pestanas={[
+                { id: 'cobros', etiqueta: 'Caja del día' },
+                { id: 'porruta', etiqueta: 'Por ruta' },
+                ...(esOwner ? [{ id: 'cuentas', etiqueta: 'Cuentas' }] : []),
+                ...(esOwner && cobradoresParaFiltro.length > 0 ? [{ id: 'cuadre', etiqueta: 'Cuadre' }] : []),
+              ]}
+            />
+            <FiltroPeriodo
+              value={{ ...periodo, fecha: periodo.fecha || fechaSeleccionada }}
+              onChange={handlePeriodoChange}
+            />
+          </div>
+        )}
+      />
       {/* LA CABECERA LA PONE `CajaDia`, no esta pagina.
 
           Al montar el bloque nuevo dejé la vieja encima y quedaron DOS: «Caja ·
@@ -1717,7 +1766,10 @@ const MOVIMIENTOS_MANUALES = [
           filtro a la derecha. En móvil el filtro baja debajo: las cuatro
           pestañas ya ocupan el ancho y apretarlo todo en 393px haría la
           pastilla ilegible. */}
-      <div className="flex flex-col lg:flex-row lg:items-center gap-2.5 lg:gap-3">
+      {/* En el móvil esta fila se esconde (la cabecera trae las pestañas y el
+          período), pero SIGUE MONTADA: `RegistrarAcciones` es lo que le dice al
+          buscador qué se puede hacer en caja. */}
+      <div className="hidden lg:flex lg:flex-row lg:items-center gap-2.5 lg:gap-3">
       {/* Va encima de las pestañas: «cuentas» y «cuadre» SON pestañas, y quien
           no sabe que existen no las va a encontrar mirando la que está abierta. */}
       <RegistrarAcciones clave="caja" acciones={accionesCaja} />
@@ -2080,6 +2132,7 @@ const MOVIMIENTOS_MANUALES = [
         onGasto={puedeReportarGastos ? () => setShowGasto(true) : undefined}
         onCerrarDia={irACerrarElDia}
         onReporte={() => setShowReporte(true)}
+        sinTitulo
       />
       </div>
 

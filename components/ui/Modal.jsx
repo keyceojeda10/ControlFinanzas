@@ -148,8 +148,8 @@ export function Modal({ open, onClose, onVolver, title, subtitle, children, size
             <button
               onClick={onClose}
               aria-label="Cerrar"
-              className="w-11 h-11 flex items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cf-gold)]/65 transition-colors"
-              style={{ color: 'var(--cf-ink-2)' }}
+              className="w-11 h-11 flex items-center justify-center rounded-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cf-gold)]/65 transition-colors"
+              style={{ color: 'var(--cf-ink)', background: 'var(--cf-fill)' }}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -159,7 +159,13 @@ export function Modal({ open, onClose, onVolver, title, subtitle, children, size
         )}
 
         {title && (
-          <div className="flex items-center gap-2 px-5 py-4 shrink-0" style={{ borderBottom: '1px solid var(--cf-border)' }}>
+          /* ── ESTILO «MI CUENTA» (17 nov 2026) ──
+             El dueño quiere los modales «sobrios, pero muy modernos», como la
+             configuración nueva: título grande con aire y el cerrar con fondo
+             suave. CUADRADO, no círculo: «un botón nunca es circular» (canon) y
+             la X redonda ya la reportó el dueño como fallo. Solo la cabecera: el
+             cuerpo de cada modal no se toca. */
+          <div className="flex items-center gap-2 px-5 pt-5 pb-4 shrink-0" style={{ borderBottom: '1px solid var(--cf-border)' }}>
             {/* El subtítulo no es adorno: en «Renovar» dice de QUIÉN es el
                 préstamo que se cierra. Antes vivía dentro del cuerpo porque la
                 cabecera no sabía pintarlo. */}
@@ -185,16 +191,16 @@ export function Modal({ open, onClose, onVolver, title, subtitle, children, size
               </button>
             )}
             <div className="min-w-0 flex-1 flex flex-col gap-0.5">
-              <h2 id="cf-modal-title" className="text-base font-semibold tracking-[0.01em]" style={{ color: 'var(--cf-ink)' }}>{title}</h2>
+              <h2 id="cf-modal-title" className="text-[20px] leading-tight font-semibold tracking-[-0.01em]" style={{ color: 'var(--cf-ink)', textWrap: 'balance' }}>{title}</h2>
               {subtitle && (
-                <span className="text-[13px] leading-snug" style={{ color: 'var(--cf-ink-3)' }}>{subtitle}</span>
+                <span className="text-[14px] leading-snug" style={{ color: 'var(--cf-ink-3)' }}>{subtitle}</span>
               )}
             </div>
             <button
               onClick={onClose}
               aria-label="Cerrar"
-              className="w-11 h-11 flex items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cf-gold)]/65 focus-visible:ring-offset-2 transition-colors"
-              style={{ color: 'var(--cf-ink-2)' }}
+              className="w-11 h-11 shrink-0 flex items-center justify-center rounded-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cf-gold)]/65 focus-visible:ring-offset-2 transition-colors"
+              style={{ color: 'var(--cf-ink)', background: 'var(--cf-fill)' }}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

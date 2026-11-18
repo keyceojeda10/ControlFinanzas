@@ -158,6 +158,8 @@ export default function CobrarHoy({
   ancla,
   onEmpezar,
   sinMargen = false,
+  // En el móvil el botón de filtros va en la cabecera de la pantalla (17 nov 2026).
+  filtrosEnCabecera = false,
 }) {
   const vacio = grupos.every((g) => g.filas.length === 0)
 
@@ -215,7 +217,7 @@ export default function CobrarHoy({
           `onFiltros` es opcional — sin el, se conserva el segmentado de antes,
           que es lo que usan el banco de pruebas y las capturas viejas. */}
       {onFiltros ? (
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <div className={filtrosEnCabecera ? 'hidden lg:flex' : 'flex'} style={{ justifyContent: 'flex-end' }}>
           <BotonFiltros n={nFiltros} onClick={onFiltros} />
         </div>
       ) : (

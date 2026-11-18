@@ -11,10 +11,13 @@ import { useRouter } from 'next/navigation'
 import PantallaMas from '@/components/pantallas/PantallaMas'
 import { adaptarMas } from '@/lib/adaptadores/mas'
 import { useAuth } from '@/hooks/useAuth'
+import { CabeceraSeccion, Buscador } from '@/components/armazon/CabeceraInicio'
+import { PastillaProfe } from '@/components/tutoriales/PiezasProfe'
+import { iniciales } from '@/lib/armazon'
 
 export default function Mas() {
   const router = useRouter()
-  const { esCobrador, puedeReportarGastos, puedeCrearClientes } = useAuth()
+  const { session, esCobrador, puedeReportarGastos, puedeCrearClientes } = useAuth()
   const [datos, setDatos] = useState(null)
   const [fallo, setFallo] = useState(false)
   const [cargando, setCargando] = useState(true)
@@ -58,6 +61,17 @@ export default function Mas() {
   // final. Es el «demasiado espacio» que reportó el dueño.
   return (
     <div>
+      {/* La cabecera de las secciones en el móvil (17 nov 2026): aquí el
+          buscador único es justo lo que hace falta —encuentra cualquier pantalla—
+          y no lleva filtros. */}
+      <CabeceraSeccion
+        activo="mas"
+        titulo="Más"
+        iniciales={iniciales(session?.user?.nombre || session?.user?.name || '')}
+        profe={<PastillaProfe />}
+        esOwner={!esCobrador}
+        buscador={<Buscador />}
+      />
       {/* Discreto y sin robarle el sitio al menú: una línea con su reintento,
           no una pantalla de error que tape lo que sí funciona. */}
       {fallo && !cargando && (

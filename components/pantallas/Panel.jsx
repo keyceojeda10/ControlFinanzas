@@ -511,6 +511,8 @@ export default function Panel({
   saludo = 'Buenos días',
   nombre = '',
   fecha = '',
+  // La cabecera nueva de Inicio (propuesta) ya lleva el saludo en el móvil.
+  sinSaludo = false,
   hero,
   caja, cajaNegativa = false, faltaPlataDeHoy = false, videoCaja = false,
   mora,
@@ -570,7 +572,7 @@ export default function Panel({
       {/* 1 · El saludo va en el CUERPO, no en la cabecera. Lo manda T40-00-a:
              «el saludo baja al cuerpo, donde puede ser grande». */}
       <div
-        className="flex items-start justify-between gap-4"
+        className={`${sinSaludo ? 'hidden lg:flex' : 'flex'} items-start justify-between gap-4`}
         style={{ flex: 'none' }}
       >
         <div style={{ minWidth: 0 }}>
