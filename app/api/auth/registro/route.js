@@ -8,7 +8,7 @@ import { registroLimiter, registroIntentos, getClientIp } from '@/lib/rate-limit
 import { DIAS_PRUEBA, PLANES_DEL_REGISTRO } from '@/lib/planes'
 import { marcarPruebaSiete, darRegaloDesdeElRegistro } from '@/lib/seguimiento/prueba'
 import { COUNTRY_CODES, getCountryConfig, validatePhone } from '@/lib/i18n'
-import { normalizarEmail, emailComoSeGuardabaAntes } from '@/lib/normalizar-email'
+import { normalizarEmail, emailComoSeGuardabaAntes, pareceCorreo } from '@/lib/normalizar-email'
 import { sendTemplate, sendButtons, wamidDe } from '@/lib/bot/whatsapp-cloud'
 import { notificarEstadoLead } from '@/lib/bot/notificar-meta'
 import { buscarLeads, ventanaAbierta } from '@/lib/bot/telefono'
@@ -81,6 +81,11 @@ export async function POST(req) {
 
     if (!terminosAceptados) {
       return NextResponse.json({ success: false, error: 'Debes aceptar los términos y condiciones' }, { status: 400 })
+    }
+
+    // El correo tiene que parecer un correo: «@andres.15» entró como tal (18 nov 2026).
+    if (!pareceCorreo(email)) {
+      return NextResponse.json({ success: false, error: 'Ese correo no es válido. Escríbelo completo, por ejemplo nombre@gmail.com' }, { status: 400 })
     }
 
     // Normalizar email (sin los puntos decorativos de Gmail; ver lib/normalizar-email.js)

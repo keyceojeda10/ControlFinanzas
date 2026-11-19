@@ -10,7 +10,7 @@ import { getCountryConfig, validatePhone, formatMoney } from '@/lib/i18n'
 import { tramosDePlan, presentacionDelPlan, INCLUYEN_TODOS } from '@/lib/adaptadores/planes'
 import { PLANES_CONFIG, PLANES_DEL_REGISTRO, DIAS_PRUEBA } from '@/lib/planes'
 import { getCountryList } from '@/lib/countries'
-import { normalizarEmail } from '@/lib/normalizar-email'
+import { normalizarEmail, pareceCorreo } from '@/lib/normalizar-email'
 import { origenDelRegistro } from '@/lib/origen-registro'
 
 const PAISES = getCountryList()
@@ -213,6 +213,7 @@ export default function RegistroForm({ refCode, planParam, countryParam, origenP
     if (!soloNumeros) { setError('Ingresa tu número de WhatsApp'); return }
     if (!validatePhone(soloNumeros, country)) { setError(`Número inválido. Ej: ${countryCfg.phonePlaceholder}`); return }
     if (!form.email.trim()) { setError('Ingresa tu correo electrónico'); return }
+    if (!pareceCorreo(form.email)) { setError('Ese correo no es válido. Escríbelo completo, por ejemplo nombre@gmail.com'); return }
     if (normalizarEmail(form.email) !== normalizarEmail(form.emailConfirm)) { setError('Los dos correos no coinciden'); return }
     if (form.password.length < 8) { setError('La contraseña debe tener al menos 8 caracteres'); return }
     if (form.password !== form.passwordConfirm) { setError('Las dos contraseñas no coinciden'); return }
