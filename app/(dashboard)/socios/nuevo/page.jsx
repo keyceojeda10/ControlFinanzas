@@ -80,7 +80,7 @@ export default function NuevoSocioPage() {
             placeholder="Teléfono (opcional)"
           />
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium uppercase tracking-[0.05em]" style={{ color: 'var(--cf-ink-3)' }}>
+            <label className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
               Notas
             </label>
             <textarea

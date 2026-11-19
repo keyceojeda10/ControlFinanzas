@@ -69,7 +69,11 @@ const nextConfig = {
            *
            * Reportado así por el dueño: «no veo ningún botón, solamente un
            * aviso que dice lo de la suscripción». */
-          { key: 'Content-Security-Policy', value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.mercadopago.com https://http2.mlstatic.com https://connect.facebook.net https://checkout.wompi.co; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' http://localhost capacitor://localhost https://api.groq.com https://api.mercadopago.com https://events.mercadopago.com https://http2.mlstatic.com https://www.facebook.com https://checkout.wompi.co https://production.wompi.co; frame-src https://sdk.mercadopago.com https://www.mercadopago.com.co https://www.youtube.com https://checkout.wompi.co; object-src 'none'; base-uri 'self'" },
+          /* ⚠ GOOGLE ADS (19 nov 2026). `app/layout.js` carga gtag desde el 30 jun y el
+             registro manda la conversión (`send_to: 'AW-…'`), pero la política nunca
+             incluyó a Google: el navegador bloqueaba el script y ninguna conversión
+             llegaba. Son los dominios que Google pide para medir Ads. */
+          { key: 'Content-Security-Policy', value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.mercadopago.com https://http2.mlstatic.com https://connect.facebook.net https://checkout.wompi.co https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' http://localhost capacitor://localhost https://api.groq.com https://api.mercadopago.com https://events.mercadopago.com https://http2.mlstatic.com https://www.facebook.com https://checkout.wompi.co https://production.wompi.co https://www.googletagmanager.com https://www.google.com https://googleads.g.doubleclick.net https://www.googleadservices.com https://pagead2.googlesyndication.com https://*.google-analytics.com https://*.doubleclick.net; frame-src https://td.doubleclick.net https://bid.g.doubleclick.net https://www.googletagmanager.com https://sdk.mercadopago.com https://www.mercadopago.com.co https://www.youtube.com https://checkout.wompi.co; object-src 'none'; base-uri 'self'" },
         ],
       },
     ]

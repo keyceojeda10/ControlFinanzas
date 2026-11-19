@@ -716,10 +716,7 @@ export function InfoContactoCard({ cliente, rutaNombre, onEditar, onWhatsApp }) 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, padding: '0 2px' }}>
-        <span style={{
-          fontSize: 10, fontWeight: 800, letterSpacing: '.07em',
-          textTransform: 'uppercase', color: 'var(--cf-ink-3)',
-        }}>Cómo ubicarlo</span>
+        <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-.01em', color: 'var(--cf-ink-3)' }}>Cómo ubicarlo</span>
         {onEditar && (
           <button type="button" onClick={onEditar} style={{
             border: 0, background: 'none', padding: 0, cursor: 'pointer',
@@ -825,10 +822,7 @@ export function InfoContactoCard({ cliente, rutaNombre, onEditar, onWhatsApp }) 
           padding: '11px 15px', borderRadius: 14,
           background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
         }}>
-          <p style={{
-            margin: '0 0 3px', fontSize: 10, fontWeight: 800, letterSpacing: '.07em',
-            textTransform: 'uppercase', color: 'var(--cf-ink-3)',
-          }}>Notas</p>
+          <p style={{ margin: '0 0 3px', fontSize: 13, fontWeight: 600, color: 'var(--cf-ink-2)' }}>Notas</p>
           <p style={{ margin: 0, fontSize: 13, whiteSpace: 'pre-wrap', color: 'var(--cf-ink-2)' }}>
             {cliente.notas}
           </p>

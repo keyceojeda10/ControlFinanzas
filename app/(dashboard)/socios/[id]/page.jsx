@@ -566,7 +566,7 @@ export default function SocioDetallePage() {
           <Input label="Cédula" value={formEdit.cedula || ''} onChange={(e) => setFormEdit((f) => ({ ...f, cedula: e.target.value }))} />
           <Input label="Teléfono" value={formEdit.telefono || ''} onChange={(e) => setFormEdit((f) => ({ ...f, telefono: e.target.value }))} />
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium uppercase tracking-[0.05em]" style={{ color: 'var(--cf-ink-3)' }}>Notas</label>
+            <label className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>Notas</label>
             <textarea
               value={formEdit.notas || ''}
               onChange={(e) => setFormEdit((f) => ({ ...f, notas: e.target.value }))}

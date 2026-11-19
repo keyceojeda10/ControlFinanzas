@@ -929,7 +929,7 @@ export default function ClienteDetallePage({ params }) {
       {/* Préstamos activos */}
       {prestamosActivos.length > 0 && (
         <div>
-          <h2 className="text-[11px] font-extrabold text-[var(--cf-ink-3)] mb-3 uppercase tracking-[.07em]">
+          <h2 className="text-[15px] font-semibold text-[var(--cf-ink-3)] mb-3">
             Préstamos activos
           </h2>
           {/* LA MISMA TARJETA QUE EN /prestamos, no otra.
@@ -976,7 +976,7 @@ export default function ClienteDetallePage({ params }) {
       {/* Líneas de crédito */}
       {cliente.lineasCredito?.filter(lc => lc.estado === 'activa').length > 0 && (
         <div>
-          <h2 className="text-[11px] font-extrabold text-[var(--cf-ink-3)] mb-3 uppercase tracking-[.07em]">
+          <h2 className="text-[15px] font-semibold text-[var(--cf-ink-3)] mb-3">
             Lineas de credito
           </h2>
           <div className="space-y-3">
@@ -1190,7 +1190,7 @@ export default function ClienteDetallePage({ params }) {
 
       {historial.length > 0 && (
         <div>
-          <h2 className="text-[11px] font-extrabold text-[var(--cf-ink-3)] mb-3 uppercase tracking-[.07em]">
+          <h2 className="text-[15px] font-semibold text-[var(--cf-ink-3)] mb-3">
             Historial
           </h2>
           <div className="space-y-2.5">
@@ -1484,7 +1484,7 @@ function PortalClienteCard({ clienteId, organizationId, nombre }) {
   return (
     <Card className="overflow-hidden">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em]">
+        <h3 className="text-[15px] font-semibold text-[var(--cf-ink-3)]">
           Portal del cliente
         </h3>
         {portal?.tienePin && (
@@ -1833,7 +1833,7 @@ function TopePrestamoCard({ tope, onSave }) {
         </svg>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-3)' }}>Tope de préstamo</p>
+        <p className="text-[15px] font-semibold" style={{ color: 'var(--cf-ink-3)' }}>Tope de préstamo</p>
         <p className="text-sm font-semibold font-mono-display mt-0.5" style={{ color: tope > 0 ? 'var(--cf-gold-dark)' : 'var(--cf-ink-3)' }}>
           {tope > 0 ? `$${formatDisplay(tope)}` : 'Sin límite'}
         </p>

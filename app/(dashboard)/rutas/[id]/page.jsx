@@ -184,7 +184,7 @@ function HistorialCobros({ rutaId, sinPagarHoy }) {
           {/* Filtro por rango de fechas (calendario nativo del dispositivo) */}
           <div className="flex flex-wrap items-end gap-2 mb-3">
             <div className="flex-1 min-w-[130px]">
-              <label className="block text-[10px] text-[var(--cf-ink-2)] uppercase tracking-wide mb-1">Desde</label>
+              <label className="text-[13px] font-semibold block text-[var(--cf-ink-2)] mb-1">Desde</label>
               <div className="relative">
                 <input
                   type="date"
@@ -201,7 +201,7 @@ function HistorialCobros({ rutaId, sinPagarHoy }) {
               </div>
             </div>
             <div className="flex-1 min-w-[130px]">
-              <label className="block text-[10px] text-[var(--cf-ink-2)] uppercase tracking-wide mb-1">Hasta</label>
+              <label className="text-[13px] font-semibold block text-[var(--cf-ink-2)] mb-1">Hasta</label>
               <div className="relative">
                 <input
                   type="date"

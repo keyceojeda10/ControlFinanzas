@@ -851,7 +851,7 @@ function KpiGroup({ title, icon, children, defaultOpen = true, storageKey }) {
           <div className="w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--cf-ink-3) 12%, transparent)', color: 'var(--cf-ink-2)' }}>
             {icon}
           </div>
-          <h2 className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-2)' }}>{title}</h2>
+          <h2 className="text-[15px] font-semibold" style={{ color: 'var(--cf-ink-3)' }}>{title}</h2>
         </div>
         <svg className={`w-4 h-4 transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--cf-ink-3)' }}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -975,7 +975,7 @@ function ResumenDelDia({ actividad, esOwner }) {
         <div className="w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--cf-gold) 15%, transparent)', color: 'var(--cf-gold)' }}>
           {Icons.actividad}
         </div>
-        <h2 className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-2)' }}>Movimientos de hoy</h2>
+        <h2 className="text-[15px] font-semibold" style={{ color: 'var(--cf-ink-3)' }}>Movimientos de hoy</h2>
       </div>
       <div className="px-4 py-3">
         {sinMovimientos && (
@@ -1131,7 +1131,7 @@ function NecesitaAtencion({ alertas, moraData }) {
         <div className="w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--cf-gold-dark) 18%, transparent)', color: 'var(--cf-gold-dark)' }}>
           {Icons.alerta}
         </div>
-        <h2 className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-gold-dark)' }}>Necesita tu atención</h2>
+        <h2 className="text-[15px] font-semibold" style={{ color: 'var(--cf-gold-dark)' }}>Necesita tu atención</h2>
       </div>
       <div className="px-2 py-1">
         {items.map((it, i) => (
@@ -1169,7 +1169,7 @@ function ProximosARenovar({ alertas }) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182M2.985 19.644l3.181-3.183" />
             </svg>
           </div>
-          <h2 className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-green-dark)' }}>Listos para renovar</h2>
+          <h2 className="text-[15px] font-semibold" style={{ color: 'var(--cf-green-dark)' }}>Listos para renovar</h2>
         </div>
         <span className="text-[11px] px-2 py-0.5 rounded-full font-medium" style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 15%, transparent)', color: 'var(--cf-green-dark)' }}>
           {lista.length}

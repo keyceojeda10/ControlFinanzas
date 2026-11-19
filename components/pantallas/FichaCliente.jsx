@@ -75,7 +75,7 @@ export function ComoPaga({ meses = [], lectura, resumen, formatear = (n) => `$${
 
   return (
     <Tarjeta>
-      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
+      <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-.01em', color: 'var(--cf-ink-3)' }}>
         Cómo paga
       </span>
 

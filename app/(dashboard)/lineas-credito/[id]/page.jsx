@@ -325,7 +325,7 @@ export default function DetalleLineaPage({ params }) {
       {/* Cortes (estados de cuenta) */}
       {linea.cortesLinea?.length > 0 && (
         <div className="mb-5">
-          <h2 className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color: 'var(--cf-ink-2)' }}>Estados de cuenta</h2>
+          <h2 className="text-[15px] font-semibold mb-1" style={{ color: 'var(--cf-ink-3)' }}>Estados de cuenta</h2>
           <p className="text-[10px] text-[var(--cf-ink-3)] mb-2 leading-relaxed">Resumen de cada mes: lo que debia + lo que pidio + intereses - lo que pago = saldo nuevo.</p>
           <div className="space-y-2">
             {linea.cortesLinea.map((corte, idx) => (
@@ -369,7 +369,7 @@ export default function DetalleLineaPage({ params }) {
 
       {/* Movimientos */}
       <div>
-        <h2 className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-2" style={{ color: 'var(--cf-ink-2)' }}>
+        <h2 className="text-[15px] font-semibold mb-2" style={{ color: 'var(--cf-ink-3)' }}>
           Movimientos ({movimientos.length})
         </h2>
         {movimientos.length === 0 ? (

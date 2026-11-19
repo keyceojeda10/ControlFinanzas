@@ -121,7 +121,7 @@ export default function ClavosPage() {
             {/* Filtro por ruta */}
             {data.rutas && data.rutas.length > 1 && (
               <div>
-                <label className="text-[10px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Ruta</label>
+                <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]">Ruta</label>
                 <select
                   value={rutaFiltro}
                   onChange={e => setRutaFiltro(e.target.value)}
@@ -138,7 +138,7 @@ export default function ClavosPage() {
 
             {/* Filtro por tipo */}
             <div>
-              <label className="text-[10px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Estado</label>
+              <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]">Estado</label>
               <div className="flex gap-1.5 mt-1">
                 {[
                   { value: '', label: 'Todos' },
@@ -161,7 +161,7 @@ export default function ClavosPage() {
 
             {/* Ordenar por */}
             <div>
-              <label className="text-[10px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Ordenar por</label>
+              <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]">Ordenar por</label>
               <div className="flex gap-1.5 mt-1">
                 {ORDEN_OPTS.map(opt => (
                   <button

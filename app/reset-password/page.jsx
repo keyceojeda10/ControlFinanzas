@@ -82,7 +82,7 @@ function ResetForm() {
       )}
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="password" className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">
+        <label htmlFor="password" className="text-[13px] font-semibold text-[var(--color-text-muted)]">
           Nueva contraseña
         </label>
         <input
@@ -94,7 +94,7 @@ function ResetForm() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="confirm" className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">
+        <label htmlFor="confirm" className="text-[13px] font-semibold text-[var(--color-text-muted)]">
           Confirmar contraseña
         </label>
         <input

@@ -263,7 +263,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
 
       {/* ── DATOS DEL CLIENTE ── */}
       <div>
-        <h3 className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-1"
+        <h3 className="text-[15px] font-semibold mb-1"
           style={{ color: 'var(--cf-gold)' }}>Datos del cliente</h3>
         <p className="text-[11px] mb-2.5" style={{ color: 'var(--cf-ink-3)' }}>
           {/* Decia que la cedula era opcional y despues el guardado la rechazaba
@@ -312,7 +312,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
 
       {/* ── PRÉSTAMO ── */}
       <div>
-        <h3 className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-1"
+        <h3 className="text-[15px] font-semibold mb-1"
           style={{ color: 'var(--cf-gold)' }}>Condiciones del préstamo</h3>
         <p className="text-[11px] mb-2.5" style={{ color: 'var(--cf-ink-3)' }}>
           Configura el monto, la tasa, la frecuencia de cobro y el plazo. Si este cliente tiene condiciones diferentes a los demas, puedes cambiarlo aqui.
@@ -320,8 +320,8 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
         <div className="space-y-3">
           {/* Monto */}
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-              style={{ color: 'var(--cf-ink-3)' }}>¿Cuánto le prestas?</label>
+            <label className="text-[13px] font-semibold mb-1 block"
+              style={{ color: 'var(--cf-ink-2)' }}>¿Cuánto le prestas?</label>
             <MoneyInput
               value={ficha.monto}
               onChange={e => set('monto', e.target.value)}
@@ -346,16 +346,16 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
           {/* Tasa + Frecuencia + Plazo */}
           <div className="grid grid-cols-3 gap-2.5">
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-                style={{ color: 'var(--cf-ink-3)' }}>Tasa %</label>
+              <label className="text-[13px] font-semibold mb-1 block"
+                style={{ color: 'var(--cf-ink-2)' }}>Tasa %</label>
               <input type="text" inputMode="decimal" value={ficha.tasa}
                 onChange={e => set('tasa', soloDecimal(e.target.value))}
                 className="w-full h-10 rounded-[12px] border px-3 text-sm"
                 style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} />
             </div>
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-                style={{ color: 'var(--cf-ink-3)' }}>Frecuencia</label>
+              <label className="text-[13px] font-semibold mb-1 block"
+                style={{ color: 'var(--cf-ink-2)' }}>Frecuencia</label>
               <select value={ficha.frecuencia} onChange={e => handleFrecuenciaChange(e.target.value)}
                 className="w-full h-10 rounded-[12px] border px-2 text-sm"
                 style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }}>
@@ -363,8 +363,8 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
               </select>
             </div>
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-                style={{ color: 'var(--cf-ink-3)' }}>Plazo ({unidadPlazo})</label>
+              <label className="text-[13px] font-semibold mb-1 block"
+                style={{ color: 'var(--cf-ink-2)' }}>Plazo ({unidadPlazo})</label>
               <input type="number" inputMode="numeric" value={ficha.plazoUnidades}
                 onChange={e => set('plazoUnidades', e.target.value)}
                 className="w-full h-10 rounded-[12px] border px-3 text-sm"
@@ -420,8 +420,8 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
 
           {/* Fecha inicio */}
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-              style={{ color: 'var(--cf-ink-3)' }}>Fecha de inicio del préstamo</label>
+            <label className="text-[13px] font-semibold mb-1 block"
+              style={{ color: 'var(--cf-ink-2)' }}>Fecha de inicio del préstamo</label>
             <input type="date" value={ficha.fechaInicio} onChange={e => set('fechaInicio', e.target.value)}
               max={hoyISO()} className="w-full h-10 rounded-[12px] border px-3 text-sm"
               style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} />
@@ -429,8 +429,8 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
 
           {/* Días sin cobro */}
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-              style={{ color: 'var(--cf-ink-3)' }}>Días sin cobro</label>
+            <label className="text-[13px] font-semibold mb-1 block"
+              style={{ color: 'var(--cf-ink-2)' }}>Días sin cobro</label>
             <p className="text-[10px] mb-2" style={{ color: 'var(--cf-ink-3)' }}>Días de la semana en que NO se cobra a este cliente.</p>
             <DiasSinCobroSelector value={ficha.diasSinCobro} onChange={arr => set('diasSinCobro', arr)} compact />
           </div>
@@ -484,8 +484,8 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
           {/* Ruta */}
           {rutas.length > 0 && !defaultRutaId && (
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-                style={{ color: 'var(--cf-ink-3)' }}>Ruta de cobro</label>
+              <label className="text-[13px] font-semibold mb-1 block"
+                style={{ color: 'var(--cf-ink-2)' }}>Ruta de cobro</label>
               <select value={ficha.rutaId} onChange={e => set('rutaId', e.target.value)}
                 className="w-full h-10 rounded-[12px] border px-3 text-sm"
                 style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }}>
