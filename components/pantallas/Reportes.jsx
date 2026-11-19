@@ -206,8 +206,7 @@ export function MiPlata({
           <div style={{ padding: '15px 18px 11px', flex: 'none' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
               <span style={{
-                fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
-                textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+                fontSize: 15, fontWeight: 600, letterSpacing: '-.01em', color: 'var(--cf-ink-3)',
               }}>Movimientos</span>
               {onTodosLosMovimientos && (
                 <button type="button" onClick={onTodosLosMovimientos} style={{

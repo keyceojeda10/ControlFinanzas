@@ -387,8 +387,7 @@ export function CrearCobrador({
 
         <div style={{ flex: 'none', display: 'flex', flexDirection: 'column', gap: 9 }}>
           <span style={{
-            fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
-            textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+            fontSize: 15, fontWeight: 600, letterSpacing: '-.01em', color: 'var(--cf-ink-3)',
           }}>Ruta que va a cobrar</span>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
             {rutas.map((r) => {
@@ -420,8 +419,7 @@ export function CrearCobrador({
         }}>
           <div style={{ padding: '15px 18px 11px' }}>
             <span style={{
-              fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
-              textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+              fontSize: 15, fontWeight: 600, letterSpacing: '-.01em', color: 'var(--cf-ink-3)',
             }}>Qué puede hacer</span>
           </div>
 
@@ -660,8 +658,7 @@ export function MiDia({
             display: 'flex', flexDirection: 'column', gap: 12,
           }}>
             <span style={{
-              fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
-              textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+              fontSize: 15, fontWeight: 600, letterSpacing: '-.01em', color: 'var(--cf-ink-3)',
             }}>Tu semana</span>
             <BarrasVerticales barras={semana} alto={62} hueco={7} />
             {fraseSemana && (

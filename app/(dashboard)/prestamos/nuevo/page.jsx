@@ -480,16 +480,58 @@ function NuevoPrestamo() {
     })
   }, [tasa, pctAlMesActivo])
   const elegirMesCompleto = (v) => { mesCompletoTocado.current = true; setInteresMesCompleto(v) }
+  /* ══ «CÓMO PRESTAS POR DEFECTO» LLEGA AL FORMULARIO (19 nov 2026) ═════════
+     Configuración → Cómo prestas decía «estos valores llenan el formulario» y
+     solo llegaba el «mes completo». Medido el 10 nov: donde un negocio guardó
+     algo distinto, casi todos sus préstamos lo usan (250 de 252 «De una vez»;
+     frecuencias 19/19, 9/9, 6/6, 62/68): lo tecleaban a mano cada vez.
+
+     Quién manda, de más a menos: la DIRECCIÓN (el simulador, «prestarle $X»),
+     lo que la persona hace aquí (atajos, «repetir el anterior»), el modo «usar
+     siempre» de ESTE teléfono, lo del NEGOCIO y, si no hay nada, lo de siempre.
+     Solo se llena lo que nadie tocó: si el campo ya no tiene su valor de
+     arranque, se respeta. Sin señal vale lo último que se trajo. Corregir un
+     préstamo o venir de una cartulina trae sus propias cifras: no se toca. */
+  const defaultsNegocio = useRef({ tasa: null })
+  // Lo que hay AHORA en cada campo: la respuesta llega cuando ya se pudo tocar.
+  const actual = useRef({})
+  actual.current = { frecuencia, tasa, plazo: plazoUnidades, modo: modoInteres }
   useEffect(() => {
+    if (corrigeParam || searchParams.get('fromCartulina')) return undefined
     let vivo = true
+    const enUrl = (k) => searchParams.get(k) != null && searchParams.get(k) !== ''
+    const aplicar = (org) => {
+      if (!org || !vivo) return
+      if (org.tasaDefault != null) defaultsNegocio.current.tasa = String(org.tasaDefault)
+      const freq = org.frecuenciaDefault
+      const a = actual.current
+      if (freq && freq !== 'diario' && !enUrl('frecuencia') && a.frecuencia === 'diario') {
+        setFrecuencia(freq)
+        setModoDiaCobro(freq === 'mensual' ? 'mes' : 'semana')
+        if (!enUrl('plazo') && a.plazo === '30') setPlazoUnidades(defaultPlazoPorFrecuencia(freq))
+      }
+      if (org.tasaDefault != null && !enUrl('tasa') && a.tasa === '20') setTasa(String(org.tasaDefault))
+      if (org.modoInteresDefault && !enUrl('modo') && !leerModoPreferido() && a.modo === 'fijo') {
+        setModoInteres(org.modoInteresDefault)
+      }
+      if (org.interesMesCompletoDefault && !mesCompletoTocado.current) setInteresMesCompleto(true)
+    }
+    try { aplicar(JSON.parse(localStorage.getItem('cf-como-prestas') || 'null')) } catch {}
     fetch('/api/configuracion/organizacion', { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        const def = !!(d?.org ?? d)?.interesMesCompletoDefault
-        if (vivo && def && !mesCompletoTocado.current) setInteresMesCompleto(true)
+        const org = d?.org ?? d
+        if (!org || org.error) return
+        const guardar = {
+          frecuenciaDefault: org.frecuenciaDefault ?? null, tasaDefault: org.tasaDefault ?? null,
+          modoInteresDefault: org.modoInteresDefault ?? null, interesMesCompletoDefault: !!org.interesMesCompletoDefault,
+        }
+        try { localStorage.setItem('cf-como-prestas', JSON.stringify(guardar)) } catch {}
+        aplicar(guardar)
       })
       .catch(() => {})
     return () => { vivo = false }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const interesPorMesActivo = interesPorMes && modoInteres === 'lineal' && frecuencia === 'quincenal' && modo !== 'mercancia'
   const sufijoDeLaTasa = interesPorMesActivo ? 'al mes' : sufijoTasa(modoInteres)
@@ -748,7 +790,9 @@ function NuevoPrestamo() {
   // montar para no repetir el test en cada prestamo. Se lee del dispositivo.
   useEffect(() => {
     const pref = leerModoPreferido()
-    if (pref) { setModoPreferido(pref); setModoInteres(pref) }
+    // La dirección manda (el simulador ya eligió el modo): el «usar siempre» de
+    // este teléfono lo pisaba al montar.
+    if (pref) { setModoPreferido(pref); if (!searchParams.get('modo')) setModoInteres(pref) }
   }, [])
 
   // Ultimo prestamo del cliente para "Repetir condiciones".
@@ -923,7 +967,8 @@ function NuevoPrestamo() {
       setNumCuotas('10')
       setPlazoUnidades('10')
     } else {
-      setTasa('20')
+      // La tasa del negocio (Cómo prestas por defecto), no un 20 fijo.
+      setTasa(defaultsNegocio.current.tasa ?? '20')
       setPlazoUnidades(defaultPlazoPorFrecuencia(frecuencia))
     }
   }

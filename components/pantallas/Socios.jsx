@@ -327,7 +327,7 @@ export function CuentaSocio({
         {/* El socioId en su NUEVO trabajo. Y con la frase que impide que el
             malentendido vuelva. */}
         <Tarjeta>
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
+          <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-.01em', color: 'var(--cf-ink-3)' }}>
             Dónde está su plata
           </span>
           <button type="button" onClick={onVerPrestamos} style={{
@@ -357,7 +357,7 @@ export function CuentaSocio({
         {/* Con la FÓRMULA VISIBLE: el socio va a intentar reconstruir su cuenta
             él mismo, y si no puede, la discusión es con el dueño. */}
         <Tarjeta plana>
-          <span style={{ display: 'block', padding: '14px 16px 11px', fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
+          <span style={{ display: 'block', padding: '14px 16px 11px', fontSize: 15, fontWeight: 600, letterSpacing: '-.01em', color: 'var(--cf-ink-3)' }}>
             Su cuenta
           </span>
           {movimientos.map((m, i) => (
