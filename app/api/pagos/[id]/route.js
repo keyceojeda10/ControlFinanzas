@@ -218,6 +218,25 @@ export async function DELETE(request, { params }) {
     // 1b. Refrescar totalPagado/ultimoPagoAt despues de borrar.
     await refrescarTotalesPrestamo(tx, pago.prestamoId)
 
+    /* 1a'. EL INTERÉS QUE ESTE PAGO ADELANTÓ SE VA CON ÉL (18 nov 2026). Un
+       «completo» o un «intereses» en un abierto asienta el período que corre;
+       anulado el pago, ese interés se quedaba cobrado antes de tiempo. Se quita
+       solo si el período TODAVÍA NO CERRÓ (después lo asienta el cron, como a
+       todos) y si este era el último pago: otro posterior podría contar con él. */
+    const adelantado = !esLiquidacion ? pago.tablaAntes?.devengoAdelantado : null
+    if (adelantado?.periodo) {
+      const hoyBogota = new Date(Date.now() - 5 * 3600e3).toISOString().slice(0, 10)
+      const otroDespues = await tx.pago.count({ where: { prestamoId: pago.prestamoId, createdAt: { gt: pago.createdAt } } })
+      if (adelantado.periodo > hoyBogota && otroDespues === 0) {
+        // La cifra de AHORA: `reajustarDevengosTrasCambio`, justo arriba, pudo cambiarla.
+        const dev = await tx.devengoInteres.findFirst({ where: { prestamoId: pago.prestamoId, periodo: adelantado.periodo } })
+        if (dev) {
+          await tx.devengoInteres.delete({ where: { id: dev.id } })
+          await tx.prestamo.update({ where: { id: pago.prestamoId }, data: { totalAPagar: { decrement: Number(dev.interes) || 0 } } })
+        }
+      }
+    }
+
     /* 1b'. LIQUIDACIÓN: la deuda vuelve a la de antes de cerrar, y en un abierto
        se borra el período que asentó al liquidar (si no, la clave única le
        impide al cron asentarlo entero). Ver `motivoParaNoDeshacerLiquidacion`. */

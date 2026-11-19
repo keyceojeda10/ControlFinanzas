@@ -30,7 +30,7 @@ import HojaReciboPrevio from '@/components/recibos/HojaReciboPrevio'
 import { dibujarRecibo } from '@/components/ui/BotonCompartirRecibo'
 import { saldoAntesDeEstePago } from '@/lib/recibo-derivados'
 import { entraAlFajo } from '@/lib/dinero/cuentas'
-import { alDiaTrasCobro } from '@/lib/adaptadores/cobros'
+import { alDiaTrasCobro, fechaCortaDe } from '@/lib/adaptadores/cobros'
 import { interesQueAhorraUnAbono } from '@/lib/dinero/abono-capital'
 import { efectoDelPago } from '@/lib/dinero/saldo-tras-cada-pago'
 import { cargarDiaCobrado } from '@/lib/dia-cobrado'
@@ -209,6 +209,12 @@ export default function RegistrarPago({
   // El reparto a mano de un cobro en un abierto: lo que va a interés, en pesos.
   // `null` = el reparto automático (ver `repartoAbierto`).
   const [interesManual, setInteresManual] = useState(null)
+  /* Adónde va lo que un cobro trae por ENCIMA del interés vencido en un abierto:
+     'capital' (por defecto) o 'adelanto' del interés del período que corre.
+     Créditos pete, 18 nov 2026: «pagó 240 de intereses y abonó 200 al capital»,
+     y los 200 se fueron sin preguntar a adelantar el interés del 30 nov. El
+     dueño: que se pregunte, con capital marcado. */
+  const [sobranteA, setSobranteA] = useState('capital')
   // LO RARO VA PLEGADO. Esta es la hoja de T02-04/T08-01: monto, a qué se aplica,
   // cómo pagó, y qué queda después. Recargo, descuento y abono por días viven
   // detrás de una línea, y al abrirla se cae al formulario completo de siempre —el
@@ -278,6 +284,7 @@ export default function RegistrarPago({
     // rerender del padre, NO pisar el monto que el usuario escribio.
     if (wasOpen) return
     setInteresManual(null)
+    setSobranteA('capital')
 
     // El pliegue se reinicia AL ABRIR. Sin esto, quien toca una vez «Recargo,
     // descuento y abono por días» se queda en el formulario viejo para siempre: la
@@ -574,7 +581,7 @@ export default function RegistrarPago({
       }
     }
 
-    if (repartoAbierto?.aMano || separarAlCorte) {
+    if (repartoAbierto?.aMano || separarAlCorte || repartoAbierto?.sobranteACapital) {
       const partes = [
         { tipo: 'intereses', monto: interesDeEste, clave: nuevaClaveCobro() },
         { tipo: 'capital', monto: capitalDeEste, clave: nuevaClaveCobro() },
@@ -755,6 +762,7 @@ export default function RegistrarPago({
     setPlataforma('')
     setNota('')
     setInteresManual(null)
+    setSobranteA('capital')
     setDiasAbonados(null)
     setError('')
     onClose?.()
@@ -1103,6 +1111,9 @@ export default function RegistrarPago({
        (el servidor, 5 nov 2026). Repartido a mano, lo que cuenta es la parte de
        interés: esa es la que entra como «intereses». */
     const aInteres = tipo === 'completo' && interesManual != null ? Number(interesManual) : Number(monto)
+    /* Con lo que sobra a capital (lo que viene marcado), el cobro no pasa de lo
+       vencido como interés: el período que corre no se adelanta. */
+    if (tipo === 'completo' && interesManual == null && sobranteA === 'capital') return 0
     if (!(Math.round(aInteres || 0) > debido)) return 0
     const enCurso = periodoEnCursoAbierto(prestamo)
     if (!enCurso || (prestamo?.devengos ?? []).some((d) => d.periodo === enCurso.periodo)) return 0
@@ -1245,13 +1256,21 @@ export default function RegistrarPago({
     if (!esAbierto || tipo !== 'completo') return null
     const total = Math.round(Number(monto) || 0)
     if (!(total > 0)) return null
-    const { tope: topeDeInteres, separar } = interesDeUnCobroAbierto(prestamo)
+    const { tope: topeDeInteres, separar, vencido = topeDeInteres } = interesDeUnCobroAbierto(prestamo)
     const tope = Math.min(total, topeDeInteres)
     const manual = interesManual != null
       ? Math.min(tope, Math.max(0, Math.round(Number(interesManual) || 0)))
       : null
-    const interes = manual ?? tope
-    return { total, tope, interes, capital: total - interes, aMano: manual != null && manual !== tope, separar }
+    /* ¿Trae más que lo vencido, y eso iría a adelantar el período que corre?
+       Entonces se pregunta (`sobranteA`). Con «A capital», solo lo vencido es
+       interés y el resto se guarda aparte como capital. */
+    const preguntaSobrante = manual == null && !separar && total > vencido && topeDeInteres > vencido
+    const sobranteACapital = preguntaSobrante && sobranteA === 'capital'
+    const interes = manual ?? (sobranteACapital ? Math.min(total, vencido) : tope)
+    return {
+      total, tope, interes, capital: total - interes, aMano: manual != null && manual !== tope, separar,
+      vencido, preguntaSobrante, sobranteACapital, sobra: Math.max(0, total - vencido),
+    }
   })()
 
   const explicacionAplicacion = (() => {
@@ -1723,6 +1742,41 @@ export default function RegistrarPago({
           }}
           extraExplicacion={repartoAbierto ? (
             <div style={{ marginTop: 9, paddingTop: 11, borderTop: '1px solid var(--cf-border)', display: 'flex', flexDirection: 'column', gap: 9 }}>
+              {/* ── LO QUE SOBRA DEL INTERÉS VENCIDO: SE PREGUNTA ──
+                  Créditos pete, 18 nov 2026. Antes iba solo a adelantar el
+                  interés del período que corre; él quería abonar a capital. */}
+              {repartoAbierto.preguntaSobrante && (() => {
+                const corte = periodoEnCursoAbierto(prestamo)?.periodo
+                const opciones = [
+                  { id: 'capital', texto: 'A capital', linea: `El capital queda en ${formatMoney(Math.max(0, capitalAbierto - repartoAbierto.sobra))}` },
+                  { id: 'adelanto', texto: `Adelanto del interés${corte ? ` del ${fechaCortaDe(`${corte}T05:00:00.000Z`)}` : ''}`, linea: 'El capital no baja' },
+                ]
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--cf-ink)' }}>
+                      {repartoAbierto.vencido > 0
+                        ? `Los ${formatMoney(repartoAbierto.sobra)} que pasan del interés vencido, ¿a dónde van?`
+                        : `No debe interés todavía. Los ${formatMoney(repartoAbierto.sobra)}, ¿a dónde van?`}
+                    </span>
+                    <div role="radiogroup" aria-label="A dónde va lo que sobra" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                      {opciones.map((o) => {
+                        const activo = sobranteA === o.id
+                        return (
+                          <button key={o.id} type="button" role="radio" aria-checked={activo} onClick={() => setSobranteA(o.id)}
+                            style={{
+                              textAlign: 'left', padding: '10px 12px', borderRadius: 12, cursor: 'pointer', font: 'inherit', minHeight: 56,
+                              background: activo ? 'var(--cf-ink)' : 'var(--cf-card)', color: activo ? 'var(--cf-card)' : 'var(--cf-ink)',
+                              border: `1px solid ${activo ? 'var(--cf-ink)' : 'var(--cf-border)'}`,
+                            }}>
+                            <span style={{ display: 'block', fontSize: 14, fontWeight: 700 }}>{o.texto}</span>
+                            <span style={{ display: 'block', fontSize: 12, opacity: 0.75, marginTop: 2 }}>{o.linea}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })()}
               {interesManual == null ? (
                 <button type="button" onClick={() => setInteresManual(String(repartoAbierto.interes))}
                   style={{ alignSelf: 'flex-start', minHeight: 44, padding: '0 2px', background: 'none', border: 0, color: 'var(--cf-gold-dark)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>

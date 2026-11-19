@@ -563,6 +563,11 @@ export async function POST(request, { params }) {
        revivía debiendo menos y el «Interés perdonado» seguía en el libro. */
     const totalAntesDeLiquidar = prestamoLocked.totalAPagar
     let devengoDeLaLiquidacion = null
+    /* El período que un «completo» o un «intereses» adelanta (no la liquidación,
+       que tiene lo suyo). Se anota en el pago para que ANULARLO lo quite: si no,
+       el interés adelantado se quedaba cobrado aunque el pago ya no existiera
+       (Créditos pete, 18 nov 2026). */
+    let devengoAdelantado = null
     /* Un «completo» también: paga lo vencido y el mes que corre, y lo que sobra
        es capital (lib/dinero/recorrido-abierto.js). Sin asentar ese mes, el
        capital de la ficha bajaba de más hasta el corte y la hoja de cobro
@@ -604,6 +609,7 @@ export async function POST(request, { params }) {
                 data: { totalAPagar: { increment: aAsentar } },
               })
               if (tipo === 'liquidacion') devengoDeLaLiquidacion = enCurso.periodo
+              else devengoAdelantado = { periodo: enCurso.periodo, interes: aAsentar }
               prestamoLocked = await tx.prestamo.findUnique({
                 where: { id: prestamoId },
                 include: incluirParaLock,
@@ -680,6 +686,9 @@ export async function POST(request, { params }) {
         },
       })
       saldoAntesDelPagoId = filaPago.id
+      if (devengoAdelantado) {
+        await tx.pago.update({ where: { id: filaPago.id }, data: { tablaAntes: { devengoAdelantado } } })
+      }
     }
 
     // 1b. Refrescar totalPagado/ultimoPagoAt denormalizados del prestamo.
