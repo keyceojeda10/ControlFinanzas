@@ -237,7 +237,14 @@ export default function PlanPage() {
   const planIndex = planes.findIndex(p => p.key === planActual)
   const nextPlan = planIndex >= 0 && planIndex < planes.length - 1 ? planes[planIndex + 1] : null
 
-  const formatFecha = (f) => f ? new Date(f).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' }) : ''
+  /* Con el año si no es este (19 nov 2026): «Tu plan vence el 13 de noviembre»
+     con «360 días restantes» se leía como el 13 de noviembre que ya pasó. */
+  const formatFecha = (f) => {
+    if (!f) return ''
+    const d = new Date(f)
+    const otroAno = d.getFullYear() !== new Date().getFullYear()
+    return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', ...(otroAno ? { year: 'numeric' } : {}) })
+  }
 
   /* ══ EL PRECIO LO DICE lib/precio-plan.js, EL MISMO QUE COBRA ══════════════
      Hasta el 12 sep 2026 esta pantalla calculaba su propio precio con un
@@ -542,6 +549,18 @@ export default function PlanPage() {
               {adicionalesMensual(orgPrecio, planActual) > 0 && (
                 <p className="text-[12px] mt-2" style={{ color: 'var(--cf-ink-2)' }}>
                   + {formatMoney(adicionalesMensual(orgPrecio, planActual))}/mes de cobradores y rutas adicionales
+                </p>
+              )}
+              {/* ⚠ DOS PRECIOS, CADA UNO CON SU NOMBRE (19 nov 2026). El cobro
+                  automático mantiene lo que el negocio venía pagando si era menos
+                  y nadie lo ha revisado (`montoDelCobro` · `porRevisar`); pagando
+                  a mano se cobra la lista. La tarjeta decía solo «$259.000/mes»
+                  y el botón «Suscribirme · $149.000/mes»: dos cifras para la
+                  misma pregunta, sin decir por qué. */}
+              {estado?.proximoCobro?.plan === planActual && estado.proximoCobro.montoPlan > 0
+                && estado.proximoCobro.montoPlan < mes.monto && (
+                <p className="text-[13px] mt-2" style={{ color: 'var(--cf-ink-2)' }}>
+                  Con el cobro automático sigues pagando <strong style={{ color: 'var(--cf-ink)' }}>{formatMoney(estado.proximoCobro.montoPlan)}/mes</strong>, lo que vienes pagando.
                 </p>
               )}
               {pref && (

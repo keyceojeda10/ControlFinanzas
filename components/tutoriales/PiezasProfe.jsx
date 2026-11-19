@@ -78,7 +78,7 @@ function marcarAvisada(clave) {
 const ANIMACION = `
 @keyframes cfProfeLlama { 0%,60%,100% { transform: scale(1) } 15% { transform: scale(1.1) } 38% { transform: scale(1.06) } }
 @keyframes cfProfeAro { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--cf-gold) 50%, transparent) } 100% { box-shadow: 0 0 0 12px color-mix(in srgb, var(--cf-gold) 0%, transparent) } }
-@keyframes cfProfeBurbuja { from { opacity: 0; transform: translateY(-4px) } to { opacity: 1; transform: none } }
+@keyframes cfProfeBurbuja { from { opacity: 0 } to { opacity: 1 } }
 .cf-profe-llama { animation: cfProfeLlama 1.4s cubic-bezier(.22,1,.36,1) 2, cfProfeAro 1.4s ease-out 3; }
 .cf-profe-burbuja { animation: cfProfeBurbuja .35s cubic-bezier(.22,1,.36,1) both; }
 @media (prefers-reduced-motion: reduce) { .cf-profe-llama, .cf-profe-burbuja { animation: none } }
@@ -151,22 +151,21 @@ export function PastillaProfe({ lateral = false }) {
           borderRadius: 999, background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
         }}>
           <IconoPlay tam={24} radio={999} visto={todosVistos} />
-          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--cf-ink-2)', fontVariantNumeric: 'tabular-nums' }}>{etiqueta}</span>
+          {/* ⚠ EL AVISO VA DENTRO DE LA PASTILLA, NO EN UN GLOBO (19 nov 2026).
+              Era una tarjeta negra flotando debajo: en la ficha del préstamo
+              tapaba «5 días vencidos» y en Reportes cortaba el título. Ahora la
+              pastilla se alarga unos segundos con el texto y vuelve a su tamaño:
+              ocupa el hueco libre de la cabecera y no tapa nada. */}
+          {llamando ? (
+            <span className="cf-profe-burbuja" style={{ fontSize: 12, fontWeight: 700, color: 'var(--cf-ink)', whiteSpace: 'nowrap' }}>
+              {porVer} {porVer === 1 ? 'video por ver' : 'videos por ver'}
+            </span>
+          ) : (
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--cf-ink-2)', fontVariantNumeric: 'tabular-nums' }}>{etiqueta}</span>
+          )}
           {porVer > 0 && <span aria-hidden style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--cf-gold)', flex: 'none' }} />}
         </span>
       </button>
-      {llamando && (
-        <button type="button" onClick={abrir} className="cf-profe-burbuja" style={{
-          position: 'absolute', top: 'calc(100% + 10px)', right: 0, zIndex: 1,
-          display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2, padding: '9px 13px',
-          borderRadius: 12, border: 0, cursor: 'pointer', font: 'inherit', textAlign: 'left', whiteSpace: 'nowrap',
-          background: '#15161A', color: '#F3F3F6', boxShadow: 'var(--cf-sh-float)',
-        }}>
-          <span aria-hidden style={{ position: 'absolute', top: -5, right: 18, width: 10, height: 10, background: '#15161A', transform: 'rotate(45deg)', borderRadius: 2 }} />
-          <span style={{ fontSize: 14, fontWeight: 700 }}>{porVer} {porVer === 1 ? 'video por ver' : 'videos por ver'}</span>
-          <span style={{ fontSize: 12, color: '#A3A8B2' }}>El profe te explica esta pantalla</span>
-        </button>
-      )}
     </span>
   )
 }
