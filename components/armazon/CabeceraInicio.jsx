@@ -588,3 +588,58 @@ export function CabeceraDetalle({ titulo, subtitulo = null, acciones = null, pro
     </div>
   )
 }
+
+
+/* ══ LA BANDA NEGRA DE LAS PANTALLAS DE SEGUNDO NIVEL (19 nov 2026) ══════════
+ * La que pinta el ARMAZÓN en vez de la cabecera blanca de detalle: Reportes,
+ * Simulador, Mi plan, Calendario, Clavos, Cobradores… Las que llevan su propia
+ * banda (`CabeceraDetalle`, con cifra dentro) no pasan por aquí. Las de TAREA
+ * (formularios con ✕) siguen blancas: salir a medias pierde datos.
+ *
+ * Va FUERA de la página, así que en vez de hoja con `children` deja un borde
+ * redondeado del color del fondo encima del final de la banda: el contenido de
+ * la página empieza ahí, como en las demás. */
+export function BandaDetalleArmazon({ titulo, subtitulo = null, onVolver, acciones = null, profe = null }) {
+  const [bordeHoja, tinta] = useTintaDeLaBarra()
+  return (
+    <div className="lg:hidden cf-no-print">
+      <style>{ESTILO}</style>
+      <div style={{ background: `${BRILLO_FRANJA}, ${NEGRO}`, paddingBottom: RADIO_HOJA + 16, color: '#fff' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: 'max(10px, env(safe-area-inset-top)) 8px 0 8px' }}>
+          <button type="button" onClick={onVolver} aria-label="Volver" className="cf-cab-toque" style={{
+            width: 42, height: 42, borderRadius: 999, flex: 'none', border: '1px solid rgba(255,255,255,.08)',
+            background: NEGRO_2, color: '#fff', display: 'grid', placeItems: 'center', cursor: 'pointer',
+          }}>
+            <Ic d={<path d="M15 5l-7 7 7 7" />} tam={22} />
+          </button>
+          <span style={{ flex: 1 }} />
+          {profe}
+          <Campana />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, padding: '12px 12px 0 20px' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {/* Baja de renglón, no se recorta: es lo que identifica. */}
+            <h1 style={{
+              margin: 0, fontFamily: "var(--font-space-grotesk), 'Space Grotesk', system-ui, sans-serif",
+              fontSize: 20, fontWeight: 600, letterSpacing: '-.02em', lineHeight: 1.2, overflowWrap: 'anywhere',
+            }}>{titulo}</h1>
+            {subtitulo && (
+              <p className="cf-num" style={{ margin: '4px 0 0', fontSize: 13, lineHeight: 1.35, color: 'rgba(255,255,255,.62)', display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+                <span aria-hidden style={{ width: 6, height: 6, borderRadius: 999, background: ORO, flex: 'none' }} />
+                {subtitulo}
+              </p>
+            )}
+          </div>
+          {acciones && <span style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 'none' }}>{acciones}</span>}
+        </div>
+      </div>
+      <div style={{
+        position: 'relative', marginTop: -RADIO_HOJA, height: RADIO_HOJA,
+        borderRadius: `${RADIO_HOJA}px ${RADIO_HOJA}px 0 0`, background: 'var(--cf-surface)',
+      }}>
+        <span ref={bordeHoja} aria-hidden style={{ position: 'absolute', top: 0, left: 0, width: 1, height: 1 }} />
+      </div>
+      <TintaDeLaBarra ver={tinta} />
+    </div>
+  )
+}

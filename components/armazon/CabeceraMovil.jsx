@@ -16,6 +16,7 @@
 
 import Link from 'next/link'
 import { CABECERA } from '@/lib/armazon'
+import { BandaDetalleArmazon } from '@/components/armazon/CabeceraInicio'
 import { getAvatarById } from '@/lib/avatars'
 
 const ALTO = 56
@@ -338,7 +339,9 @@ function abrirAvisos() {
 
 export default function CabeceraMovil({ variante = CABECERA.NAVEGACION, ...props }) {
   if (variante === CABECERA.NINGUNA) return null
-  if (variante === CABECERA.DETALLE) return <Detalle {...props} />
+  /* La de detalle es la banda negra desde el 19 nov 2026 (`Detalle`, la blanca,
+     queda por si hiciera falta volver). */
+  if (variante === CABECERA.DETALLE) return <BandaDetalleArmazon titulo={props.titulo} subtitulo={props.subtitulo} onVolver={props.onVolver} acciones={props.acciones} profe={props.profe} />
   if (variante === CABECERA.TAREA)   return <Tarea {...props} />
   return <Navegacion {...props} />
 }

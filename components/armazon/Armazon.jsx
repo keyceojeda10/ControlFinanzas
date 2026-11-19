@@ -246,10 +246,11 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
      `ThemeProvider` respeta `data-franja` al cambiar de tema. */
   useEffect(() => {
     const h = document.documentElement
-    const negra = cabeceraPropia && window.matchMedia(MEDIA_MOVIL).matches
+    // También las de detalle: llevan la banda negra del armazón (19 nov 2026).
+    const negra = (cabeceraPropia || armazon.cabecera === CABECERA.DETALLE) && window.matchMedia(MEDIA_MOVIL).matches
     h.dataset.franja = negra ? 'negra' : ''
     pintarBarraDelSistema(negra ? NEGRO_FRANJA : (h.style.backgroundColor || (h.dataset.theme === 'dark' ? NEGRO_FRANJA : '#F4F4F1')))
-  }, [cabeceraPropia])
+  }, [cabeceraPropia, armazon.cabecera])
 
   /* ⚠ UNA TAREA A PANTALLA COMPLETA NO LLEVA PASTILLA, AUNQUE VIVA EN UNA RUTA
    * DE NAVEGACIÓN.
