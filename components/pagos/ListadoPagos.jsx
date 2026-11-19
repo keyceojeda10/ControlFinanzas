@@ -65,6 +65,10 @@ const getPrestamoId = (pago) => pago?.prestamoId ?? pago?.prestamo?.id ?? null
  * @param {string} emptyLabel
  * @param {function} renderAcciones  (pago) => ReactNode opcional
  * @param {string} maxHeight  estilo scroll (ej '320px')
+ * @param {boolean} filas    (19 nov 2026) sin caja por pago: filas con su raya,
+ *                           para ir DENTRO de una tarjeta (el historial por día).
+ *                           Sin esto quedaba una tarjeta dentro de otra.
+ * @param {boolean} sinFecha el día ya lo dice el grupo: solo la hora.
  */
 export default function ListadoPagos({
   pagos,
@@ -74,6 +78,8 @@ export default function ListadoPagos({
   emptyLabel = 'Sin pagos registrados',
   renderAcciones,
   maxHeight,
+  filas = false,
+  sinFecha = false,
 }) {
   const lista = Array.isArray(pagos) ? pagos : []
 
@@ -91,10 +97,10 @@ export default function ListadoPagos({
 
   return (
     <div
-      className="space-y-2 pr-1"
+      className={filas ? undefined : 'space-y-2 pr-1'}
       style={maxHeight ? { maxHeight, overflowY: 'auto' } : undefined}
     >
-      {lista.map((pago) => {
+      {lista.map((pago, i) => {
         const tipo = pago.tipo || 'parcial'
         /* Parcial o de más lo dice la cuota que tocaba, no `tipo` (soporte del
            12 oct 2026: $200.000 de una cuota de $450.000 salía «Completo»). */
@@ -114,7 +120,8 @@ export default function ListadoPagos({
         return (
           <div
             key={pago.id}
-            className="rounded-[10px] border border-[var(--cf-border)] bg-[var(--cf-card)] px-3 py-2.5"
+            className={filas ? 'px-4 py-3' : 'rounded-[10px] border border-[var(--cf-border)] bg-[var(--cf-card)] px-3 py-2.5'}
+            style={filas && i > 0 ? { borderTop: '1px solid var(--cf-hairline)' } : undefined}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
@@ -122,10 +129,12 @@ export default function ListadoPagos({
                   /* El nombre NO se recorta: baja de renglón. */
                   <p className="text-sm font-semibold text-[var(--cf-ink)] [overflow-wrap:anywhere]">{cliente}</p>
                 )}
-                <p className="text-[11px] text-[var(--cf-ink-3)] mt-0.5">
-                  {fmtFecha(pago.fechaPago)}
-                  {fmtHora(pago.fechaPago) ? ` · ${fmtHora(pago.fechaPago)}` : ''}
-                  {mostrarCob && cobrador ? ` · ${cobrador}` : ''}
+                <p className={filas ? 'text-[13px] text-[var(--cf-ink-2)] [overflow-wrap:anywhere]' : 'text-[11px] text-[var(--cf-ink-3)] mt-0.5'}>
+                  {[
+                    sinFecha ? null : fmtFecha(pago.fechaPago),
+                    fmtHora(pago.fechaPago) || null,
+                    mostrarCob && cobrador ? cobrador : null,
+                  ].filter(Boolean).join(' · ')}
                 </p>
                 {/* ── EL MEDIO Y EL ENLACE, EN UNA FILA CON AIRE ──
                     Eran dos `inline` seguidos: «Efectivo» y «Ver préstamo» salían

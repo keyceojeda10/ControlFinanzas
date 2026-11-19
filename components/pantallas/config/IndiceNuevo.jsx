@@ -66,9 +66,47 @@ function Grupo({ titulo }) {
   )
 }
 
+/* ══ EL NEGOCIO, ARRIBA ══
+ * Su nombre, el plan y cuántos clientes lleva; toca y va al plan. `oscuro`: dentro
+ * de la banda negra del teléfono (`CabeceraDetalle`, 19 nov 2026). */
+export function TarjetaNegocio({ negocio, iniciales = '$', plan, clientesNota, onIr, oscuro = false }) {
+  return (
+    <button type="button" onClick={() => onIr?.('plan')} style={{
+      display: 'flex', alignItems: 'center', gap: 14, width: '100%', textAlign: 'left', font: 'inherit', cursor: 'pointer',
+      ...(oscuro
+        ? { background: 'transparent', border: 0, padding: '16px 0 4px' }
+        : { background: 'var(--cf-card)', border: '1px solid var(--cf-border)', borderRadius: 16, padding: '18px 16px' }),
+    }}>
+      <span aria-hidden style={{
+        width: 48, height: 48, borderRadius: 14, flex: 'none', display: 'grid', placeItems: 'center',
+        background: oscuro ? '#24252B' : '#15161A', color: 'var(--cf-gold)', fontSize: 18, fontWeight: 800,
+        border: oscuro ? '1px solid rgba(255,255,255,.1)' : 0,
+      }}>{iniciales}</span>
+      <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <span style={{ fontSize: 19, fontWeight: 600, color: oscuro ? '#fff' : 'var(--cf-ink)', overflowWrap: 'anywhere' }}>{negocio}</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          {plan && (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', height: 26, padding: '0 12px', borderRadius: 999,
+              background: oscuro ? 'rgba(231,164,0,.18)' : 'var(--cf-gold-tint)',
+              color: oscuro ? '#F5B824' : 'var(--cf-gold-text-2, var(--cf-gold-dark))', fontSize: 13, fontWeight: 700,
+            }}>Plan {plan}</span>
+          )}
+          {clientesNota && <span className="cf-num" style={{ fontSize: 14, color: oscuro ? 'rgba(255,255,255,.62)' : 'var(--cf-ink-3)' }}>{clientesNota}</span>}
+        </span>
+      </span>
+      {oscuro
+        ? <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.55)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}><path d="M9 5l7 7-7 7" /></svg>
+        : <Flecha />}
+    </button>
+  )
+}
+
 export default function IndiceNuevo({
   negocio, iniciales = '$', plan, clientesNota, filas = [], tema, temas = [], onTema,
   esOwner = false, onIr,
+  /* La tarjeta del negocio va en la banda negra de la página (19 nov 2026). */
+  negocioEnLaBanda = false,
 }) {
   /* Lo que hacía la tarjeta de instalar que este índice reemplaza: si ya está
      instalada se dice, y no se ofrece instalarla otra vez. */
@@ -92,28 +130,7 @@ export default function IndiceNuevo({
     <div style={{ margin: '0 -20px', display: 'flex', flexDirection: 'column', background: 'var(--cf-surface)' }}>
       {/* ── LAS TARJETAS DE ARRIBA ── */}
       <div style={{ padding: '4px 16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <button type="button" onClick={() => onIr?.('plan')} style={{
-          display: 'flex', alignItems: 'center', gap: 14, width: '100%', textAlign: 'left', font: 'inherit', cursor: 'pointer',
-          background: 'var(--cf-card)', border: '1px solid var(--cf-border)', borderRadius: 16, padding: '18px 16px',
-        }}>
-          <span aria-hidden style={{
-            width: 48, height: 48, borderRadius: 14, flex: 'none', display: 'grid', placeItems: 'center',
-            background: '#15161A', color: 'var(--cf-gold)', fontSize: 18, fontWeight: 800,
-          }}>{iniciales}</span>
-          <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ fontSize: 19, fontWeight: 600, color: 'var(--cf-ink)', overflowWrap: 'anywhere' }}>{negocio}</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              {plan && (
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', height: 26, padding: '0 12px', borderRadius: 999,
-                  background: 'var(--cf-gold-tint)', color: 'var(--cf-gold-text-2, var(--cf-gold-dark))', fontSize: 13, fontWeight: 700,
-                }}>Plan {plan}</span>
-              )}
-              {clientesNota && <span className="cf-num" style={{ fontSize: 14, color: 'var(--cf-ink-3)' }}>{clientesNota}</span>}
-            </span>
-          </span>
-          <Flecha />
-        </button>
+        {!negocioEnLaBanda && <TarjetaNegocio negocio={negocio} iniciales={iniciales} plan={plan} clientesNota={clientesNota} onIr={onIr} />}
 
         {esOwner && (
           <button type="button" onClick={() => onIr?.('plan')} style={{

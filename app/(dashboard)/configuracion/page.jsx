@@ -5,7 +5,9 @@ import Configuracion from '@/components/pantallas/Configuracion'
 import TuNegocio from '@/components/pantallas/config/TuNegocio'
 import ComoPrestas from '@/components/pantallas/config/ComoPrestas'
 import PlanYPagos from '@/components/pantallas/config/PlanYPagos'
-import IndiceNuevo from '@/components/pantallas/config/IndiceNuevo'
+import IndiceNuevo, { TarjetaNegocio } from '@/components/pantallas/config/IndiceNuevo'
+import { CabeceraDetalle } from '@/components/armazon/CabeceraInicio'
+import { PastillaProfe } from '@/components/tutoriales/PiezasProfe'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { valoresIndice, filasIndice, seccionesConfig } from '@/lib/adaptadores/configuracion'
 import { useState, useEffect, Suspense } from 'react'
@@ -191,7 +193,7 @@ function TabPerfil() {
   return (
     <div className="space-y-5">
       <Card>
-        <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em] mb-4">Información personal</p>
+        <p className="text-[15px] font-semibold text-[var(--cf-ink-3)] mb-4">Información personal</p>
         <div className="space-y-4">
           <div className="space-y-1.5">
             <label className="block text-xs font-medium text-[var(--cf-ink-3)]">Nombre</label>
@@ -231,7 +233,7 @@ function TabPerfil() {
       </Card>
 
       <Card>
-        <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em] mb-3">Avatar de perfil</p>
+        <p className="text-[15px] font-semibold text-[var(--cf-ink-3)] mb-3">Avatar de perfil</p>
         <p className="text-[11px] text-[var(--cf-ink-3)] mb-4">
           Se mostrará en el menú y en el sidebar.
         </p>
@@ -275,7 +277,7 @@ function TabPerfil() {
             if (!catAvatars.length) return null
             return (
               <div key={cat.id}>
-                <p className="text-[11px] font-extrabold uppercase tracking-[.07em] text-[var(--cf-ink-3)] mb-2.5">{cat.nombre}</p>
+                <p className="text-[15px] font-semibold text-[var(--cf-ink-3)] mb-2.5">{cat.nombre}</p>
                 <div className="grid grid-cols-5 sm:grid-cols-8 gap-2.5">
                   {catAvatars.map((av) => {
                     const selected = avatarSeleccionado === av.id
@@ -331,7 +333,7 @@ function TabPerfil() {
       </Modal>
 
       <Card>
-        <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em] mb-4">Cambiar contraseña</p>
+        <p className="text-[15px] font-semibold text-[var(--cf-ink-3)] mb-4">Cambiar contraseña</p>
         <div className="space-y-4">
           <div className="space-y-1.5">
             <label className="block text-xs font-medium text-[var(--cf-ink-3)]">Contraseña actual</label>
@@ -632,7 +634,7 @@ function TabOrganizacion({ bloques, tema, onTema }) {
 
       {quiere('negocio') && (
       <Card>
-        <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em] mb-3">Días sin cobro</p>
+        <p className="text-[15px] font-semibold text-[var(--cf-ink-3)] mb-3">Días sin cobro</p>
         <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug mb-3">
           Los días que marques no generarán mora para ningún cliente. Puedes configurar días diferentes por ruta o por cliente.
         </p>
@@ -652,7 +654,7 @@ function TabOrganizacion({ bloques, tema, onTema }) {
       <Card>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em]">Capital en ruta = efectivo en mano</p>
+            <p className="text-[15px] font-semibold text-[var(--cf-ink)]">Capital en ruta = efectivo en mano</p>
             <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug mt-1">
               Activa si entregas el capital de la ruta como plata física al cobrador. El sistema usará ese valor para calcular el dinero en mano y el cuadre de caja.
             </p>
@@ -678,7 +680,7 @@ function TabOrganizacion({ bloques, tema, onTema }) {
       <Card>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em]">Contar renovaciones en el cobrado</p>
+            <p className="text-[15px] font-semibold text-[var(--cf-ink)]">Contar renovaciones en el cobrado</p>
             <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug mt-1">
               Al renovar, el saldo que el cliente ya debía se absorbe en el préstamo nuevo. Activa esto si quieres verlo sumado en <strong>Cobrado</strong> y en <strong>Prestado</strong> a la vez, como si el cliente hubiera pagado la cartulina vieja. El efectivo del día es el mismo en ambos casos; solo cambia si ese movimiento se ve o no.
             </p>
@@ -704,7 +706,7 @@ function TabOrganizacion({ bloques, tema, onTema }) {
       <Card>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em]">Modo abreviado de montos</p>
+            <p className="text-[15px] font-semibold text-[var(--cf-ink)]">Modo abreviado de montos</p>
             <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug mt-1">
               Escribe montos sin los últimos tres ceros. Por ejemplo, 100 se convierte en 100.000 y 1.500 en 1.500.000.
             </p>
@@ -733,7 +735,7 @@ function TabOrganizacion({ bloques, tema, onTema }) {
       <Card>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em]">Aprobar préstamos del cobrador</p>
+            <p className="text-[15px] font-semibold text-[var(--cf-ink)]">Aprobar préstamos del cobrador</p>
             <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug mt-1">
               Cuando un cobrador crea un préstamo, queda pendiente hasta que lo apruebes. Sin esta opción, los préstamos se activan de inmediato.
             </p>
@@ -762,7 +764,7 @@ function TabOrganizacion({ bloques, tema, onTema }) {
       <Card>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em]">Pedir permiso para prestarle a quien ya debe</p>
+            <p className="text-[15px] font-semibold text-[var(--cf-ink)]">Pedir permiso para prestarle a quien ya debe</p>
             <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug mt-1">
               Si el cliente ya tiene un préstamo activo, el cobrador no puede hacerle otro sin tu permiso: te llega la solicitud y la apruebas con un toque. Renovar sí puede, sin pedir nada.
             </p>
@@ -788,7 +790,7 @@ function TabOrganizacion({ bloques, tema, onTema }) {
       <Card>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em]">Portal: mostrar datos completos</p>
+            <p className="text-[15px] font-semibold text-[var(--cf-ink)]">Portal: mostrar datos completos</p>
             <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug mt-1">
               Cuando el cliente ingresa al portal, ve monto prestado, total a pagar, tasa de interés y demás detalles financieros. Si desactivas esto, solo verá saldo, cuota y fecha de pago.
             </p>
@@ -1215,7 +1217,7 @@ function TabSuscripcion() {
             boton que va al mismo sitio: dos tarjetas contando lo mismo, y la de
             arriba salia con rayas porque nunca recibio la fecha. Esta se queda
             con LO QUE NO ESTA ARRIBA: las fechas exactas y cuanto falta. */}
-        <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em] mb-4">
+        <p className="text-[15px] font-semibold text-[var(--cf-ink-3)] mb-4">
           Detalle de la suscripción
         </p>
 
@@ -1268,7 +1270,7 @@ function TabSuscripcion() {
 
       {historial?.length > 0 && (
         <Card>
-          <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em] mb-4">Historial de suscripciones</p>
+          <p className="text-[15px] font-semibold text-[var(--cf-ink-3)] mb-4">Historial de suscripciones</p>
           <div className="space-y-0">
             <div className="hidden sm:grid grid-cols-4 gap-2 text-[10px] text-[var(--cf-ink-3)] font-medium uppercase pb-2 border-b border-[var(--cf-border)]">
               <span>Período</span>
@@ -1344,7 +1346,7 @@ function TabReferidos() {
   return (
     <div className="space-y-5">
       <Card>
-        <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em] mb-4">Tu link de referido</p>
+        <p className="text-[15px] font-semibold text-[var(--cf-ink-3)] mb-4">Tu link de referido</p>
         <div className="space-y-4">
           <div className="bg-[var(--cf-fill)] border border-[var(--cf-border)] rounded-[12px] px-4 py-3">
             <p className="text-xs text-[var(--cf-ink-3)] mb-1">Código</p>
@@ -1375,7 +1377,7 @@ function TabReferidos() {
 
       <Card>
         <div className="flex items-center justify-between mb-4">
-          <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em]">Referidos</p>
+          <p className="text-[15px] font-semibold text-[var(--cf-ink)]">Referidos</p>
           <Badge variant="green">{referidos.length}</Badge>
         </div>
         {referidos.length === 0 ? (
@@ -1701,11 +1703,11 @@ function ConfiguracionContent() {
            la de abajo volvia al indice. Ahora hay una sola y va al indice, que es
            lo que espera quien entro desde ahi. */
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 24 }}>
-          <span style={{
-            fontFamily: 'var(--font-space-grotesk), system-ui',
-            fontSize: 20, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)',
-          }}>{abierta.nombre}</span>
-          {panel(abierta.id)}
+          {/* El nombre de la sección va en la banda negra (19 nov 2026); la flecha
+              vuelve al índice, como hacía la cabecera del armazón. */}
+          <CabeceraDetalle titulo={abierta.nombre} profe={<PastillaProfe />}
+            onVolver={() => { if (puedeRetroceder()) router.back(); else router.replace('/configuracion') }} />
+          <div style={{ paddingTop: 4 }}>{panel(abierta.id)}</div>
         </div>
       )
     }
@@ -1717,7 +1719,14 @@ function ConfiguracionContent() {
        hacía la tarjeta de instalar (decir si ya está instalada, el video del
        profe) va dentro. Ver components/pantallas/config/IndiceNuevo.jsx. */
     return (
+      <>
+      {/* La banda negra con el negocio adentro, como las fichas (19 nov 2026). */}
+      <CabeceraDetalle titulo="Configuración" profe={<PastillaProfe />}
+        enLaBanda={<TarjetaNegocio oscuro negocio={org?.nombre ?? 'Tu negocio'} iniciales={inicialesNegocio}
+          plan={org?.plan ? PLAN_NAMES[org.plan] ?? org.plan : null} clientesNota={valores.clientesNota}
+          onIr={(id) => router.push(`/configuracion?s=${id}`)} />} />
       <IndiceNuevo
+        negocioEnLaBanda
         negocio={org?.nombre ?? 'Tu negocio'}
         iniciales={inicialesNegocio}
         plan={org?.plan ? PLAN_NAMES[org.plan] ?? org.plan : null}
@@ -1733,6 +1742,7 @@ function ConfiguracionContent() {
         ]}
         onTema={cambiarTema}
       />
+      </>
     )
   }
 
@@ -1768,8 +1778,8 @@ function Remite({ nombre, nota, destino, accion }) {
       background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
     }}>
       <span style={{
-        display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: '.09em',
-        textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+        display: 'block', fontSize: 15, fontWeight: 600, letterSpacing: '-.01em',
+        color: 'var(--cf-ink-3)',
       }}>{nombre}</span>
       <p style={{ fontSize: 13, color: 'var(--cf-ink-2)', margin: '8px 0 0', lineHeight: 1.5 }}>{nota}</p>
       <a href={destino} style={{
@@ -1879,7 +1889,7 @@ function TabApariencia() {
 
 export default function ConfiguracionPage() {
   return (
-    <Suspense fallback={<div className="max-w-2xl mx-auto"><Skeleton className="h-10 w-full" /></div>}>
+    <Suspense fallback={<><CabeceraDetalle titulo="Configuración" profe={<PastillaProfe />} /><div className="max-w-2xl mx-auto pt-4 lg:pt-0"><Skeleton className="h-10 w-full" /></div></>}>
       <ConfiguracionContent />
     </Suspense>
   )

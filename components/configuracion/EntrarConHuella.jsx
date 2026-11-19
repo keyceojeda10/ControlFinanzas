@@ -42,7 +42,7 @@ export default function EntrarConHuella() {
 
   return (
     <Card>
-      <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em] mb-2">Entrar con huella o cara</p>
+      <p className="text-[15px] font-semibold text-[var(--cf-ink-3)] mb-2">Entrar con huella o cara</p>
       <p className="text-[13px] mb-4" style={{ color: 'var(--cf-ink-2)' }}>
         Entra sin escribir la contraseña. Tu huella o tu cara no salen del teléfono: él las revisa y nos avisa que eres tú.
       </p>
