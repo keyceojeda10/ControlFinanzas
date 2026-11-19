@@ -249,6 +249,7 @@ export default function PilaAvisos({ children, onVerTodos }) {
         && !(clavesPendientes.has(`reapertura:${d.cierreId}`) && n.tipo === 'solicitud_reapertura')
         && !(clavesPendientes.has(`gasto:${d.gastoId}`) && n.tipo === 'gasto_por_aprobar')
         && !(clavesPendientes.has(`permiso:${d.permisoId}`) && n.tipo === 'permiso_prestamo')
+        && !(clavesPendientes.has(`orden:${d.ordenRutaId}`) && n.tipo === 'optimizar_ruta')
     } catch { return true }
   })
   const sinLeer = guardadosVisibles.filter((n) => !n.leida).length
@@ -312,6 +313,7 @@ export default function PilaAvisos({ children, onVerTodos }) {
                 || (p.clase === 'reapertura' && d.cierreId === p.id)
                 || (p.clase === 'gasto' && d.gastoId === p.id)
                 || (p.clase === 'permiso' && d.permisoId === p.id)
+                || (p.clase === 'orden' && d.ordenRutaId === p.id)
               if (suya) marcarLeida(n.id)
             } catch {}
           }

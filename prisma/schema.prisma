@@ -401,6 +401,31 @@ model Ruta {
   @@index([organizationId, activo])
 }
 
+/// EL ORDEN DE UNA RUTA ANTES DE «OPTIMIZAR», Y LO QUE PIDE EL COBRADOR (19 nov 2026).
+/// INVERSIONESJYM: el cobrador tocó «Optimizar» con 20 de 459 clientes con
+/// ubicación y la ruta del dueño quedó revuelta, sin forma de volver. Hay UN
+/// orden por ruta (`Cliente.ordenRuta`), así que lo que optimiza uno lo ve el otro.
+///   clase «anterior»:  el orden que había (`orden` = ids), para «Volver al orden
+///                      anterior». estado vigente | usado | reemplazado
+///   clase «solicitud»: el cobrador pide optimizar y el dueño decide.
+///                      estado pendiente | aprobada | rechazada
+/// Sin llave foránea, como `PermisoPrestamo`: una ruta borrada no se lleva esto.
+model OrdenRuta {
+  id             String    @id @default(cuid())
+  organizationId String
+  rutaId         String
+  clase          String    @db.VarChar(16)
+  estado         String    @db.VarChar(16)
+  orden          Json?
+  pedidoPorId    String
+  resueltoPorId  String?
+  resueltoEn     DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([rutaId, clase, estado])
+  @@index([organizationId, clase, estado])
+}
+
 model GrupoCobro {
   id             String   @id @default(cuid())
   organizationId String

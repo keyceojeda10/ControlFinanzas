@@ -40,6 +40,7 @@ const ICONO = {
   reapertura: <><rect x="4" y="10" width="16" height="10" rx="2" /><path d="M8 10V7a4 4 0 017.5-2" /></>,
   gasto: <><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z" /><path d="M9 8h6M9 12h6" /></>,
   reclamo: <><path d="M12 9v4" /><path d="M12 17h.01" /><path d="M10.3 3.9L2.5 17.5A2 2 0 004.2 20.5h15.6a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" /></>,
+  orden: <><path d="M4 19c4-1 5-6 8-7s4 2 8-6" /><circle cx="4" cy="19" r="1.6" /><circle cx="20" cy="6" r="1.6" /></>,
   permiso: <><rect x="4" y="5" width="12" height="15" rx="2" /><path d="M8 3h12v15" /><path d="M7.5 12.5l2 2 3.5-4" /></>,
 }
 
@@ -50,6 +51,12 @@ async function resolver(p, accion) {
   }
   if (p.clase === 'permiso') {
     return fetch(`/api/prestamos/permiso/${p.id}`, { ...json, body: JSON.stringify({ decision: accion }) })
+  }
+  if (p.clase === 'orden') {
+    return fetch(`/api/rutas/${p.rutaId}/optimizar`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ solicitudId: p.id, decision: accion }),
+    })
   }
   if (p.clase === 'reapertura') {
     return fetch(`/api/caja/reabrir/${accion === 'aprobar' ? 'aprobar' : 'rechazar'}`, { ...json, body: JSON.stringify({ cierreId: p.id }) })
@@ -154,12 +161,14 @@ function Fila({ p, onResuelto, onAbrir }) {
   const titulo = p.clase === 'prestamo' ? `${p.quien} quiere prestar ${formatMoney(p.monto)}`
     : p.clase === 'permiso' ? (p.monto ? `${p.quien} pide permiso para prestar ${formatMoney(p.monto)}`
         : p.clavo ? `${p.quien} pide permiso para prestarle a un clavo` : `${p.quien} pide permiso para otra cartulina`)
+    : p.clase === 'orden' ? `${p.quien} pide optimizar la ruta ${p.para ?? ''}`.trim()
     : p.clase === 'reapertura' ? `${p.quien} pide reabrir su caja`
     : `${p.quien} anotó un gasto de ${formatMoney(p.monto)}`
   const detalle = p.clase === 'prestamo' ? (p.para ? `a ${p.para}` : null)
     : p.clase === 'permiso' ? (p.clavo
         ? `a ${p.para ?? 'un cliente'}, que tiene un clavo: debe ${formatMoney(p.clavo.saldo)}`
         : p.para ? `a ${p.para}, que ya tiene un préstamo` : 'a un cliente que ya tiene un préstamo')
+    : p.clase === 'orden' ? 'por cercanía · cambia el orden para los dos'
     : p.clase === 'reapertura' ? (p.fechaCaja ? `la del ${formatFecha(p.fechaCaja)}` : null)
     : p.concepto
 

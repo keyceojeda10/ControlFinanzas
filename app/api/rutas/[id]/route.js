@@ -3,6 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { estadoDelOrden } from '@/lib/rutas/orden-de-ruta'
 import { logActividad }     from '@/lib/activity-log'
 import { rutaPermitida }    from '@/lib/limites-plan'
 import { calificacionDe } from '@/lib/calificacion'
@@ -939,6 +940,9 @@ export async function GET(request, { params }) {
       capitalPendiente: Math.round(capitalPendiente),
     } : {}),
     cobrador:    ruta.cobrador,
+    // ¿Hay un orden al que volver tras «Optimizar»? ¿El cobrador pidió optimizar?
+    // (lib/rutas/orden-de-ruta.js). Si la tabla falla, la ruta abre igual.
+    ordenDeRuta: await estadoDelOrden(prisma, { organizationId, rutaId: id }).catch(() => null),
     // Pasada del límite del plan: no admite clientes ni préstamos nuevos (#22).
     soloLectura: !(await rutaPermitida(organizationId, id)),
     // Con la ubicación de su último cobro con GPS, para el mapa (solo se enseña).

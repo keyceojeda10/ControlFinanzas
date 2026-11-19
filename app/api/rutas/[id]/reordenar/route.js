@@ -3,6 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { logActividad }     from '@/lib/activity-log'
 
 export async function PUT(request, { params }) {
   const session = await getServerSession(authOptions)
@@ -54,6 +55,22 @@ export async function PUT(request, { params }) {
       })
     )
   )
+
+  /* QUIÉN MOVIÓ EL ORDEN (19 nov 2026). Una ruta revuelta no dejaba rastro y
+     hubo que sacarlo de los registros del servidor. Una fila por persona y ruta
+     cada 30 minutos: arrastrar diez clientes seguidos no llena el historial. */
+  const hace30 = new Date(Date.now() - 30 * 60000)
+  const yaAnotado = await prisma.actividadLog.findFirst({
+    where: { organizationId, userId: session.user.id, accion: 'reordenar_ruta', entidadId: id, createdAt: { gte: hace30 } },
+    select: { id: true },
+  }).catch(() => null)
+  if (!yaAnotado) {
+    logActividad({
+      session, accion: 'reordenar_ruta', entidadTipo: 'ruta', entidadId: id,
+      detalle: `Movió clientes de puesto en la ruta ${ruta.nombre}`,
+      ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+    })
+  }
 
   return Response.json({ reordenados: clienteIds.length })
 }

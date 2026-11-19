@@ -29,7 +29,7 @@ export async function GET() {
 
   const { organizationId } = session.user
 
-  const [prestamos, reaperturas, gastos, permisos, reclamos] = await Promise.all([
+  const [prestamos, reaperturas, gastos, permisos, reclamos, ordenes] = await Promise.all([
     prisma.prestamo.findMany({
       where: { organizationId, estado: 'pendiente_aprobacion' },
       select: {
@@ -75,6 +75,13 @@ export async function GET() {
       orderBy: { createdAt: 'asc' },
       take: 30,
     }),
+    // El cobrador pide optimizar su ruta (lib/rutas/orden-de-ruta.js). De la
+    // última semana: una más vieja ya no tiene a nadie esperándola.
+    prisma.ordenRuta.findMany({
+      where: { organizationId, clase: 'solicitud', estado: 'pendiente', createdAt: { gte: new Date(Date.now() - 7 * 86400000) } },
+      orderBy: { createdAt: 'asc' },
+      take: 30,
+    }),
   ])
 
   /* LO QUE SE ANOTÓ ESE DÍA, al lado de lo que dice el cliente: es lo que el dueño
@@ -97,7 +104,7 @@ export async function GET() {
 
   // `Prestamo.creadoPorId` es un id suelto, sin relación: los nombres se traen
   // aparte y de una vez.
-  const ids = [...new Set([...prestamos.map((p) => p.creadoPorId), ...permisos.map((p) => p.cobradorId)].filter(Boolean))]
+  const ids = [...new Set([...prestamos.map((p) => p.creadoPorId), ...permisos.map((p) => p.cobradorId), ...ordenes.map((o) => o.pedidoPorId)].filter(Boolean))]
   const autores = ids.length
     ? await prisma.user.findMany({ where: { id: { in: ids }, organizationId }, select: { id: true, nombre: true } })
     : []
@@ -107,6 +114,11 @@ export async function GET() {
     ? await prisma.cliente.findMany({ where: { id: { in: idsClientes }, organizationId }, select: { id: true, nombre: true } })
     : []
   const clienteDe = new Map(clientesDePermisos.map((c) => [c.id, c.nombre]))
+  const idsRutas = [...new Set(ordenes.map((o) => o.rutaId))]
+  const rutasDeOrdenes = idsRutas.length
+    ? await prisma.ruta.findMany({ where: { id: { in: idsRutas }, organizationId }, select: { id: true, nombre: true } })
+    : []
+  const rutaDe = new Map(rutasDeOrdenes.map((r) => [r.id, r.nombre]))
   /* El que pide prestarle a un clavo lo dice en la fila: el dueño decide con un
      toque y tiene que saber qué está aprobando (2 nov 2026). */
   const clavos = await Promise.all(idsClientes.map((clienteId) => perdidosDelCliente(prisma, { organizationId, clienteId })))
@@ -136,6 +148,13 @@ export async function GET() {
       clavo: clavoDe.get(p.clienteId) ? { saldo: clavoDe.get(p.clienteId).saldo } : null,
       desde: p.createdAt,
       href: `/clientes/${p.clienteId}`,
+    })),
+    ...ordenes.filter((o) => rutaDe.has(o.rutaId)).map((o) => ({
+      clave: `orden:${o.id}`, clase: 'orden', id: o.id, rutaId: o.rutaId,
+      quien: nombreDe.get(o.pedidoPorId) ?? 'Un cobrador',
+      para: rutaDe.get(o.rutaId),
+      desde: o.createdAt,
+      href: `/rutas/${o.rutaId}`,
     })),
     ...gastos.map((g) => ({
       clave: `gasto:${g.id}`, clase: 'gasto', id: g.id,

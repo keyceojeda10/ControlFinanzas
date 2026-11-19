@@ -36,6 +36,7 @@ import { obtenerCoordsRapido, calentarCoords, completarUbicacionDelPago } from '
 import { useProcesando } from '@/components/cf/Procesando'
 // Las mismas que usa el servidor para el «3,4 km» de la cabecera.
 import { optimizeRoute, totalDistance } from '@/lib/routeOptimizer'
+import { ubicacionSuficiente, textoSinUbicacion } from '@/lib/rutas/orden-de-ruta'
 import { Button }                    from '@/components/ui/Button'
 import { Card }                      from '@/components/ui/Card'
 import { Modal }                     from '@/components/ui/Modal'
@@ -1954,6 +1955,15 @@ export default function RutaDetallePage({ params }) {
   // ─── Optimizar ruta ────────────────────────────────────
   const [confirmOptimizar, setConfirmOptimizar] = useState(false)
 
+  /* ⚠ EL ORDEN ES UNO POR RUTA (19 nov 2026, lib/rutas/orden-de-ruta.js). El
+     dueño optimiza y queda a dónde volver; el cobrador PIDE y espera el aval:
+     su «Optimizar» revolvió la ruta de 459 clientes de su dueño. */
+  const [confirmVolverOrden, setConfirmVolverOrden] = useState(false)
+  const [decidiendoOrden, setDecidiendoOrden] = useState(null)   // 'aprobar' | 'rechazar' | 'volver' | null
+  const avisoOrden = (dato) => { setOptimResult(dato); setTimeout(() => setOptimResult(null), 7000) }
+  // La pantalla cambia YA; `fetchRuta` confirma después (en una ruta grande tarda).
+  const ponerOrden = (cambio) => setRuta((prev) => (prev ? { ...prev, ordenDeRuta: { ...(prev.ordenDeRuta ?? {}), ...cambio } } : prev))
+
   const optimizarRuta = async () => {
     setConfirmOptimizar(false)
     setOptimizando(true)
@@ -1962,13 +1972,53 @@ export default function RutaDetallePage({ params }) {
       const res = await fetch(`/api/rutas/${id}/optimizar`, { method: 'POST' })
       const data = await res.json()
       if (!res.ok) { alert(data.error ?? 'Error al optimizar'); return }
-      setOptimResult(data)
+      avisoOrden(data)
+      ponerOrden(data.solicitado
+        ? { solicitud: { id: data.solicitudId, pedidoPor: 'Tú', desde: data.desde } }
+        : { anteriorDesde: new Date().toISOString(), solicitud: null })
       fetchRuta()
-      setTimeout(() => setOptimResult(null), 6000)
     } catch {
       alert('Error de conexión')
     } finally {
       setOptimizando(false)
+    }
+  }
+
+  const decidirPedidoOrden = async (decision) => {
+    const solicitudId = ruta?.ordenDeRuta?.solicitud?.id
+    if (!solicitudId) return
+    setDecidiendoOrden(decision)
+    try {
+      const res = await fetch(`/api/rutas/${id}/optimizar`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ solicitudId, decision }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) { alert(data.error ?? 'No se pudo. Inténtalo de nuevo.'); return }
+      avisoOrden(decision === 'aprobar' ? data : { rechazado: true })
+      ponerOrden(decision === 'aprobar' ? { solicitud: null, anteriorDesde: new Date().toISOString() } : { solicitud: null })
+      fetchRuta()
+    } catch {
+      alert('Error de conexión')
+    } finally {
+      setDecidiendoOrden(null)
+    }
+  }
+
+  const volverAlOrden = async () => {
+    setConfirmVolverOrden(false)
+    setDecidiendoOrden('volver')
+    try {
+      const res = await fetch(`/api/rutas/${id}/orden-anterior`, { method: 'POST' })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) { alert(data.error ?? 'No se pudo volver al orden anterior'); return }
+      avisoOrden({ volvio: true })
+      ponerOrden({ anteriorDesde: null })
+      fetchRuta()
+    } catch {
+      alert('Error de conexión')
+    } finally {
+      setDecidiendoOrden(null)
     }
   }
 
@@ -2289,6 +2339,15 @@ export default function RutaDetallePage({ params }) {
      cliente con ubicación —el orden se arma de ahí en adelante— y los que no
      tienen ubicación se van al final. */
   const sinUbicacion = (ruta?.clientes?.length ?? 0) - clientesConCoords
+  // Con menos de 8 de cada 10 ubicados no se optimiza: la misma cuenta que el servidor.
+  const ubicacionRuta = ubicacionSuficiente(ruta?.clientes ?? [])
+  const pedidoOrden = ruta?.ordenDeRuta?.solicitud ?? null
+  const cuandoFue = (f) => {
+    if (!f) return ''
+    const d = new Date(f)
+    return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' }) + ' a las '
+      + d.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' })
+  }
   const primeroConUbicacion = ruta?.clientes?.find((c) => c.latitud != null && c.longitud != null)?.nombre
   const notaOptimizar = [
     primeroConUbicacion ? `Arranca desde ${primeroConUbicacion}, el primero de la ruta con ubicación.` : null,
@@ -3276,6 +3335,8 @@ export default function RutaDetallePage({ params }) {
               icono: <path d="M12 5v14M5 12h14" /> },
             (ruta.clientes?.length ?? 0) >= 2 && clientesConCoords >= 2 && { id: 'optimizar', texto: optimizando ? 'Optimizando' : 'Optimizar', onClick: () => setConfirmOptimizar(true), deshabilitado: optimizando,
               icono: <><path d="M4 19c4-1 5-6 8-7s4 2 8-6" /><circle cx="4" cy="19" r="1.6" /><circle cx="20" cy="6" r="1.6" /></> },
+            esOwner && ruta.ordenDeRuta?.anteriorDesde && { id: 'orden-anterior', texto: 'Orden anterior', onClick: () => setConfirmVolverOrden(true), deshabilitado: decidiendoOrden === 'volver',
+              icono: <><path d="M9 14L4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 010 11H11" /></> },
             clientesConCoords >= 2 && { id: 'gmaps', texto: 'Google Maps', onClick: abrirGoogleMaps,
               icono: <><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0113 0c0 5.4-6.5 11-6.5 11z" /><circle cx="12" cy="10" r="2.3" /></> },
             (ruta.clientes?.length ?? 0) > 0 && { id: 'imprimir', texto: 'Imprimir hoja', onClick: () => window.print(),
@@ -3332,8 +3393,32 @@ export default function RutaDetallePage({ params }) {
       {optimResult && (
         <div className="px-3 py-2 rounded-[12px] bg-[rgba(34,197,94,0.06)] border border-[rgba(34,197,94,0.12)]">
           <p className="text-xs text-[var(--cf-green-dark)] font-medium">
-            Ruta optimizada {optimResult.ahorro > 0 && `· ${optimResult.ahorro}% más corta`}
+            {optimResult.solicitado
+              ? (optimResult.yaPedida ? 'Ya se lo pediste al dueño. Cuando lo apruebe, cambia el orden.'
+                : 'Listo, se lo pediste al dueño. Cuando lo apruebe, cambia el orden; mientras tanto sigues con el de ahora.')
+              : optimResult.volvio ? 'La ruta volvió al orden que tenía antes de optimizarla.'
+              : optimResult.rechazado ? 'Listo, la ruta se queda como está. Ya le avisamos al cobrador.'
+              : <>Ruta optimizada {optimResult.ahorro > 0 && `· ${optimResult.ahorro}% más corta`}{esOwner ? '. Si no te sirve, toca «Orden anterior».' : ''}</>}
           </p>
+        </div>
+      )}
+
+      {/* El cobrador pidió optimizar: el dueño decide aquí mismo o en la campana. */}
+      {esOwner && pedidoOrden && (
+        <div data-pedido-orden className="rounded-[12px] px-3.5 py-3 flex flex-col gap-2.5" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
+          <div className="flex flex-col gap-0.5">
+            <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>{pedidoOrden.pedidoPor} pide optimizar esta ruta</p>
+            <p className="text-[13px] leading-snug" style={{ color: 'var(--cf-ink-2)' }}>
+              {`El ${cuandoFue(pedidoOrden.desde)} pidió ordenarla por cercanía. Cambia el orden para los dos; si no te sirve, puedes volver al de ahora.`}
+            </p>
+            {!ubicacionRuta.alcanza && (
+              <p className="text-[13px] leading-snug" style={{ color: 'var(--cf-red-dark)' }}>{textoSinUbicacion(ubicacionRuta)}</p>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={() => decidirPedidoOrden('aprobar')} loading={decidiendoOrden === 'aprobar'} disabled={!!decidiendoOrden || !ubicacionRuta.alcanza}>Aprobar</Button>
+            <Button variant="secondary" onClick={() => decidirPedidoOrden('rechazar')} loading={decidiendoOrden === 'rechazar'} disabled={!!decidiendoOrden}>No, dejarla así</Button>
+          </div>
         </div>
       )}
 
@@ -4509,12 +4594,28 @@ export default function RutaDetallePage({ params }) {
         onClose={() => setConfirmOptimizar(false)}
         title="Optimizar ruta"
         footer={
-          <>
-            <Button variant="secondary" onClick={() => setConfirmOptimizar(false)}>Cancelar</Button>
-            <Button onClick={optimizarRuta} loading={optimizando}>Optimizar</Button>
-          </>
+          !ubicacionRuta.alcanza || (!esOwner && pedidoOrden)
+            ? <Button onClick={() => setConfirmOptimizar(false)}>Entendido</Button>
+            : <>
+                <Button variant="secondary" onClick={() => setConfirmOptimizar(false)}>Cancelar</Button>
+                <Button onClick={optimizarRuta} loading={optimizando}>{esOwner ? 'Optimizar' : 'Pedir al dueño'}</Button>
+              </>
         }
       >
+        {/* ── NO SE OPTIMIZA CON POCOS UBICADOS, Y EL COBRADOR PIDE (19 nov 2026) ──
+            Lo de abajo solo sale cuando de verdad se puede optimizar. */}
+        {!ubicacionRuta.alcanza ? (
+          <div className="flex flex-col gap-2">
+            <p className="text-sm" style={{ color: 'var(--cf-ink-2)' }}>{textoSinUbicacion(ubicacionRuta)}</p>
+            <p className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>
+              La ubicación se guarda en la ficha de cada cliente, o sola cuando le cobras con el GPS encendido.
+            </p>
+          </div>
+        ) : !esOwner && pedidoOrden ? (
+          <p className="text-sm" style={{ color: 'var(--cf-ink-2)' }}>
+            {`El ${cuandoFue(pedidoOrden.desde)} se lo pediste al dueño. Cuando lo apruebe, cambia el orden; mientras tanto sigues con el de ahora.`}
+          </p>
+        ) : (<>
         {/* ── SE DICE CUANTO SE AHORRA, NO SOLO QUE SE VA A REORDENAR ──
             Pedia confirmar a ciegas: «se reordenaran los clientes… esto puede
             cambiar el orden que configuraste». O sea, todo el riesgo enunciado
@@ -4539,7 +4640,8 @@ export default function RutaDetallePage({ params }) {
               </p>
             </div>
             <p className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>
-              Cambia el orden que hayas puesto a mano. Se puede volver a ordenar cuando quieras.
+              {esOwner ? 'Cambia el orden que hayas puesto a mano. Si no te sirve, vuelves al de ahora con «Orden anterior».'
+                : 'Cambia el orden que hayas puesto a mano.'}
             </p>
             {notaOptimizar && <p className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>{notaOptimizar}</p>}
           </div>
@@ -4552,6 +4654,29 @@ export default function RutaDetallePage({ params }) {
             {notaOptimizar && <p className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>{notaOptimizar}</p>}
           </div>
         )}
+        {!esOwner && (
+          <p className="text-xs mt-3" style={{ color: 'var(--cf-ink-3)' }}>
+            El orden de la ruta es el mismo para ti y para el dueño, así que él tiene que aprobarlo. Mientras tanto sigues con el orden de ahora.
+          </p>
+        )}
+        </>)}
+      </Modal>
+
+      {/* Volver al orden de antes del último «Optimizar». */}
+      <Modal
+        open={confirmVolverOrden}
+        onClose={() => setConfirmVolverOrden(false)}
+        title="Volver al orden anterior"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setConfirmVolverOrden(false)}>Cancelar</Button>
+            <Button onClick={volverAlOrden} loading={decidiendoOrden === 'volver'}>Volver al orden anterior</Button>
+          </>
+        }
+      >
+        <p className="text-sm" style={{ color: 'var(--cf-ink-2)' }}>
+          {`La ruta vuelve al orden que tenía el ${cuandoFue(ruta?.ordenDeRuta?.anteriorDesde)}, antes de optimizarla. Los clientes que llegaron después quedan al final.`}
+        </p>
       </Modal>
 
       {/* Modal: confirmar quitar cliente */}
