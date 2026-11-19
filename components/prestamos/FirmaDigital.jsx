@@ -7,6 +7,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { formatMoney, getLocale, formatFechaCorta } from '@/lib/i18n'
 import { useAuth } from '@/hooks/useAuth'
+import { guardarImagen, descargarDatos } from '@/lib/lienzo-compartir'
 import { Pastilla } from '@/components/cf/primitivos'
 import { FilaOpcion } from '@/components/pantallas/Gestion'
 import { formatearTasa } from '@/lib/adaptadores/prestamos'
@@ -428,15 +429,41 @@ export default function FirmaDigital({ prestamo, onSave }) {
     }
   }
 
+  /* ── EL COMPROBANTE, LISTO ANTES DEL TOQUE (inducción del 18 nov 2026) ──
+     En el iPhone guardar en Fotos pasa por la hoja del teléfono, y esa hoja
+     exige el toque: dibujar el comprobante dentro del toque (es asíncrono) lo
+     rompe. Se dibuja al tener el préstamo y el toque solo lo entrega. Si aún no
+     está listo, se hace como antes: descargar al terminar de dibujarlo. */
+  const nombreComprobante = `comprobante-prestamo-${prestamo?.cliente?.nombre?.replace(/\s+/g, '-') || prestamo?.id || 'prestamo'}.png`
+  const comprobanteListo = useRef(null)
+  // Por contenido y no por objeto: si quien lo pinta rehace el objeto en cada
+  // render, el comprobante no se vuelve a dibujar por eso.
+  const huellaPrestamo = (() => { try { return JSON.stringify(prestamo ?? null) } catch { return String(prestamo?.id) } })()
+  useEffect(() => {
+    comprobanteListo.current = null
+    if (!prestamo) return undefined
+    let vivo = true
+    generarComprobante(prestamo, paisSesion, tzSesion).then((canvas) => {
+      if (!vivo || !canvas) return
+      const url = canvas.toDataURL('image/png')
+      canvas.toBlob((blob) => {
+        if (vivo && blob) comprobanteListo.current = { file: new File([blob], nombreComprobante, { type: 'image/png' }), url }
+      }, 'image/png')
+    }).catch(() => {})
+    return () => { vivo = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `huellaPrestamo` resume a `prestamo`
+  }, [huellaPrestamo, paisSesion, tzSesion, nombreComprobante])
+
   const descargarComprobante = async () => {
     if (!prestamo) return
+    if (comprobanteListo.current) {
+      guardarImagen({ ...comprobanteListo.current, nombre: nombreComprobante })
+      return
+    }
     setDescargando(true)
     try {
       const canvas = await generarComprobante(prestamo, paisSesion, tzSesion)
-      const link = document.createElement('a')
-      link.download = `comprobante-prestamo-${prestamo.cliente?.nombre?.replace(/\s+/g, '-') || prestamoId}.png`
-      link.href = canvas.toDataURL('image/png')
-      link.click()
+      descargarDatos(canvas.toDataURL('image/png'), nombreComprobante)
     } catch {
       alert('Error al generar comprobante')
     } finally {

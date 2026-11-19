@@ -1,29 +1,25 @@
 'use client'
 
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
+import { compartirArchivo, guardarImagen } from '@/lib/lienzo-compartir'
 import { QRCodeSVG } from 'qrcode.react'
 import { Modal } from '@/components/ui/Modal'
 
-export default function QrClienteModal({ open, onClose, cliente }) {
-  const qrRef = useRef(null)
-
-  if (!cliente) return null
-
-  const qrUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/qr/${cliente.id}`
-
-  const handleDescargar = async () => {
-    const svg = qrRef.current?.querySelector('svg')
-    if (!svg) return
-
+/* ── LA IMAGEN SE PREPARA AL ABRIR, NO AL TOCAR (inducción del 18 nov 2026) ──
+   En el iPhone, compartir o guardar exige el toque, y armar el PNG dentro del
+   toque (cargar el SVG, dibujar, `toBlob`) lo rompe: iOS lo rechaza sin decir
+   nada. Igual que el recibo (HojaReciboPrevio): se dibuja al abrir y el toque
+   solo entrega lo que ya está listo. «Guardar» va por `guardarImagen`, que en
+   iPhone abre la hoja del teléfono —la que llega a Fotos—. */
+function dibujarQr(svg, nombre) {
+  return new Promise((resolver) => {
     const canvas = document.createElement('canvas')
     const size = 800
     canvas.width = size
     canvas.height = size + 120
     const ctx = canvas.getContext('2d')
-
     ctx.fillStyle = '#ffffff'
     ctx.fillRect(0, 0, canvas.width, canvas.height)
-
     const svgData = new XMLSerializer().serializeToString(svg)
     const img = new Image()
     img.onload = () => {
@@ -31,55 +27,50 @@ export default function QrClienteModal({ open, onClose, cliente }) {
       ctx.fillStyle = '#18181b'
       ctx.font = 'bold 32px -apple-system, BlinkMacSystemFont, sans-serif'
       ctx.textAlign = 'center'
-      ctx.fillText(cliente.nombre, size / 2, size + 50)
+      ctx.fillText(nombre, size / 2, size + 50)
       ctx.font = '22px -apple-system, BlinkMacSystemFont, sans-serif'
       ctx.fillStyle = '#71717a'
       ctx.fillText('Escanea para cobrar', size / 2, size + 85)
-
-      const link = document.createElement('a')
-      link.download = `QR-${cliente.nombre.replace(/\s+/g, '-')}.png`
-      link.href = canvas.toDataURL('image/png')
-      link.click()
+      const url = canvas.toDataURL('image/png')
+      canvas.toBlob((blob) => resolver(blob ? { url, blob } : null), 'image/png')
     }
+    img.onerror = () => resolver(null)
     img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)))
+  })
+}
+
+export default function QrClienteModal({ open, onClose, cliente }) {
+  const qrRef = useRef(null)
+  const listo = useRef(null)   // { file, url }
+
+  const nombreArchivo = `QR-${String(cliente?.nombre || 'cliente').replace(/\s+/g, '-')}.png`
+  useEffect(() => {
+    listo.current = null
+    if (!open || !cliente) return undefined
+    let vivo = true
+    // Un cuadro después de abrir: el SVG del QR ya está pintado.
+    const id = requestAnimationFrame(() => {
+      const svg = qrRef.current?.querySelector('svg')
+      if (!svg) return
+      dibujarQr(svg, cliente.nombre).then((r) => {
+        if (vivo && r) listo.current = { file: new File([r.blob], nombreArchivo, { type: 'image/png' }), url: r.url }
+      })
+    })
+    return () => { vivo = false; cancelAnimationFrame(id) }
+  }, [open, cliente, nombreArchivo])
+
+  if (!cliente) return null
+
+  const qrUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/qr/${cliente.id}`
+
+  const handleDescargar = () => {
+    if (!listo.current) return
+    guardarImagen({ file: listo.current.file, url: listo.current.url, nombre: nombreArchivo })
   }
 
-  const handleCompartir = async () => {
-    if (!navigator.share) {
-      handleDescargar()
-      return
-    }
-    const svg = qrRef.current?.querySelector('svg')
-    if (!svg) return
-
-    const canvas = document.createElement('canvas')
-    const size = 800
-    canvas.width = size
-    canvas.height = size + 120
-    const ctx = canvas.getContext('2d')
-    ctx.fillStyle = '#ffffff'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-    const svgData = new XMLSerializer().serializeToString(svg)
-    const img = new Image()
-    img.onload = async () => {
-      ctx.drawImage(img, 0, 0, size, size)
-      ctx.fillStyle = '#18181b'
-      ctx.font = 'bold 32px -apple-system, BlinkMacSystemFont, sans-serif'
-      ctx.textAlign = 'center'
-      ctx.fillText(cliente.nombre, size / 2, size + 50)
-      ctx.font = '22px -apple-system, BlinkMacSystemFont, sans-serif'
-      ctx.fillStyle = '#71717a'
-      ctx.fillText('Escanea para cobrar', size / 2, size + 85)
-
-      canvas.toBlob(async (blob) => {
-        const file = new File([blob], `QR-${cliente.nombre.replace(/\s+/g, '-')}.png`, { type: 'image/png' })
-        try {
-          await navigator.share({ files: [file], title: `QR de ${cliente.nombre}` })
-        } catch {}
-      }, 'image/png')
-    }
-    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)))
+  const handleCompartir = () => {
+    if (!listo.current) return
+    if (!compartirArchivo(listo.current.file, { titulo: `QR de ${cliente.nombre}` })) handleDescargar()
   }
 
   const handleImprimir = () => {
