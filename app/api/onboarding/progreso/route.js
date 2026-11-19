@@ -17,7 +17,7 @@ export async function GET() {
 
   const org = await prisma.organization.findUnique({
     where: { id: orgId },
-    select: { onboardingStep: true, onboardingFlujo: true, createdAt: true, plan: true },
+    select: { onboardingStep: true, onboardingFlujo: true, createdAt: true, plan: true, origenRegistro: true },
   })
 
   // ══ LA GUÍA SABE VOLVER ══
@@ -274,6 +274,9 @@ export async function GET() {
     wizardInitialStep,
     flujo,
     plan: org?.plan ?? 'basic',
+    /* El plan ya se eligió en el registro (paso 1, como antes del 16 jul): el
+       asistente no lo vuelve a preguntar. Lo anota el registro en el origen. */
+    planYaElegido: planElegidoAlRegistrarse(org?.origenRegistro),
     // Por qué ha vuelto la guía. Sin decirlo, reaparecer se lee como un fallo
     // del sistema —«esto ya lo hice»—; con el motivo es una mano tendida.
     reapertura,
@@ -316,4 +319,9 @@ export async function POST(request) {
   }
 
   return NextResponse.json({ error: 'Acción invalida' }, { status: 400 })
+}
+
+/** ¿Eligió el plan al registrarse? Lo anota `/api/auth/registro` en el origen. */
+function planElegidoAlRegistrarse(origenRegistro) {
+  try { return Boolean(JSON.parse(origenRegistro || 'null')?.planElegido) } catch { return false }
 }

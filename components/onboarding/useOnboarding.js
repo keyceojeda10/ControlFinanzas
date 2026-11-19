@@ -54,6 +54,7 @@ export function useOnboarding(esOwner) {
   const [showWizard, setShowWizard] = useState(false)
   const [wizardInitialStep, setWizardInitialStep] = useState(0)
   const [wizardFlujo, setWizardFlujo] = useState(null)
+  const [planYaElegido, setPlanYaElegido] = useState(false)
   const [plan, setPlan] = useState('basic')
   const [minimized, setMinimized] = useState(false)
 
@@ -99,6 +100,7 @@ export function useOnboarding(esOwner) {
       setShowWizard(data.showWizard || false)
       setWizardInitialStep(data.wizardInitialStep || 0)
       setWizardFlujo(data.flujo || null)
+      setPlanYaElegido(data.planYaElegido === true)
       setPlan(data.plan || 'basic')
       if (completadasCount === totalCount && totalCount > 0) setDismissed(true)
 
@@ -191,6 +193,7 @@ export function useOnboarding(esOwner) {
     wizardMinimized: minimized,
     wizardInitialStep,
     wizardFlujo,
+    planYaElegido,
     plan,
     spotlight,
     dismiss,

@@ -67,6 +67,8 @@ export default function OnboardingWizard({
   onMinimize,
   initialStep = 0,
   initialFlujo = null,
+  // El plan ya se eligió al registrarse (como antes del 16 jul 2026): no se repite.
+  planYaElegido = false,
   plan = 'basic',
 }) {
   const [step,          setStep]          = useState(initialStep > 3 ? 0 : initialStep)
@@ -307,7 +309,11 @@ export default function OnboardingWizard({
           nombre={nombre}
           inicial={flujo}
           plan={currentPlan}
-          onSelect={(perfil) => setPerfilPendiente(perfil)}
+          /* Con el plan elegido en el registro, «¿quién cobra?» sigue directo
+             al capital, como en julio: «Elige tu plan» sería preguntarlo dos
+             veces. (Quien dice «tengo cobradores» con un plan sin cobradores
+             sube al primero de equipo en `handleWelcomeDone`, como siempre.) */
+          onSelect={(perfil) => (planYaElegido ? handleWelcomeDone(perfil) : setPerfilPendiente(perfil))}
           onMinimize={onMinimize}
         />
       )}

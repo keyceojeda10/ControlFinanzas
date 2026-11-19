@@ -5,8 +5,8 @@ import { prisma }       from '@/lib/prisma'
 import { enviarEmail, emailBienvenida, emailVerificacion } from '@/lib/email'
 import { sendConversionEvent } from '@/lib/facebook-capi'
 import { registroLimiter, registroIntentos, getClientIp } from '@/lib/rate-limit'
-import { DIAS_PRUEBA_BASE } from '@/lib/planes'
-import { marcarPruebaSiete } from '@/lib/seguimiento/prueba'
+import { DIAS_PRUEBA, PLANES_DEL_REGISTRO } from '@/lib/planes'
+import { marcarPruebaSiete, darRegaloDesdeElRegistro } from '@/lib/seguimiento/prueba'
 import { COUNTRY_CODES, getCountryConfig, validatePhone } from '@/lib/i18n'
 import { normalizarEmail, emailComoSeGuardabaAntes } from '@/lib/normalizar-email'
 import { sendTemplate, sendButtons, wamidDe } from '@/lib/bot/whatsapp-cloud'
@@ -44,6 +44,17 @@ export async function POST(req) {
     // De dónde vino (lib/origen-registro.js). Solo claves conocidas, y el canal en una palabra.
     const origenLimpio = limpiarOrigen(body.origen)
     const origen = origenLimpio ? { ...origenLimpio, canal: canalDeOrigen(origenLimpio) } : { canal: 'directo' }
+
+    /* ══ EL PLAN SE ELIGE AL REGISTRARSE, COMO ANTES DEL 16 JUL 2026 ══════════
+       Hasta esa fecha el primer paso del registro era «Elige tu plan», con su
+       precio, y entre el 71 y el 81 % de los nuevos cargaba un cliente en tres
+       días; desde que el registro lo puso solo, en silencio, entre el 35 y el
+       51 % (medido por semana, inducción del 18 nov). El dueño pidió volver a
+       ese flujo. Aquí se respeta lo elegido —antes llegaba y se tiraba: todos
+       nacían en Inicial— y se anota en el origen para que el asistente no lo
+       vuelva a preguntar. Solo planes que se venden; cualquier otra cosa, Inicial. */
+    const planElegido = PLANES_DEL_REGISTRO.includes(body.plan) ? body.plan : null
+    const planInicial = planElegido ?? 'starter'
 
     // Validaciones
     if (!nombreOrganizacion?.trim() || !nombre?.trim() || !email?.trim() || !password) {
@@ -155,21 +166,22 @@ export async function POST(req) {
       // sumar días de calendario en los países con horario de verano (México,
       // Chile, Paraguay), y encima el 14 estaba escrito a mano en los dos sitios.
       //
-      // ⚠ 7 + 7 (12 oct 2026): se arranca con `DIAS_PRUEBA_BASE` (7) y los otros
-      // 7 se ganan registrando cobros en 3 días distintos. Ver lib/seguimiento/prueba.js.
+      // ⚠ 14 DÍAS FIJOS (18 nov 2026): el 7 + 7 del 12 oct se quita para las
+      // cuentas nuevas. «14 días gratis, sin tarjeta» es lo que dice el
+      // registro, y es lo que se da. Ver `darRegaloDesdeElRegistro`.
       const vencimiento = new Date()
-      vencimiento.setDate(vencimiento.getDate() + DIAS_PRUEBA_BASE)
+      vencimiento.setDate(vencimiento.getDate() + DIAS_PRUEBA)
 
       const org = await tx.organization.create({
         data: {
           nombre:        nombreOrganizacion.trim(),
-          plan:          'starter',
+          plan:          planInicial,
           activo:        true,
           telefono:      telefonoLimpio,
           country,
           codigoReferido,
           planDemoHasta: vencimiento,
-          origenRegistro: JSON.stringify(origen),
+          origenRegistro: JSON.stringify(planElegido ? { ...origen, planElegido } : origen),
           // Quien llega nuevo arranca con la tarjeta: nunca ha usado otra cosa.
           reciboCliente: 'tarjeta',
           ...(orgReferidora ? { referidoPorId: orgReferidora.id } : {}),
@@ -202,7 +214,7 @@ export async function POST(req) {
       await tx.suscripcion.create({
         data: {
           organizationId:   org.id,
-          plan:             'starter',
+          plan:             planInicial,
           estado:           'activa',
           fechaInicio:      ahora,
           fechaVencimiento: vencimiento,
@@ -210,8 +222,10 @@ export async function POST(req) {
         },
       })
 
-      // La marca de 7 + 7: la lleva el motor de seguimiento, no los crons viejos.
+      // La marca la deja en el motor de seguimiento (no en los crons viejos), y
+      // el regalo ya dado deja la prueba en 14 días fijos sin empujones a ganarlo.
       await marcarPruebaSiete(tx, org.id)
+      await darRegaloDesdeElRegistro(tx, org.id)
 
       return { org, user, vencimiento }
     })

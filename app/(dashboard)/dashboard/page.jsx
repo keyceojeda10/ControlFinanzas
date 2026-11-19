@@ -1564,6 +1564,7 @@ export default function DashboardPage() {
           nombre={session?.user?.nombre || session?.user?.name}
           initialStep={onboarding.wizardInitialStep}
           initialFlujo={onboarding.wizardFlujo}
+          planYaElegido={onboarding.planYaElegido}
           plan={onboarding.plan}
           onComplete={() => {
             // Sin dismiss(): eso marcaba el paso 99 (onboarding cerrado para
