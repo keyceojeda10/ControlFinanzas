@@ -472,13 +472,13 @@ export default function ReportesPage() {
             style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
             <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-3)' }}>{rotulo('capitalEnCalle')}</p>
             <p className="cf-fig text-[18px] mt-1" style={{ color: 'var(--cf-ink)' }}>{formatMoney(resumen.prestamos.capitalEnCalle)}</p>
-            <p className="text-[10px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>tu plata, sin intereses</p>
+            <p className="text-[12px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>tu plata, sin intereses</p>
           </div>
           <div className="rounded-[16px] px-4 py-3"
             style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
             <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-3)' }}>Completados</p>
             <p className="cf-fig text-[18px] mt-1" style={{ color: 'var(--cf-ink)' }}>{resumen.prestamos.completados}</p>
-            <p className="text-[10px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>préstamos finalizados</p>
+            <p className="text-[12px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>préstamos finalizados</p>
           </div>
         </div>
       )}
@@ -533,7 +533,7 @@ export default function ReportesPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 012.916.52 6.003 6.003 0 01-5.395 4.972m0 0a6.726 6.726 0 01-2.749 1.35m0 0a6.772 6.772 0 01-3.044 0" />
               </svg>
             </div>
-            <p className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-2)' }}>Rendimiento de cobradores</p>
+            <p className="text-[15px] font-semibold" style={{ color: 'var(--cf-ink-3)' }}>Rendimiento de cobradores</p>
           </div>
 
           {/* Top 3 podio si hay >= 2.
@@ -649,7 +649,7 @@ export default function ReportesPage() {
                   <div className="flex justify-between items-baseline mb-1.5">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{c.nombre}</p>
-                      <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>{c.ruta} · {c.diasTrabajados} días</p>
+                      <p className="text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>{c.ruta} · {c.diasTrabajados} días</p>
                     </div>
                     <span
                       className="text-[12px] font-bold font-mono-display px-2 py-0.5 rounded-full shrink-0 ml-2"
@@ -667,7 +667,7 @@ export default function ReportesPage() {
                       }}
                     />
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-1 text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-1 text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>
                     <span>Esperado: <span className="font-mono-display">{formatMoney(c.totalEsperado)}</span></span>
                     <span>Recogido: <span className="font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>{formatMoney(c.cobrado ?? c.totalRecogido)}</span></span>
                     <span>Gastos: <span className="font-mono-display" style={{ color: 'var(--cf-red-dark)' }}>{formatMoney(totalGastos)}</span></span>

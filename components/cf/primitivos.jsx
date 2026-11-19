@@ -816,10 +816,15 @@ export function Campo({ foco = false, style, className, ...props }) {
 /** Etiqueta de campo. Escrita como PREGUNTA en el idioma del usuario:
     "Cuánto le vas a prestar", no "Monto del préstamo". */
 export function EtiquetaCampo({ children, style }) {
+  /* Estilo «Mi cuenta» (19 nov 2026): 13 px y sin mayúsculas, como `ROTULO_CAMPO`
+     de `components/cf/ajustes.js`. Los 10 px en mayúsculas se quedaron en el
+     Simulador, el crear préstamo, la caja y el pasar la cartera cuando el resto
+     de formularios ya había cambiado (18 nov). Se queda en mayúscula pequeña
+     solo el rótulo ENCIMA DE UNA CIFRA, que no es esta pieza. */
   return (
     <span style={{
-      fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
-      color: 'var(--cf-ink-3)', ...style,
+      fontSize: 13, fontWeight: 600, letterSpacing: 0, textTransform: 'none',
+      color: 'var(--cf-ink-2)', ...style,
     }}>{children}</span>
   )
 }

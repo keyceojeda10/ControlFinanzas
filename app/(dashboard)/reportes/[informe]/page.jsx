@@ -355,7 +355,7 @@ export default function PantallaDeInforme() {
               )}
               {/* Con el rango puesto, las pastillas de arriba dejan de mandar:
                   se dice, en vez de dejar dos filtros peleándose en silencio. */}
-              <span style={{ fontSize: 11, color: 'var(--cf-ink-3)', flexBasis: '100%' }}>
+              <span style={{ fontSize: 12, color: 'var(--cf-ink-3)', flexBasis: '100%' }}>
                 {rangoPuesto
                   ? 'Manda el tramo que escribiste. Quítalo para volver a los períodos de arriba.'
                   : `Es el tramo que enseña «${(PERIODOS[String(periodo).toUpperCase()] ?? {}).rotulo ?? periodo}». Cambia una fecha para pedir otro, como «del 1 al 15 de julio».`}
@@ -390,7 +390,7 @@ export default function PantallaDeInforme() {
           saber si era el que buscaba. */}
       {informe.trae?.length > 0 && (
         <Tarjeta style={{ padding: 14 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--cf-ink-3)', marginBottom: 10 }}>
+          <p style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-.01em', color: 'var(--cf-ink-3)', marginBottom: 10 }}>
             Qué trae
           </p>
           <ul style={{ display: 'flex', flexDirection: 'column', gap: 8, margin: 0, padding: 0, listStyle: 'none' }}>
@@ -414,7 +414,7 @@ export default function PantallaDeInforme() {
           ojo, junto al filtro que acaba de elegir, y en el mismo sitio en los
           doce informes. */}
       <Tarjeta style={{ padding: 14 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--cf-ink-3)', marginBottom: 10 }}>
+        <p style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-.01em', color: 'var(--cf-ink-3)', marginBottom: 10 }}>
           Bajar este informe
         </p>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
@@ -438,7 +438,7 @@ export default function PantallaDeInforme() {
             </BotonSecundario>
           )}
         </div>
-        <p style={{ fontSize: 11, color: 'var(--cf-ink-3)', marginTop: 8, lineHeight: 1.5 }}>
+        <p style={{ fontSize: 12, color: 'var(--cf-ink-3)', marginTop: 8, lineHeight: 1.5 }}>
           {/* ⚠ EN LOS QUE NO TIENEN VISTA NO HAY NADA «ABAJO» NI NINGÚN FILTRO
               QUE ELEGIR, y la frase de siempre mandaba a mirar una pantalla
               vacía. Cada uno dice lo que de verdad hace. */}

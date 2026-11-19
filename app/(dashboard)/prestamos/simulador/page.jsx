@@ -320,7 +320,7 @@ export default function SimuladorPage() {
             enseñan: un campo que no hace nada es peor que no tenerlo. */}
         {cuotaManualActiva && (
           <label className="flex flex-col gap-2 mt-4">
-            <span className="text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>
+            <span className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
               Cuánto le cobras {freqInfo.cada}
             </span>
             <input
