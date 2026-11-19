@@ -113,7 +113,7 @@ export default function WizardCapital({ onComplete, alreadyDone, savedMonto = 0 
           <span className="cf-fig" style={{ fontSize: 30, fontWeight: 600, color: 'var(--cf-ink-3)' }}>
             {currencySymbol || '$'}
           </span>
-          <input
+          <input className="cf-campo-grande"
             // type=text + inputMode, no type=number: <input type=number> rechaza
             // el separador que no coincide con el idioma del teléfono, y el
             // campo se queda vacío sin decir por qué.

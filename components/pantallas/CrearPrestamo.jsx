@@ -143,7 +143,7 @@ function CampoCorto({ valor, sufijo, ayuda }) {
         height: 'var(--cf-h-field)', padding: '0 14px', borderRadius: 'var(--cf-r-control)',
         background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
       }}>
-        <input defaultValue={valor} type="text" inputMode="decimal" style={{
+        <input className="cf-campo-grande" defaultValue={valor} type="text" inputMode="decimal" style={{
           flex: 1, minWidth: 0, border: 0, outline: 'none', background: 'none',
           fontFamily: 'var(--font-space-grotesk), system-ui',
           fontVariantNumeric: 'tabular-nums lining-nums',

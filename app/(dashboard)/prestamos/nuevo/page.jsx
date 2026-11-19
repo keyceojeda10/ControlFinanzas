@@ -3,7 +3,8 @@
 
 import { conPantalla } from '@/components/cf/Procesando'
 import { useState, useEffect, useMemo, useRef, useCallback, Suspense } from 'react'
-import { abreviaturaDocumento } from '@/lib/documento'
+import { documentoParaMostrar } from '@/lib/documento'
+import { vistaAbonoPrevio } from '@/lib/prestamos/vista-abono-previo'
 import { useRouter, useSearchParams }              from 'next/navigation'
 import Link                                        from 'next/link'
 import { useAuth }                                 from '@/hooks/useAuth'
@@ -178,6 +179,38 @@ function EditableRow({ label, value, editor, valueColor }) {
 }
 
 /** Una cifra calculada del resumen: rótulo pequeño y cifra grande. No se edita. */
+/* Lo abonado antes, lo que queda, el próximo cobro y si queda al día: lo que el
+   prestamista coteja contra su cuaderno antes de crear el préstamo. */
+function ResumenDelAbono({ vista }) {
+  if (!vista) return null
+  const fecha = vista.proximo
+    ? vista.proximo.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })
+    : null
+  const renglon = (rot, val, color = 'var(--cf-ink)') => (
+    <div className="flex items-baseline justify-between gap-3">
+      <span className="text-[14px]" style={{ color: 'var(--cf-ink-3)' }}>{rot}</span>
+      <span className="text-[16px] font-semibold text-right font-mono-display" style={{ color }}>{val}</span>
+    </div>
+  )
+  return (
+    <div className="rounded-[14px] px-4 py-3 space-y-2" style={{ background: 'var(--cf-fill)' }}>
+      {renglon('Ya te pagó antes', formatMoney(vista.abonado), 'var(--cf-green-dark)')}
+      {renglon('Le queda por pagar', formatMoney(vista.queda))}
+      {fecha && renglon('Próximo cobro', fecha)}
+      {vista.queda === 0 ? (
+        <p className="text-[13px]" style={{ color: 'var(--cf-ink-2)' }}>Con lo que ya pagó, el préstamo queda saldado.</p>
+      ) : vista.alDia === true ? (
+        <p className="text-[13px]" style={{ color: 'var(--cf-green-dark)' }}>Con lo que ya pagó, queda al día.</p>
+      ) : vista.alDia === false ? (
+        <p className="text-[13px]" style={{ color: 'var(--cf-red-dark)' }}>
+          Con lo que ya pagó y la fecha de inicio, queda atrasado {vista.diasMora} {vista.diasMora === 1 ? 'día' : 'días'}.
+          Si no es así, revisa la fecha de inicio o lo abonado.
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
 function CifraResumen({ rotulo, valor, tam = 22, color = 'var(--cf-ink)', pie }) {
   return (
     <div className="min-w-0">
@@ -1138,6 +1171,22 @@ function NuevoPrestamo() {
     ...(nota.trim() && { nota: nota.trim() }),
   })
 
+  /* ══ EL PRÉSTAMO QUE YA VENÍA, EN EL RESUMEN (inducción del 18 nov 2026) ══
+     «Ese abono no sale en el resumen del préstamo por ninguna parte», ni la
+     próxima fecha ni si queda al día. Se arma con el MISMO cuerpo que se manda
+     al crear y se le pregunta a las funciones de la ficha (lib/prestamos/
+     vista-abono-previo.js). Es una función y no una constante: así se llama al
+     pintar, cuando todo lo que lee ya está declarado. */
+  const vistaDelAbono = () => (esEnCurso && Number(yaAbonado) > 0 && calculo?.totalAPagar > 0
+    ? vistaAbonoPrevio({
+        ...cuerpoDelPrestamo(),
+        abonado: Number(yaAbonado),
+        totalAPagar: calculo.totalAPagar,
+        cuotaDiaria: calculo.cuotaDiaria,
+        diasExcluidos: Array.isArray(diasSinCobroCliente) ? diasSinCobroCliente : [],
+      })
+    : null)
+
   const crearPrestamoRequest = async (inyeccionPrevia = null) => {
     // Cliente en perdidos: el dueño confirma; al cobrador el servidor no lo deja (#17).
     const res = await enviarConfirmandoPerdidos((confirmado) => fetch('/api/prestamos', {
@@ -1187,6 +1236,19 @@ function NuevoPrestamo() {
   // `cuotaInsuficiente` sin retardo: si de verdad la cuota no alcanza, el boton
   // no se habilita ni por un instante. Lo que espera es el rojo en pantalla.
   const [avisoCuotaVisible, setAvisoCuotaVisible] = useState(false)
+  /* ── EL PIE NO REPITE LO QUE YA ESTÁ A LA VISTA (inducción del 18 nov 2026) ──
+     En «Condiciones» el pie fijo enseña cuota y total, y debajo del formulario
+     está el resumen con las mismas dos cifras: salían dos veces, y el pie tapaba
+     el renglón «Plazo». Con el resumen en pantalla, el pie solo lleva botones. */
+  const refResumen = useRef(null)
+  const [resumenALaVista, setResumenALaVista] = useState(false)
+  useEffect(() => {
+    const el = refResumen.current
+    if (!el || typeof IntersectionObserver === 'undefined') { setResumenALaVista(false); return }
+    const io = new IntersectionObserver(([e]) => setResumenALaVista(e.isIntersecting))
+    io.observe(el)
+    return () => io.disconnect()
+  }, [paso, !!calculo])
   useEffect(() => {
     if (!cuotaInsuficiente) { setAvisoCuotaVisible(false); return }
     const t = setTimeout(() => setAvisoCuotaVisible(true), 900)
@@ -1570,7 +1632,7 @@ function NuevoPrestamo() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm" style={{ color: 'var(--cf-ink)', overflowWrap: 'anywhere' }}>{c.nombre}</p>
-              <p className="text-xs" style={{ color: 'var(--cf-ink-3)', overflowWrap: 'anywhere' }}>{abreviaturaDocumento()} {c.cedula}</p>
+              <p className="text-xs" style={{ color: 'var(--cf-ink-3)', overflowWrap: 'anywhere' }}>{documentoParaMostrar(c.cedula) ?? 'Sin cédula'}</p>
             </div>
             {c.tieneClavo && <EtiquetaClavo style={{ flex: 'none' }} />}
             {mostrarCheck && c.id === clienteId && (
@@ -1678,7 +1740,7 @@ function NuevoPrestamo() {
                     {clienteSeleccionado.nombre}
                   </p>
                   <p className="text-xs break-words" style={{ color: 'var(--cf-ink-3)' }}>
-                    {abreviaturaDocumento()} {clienteSeleccionado.cedula}
+                    {documentoParaMostrar(clienteSeleccionado.cedula) ?? 'Sin cédula'}
                   </p>
                 </div>
                 <button
@@ -2712,11 +2774,6 @@ function NuevoPrestamo() {
                 </div>
               )}
 
-              <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Fecha de inicio</label>
-                <Input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} max={hoyISO()} />
-              </div>
-
               <label className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border cursor-pointer"
                 style={{ background: 'var(--cf-fill)', borderColor: 'var(--cf-border)' }}>
                 <div className="flex-1 min-w-0">
@@ -2778,6 +2835,24 @@ function NuevoPrestamo() {
                 <p className="mt-1 text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
                   Te sale al cobrarle y cuando se le vence.
                 </p>
+              </div>
+
+              {/* ══ LA FECHA Y EL ABONO, JUNTOS (inducción del 18 nov 2026) ══
+                  «Son cosas que van de la mano: si es un préstamo anterior tiene
+                  que colocar la fecha real, y si ya abonó, ahí mismo el abono.
+                  Al estar separadas se le puede olvidar una o la otra.» Estaban
+                  con el seguro, las cuotas extra, el socio y la nota en medio. */}
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Fecha de inicio</label>
+                <Input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} max={hoyISO()} />
+                <p className="mt-1 text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>
+                  Si el préstamo ya venía de tu cuaderno, pon la fecha real en que lo hiciste.
+                </p>
+                {esEnCurso && fechaInicio === hoyISO() && (
+                  <p className="mt-1.5 text-[13px] font-semibold" style={{ color: 'var(--cf-red-dark)' }}>
+                    Marcaste que ya había pagado algo, pero la fecha de inicio es hoy. Pon la fecha real en que le prestaste.
+                  </p>
+                )}
               </div>
 
               <label className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border cursor-pointer"
@@ -2942,7 +3017,7 @@ function NuevoPrestamo() {
                   /* SIN BORDE NI DEGRADADO VERDES: «eso ya no se usa en la
                      aplicación». Tarjeta plana, las dos cifras que importan en
                      grande, y cada renglón con su pastilla de editar. */
-                  <div className="rounded-[20px] overflow-hidden" style={{ border: '1px solid var(--cf-border)', background: 'var(--cf-card)' }}>
+                  <div ref={refResumen} className="rounded-[20px] overflow-hidden" style={{ border: '1px solid var(--cf-border)', background: 'var(--cf-card)' }}>
                     <div className="px-4 pt-4 flex items-baseline justify-between gap-3">
                       <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-2)' }}>Resumen del préstamo</p>
                       <span className="text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>Toca un renglón para cambiarlo</span>
@@ -2953,6 +3028,7 @@ function NuevoPrestamo() {
                         <CifraResumen rotulo={`Cuota ${labelFreq}`} valor={formatMoney(calculo.cuotaDiaria)} tam={26} />
                         <CifraResumen rotulo="Total a pagar" valor={formatMoney(totalConSeguro)} tam={26} />
                       </div>
+                      {vistaDelAbono() && <div className="pb-3"><ResumenDelAbono vista={vistaDelAbono()} /></div>}
 
                       {/* Editables */}
                       <div className="space-y-0 text-sm">
@@ -3253,6 +3329,7 @@ function NuevoPrestamo() {
                     <CifraResumen rotulo={`Cuota ${frecuencia === 'diario' ? 'diaria' : labelFrecuencia.toLowerCase()}`} valor={formatMoney(calculo.cuotaDiaria)} tam={26} />
                     <CifraResumen rotulo="Total a pagar" valor={formatMoney(calculo.totalAPagar)} tam={26} />
                   </div>
+                  <ResumenDelAbono vista={vistaDelAbono()} />
                   {seguroAparte > 0 && (
                     <CifraResumen rotulo="Seguro" valor={formatMoney(seguroAparte)}
                       pie="Aparte: no está en el total ni se resta de lo que le entregas" />
@@ -3575,7 +3652,7 @@ function NuevoPrestamo() {
         {/* `xl:hidden`: desde `xl` la cuota ya está arriba en el panel, a 32px y
             junto a la ganancia y el calendario. Dejarla también aquí ponía la
             misma cifra dos veces en la misma pantalla. */}
-        {paso === 1 && calculo && (
+        {paso === 1 && calculo && !resumenALaVista && (
           <div className="xl:hidden max-w-2xl mx-auto flex items-end justify-between gap-4 mb-3.5">
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-[.1em]" style={{ color: 'var(--cf-ink-3)' }}>

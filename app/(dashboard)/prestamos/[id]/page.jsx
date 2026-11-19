@@ -8,7 +8,7 @@ import { useState, useEffect, useMemo, useRef, useCallback, use } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link                           from 'next/link'
 import { useAuth }                    from '@/hooks/useAuth'
-import { montoCrudo, montoCrudoConModo, montoParaMostrarConModo } from '@/lib/adaptadores/pago'
+import { montoCrudo, montoCrudoConModo, montoParaMostrarConModo, montoParaMostrar } from '@/lib/adaptadores/pago'
 import { useOffline }                 from '@/components/providers/OfflineProvider'
 import { explicarFallo }              from '@/lib/pagos-sin-senal'
 import { obtenerPrestamoOffline, resolverTempId }     from '@/lib/offline'
@@ -3457,7 +3457,7 @@ function PrestamoDetalleContenido({ params }) {
               }}>O pon el monto que pactaste</span>
               <input
                 type="text" inputMode="decimal"
-                value={liqTecleado != null ? liqTecleado : (liqMonto ? montoParaMostrarConModo(String(Math.round(liqMonto)), modoAbreviado, undefined) : '')}
+                value={liqTecleado != null ? montoParaMostrar(liqTecleado, undefined) : (liqMonto ? montoParaMostrarConModo(String(Math.round(liqMonto)), modoAbreviado, undefined) : '')}
                 onChange={(e) => {
                   const crudo = montoCrudo(e.target.value)
                   setLiqTecleado(crudo)

@@ -5,7 +5,7 @@
 // Todos los datos se conservan.
 
 import Link from 'next/link'
-import { abreviaturaDocumento } from '@/lib/documento'
+import { documentoParaMostrar } from '@/lib/documento'
 import { Card } from '@/components/ui/Card'
 import { formatFechaCobroRelativa } from '@/lib/calculos'
 import { formatMoney } from '@/lib/i18n'
@@ -90,7 +90,7 @@ export default function PrestamoCard({ prestamo: p, actions, esNuevo, ancla, alS
               </p>
               <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                 {p.cliente?.cedula && !p.cliente.cedula.startsWith('SIN-') && (
-                  <span className="text-[10px]" style={{ color: P.sub }}>{abreviaturaDocumento()} {p.cliente.cedula}</span>
+                  <span className="text-[10px]" style={{ color: P.sub }}>{documentoParaMostrar(p.cliente.cedula) ?? 'Sin cédula'}</span>
                 )}
                 {p.creadoPorNombre && (
                   <>

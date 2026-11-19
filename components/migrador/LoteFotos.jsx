@@ -45,6 +45,8 @@ import PreguntaAbonoRaro from '@/components/prestamos/PreguntaAbonoRaro'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { BotonPrimario, Chip, EtiquetaCampo, Pastilla } from '@/components/cf/primitivos'
 import MoneyInput from '@/components/ui/MoneyInput'
+import { guardarEnCache, leerDeCache } from '@/lib/offline'
+import { useAuth } from '@/hooks/useAuth'
 import { formatMoney } from '@/lib/i18n'
 import { montoConTasa, inicioPorLoAbonado, choqueDeCuota } from '@/lib/cartulina-datos'
 import { MODOS_EN_ORDEN, etiquetaModo } from '@/lib/dinero/modos'
@@ -183,6 +185,36 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
      qué ruta va la cartera: no está escrito en la cartulina. Pedirlo por fila
      serían treinta veces la misma respuesta. */
   const [base, setBase] = useState({ tasa: '20', frecuencia: 'diario', modoInteres: 'fijo', rutaId: '' })
+
+  /* ══ EL LOTE SE QUEDA GUARDADO EN EL TELÉFONO (inducción del 18 nov 2026) ══
+     «Estaba pasando su cartera tomando fotos desde el cuaderno, se salió y ya
+     no pudo retomar desde donde quedó». Lo leído vivía solo en la memoria de la
+     pantalla: al salir se perdía todo —y cada foto ya se había pagado por leer—.
+     Ahora va al almacén del teléfono (el mismo de trabajar sin señal), por
+     negocio, y al volver se ofrece seguir donde iba.
+     ⚠ Las filas que se crean SALEN del lote en cuanto quedan guardadas, y el
+     cliente creado se anota en su fila antes del préstamo: si sale a mitad de
+     «Crear», al retomar no se duplica nadie (ver `crear`). */
+  const { organizationId } = useAuth()
+  const claveLote = `migrador:lote:${organizationId || 'sin-negocio'}`
+  const [pendiente, setPendiente] = useState(null)   // { filas, base, guardadoEn }
+  const loteLeido = useRef(false)
+  useEffect(() => {
+    if (!organizationId) return
+    let vivo = true
+    leerDeCache(claveLote)
+      .then((g) => { if (vivo && g?.filas?.length) setPendiente(g) })
+      .catch(() => {})
+      .finally(() => { loteLeido.current = true })
+    return () => { vivo = false }
+  }, [organizationId, claveLote])
+  useEffect(() => {
+    // Mientras se ofrece el lote de antes no se pisa: la pantalla está vacía.
+    if (!organizationId || !loteLeido.current || pendiente) return
+    guardarEnCache(claveLote, filas.length ? { filas, base, guardadoEn: Date.now() } : null).catch(() => {})
+  }, [filas, base, organizationId, claveLote, pendiente])
+  const seguirLote = () => { setFilas(pendiente.filas); if (pendiente.base) setBase(pendiente.base); setPendiente(null) }
+  const descartarLote = () => { guardarEnCache(claveLote, null).catch(() => {}); setPendiente(null) }
 
   /* ⚠ EL HUECO DEL PIE SE MIDE, NO SE ESCRIBE A MANO.
    *
@@ -359,6 +391,9 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
             const dataC = await resC.json()
             if (!resC.ok) throw new Error(dataC.error || 'no se pudo crear el cliente')
             clienteId = dataC.id
+            // Anotado YA: si sale antes del préstamo, al retomar no lo crea otra vez.
+            const idCliente = clienteId
+            setFilas((prev) => prev.map((x) => (x._id === f._id ? { ...x, _clienteId: idCliente } : x)))
           }
 
           const resP = await fetch('/api/prestamos', {
@@ -399,6 +434,8 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
             diasSinCobro: [],
             clienteId, prestamoId: dataP.id,
           })
+          // Guardada: sale del lote en el acto (no al final de la tanda entera).
+          setFilas((prev) => prev.filter((x) => x._id !== f._id))
         } catch (e) {
           // El motivo viaja PEGADO A LA FILA, no en una lista aparte: «1 no se
           // pudo crear» sin decir cuál ni por qué es un callejón sin salida.
@@ -455,9 +492,31 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
   }
 
   // ══ VACÍO: todavía no ha subido nada ══
-  if (!filas.length) {
+  // (Mientras se crea, las filas van saliendo: sin `!creando` la pantalla
+  // volvía a «sube tus fotos» antes de terminar la última tanda.)
+  if (!filas.length && !creando) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {pendiente && (
+          <div role="status" style={{
+            padding: '16px 18px', borderRadius: 'var(--cf-r-card)', background: 'var(--cf-card)',
+            border: '1.5px solid var(--cf-gold)', display: 'flex', flexDirection: 'column', gap: 12,
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--cf-ink)' }}>Tienes una carga sin terminar</span>
+              <span style={{ fontSize: 14, lineHeight: 1.45, color: 'var(--cf-ink-2)' }}>
+                {pendiente.filas.length} {pendiente.filas.length === 1 ? 'cartulina leída' : 'cartulinas leídas'} que todavía no se guardaron
+                {pendiente.guardadoEn ? `, del ${new Date(pendiente.guardadoEn).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}` : ''}.
+                Sigue donde ibas: no hay que volver a tomar las fotos.
+              </span>
+            </div>
+            <BotonPrimario onClick={seguirLote}>Seguir donde iba</BotonPrimario>
+            <button type="button" onClick={descartarLote} style={{
+              height: 40, border: 0, background: 'none', cursor: 'pointer', font: 'inherit',
+              fontSize: 14, fontWeight: 600, color: 'var(--cf-ink-3)', textDecoration: 'underline', textUnderlineOffset: 3,
+            }}>Empezar de nuevo</button>
+          </div>
+        )}
         <input ref={inputRef} type="file" accept="image/*" multiple
           onChange={subir} style={{ display: 'none' }} />
         <input ref={camaraRef} type="file" accept="image/*" capture="environment"

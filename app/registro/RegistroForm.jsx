@@ -736,7 +736,7 @@ export default function RegistroForm({ refCode, planParam, countryParam, origenP
                     onKeyDown={(e) => handleOtpKeyDown(i, e)}
                     autoFocus={i === 0}
                     disabled={otpLoading}
-                    className="w-11 text-center text-[22px] font-bold rounded-[12px] outline-none transition-all"
+                    className="w-11 text-center text-[22px] font-bold rounded-[12px] outline-none transition-all cf-campo-grande"
                     style={{
                       height: 52,
                       background: t.bgCardHover,

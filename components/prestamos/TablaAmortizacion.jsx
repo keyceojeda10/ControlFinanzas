@@ -248,7 +248,7 @@ function CuotaFila({
 }
 
 function CapitalExtraEditor({ montoActual, onGuardar, onQuitar, onCancelar }) {
-  const [valor, setValor] = useState(montoActual > 0 ? String(montoActual) : '')
+  const [valor, setValor] = useState(montoActual > 0 ? String(Math.round(montoActual)) : '')
 
   return (
     <div
@@ -261,10 +261,10 @@ function CapitalExtraEditor({ montoActual, onGuardar, onQuitar, onCancelar }) {
       </p>
       <div className="flex items-center gap-2">
         <input
-          type="number"
+          type="text"
           inputMode="numeric"
-          value={valor}
-          onChange={e => setValor(e.target.value)}
+          value={valor ? Number(String(valor).replace(/\D/g, '')).toLocaleString('es-CO') : ''}
+          onChange={e => setValor(e.target.value.replace(/\D/g, ''))}
           placeholder="Monto"
           autoFocus
           className="flex-1 h-7 rounded-md border px-2 text-xs"

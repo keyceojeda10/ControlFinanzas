@@ -163,7 +163,7 @@ function CampoMonto({ rotulo, monto, moneda = '$', onMonto, atajos, atajoActivo,
           onChange={(e) => onMonto?.(e.target.value)}
           type="text" inputMode="decimal" autoComplete="off"
           aria-label={rotulo}
-          className="cf-fig"
+          className="cf-fig cf-campo-grande"
           style={{
             flex: 1, minWidth: 0, border: 0, background: 'none', padding: 0,
             outline: 'none', font: 'inherit',

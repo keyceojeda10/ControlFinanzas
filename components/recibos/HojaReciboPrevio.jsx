@@ -41,7 +41,7 @@
 import { useEffect, useRef, useState } from 'react'
 import HojaInferior from '@/components/cf/HojaInferior'
 import { BotonPrimario, BotonSecundario } from '@/components/cf/primitivos'
-import { compartirArchivo, descargarDatos } from '@/lib/lienzo-compartir'
+import { compartirArchivo, descargarDatos, guardarImagen } from '@/lib/lienzo-compartir'
 import { ChecklistCamposRecibo, getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
 
 /* El nombre del archivo es lo que ve el cliente en el chat y lo que queda en la
@@ -174,7 +174,10 @@ export default function HojaReciboPrevio({
     if (!ok) descargar()
   }
 
+  // En el iPhone «Guardar» abre la hoja del teléfono, que es la que llega a Fotos
+  // (ver `guardarImagen`). El de respaldo de «Compartir» sigue siendo descargar.
   const descargar = () => descargarDatos(imagen, nombreDelArchivo(cliente))
+  const guardarEnElTelefono = () => guardarImagen({ file: archivoRef.current, url: imagen, nombre: nombreDelArchivo(cliente) })
 
   return (
     <HojaInferior
@@ -197,12 +200,12 @@ export default function HojaReciboPrevio({
               <BotonPrimario style={{ flex: 2, opacity: imagen ? 1 : 0.5 }} onClick={compartir} disabled={!imagen}>
                 Compartir
               </BotonPrimario>
-              <BotonSecundario style={{ flex: 1, opacity: imagen ? 1 : 0.5 }} onClick={descargar} disabled={!imagen}>
+              <BotonSecundario style={{ flex: 1, opacity: imagen ? 1 : 0.5 }} onClick={guardarEnElTelefono} disabled={!imagen}>
                 Guardar
               </BotonSecundario>
             </>
           ) : (
-            <BotonPrimario style={{ flex: 1, opacity: imagen ? 1 : 0.5 }} onClick={descargar} disabled={!imagen}>
+            <BotonPrimario style={{ flex: 1, opacity: imagen ? 1 : 0.5 }} onClick={guardarEnElTelefono} disabled={!imagen}>
               Guardar la imagen
             </BotonPrimario>
           )

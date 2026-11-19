@@ -6,7 +6,7 @@
 'use client'
 
 import Link from 'next/link'
-import { abreviaturaDocumento } from '@/lib/documento'
+import { documentoParaMostrar } from '@/lib/documento'
 import { Card } from '@/components/ui/Card'
 import CardWaves from '@/components/ui/CardWaves'
 import { useCardPalettes } from '@/components/ui/tarjetaCredito'
@@ -59,7 +59,7 @@ export default function SocioCard({ socio }) {
             </p>
             {socio.cedula && (
               <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
-                {abreviaturaDocumento()} {socio.cedula}
+                {documentoParaMostrar(socio.cedula) ?? 'Sin cédula'}
               </p>
             )}
           </div>

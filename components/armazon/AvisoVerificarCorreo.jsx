@@ -118,7 +118,7 @@ export default function AvisoVerificarCorreo() {
         }
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <input
+          <input className="cf-campo-grande"
             value={codigo}
             onChange={(e) => { setCodigo(e.target.value.replace(/\D/g, '').slice(0, 6)); setError('') }}
             onKeyDown={(e) => e.key === 'Enter' && verificar()}

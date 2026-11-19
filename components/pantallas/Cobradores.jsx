@@ -521,7 +521,7 @@ function Entrada({ rotulo, valor, onCambiar, placeholder, foco, numerica, tipo =
           placeholder={placeholder}
           onFocus={() => setTocado(true)}
           onChange={(e) => onCambiar?.(e.target.value)}
-          className={numerica ? 'cf-num' : undefined}
+          className={numerica ? 'cf-num cf-campo-grande' : 'cf-campo-grande'}
           style={{
             flex: 1, minWidth: 0, border: 0, outline: 'none', background: 'transparent',
             font: 'inherit', fontSize: 17, fontWeight: numerica ? 500 : 600, color: 'var(--cf-ink)',

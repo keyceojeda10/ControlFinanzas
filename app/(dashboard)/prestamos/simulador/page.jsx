@@ -37,7 +37,7 @@ import { calcularPrestamo } from '@/lib/calculos'
 import { formatMoney, soloDecimal } from '@/lib/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { useRegistrarAcciones } from '@/components/acciones/AccionesProvider'
-import { montoCrudo, montoCrudoConModo, montoParaMostrarConModo } from '@/lib/adaptadores/pago'
+import { montoCrudo, montoCrudoConModo, montoParaMostrarConModo, montoParaMostrar } from '@/lib/adaptadores/pago'
 import { compartirSimulacionImagen } from '@/lib/simulacion-imagen'
 import { MODOS_CUOTA_PAREJA } from '@/lib/dinero/interes-en-pesos'
 import { useCuotaEnPesos } from '@/hooks/useCuotaEnPesos'
@@ -325,7 +325,7 @@ export default function SimuladorPage() {
             </span>
             <input
               type="text" inputMode="decimal"
-              value={cuotaTecleada != null ? cuotaTecleada : montoParaMostrarConModo(cuotaManual, modoAbreviado, undefined)}
+              value={cuotaTecleada != null ? montoParaMostrar(cuotaTecleada, undefined) : montoParaMostrarConModo(cuotaManual, modoAbreviado, undefined)}
               onChange={(e) => {
                 const crudo = montoCrudo(e.target.value)
                 setCuotaTecleada(crudo)

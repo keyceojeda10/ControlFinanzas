@@ -12,7 +12,7 @@
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { formatMoney } from '@/lib/i18n'
-import { abreviaturaDocumento } from '@/lib/documento'
+import { documentoParaMostrar } from '@/lib/documento'
 import { referenciaDelCredito } from '@/lib/prestamos/referencia'
 import { getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
 import { resolverCampo } from '@/components/ui/BotonImprimirRecibo'
@@ -327,7 +327,8 @@ export function dibujarRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) 
   const campos = (Array.isArray(camposRecibo) && camposRecibo.length > 0)
     ? camposRecibo
     : getDefaultCampos()
-  const tieneCedula = cliente?.cedula && !String(cliente.cedula).startsWith('SIN-')
+  const documento = documentoParaMostrar(cliente?.cedula)
+  const tieneCedula = !!documento
 
   /* Cada fila lleva su icono y si es texto o cifra, para que la tabla los pinte
      sin volver a preguntar qué campo era. */
@@ -353,7 +354,7 @@ export function dibujarRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) 
   const yaPideCedula = campos.some((c) => c.tipo === 'dato' && c.campo === 'clienteCedula')
   const cabeceraTabla = [['Cliente', cliente?.nombre ?? '—', 'persona', 'txt']]
   if (tieneCedula && !yaPideCedula) {
-    cabeceraTabla.push(['Documento', `${abreviaturaDocumento()} ${cliente.cedula}`, 'recibo', 'txt'])
+    cabeceraTabla.push(['Documento', documento, 'recibo', 'txt'])
   }
   /* DE QUÉ CRÉDITO ES ESTE PAGO (6 oct 2026): «si un cliente tiene varios
      créditos y paga uno, no sabe cuál está pagando». Ver lib/prestamos/referencia.js. */

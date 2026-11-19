@@ -83,7 +83,7 @@ export default function AvisarPago({ token, negocio }) {
       </div>
       <label style={ETIQUETA}>
         ¿Cuánto pagaste?
-        <input inputMode="numeric" value={monto} placeholder="Opcional" style={CAMPO}
+        <input inputMode="numeric" value={monto ? Number(monto).toLocaleString('es-CO') : ''} placeholder="Opcional" style={CAMPO}
           onChange={(e) => setMonto(e.target.value.replace(/\D/g, '').slice(0, 12))} />
       </label>
       <label style={ETIQUETA}>

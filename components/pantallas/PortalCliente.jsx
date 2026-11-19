@@ -143,7 +143,7 @@ export function PortalAcceso({
                 onChange={(e) => onCedula?.(e.target.value)}
                 type="text" inputMode="numeric" autoComplete="off"
                 aria-label={`Tu ${String(rotuloCedula).toLowerCase()}`}
-                className="cf-num"
+                className="cf-num cf-campo-grande"
                 style={{
                   flex: 1, minWidth: 0, border: 0, background: 'none', padding: 0,
                   outline: 'none', font: 'inherit',
@@ -529,7 +529,7 @@ export function PortalRecuperar({
             onChange={(e) => onNumero?.(e.target.value)}
             type="tel" inputMode="tel" autoComplete="tel"
             aria-label="Tu número de teléfono"
-            className="cf-fig"
+            className="cf-fig cf-campo-grande"
             style={{
               flex: 1, minWidth: 0, border: 0, background: 'none', padding: 0,
               outline: 'none', font: 'inherit',

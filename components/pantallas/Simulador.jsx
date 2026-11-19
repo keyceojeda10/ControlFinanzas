@@ -48,7 +48,7 @@ function CampoConSufijo({ etiqueta, prefijo, sufijo, valor, onCambio, marcador, 
             romper la calculadora — enseñaba una cuota que no correspondía a lo
             escrito. Con `onCambio` pasa a ser controlado; sin él se comporta
             igual que antes, que es lo que necesita el banco de pruebas. */}
-        <input
+        <input className="cf-campo-grande"
           {...(onCambio
             ? { value: valor ?? '', onChange: (e) => onCambio(e.target.value) }
             : { defaultValue: valor })}

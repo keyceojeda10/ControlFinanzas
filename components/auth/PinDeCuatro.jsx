@@ -13,7 +13,7 @@ export default function PinDeCuatro({ titulo, onCompleto, error, cargando = fals
   return (
     <div className="flex flex-col gap-3">
       <p className="text-[15px] font-semibold" style={{ color: 'var(--cf-ink)' }}>{titulo}</p>
-      <input
+      <input className="cf-campo-grande"
         ref={ref}
         type="password"
         inputMode="numeric"

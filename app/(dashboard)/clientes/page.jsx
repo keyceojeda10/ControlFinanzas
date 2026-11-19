@@ -2,7 +2,7 @@
 // app/(dashboard)/clientes/page.jsx - Lista de clientes
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { abreviaturaDocumento } from '@/lib/documento'
+import { documentoParaMostrar } from '@/lib/documento'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth }       from '@/hooks/useAuth'
@@ -1295,7 +1295,7 @@ export default function ClientesPage() {
                       <span className="min-w-0 flex-1">
                         <span className="block text-[14px] font-semibold" style={{ color: 'var(--cf-ink)', minWidth: 0, overflowWrap: 'anywhere' }}>{c.nombre}</span>
                         <span className="block text-[11.5px] truncate" style={{ color: 'var(--cf-ink-3)' }}>
-                          {[c.cedula ? `${abreviaturaDocumento()} ${c.cedula}` : null, c.ruta?.nombre].filter(Boolean).join(' · ')}
+                          {[documentoParaMostrar(c.cedula), c.ruta?.nombre].filter(Boolean).join(' · ')}
                         </span>
                       </span>
                       <span className="text-[13px] font-bold shrink-0" style={{ color: 'var(--cf-gold-dark)' }}>Abrir</span>

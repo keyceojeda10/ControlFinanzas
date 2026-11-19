@@ -226,7 +226,7 @@ function Campo({ rotulo, valor, onCambiar, placeholder, foco, numerica, icono })
           placeholder={placeholder}
           onFocus={() => setTocado(true)}
           onChange={(e) => onCambiar?.(e.target.value)}
-          className={numerica ? 'cf-num' : undefined}
+          className={numerica ? 'cf-num cf-campo-grande' : 'cf-campo-grande'}
           style={{
             flex: 1, minWidth: 0, border: 0, outline: 'none', background: 'transparent',
             // 17px, no 15: por debajo de 16px iOS hace zoom al enfocar el campo y

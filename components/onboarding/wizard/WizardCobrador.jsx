@@ -179,7 +179,7 @@ export default function WizardCobrador({ onComplete, onSkip }) {
                   value={capitalNum > 0 ? capitalNum.toLocaleString('es-CO') : ''}
                   onChange={(e) => setRutaCapital(e.target.value.replace(/\D/g, ''))}
                   placeholder="0"
-                  className="w-full h-12 rounded-[12px] pl-9 pr-4 text-[18px] font-bold font-mono-display transition-all outline-none"
+                  className="w-full h-12 rounded-[12px] pl-9 pr-4 text-[18px] font-bold font-mono-display transition-all outline-none cf-campo-grande"
                   style={{
                     background: 'var(--cf-surface)',
                     border: '1.5px solid var(--cf-border)',

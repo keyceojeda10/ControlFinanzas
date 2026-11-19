@@ -452,7 +452,7 @@ export function ComoPrestasMovil({
                 value={tasa ?? ''}
                 onChange={(e) => onTasa?.(e.target.value)}
                 type="text" inputMode="decimal" aria-label="Tasa"
-                className="cf-fig"
+                className="cf-fig cf-campo-grande"
                 style={{
                   width: 62, textAlign: 'right', border: 0, background: 'none', padding: 0,
                   outline: 'none', font: 'inherit',
@@ -472,7 +472,7 @@ export function ComoPrestasMovil({
                 value={plazo ?? ''}
                 onChange={(e) => onPlazo?.(e.target.value)}
                 type="text" inputMode="numeric" aria-label="Plazo"
-                className="cf-fig"
+                className="cf-fig cf-campo-grande"
                 style={{
                   width: 62, textAlign: 'right', border: 0, background: 'none', padding: 0,
                   outline: 'none', font: 'inherit',

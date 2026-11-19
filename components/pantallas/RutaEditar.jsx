@@ -150,7 +150,7 @@ export function CrearRuta({
             borderRadius: 14, background: 'var(--cf-card)',
             border: '1.5px solid var(--cf-gold)', boxShadow: '0 0 0 3px var(--cf-gold-focus)',
           }}>
-            <input
+            <input className="cf-campo-grande"
               value={nombre ?? ''}
               onChange={(e) => onNombre?.(e.target.value)}
               aria-label="Nombre de la ruta"

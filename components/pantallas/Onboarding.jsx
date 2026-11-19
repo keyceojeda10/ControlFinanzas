@@ -276,7 +276,7 @@ export function RegistroWhatsApp({
               onChange={(e) => onNumero?.(e.target.value)}
               type="tel" inputMode="tel" autoComplete="tel"
               aria-label="Tu número de WhatsApp"
-              className="cf-num"
+              className="cf-num cf-campo-grande"
               style={{
                 flex: 1, minWidth: 0, border: 0, background: 'none', padding: 0,
                 outline: 'none', font: 'inherit',

@@ -42,6 +42,12 @@ function Rotulo({ children }) {
 
 /* ══ T05-02 · Renovar ══════════════════════════════════════════════════════ */
 
+/** La cifra con sus puntos de miles, como `MoneyInput`. */
+function conPuntos(v) {
+  const n = String(v ?? '').replace(/\D/g, '')
+  return n ? Number(n).toLocaleString('es-CO') : ''
+}
+
 export function Renovar({
   titulo = 'Renovar el préstamo',
   ayuda = 'Cierra el actual y abre uno nuevo',
@@ -119,14 +125,20 @@ export function Renovar({
           }}>{simbolo}</span>
           {/* `type=text` con `inputMode=decimal`: son 12 países con dos convenios
               de miles, y `type=number` rechaza el separador que no coincide. */}
+          {/* CON LOS PUNTOS DE MILES (inducción del 18 nov 2026): salía
+              «2000000», y teclear siete ceros sin ver dónde van los millones es
+              como se presta diez veces de más. Quien lo usa ya limpia todo lo
+              que no es dígito (`montoCrudo`), así que solo cambia cómo se ve.
+              Y `cf-campo-grande`: sin la marca, la regla de 16 px del móvil
+              (globals.css) lo dejaba diminuto. */}
           <input
-            value={total ?? ''}
+            value={conPuntos(total)}
             onChange={(e) => onTotal?.(e.target.value)}
             // Sin `onTotal` la cifra es la respuesta, no se escribe (cambiar el modo).
             readOnly={!onTotal}
             type="text" inputMode="decimal"
             aria-label={totalEtiqueta}
-            className="cf-fig"
+            className="cf-fig cf-campo-grande"
             style={{
               flex: 1, minWidth: 0, border: 0, background: 'none', padding: 0,
               outline: 'none', font: 'inherit',

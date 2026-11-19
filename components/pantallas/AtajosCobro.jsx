@@ -315,7 +315,7 @@ export default function AtajosCobro({
             {/* `type="text"` con `inputMode="decimal"`, no `type="number"`: este
                 último rechaza el separador decimal que no coincide con el idioma
                 del teléfono, y en un móvil en inglés no se puede escribir la coma. */}
-            <input
+            <input className="cf-campo-grande"
               autoFocus
               type="text"
               inputMode="decimal"

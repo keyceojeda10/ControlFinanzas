@@ -623,7 +623,7 @@ export default function RenovarPrestamo({
                 {!cuotaManualActiva && !modoUsaTabla && (
                   <button
                     type="button"
-                    onClick={() => setCuotaManual(String(calculo.cuotaDiaria))}
+                    onClick={() => setCuotaManual(String(Math.round(calculo.cuotaDiaria)))}
                     className="ml-1.5 underline"
                     style={{ color: 'var(--cf-gold)' }}
                   >
@@ -635,10 +635,10 @@ export default function RenovarPrestamo({
                 <div className="flex items-center gap-1.5">
                   <span className="text-sm font-medium" style={{ color: 'var(--cf-ink-3)' }}>$</span>
                   <input
-                    type="number"
+                    type="text"
                     inputMode="numeric"
-                    value={cuotaManual}
-                    onChange={(e) => setCuotaManual(e.target.value)}
+                    value={cuotaManual ? Number(String(cuotaManual).replace(/\D/g, '')).toLocaleString('es-CO') : ''}
+                    onChange={(e) => setCuotaManual(e.target.value.replace(/\D/g, ''))}
                     className="w-24 h-8 px-2 text-right text-base font-bold rounded-lg outline-none font-mono-display"
                     style={{ background: 'var(--cf-surface)', border: '1.5px solid var(--cf-gold)', color: 'var(--cf-ink)' }}
                     autoFocus

@@ -70,7 +70,7 @@ export function CampoMonto({
         // poder escribir el punto de los miles.
         type="text"
         inputMode="decimal"
-        className="cf-fig cf-campo"
+        className="cf-fig cf-campo cf-campo-grande"
         style={{
           flex: 1, minWidth: 0, width: '100%',
           background: 'none', border: 0, outline: 'none', padding: 0,
