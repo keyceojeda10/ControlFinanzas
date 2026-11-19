@@ -4651,7 +4651,7 @@ export default function RutaDetallePage({ params }) {
         }
       >
         <p className="text-sm" style={{ color: 'var(--cf-ink-2)' }}>
-          {`La ruta vuelve al orden que tenía el ${cuandoFue(ruta?.ordenDeRuta?.anteriorDesde)}, antes de optimizarla. Los clientes que llegaron después quedan al final.`}
+          {`La ruta vuelve al orden que tenía el ${cuandoFue(ruta?.ordenDeRuta?.anteriorDesde)}, ${ruta?.ordenDeRuta?.anteriorPor ? `antes de que ${ruta.ordenDeRuta.anteriorPor} la cambiara` : 'antes del último cambio'}. Los clientes que llegaron después quedan al final.`}
         </p>
       </Modal>
 

@@ -4,6 +4,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { logActividad }     from '@/lib/activity-log'
+import { notificar }        from '@/lib/notificar'
+import { guardarAntesDeMoverAMano } from '@/lib/rutas/orden-de-ruta'
 
 export async function PUT(request, { params }) {
   const session = await getServerSession(authOptions)
@@ -44,6 +46,22 @@ export async function PUT(request, { params }) {
   })
   if (clientes.length !== clienteIds.length) {
     return Response.json({ error: 'Uno o más clientes no pertenecen a esta ruta' }, { status: 400 })
+  }
+
+  /* El cobrador mueve al instante (es la calle), pero el orden también es del
+     dueño: antes de su primer movimiento del día se guarda cómo estaba y se le
+     avisa al dueño una vez (lib/rutas/orden-de-ruta.js). Si falla, el
+     movimiento sigue: no se le frena el cobro a nadie por un respaldo. */
+  if (rol === 'cobrador') {
+    const r = await guardarAntesDeMoverAMano(prisma, { organizationId, rutaId: id, userId: session.user.id }).catch(() => null)
+    if (r?.primeroDelDia) {
+      notificar({
+        organizationId, para: 'owners', tipo: 'orden_ruta_movido',
+        titulo: 'Cambiaron el orden de una ruta',
+        mensaje: `${session.user.nombre ?? 'El cobrador'} cambió el orden de la ruta ${ruta.nombre}. Si no te sirve, en la ruta tienes «Orden anterior».`,
+        href: `/rutas/${id}`, datos: { rutaId: id }, excepto: session.user.id,
+      })
+    }
   }
 
   // Actualizar orden en una transacción
