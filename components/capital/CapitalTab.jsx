@@ -6,6 +6,8 @@ import MoneyInput from '@/components/ui/MoneyInput'
 import { porQueNegativa, esAlarma } from '@/lib/dinero/ruta-negativa'
 import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
 import QueNecesitas from '@/components/acciones/QueNecesitas'
+import { CabeceraDetalle } from '@/components/armazon/CabeceraInicio'
+import { PastillaProfe } from '@/components/tutoriales/PiezasProfe'
 import { cuandoMovimientoDeGasto } from '@/lib/gastos'
 import { filasDeMovimientos } from '@/lib/adaptadores/movimientos-capital'
 
@@ -54,7 +56,12 @@ function fechaCorta(iso) {
   })
 }
 
-export default function CapitalTab() {
+/* `aviso`: lo que la página pone debajo de la cabecera (la explicación del fondo).
+   La cabecera negra del teléfono la pinta ESTA pieza porque la cifra de la banda
+   —toda tu plata— sale de sus datos (19 nov 2026). */
+const CABECERA_CAPITAL = { titulo: 'Capital', subtitulo: 'Tu fondo para prestar' }
+
+export default function CapitalTab({ aviso = null }) {
   const { formatMoney } = useCountry()
   const [resumen, setResumen] = useState(null)
 
@@ -287,7 +294,12 @@ export default function CapitalTab() {
     setShowModal(true)
   }
 
-  if (loading) return <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="animate-pulse bg-[var(--cf-fill)] rounded-[16px] h-20" />)}</div>
+  if (loading) return (
+    <>
+      <CabeceraDetalle {...CABECERA_CAPITAL} profe={<PastillaProfe />} />
+      <div className="space-y-3 pt-4 lg:pt-0">{[...Array(3)].map((_, i) => <div key={i} className="animate-pulse bg-[var(--cf-fill)] rounded-[16px] h-20" />)}</div>
+    </>
+  )
 
   const noConfigurado = resumen && !resumen.configurado
   const sugerido = resumen?.sugerido
@@ -353,14 +365,56 @@ export default function CapitalTab() {
 
   return (
     <div className="space-y-5">
-      {/* ── TODA TU PLATA (T30-01) ── */}
+      {/* ── TODA TU PLATA (T30-01) ──
+          En el teléfono va DENTRO de la banda negra (`CabeceraDetalle`, 19 nov
+          2026); en el PC sigue siendo esta tarjeta. La misma cifra, las mismas
+          palabras: una sola cuenta, `todaLaPlata`. */}
+      <CabeceraDetalle {...CABECERA_CAPITAL} profe={<PastillaProfe />}
+        enLaBanda={todaLaPlata > 0 ? (
+        <div style={{ color: '#F3F3F6', paddingTop: 18 }}>
+          <span className="text-[10px] font-bold uppercase tracking-[.09em]" style={{ opacity: .65 }}>
+            Toda tu plata
+          </span>
+          <p className="cf-fig mt-1 mb-3" style={{ fontSize: 30, letterSpacing: '-.03em' }}>
+            {formatMoney(todaLaPlata)}
+          </p>
+          {/* La barra parte el total en sus dos mitades: sin ella, dos cifras
+              sueltas no dicen cuál pesa más. */}
+          <div className="h-[7px] rounded-full overflow-hidden flex" style={{ background: 'rgba(255,255,255,.14)' }}>
+            <span style={{ width: `${pctListo}%`, background: '#2FBE6A' }} />
+            <span style={{ flex: 1, background: '#F5B824' }} />
+          </div>
+          <div className="mt-3 space-y-1.5">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[13px] flex items-center gap-2" style={{ opacity: .8 }}>
+                <span className="w-2 h-2 rounded-full" style={{ background: '#2FBE6A' }} />
+                Lista para prestar
+              </span>
+              <span className="cf-fig text-[14px] font-bold" style={saldoCapital < 0 ? { color: '#FF8A80' } : undefined}>{formatMoney(saldoCapital)}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[13px] flex items-center gap-2" style={{ opacity: .8 }}>
+                <span className="w-2 h-2 rounded-full" style={{ background: '#F5B824' }} />
+                En la calle, cobrándose
+              </span>
+              <span className="cf-fig text-[14px] font-bold" style={{ color: '#F5B824' }}>
+                {formatMoney(enCalle)}
+              </span>
+            </div>
+          </div>
+          {/* El aviso vivía en «Saldo del capital», que ahora solo sale cuando
+              este bloque no está (18 nov 2026): aquí no se puede perder. */}
+          {saldoCapital < 0 && (
+            <p className="text-[13px] mt-3 font-semibold" style={{ color: '#FF8A80' }}>
+              Capital en negativo: prestaste más de lo que tenías registrado.
+            </p>
+          )}
+        </div>
+        ) : null}
+      />
+      {aviso}
       {todaLaPlata > 0 && (
-        /* ⚠ CARBÓN LITERAL, NO `--cf-ink`. Con el token, en tema OSCURO este bloque se
-           invertía y salía BLANCO —la tinta del tema oscuro es clara—: el único
-           bloque de cifra del sistema que cambiaba de color con el tema (cazado el
-           19 sep 2026 en el barrido en oscuro). Es la misma regla de `BloqueOscuro`:
-           dentro del bloque no manda el tema, manda que el fondo es negro. Por eso
-           el verde y el dorado de dentro son los del tema oscuro, también literales. */
+        <div className="hidden lg:block">
         <div className="p-4" style={{ background: '#15161A', color: '#F3F3F6', border: '1px solid rgba(255,255,255,.09)', borderRadius: 'var(--cf-r-hero)' }}>
           <span className="text-[10px] font-bold uppercase tracking-[.09em]" style={{ opacity: .65 }}>
             Toda tu plata
@@ -399,6 +453,7 @@ export default function CapitalTab() {
               Capital en negativo: prestaste más de lo que tenías registrado.
             </p>
           )}
+        </div>
         </div>
       )}
 

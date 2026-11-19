@@ -24,6 +24,8 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useCabecera } from '@/components/armazon/Armazon'
+import { CabeceraDetalle } from '@/components/armazon/CabeceraInicio'
+import { PastillaProfe } from '@/components/tutoriales/PiezasProfe'
 import { useRouter } from 'next/navigation'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
@@ -186,7 +188,8 @@ export default function GastosPage() {
     subtitulo: textoAprobadosMes(aprobadosMes, fmt),
   })
 
-  if (authLoading) return <PilaEsqueletos cuantos={3} alto={96} />
+  // La franja negra propia (lib/franja.js): la cabecera sale también cargando.
+  if (authLoading) return <><CabeceraDetalle titulo="Gastos" profe={<PastillaProfe />} /><div className="pt-4 lg:pt-0"><PilaEsqueletos cuantos={3} alto={96} /></div></>
 
   // ── EL PERMISO MANDA, NO EL ROL ──
   //
@@ -205,16 +208,54 @@ export default function GastosPage() {
   // siguen siendo del dueño (`esOwner` más abajo).
   if (!esOwner && !puedeReportarGastos) {
     return (
+      <>
+      <CabeceraDetalle titulo="Gastos" profe={<PastillaProfe />} />
       <p style={{ padding: 16, textAlign: 'center', color: 'var(--cf-ink-3)', fontSize: 14 }}>
         No tienes permiso para reportar gastos. Pídeselo al administrador.
       </p>
+      </>
     )
   }
 
   const hayFiltro = Boolean(fecha || cobradorId)
 
+  const etiquetaTotal = `Total ${ESTADOS.find((e) => e.id === estado)?.etiqueta.toLowerCase()}`
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 28 }}>
+      {/* ── LA BANDA NEGRA DEL TELÉFONO (19 nov 2026) ──
+          El total de la pestaña elegida y «Anotar gasto» arriba, al alcance del
+          pulgar. En el PC sigue lo de siempre (botón a la derecha y el bloque). */}
+      <CabeceraDetalle
+        titulo="Gastos"
+        subtitulo={textoAprobadosMes(aprobadosMes, fmt)}
+        profe={<PastillaProfe />}
+        acciones={
+          <button type="button" onClick={() => setAbrirReportar(true)} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 7, height: 44, padding: '0 16px',
+            borderRadius: 999, flex: 'none', cursor: 'pointer', border: 0,
+            background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)', font: 'inherit', fontSize: 14, fontWeight: 700,
+          }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden><path d="M12 5v14M5 12h14" /></svg>
+            Anotar
+          </button>
+        }
+        enLaBanda={
+          <div style={{ paddingTop: 18 }}>
+            <p style={{ margin: 0, fontSize: 11, fontWeight: 700, letterSpacing: '.12em', color: 'rgba(255,255,255,.55)', textTransform: 'uppercase' }}>{etiquetaTotal}</p>
+            <p className="cf-num" style={{
+              margin: '4px 0 0', fontFamily: "var(--font-space-grotesk), 'Space Grotesk', system-ui, sans-serif",
+              fontSize: 40, fontWeight: 600, letterSpacing: '-.03em', lineHeight: 1.05,
+              color: estado === 'pendiente' ? '#F5B824' : '#fff',
+            }}>{fmt(total)}</p>
+            <p className="cf-num" style={{ margin: '8px 0 0', fontSize: 13, color: 'rgba(255,255,255,.62)' }}>
+              {gastos.length} {gastos.length === 1 ? 'gasto' : 'gastos'}{hayFiltro ? ' · con filtro' : ''}
+            </p>
+          </div>
+        }
+      />
+      {/* ⚠ El `display` en línea va DENTRO: junto a `hidden` le gana a la clase. */}
+      <div className="hidden lg:block">
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
         {/* El título lo pone el armazón (`useCabecera` arriba). Aquí salía otra
             vez, y con él su subtítulo: el mismo dato en dos elementos de la
@@ -232,6 +273,7 @@ export default function GastosPage() {
               strokeWidth="2.6" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
             Anotar gasto
           </button>
+      </div>
       </div>
 
       <ReportarGasto
@@ -263,8 +305,9 @@ export default function GastosPage() {
           {/* LA CIFRA ES LO QUE VA A SALIR DE LA CAJA. En pendientes va en dorado
               —es una decisión que falta por tomar—; en las otras dos es historia y
               va en blanco. */}
+          <div className="hidden lg:block">
           <BloqueOscuro
-            etiqueta={`Total ${ESTADOS.find((e) => e.id === estado)?.etiqueta.toLowerCase()}`}
+            etiqueta={etiquetaTotal}
             cifra={fmt(total)}
             tono={estado === 'pendiente' ? 'ganancia' : 'neutro'}
           >
@@ -273,6 +316,7 @@ export default function GastosPage() {
               {hayFiltro ? ' · con filtro' : ''}
             </span>
           </BloqueOscuro>
+          </div>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
             <label style={{

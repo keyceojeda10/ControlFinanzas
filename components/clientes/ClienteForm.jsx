@@ -685,7 +685,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
             ¿Lo asignamos a una ruta?
           </h2>
           <p className="text-sm mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>
-            Esto es opcional. Puedes crearlo sin ruta y asignarla después.
+            {esEdicion ? 'Esto es opcional. Puedes cambiarle la ruta o dejarlo sin ruta.' : 'Esto es opcional. Puedes crearlo sin ruta y asignarla después.'}
           </p>
 
           <div className="mt-7 space-y-5">
@@ -768,7 +768,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
               <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>
                 Días sin cobro (opcional)
               </label>
-              <p className="text-[11px] leading-snug mt-1 mb-2" style={{ color: 'var(--cf-ink-3)' }}>
+              <p className="text-[13px] leading-snug mt-1 mb-2" style={{ color: 'var(--cf-ink-3)' }}>
                 Este cliente no será cobrado en los días que selecciones. Si no defines nada, hereda de la ruta o la organización.
               </p>
               <DiasSinCobroSelector value={diasSinCobro} onChange={setDiasSinCobro} compact />
@@ -777,10 +777,10 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
             {esOwner && (
               <div>
                 <label className="text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>
-                  Tope maximo de prestamo
+                  Tope máximo de préstamo
                 </label>
-                <p className="text-[11px] leading-snug mt-1 mb-2" style={{ color: 'var(--cf-ink-3)' }}>
-                  Monto maximo que se le puede prestar a este cliente. Dejalo vacio para sin limite.
+                <p className="text-[13px] leading-snug mt-1 mb-2" style={{ color: 'var(--cf-ink-3)' }}>
+                  Lo más que se le puede prestar a este cliente. Déjalo vacío para que no tenga límite.
                 </p>
                 <MoneyInput
                   value={form.montoMaximoPrestamo}
