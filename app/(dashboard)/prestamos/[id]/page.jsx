@@ -45,6 +45,8 @@ import {
   TimelinePrestamo,
   PagoMiniCard,
   moodColorFromPrestamo,
+  PastillasDeLaBanda,
+  BotonesDeLaBanda,
 } from '@/components/prestamos/PrestamoDetalleViews'
 import { formatFechaCobroRelativa, tieneTablaAmortizacion, interesCobrableAhora, cobradoHoy, cuantosPagosHoy, pagosDelDia } from '@/lib/calculos'
 import { pagosEnOrden } from '@/lib/dinero/orden-de-pagos'
@@ -71,7 +73,10 @@ import { useTactil } from '@/lib/tactil'
 import { adaptarPerdidos, adaptarCerrar, resumenCerrar , adaptarRecargo, adaptarDescuento, montoDesdePorcentaje } from '@/lib/adaptadores/gestion'
 import { ChecklistCamposRecibo, getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
 import { comoFueElPago, faltaDeLaCuotaDeHoy, marcaDelPago as marcaDelPagoComun } from '@/lib/dinero/cuota-de-referencia'
-import FichaPrestamo from '@/components/pantallas/FichaPrestamo'
+import FichaPrestamo, { CifraDeLaBanda } from '@/components/pantallas/FichaPrestamo'
+import { CabeceraDetalle } from '@/components/armazon/CabeceraInicio'
+import { PastillaProfe } from '@/components/tutoriales/PiezasProfe'
+import { documentoParaMostrar } from '@/lib/documento'
 import { formatearTasa, moraEsGrave } from '@/lib/adaptadores/prestamos'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { MenuGestion } from '@/components/pantallas/MenuGestion'
@@ -734,12 +739,17 @@ function PrestamoDetalleContenido({ params }) {
     ) : null,
   })
 
+  /* Con la franja negra propia (lib/franja.js), el armazón ya no pinta la
+     cabecera vieja en el teléfono: la de detalle sale también mientras carga y si
+     falla, o no habría por dónde volver. */
   if (loading) {
-    return <SkeletonPrestamoDetalle />
+    return <><CabeceraDetalle titulo="Préstamo" profe={<PastillaProfe />} /><SkeletonPrestamoDetalle /></>
   }
 
   if (error || !prestamo) {
     return (
+      <>
+      <CabeceraDetalle titulo="Préstamo" profe={<PastillaProfe />} />
       <div className="flex flex-col items-center justify-center py-16 text-center max-w-2xl mx-auto">
         <div className="mb-4"><MonedaCF pose="busca" size={100} /></div>
         <p className="text-sm font-medium text-[var(--cf-ink)]">No pudimos cargar el préstamo</p>
@@ -749,6 +759,7 @@ function PrestamoDetalleContenido({ params }) {
           <Button size="sm" variant="ghost" onClick={() => router.back()}>Volver</Button>
         </div>
       </div>
+      </>
     )
   }
 
@@ -1601,8 +1612,49 @@ function PrestamoDetalleContenido({ params }) {
   // 164px de nada entre «Cancelar préstamo» y la pastilla.
   // Medido con `.auditoria/hueco-real.mjs`. Ojo: `hueco-del-pie.mjs` daba «ok»
   // —mide el último elemento con contenido, no el hueco que se ve—.
+  const statsClienteTexto = !esOwner && statsCliente && statsCliente.totalPrestamos > 1
+    ? `${statsCliente.completados} préstamo${statsCliente.completados === 1 ? '' : 's'} completado${statsCliente.completados === 1 ? '' : 's'} · cliente recurrente`
+    : null
+  /* ── LA BANDA NEGRA DEL TELÉFONO (19 nov 2026) ──
+     Quién es (una vez: el nombre lleva a su ficha), cómo se cobra y cuánto falta.
+     El atraso deja de ser la franja de arriba y pasa a pastilla, con lo mismo que
+     decía: días, cuotas y plata. En el PC no cambia nada (`CabeceraDetalle` es
+     `lg:hidden` y lo de abajo sigue igual). */
+  const subtituloBanda = [
+    cliente?.cedula && !String(cliente.cedula).startsWith('SIN-') ? documentoParaMostrar(cliente.cedula) : null,
+    sePagaDeUnaVez(prestamo) ? 'un solo pago'
+      : cuotaDiaria > 0 ? `${frecuenciaLabel ? frecuenciaLabel.charAt(0).toUpperCase() + frecuenciaLabel.slice(1) : ''} · cuota ${formatMoney(Math.round(cuotaDiaria))}`.replace(/^ · /, '') : null,
+    prestamo.sinPlazo && prestamo.modoInteres === 'solo_interes' ? 'abierto' : null,
+  ].filter(Boolean).join(' · ') || null
+  const atrasoBanda = atrasado && estaActivo && !completado && !esClavo ? {
+    texto: textoAtraso
+      + (cuotasEnMora > 0 ? ` · ${cuotasEnMora} cuota${cuotasEnMora === 1 ? '' : 's'}` : '')
+      + (montoEnMora > 0 ? ` · ${formatMoney(montoEnMora)}` : ''),
+    rojo: enMora,
+  } : null
+
   return (
     <div className="max-w-2xl lg:max-w-6xl mx-auto space-y-4 pb-4">
+
+      <CabeceraDetalle
+        titulo={cliente?.nombre || 'Cliente'}
+        tituloHref={cliente?.id ? `/clientes/${cliente.id}` : null}
+        subtitulo={subtituloBanda}
+        profe={<PastillaProfe />}
+        acciones={<BotonesDeLaBanda telefono={cliente?.telefono} onWhatsApp={cliente?.telefono ? () => setModalWA(true) : null} />}
+        enLaBanda={<>
+          <PastillasDeLaBanda prestamo={prestamo} atraso={atrasoBanda} statsCliente={statsClienteTexto} />
+          <CifraDeLaBanda
+            esUnico={esUnicoModo}
+            faltaPagar={formatMoney(Math.round(saldoPendiente || 0))}
+            pagado={formatMoney(totalPagadoReal)}
+            totalAPagar={formatMoney(Math.round(totalAPagar || 0))}
+            porcentaje={Math.min(100, Math.max(0, Math.round(porcentajePagado || 0)))}
+            fechaVencimiento={fechaVencTexto}
+            diasParaVencer={diasParaVencerTexto}
+          />
+        </>}
+      />
 
       {/* El motivo de una acción que el servidor rechazó, arriba y fijo hasta
           que se cierre: la acción suele lanzarse desde el historial, abajo, y un
@@ -1737,7 +1789,8 @@ function PrestamoDetalleContenido({ params }) {
       {/* La franja de mora NO se pinta si ya está dentro de la del clavo. */}
       {atrasado && estaActivo && !completado && !esClavo && (
         /* Ámbar de 1 a 7 días (vencido), rojo de 8 en adelante (en mora). */
-        <div className="flex items-center gap-3 rounded-[16px] px-4 py-3" style={enMora
+        /* En el teléfono va como pastilla en la banda negra (`atrasoBanda`). */
+        <div className="hidden lg:flex items-center gap-3 rounded-[16px] px-4 py-3" style={enMora
           ? { background: 'var(--cf-red-pill-bg)', border: '1px solid var(--cf-red-pill-border)' }
           : { background: 'var(--cf-gold-tint)', border: '1px solid var(--cf-gold-border)' }}>
           <div className={`w-2 h-2 rounded-full shrink-0 ${enMora ? 'animate-pulse' : ''}`} style={{ background: enMora ? 'var(--cf-red-dark)' : 'var(--cf-gold-dark)' }} />
@@ -1858,6 +1911,8 @@ function PrestamoDetalleContenido({ params }) {
         <div className="space-y-4 min-w-0">
 
       {/* ── 2. HEADER CLIENTE CON CONTEXTO ─────────────────────────── */}
+      {/* En el teléfono, todo esto está en la banda negra (`PastillasDeLaBanda`). */}
+      <div className="hidden lg:block">
       <HeaderClienteContexto
         cliente={cliente}
         prestamo={prestamo}
@@ -1871,11 +1926,10 @@ function PrestamoDetalleContenido({ params }) {
            Al COBRADOR se le sigue diciendo aquí: «Cómo va» es solo del dueño
            (`esOwner` en su condición), así que quitarlo de la cabecera le
            borraría el dato en vez de moverlo. */
-        statsCliente={!esOwner && statsCliente && statsCliente.totalPrestamos > 1
-          ? `${statsCliente.completados} préstamo${statsCliente.completados === 1 ? '' : 's'} completado${statsCliente.completados === 1 ? '' : 's'} · cliente recurrente`
-          : null}
+        statsCliente={statsClienteTexto}
         onWhatsApp={cliente?.telefono ? () => setModalWA(true) : null}
       />
+      </div>
 
       {/* ── 3. BOTÓN PRINCIPAL DE PAGO CON PERSONALIDAD ────────────── */}
       {estaActivo && !yaPagoHoy && !completado && (
@@ -1969,6 +2023,7 @@ function PrestamoDetalleContenido({ params }) {
       {/* ── 5. ACCIONES SECUNDARIAS COMO CHIPS ─────────────────── */}
       {(mostrarAtajosCobro || mostrarGestionPrestamo || cliente?.telefono || pagos.length > 0) && (
         <ChipsAccionesSecundarias
+          circulosEnElTelefono
           acciones={[
             // ── «ENVIAR POR WHATSAPP», SIEMPRE Y A LA VISTA ──────────────
             //
@@ -2096,6 +2151,7 @@ function PrestamoDetalleContenido({ params }) {
           features no es rediseñar. Si sobran, se van cuando lo digas. */}
       <FichaPrestamo
         sinMargen
+        cifraEnLaBanda
         cierreHoy={cierreTexto}
         cierrePerdona={cierrePerdonaTexto}
         onCerrarHoy={puedeAplicarDescuentos ? () => abrirLiquidacion() : null}

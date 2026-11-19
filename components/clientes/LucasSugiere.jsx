@@ -75,8 +75,9 @@ export default function LucasSugiere({ sugerencia, onPrestar, onOtroMonto, clave
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{
-        background: '#15161A', borderRadius: 18, padding: '17px 19px',
-        border: '1px solid rgba(255,255,255,.09)',
+        // Claro, no un tercer bloque negro bajo la banda de la ficha (19 nov 2026).
+        background: 'var(--cf-gold-tint)', borderRadius: 18, padding: '17px 19px',
+        border: '1px solid color-mix(in srgb, var(--cf-gold-dark) 22%, transparent)',
         display: 'flex', flexDirection: 'column', gap: 12,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -85,12 +86,12 @@ export default function LucasSugiere({ sugerencia, onPrestar, onOtroMonto, clave
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             background: 'var(--cf-gold)', color: '#3A2900',
           }}>{CHISPA}</span>
-          <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 700, color: '#F3F3F6' }}>
+          <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)' }}>
             Lucas te sugiere
           </span>
           {etiqueta && (
             <span style={{
-              flex: 'none', fontSize: 11, color: '#8A8E98',
+              flex: 'none', fontSize: 12, color: 'var(--cf-ink-3)',
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>{etiqueta}</span>
           )}
@@ -102,7 +103,7 @@ export default function LucasSugiere({ sugerencia, onPrestar, onOtroMonto, clave
               style={{
                 flex: 'none', width: 26, height: 26, marginRight: -6, padding: 0,
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                border: 0, background: 'none', cursor: 'pointer', color: '#8A8E98',
+                border: 0, background: 'none', cursor: 'pointer', color: 'var(--cf-ink-3)',
                 borderRadius: 8,
               }}
             >
@@ -116,12 +117,12 @@ export default function LucasSugiere({ sugerencia, onPrestar, onOtroMonto, clave
 
         {/* El titular lleva la cifra dentro, en dorado: es lo que se lee de un
             vistazo y lo que decide. */}
-        <p style={{ margin: 0, fontSize: 16.5, lineHeight: 1.35, color: '#F3F3F6' }}>
+        <p style={{ margin: 0, fontSize: 16, fontWeight: 700, lineHeight: 1.35, color: 'var(--cf-ink)' }}>
           {esOferta ? partirEnLaCifra(titular) : titular}
         </p>
 
         {porque && (
-          <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.5, color: '#A3A8B2' }}>
+          <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: 'var(--cf-ink-2)' }}>
             {porque}
           </p>
         )}
@@ -129,7 +130,7 @@ export default function LucasSugiere({ sugerencia, onPrestar, onOtroMonto, clave
         {esOferta && (
           <div style={{
             display: 'flex', gap: 8, paddingTop: 12,
-            borderTop: '1px solid rgba(255,255,255,.09)',
+            borderTop: '1px solid color-mix(in srgb, var(--cf-gold-dark) 22%, transparent)',
           }}>
             <button
               type="button"
@@ -149,8 +150,8 @@ export default function LucasSugiere({ sugerencia, onPrestar, onOtroMonto, clave
                 onClick={onOtroMonto}
                 style={{
                   flex: 'none', height: 44, padding: '0 16px', borderRadius: 13, cursor: 'pointer',
-                  background: 'transparent', border: '1px solid rgba(255,255,255,.16)',
-                  color: '#F3F3F6', font: 'inherit', fontSize: 14, fontWeight: 700,
+                  background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+                  color: 'var(--cf-ink)', font: 'inherit', fontSize: 14, fontWeight: 700,
                 }}
               >
                 Otro monto

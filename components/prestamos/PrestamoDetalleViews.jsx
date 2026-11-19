@@ -13,6 +13,7 @@ import Avatar from '@/components/ui/Avatar'
 import { getPlataformaInfo, PlataformaIcon } from '@/components/ui/LogoPlataforma'
 import { Pastilla } from '@/components/cf/primitivos'
 import { comoFueElPago, textoDelPago } from '@/lib/dinero/cuota-de-referencia'
+import AccesosCirculos from '@/components/cf/AccesosCirculos'
 
 // ─── Helpers de fecha ────────────────────────────────────────────
 //
@@ -534,8 +535,24 @@ export function generarStatsContextuales({ prestamo, totalPagado, cuotasPagadas,
  * llegando por ahí y aquí se convierte en un punto rojo sobre el icono. Un
  * aviso que se ve de lejos vale más que un renglón de 10px que hay que leer.
  */
-export function ChipsAccionesSecundarias({ acciones }) {
+export function ChipsAccionesSecundarias({ acciones, circulosEnElTelefono = false }) {
   if (!acciones || acciones.length === 0) return null
+  /* EN EL TELÉFONO, CÍRCULOS (19 nov 2026): los mismos accesos que la ruta
+     (`AccesosCirculos`), con la cabecera negra de la ficha. En el PC siguen los
+     chips de siempre. Los mismos datos, la misma acción: solo cambia el dibujo. */
+  if (circulosEnElTelefono) {
+    return (
+      <>
+        <div className="lg:hidden">
+          <AccesosCirculos style={{ padding: '6px 0 2px' }} accesos={acciones.map((a) => ({
+            id: a.label, texto: a.label, titulo: a.sublabel || a.label, onClick: a.onClick,
+            iconoCompleto: a.icon, color: a.color, alerta: a.alerta,
+          }))} />
+        </div>
+        <div className="hidden lg:block"><ChipsAccionesSecundarias acciones={acciones} /></div>
+      </>
+    )
+  }
   return (
     /* ⚠ ANTES DE ENCOGER, DOS POR DOS.
        Con tres chips cabían; con el cuarto («Pagos», 31 ago) el rótulo
@@ -1026,6 +1043,75 @@ export function ComparativoPrestamosCliente({ totalPrestamosCliente, prestamoNum
           <p key={i} className="text-[10px] mt-0.5" style={{ color: 'var(--cf-ink-2)' }}>{it}</p>
         ))}
       </div>
+    </div>
+  )
+}
+
+/* ══ LAS PASTILLAS DE LA BANDA NEGRA (19 nov 2026) ═══════════════════════════
+ * En el teléfono la ficha lleva la cabecera negra (`CabeceraDetalle`) y lo que
+ * decía `HeaderClienteContexto` pasa aquí, para no perder nada:
+ *   · el atraso, que también reemplaza la franja ámbar/roja de arriba: días,
+ *     cuotas y plata, en una pastilla (rojo en mora, ámbar vencido);
+ *   · el estado que no es atraso (Completado, Anulado, Por aprobar, Al día);
+ *   · el cobro guardado en el teléfono sin subir (`OfflineBadge`);
+ *   · al cobrador, «cliente recurrente», que el dueño ve en «Cómo va». */
+export function PastillasDeLaBanda({ prestamo, atraso = null, statsCliente = null }) {
+  const estado = prestamo?.estado
+  const conAtraso = ['activo', undefined, null].includes(estado) && (prestamo?.diasMora ?? 0) > 0
+  const estadoTexto = estado === 'completado' ? 'Completado'
+    : estado === 'cancelado' ? 'Anulado'
+    : estado === 'pendiente_aprobacion' ? 'Por aprobar'
+    : conAtraso ? null : 'Al día'
+  const tonoEstado = estado === 'completado' || estado === 'cancelado' ? 'neutro'
+    : estado === 'pendiente_aprobacion' ? 'ambar' : 'verde'
+  const TONO = {
+    rojo: { background: 'rgba(229,72,77,.2)', color: '#FF9A9D', punto: '#F0575C' },
+    ambar: { background: 'rgba(231,164,0,.18)', color: '#F5B824', punto: '#F5B824' },
+    verde: { background: 'rgba(47,190,106,.16)', color: '#5FD68F', punto: '#2FBE6A' },
+    neutro: { background: '#24252B', color: 'rgba(255,255,255,.75)', punto: null },
+  }
+  const pastilla = (texto, tono, key) => {
+    const t = TONO[tono]
+    return (
+      <span key={key} className="cf-num" style={{
+        display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 28, padding: '4px 11px',
+        borderRadius: 999, background: t.background, color: t.color, fontSize: 13, fontWeight: 700, lineHeight: 1.3,
+      }}>
+        {t.punto && <span aria-hidden style={{ width: 6, height: 6, borderRadius: 999, background: t.punto, flex: 'none' }} />}
+        {texto}
+      </span>
+    )
+  }
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, paddingTop: 14, alignItems: 'center' }}>
+      {atraso && pastilla(atraso.texto, atraso.rojo ? 'rojo' : 'ambar', 'atraso')}
+      {estadoTexto && pastilla(estadoTexto, tonoEstado, 'estado')}
+      {statsCliente && pastilla(statsCliente, 'neutro', 'stats')}
+      <OfflineBadge id={prestamo?.id} className="!text-[13px] !px-2.5 !py-1" />
+    </div>
+  )
+}
+
+/* Llamar y WhatsApp, en la banda negra: al alcance del pulgar. */
+export function BotonesDeLaBanda({ telefono, onWhatsApp }) {
+  if (!telefono) return null
+  const estilo = {
+    width: 44, height: 44, borderRadius: 999, flex: 'none', display: 'grid', placeItems: 'center',
+    border: '1px solid rgba(255,255,255,.1)', background: '#24252B', padding: 0, cursor: 'pointer',
+  }
+  return (
+    <div style={{ display: 'flex', gap: 8, flex: 'none' }}>
+      <a href={`tel:${telefono}`} aria-label="Llamar" style={{ ...estilo, color: '#fff' }}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2" /></svg>
+      </a>
+      {onWhatsApp && (
+        <button type="button" onClick={onWhatsApp} aria-label="WhatsApp" style={{ ...estilo, color: '#25D366' }}>
+          <svg width="19" height="19" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347" />
+            <path d="M20.52 3.449C12.831-3.984.106 1.407.101 11.893c0 2.096.549 4.14 1.595 5.945L0 24l6.335-1.652a11.882 11.882 0 0 0 5.68 1.448h.005c9.6 0 15.24-10.4 10.5-18.35a11.83 11.83 0 0 0-2-2.997zM12.02 21.785h-.004a9.87 9.87 0 0 1-5.03-1.378l-.36-.214-3.741.981.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.263c.001-8.708 10.59-13.067 16.752-6.909 6.16 6.158 1.812 16.805-6.87 16.805z" />
+          </svg>
+        </button>
+      )}
     </div>
   )
 }

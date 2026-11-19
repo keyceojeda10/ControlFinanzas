@@ -272,6 +272,12 @@ export default function FichaPrestamo({
   // Es la CUARTA vez que pasa: el panel (310px donde la lamina pide 350),
   // cobrar hoy (302), la tabla de amortizacion, y esta.
   sinMargen = false,
+  /* ── LA CIFRA GRANDE VA EN LA BANDA NEGRA (19 nov 2026) ──
+     En el TELÉFONO la ficha lleva la cabecera negra del detalle de ruta y
+     «Le falta pagar» se pinta allí (`CifraDeLaBanda`, abajo). Aquí el bloque
+     oscuro queda solo para el PC, y en el teléfono «De eso es tu plata» y «Si
+     paga todo hoy» pasan a una tarjeta blanca. Ninguna cifra se pierde. */
+  cifraEnLaBanda = false,
 }) {
   const esUnico = modo === 'unico'
   const hayMora = enMora && enMora !== '$0'
@@ -291,6 +297,7 @@ export default function FichaPrestamo({
         padding: sinMargen ? '8px 0 16px' : '8px var(--cf-pad-screen) 16px',
       }}>
 
+        <div className={cifraEnLaBanda ? 'hidden lg:block' : undefined}>
         {/* ── La respuesta ── */}
         {esUnico ? (
           // `unico` NO lleva barra de progreso: sin cuotas estaría en 0% todo el
@@ -384,6 +391,34 @@ export default function FichaPrestamo({
               />
             )}
           </BloqueOscuro>
+        )}
+        </div>
+
+        {/* En el teléfono, lo que acompañaba a la cifra grande: en blanco. */}
+        {cifraEnLaBanda && !esUnico && (capitalPendiente != null || cierreHoy) && (
+          <div className="lg:hidden">
+            <Tarjeta style={{ padding: '4px 18px', gap: 0 }}>
+              {capitalPendiente != null && (
+                <LineaCifra
+                  rotulo="De eso es tu plata"
+                  cifra={capitalPendiente}
+                  chip={restoSobreCapital ? `+${restoSobreCapital}` : null}
+                  tonoChip="favor"
+                  style={{ padding: '14px 0' }}
+                />
+              )}
+              {cierreHoy && (
+                <LineaCifra
+                  rotulo="Si paga todo hoy"
+                  cifra={cierreHoy}
+                  chip={cierrePerdona}
+                  tonoChip="neutro"
+                  onTocar={onCerrarHoy || undefined}
+                  style={{ padding: '14px 0', ...(capitalPendiente != null ? { borderTop: '1px solid var(--cf-hairline)' } : {}) }}
+                />
+              )}
+            </Tarjeta>
+          </div>
         )}
 
         {/* ── Tira de cifras (no en `unico`: no hay cuota) ── */}
@@ -549,6 +584,38 @@ export default function FichaPrestamo({
             </BotonPrimario>
           )}
         </BarraAccion>
+      )}
+    </div>
+  )
+}
+
+
+/* ══ LA CIFRA DE LA FICHA, DENTRO DE LA BANDA NEGRA (19 nov 2026) ═════════════
+ * Lo primero que se ve de un préstamo es cuánto falta, como el mapa en la ruta.
+ * La misma cifra y las mismas palabras que el bloque oscuro de arriba («Le falta
+ * pagar», «Te va a pagar» en un solo pago), en blanco sobre la franja. */
+export function CifraDeLaBanda({ esUnico = false, faltaPagar, pagado, totalAPagar, porcentaje = 0, fechaVencimiento, diasParaVencer }) {
+  return (
+    <div style={{ paddingTop: 20 }}>
+      <p style={{ margin: 0, fontSize: 11, fontWeight: 700, letterSpacing: '.12em', color: 'rgba(255,255,255,.55)' }}>
+        {esUnico ? 'TE VA A PAGAR' : 'LE FALTA PAGAR'}
+      </p>
+      <p className="cf-num" style={{
+        margin: '4px 0 0', fontFamily: "var(--font-space-grotesk), 'Space Grotesk', system-ui, sans-serif",
+        fontSize: 40, fontWeight: 600, letterSpacing: '-.03em', lineHeight: 1.05, color: '#fff',
+      }}>{faltaPagar}</p>
+      {esUnico ? (
+        <p className="cf-num" style={{ margin: '10px 0 0', fontSize: 13, color: 'rgba(255,255,255,.62)' }}>
+          {[fechaVencimiento, diasParaVencer, 'todo de una vez'].filter(Boolean).join(' · ')}
+        </p>
+      ) : (
+        <>
+          <div style={{ marginTop: 14 }}><BarraProgreso porcentaje={porcentaje} tono="ok" alto={8} sobreOscuro /></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 8 }}>
+            <span className="cf-num" style={{ fontSize: 13, color: 'rgba(255,255,255,.62)' }}>pagó {pagado} de {totalAPagar}</span>
+            <span className="cf-num" style={{ fontSize: 13, fontWeight: 700, color: '#F5B824', flex: 'none' }}>{porcentaje}%</span>
+          </div>
+        </>
       )}
     </div>
   )

@@ -31,6 +31,7 @@ import { obtenerRutaOffline, guardarOrdenPendiente, guardarPagoPendiente, guarda
 import { nuevaClaveCobro } from '@/lib/pagos-sin-senal'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { CabeceraDetalle } from '@/components/armazon/CabeceraInicio'
+import AccesosCirculos from '@/components/cf/AccesosCirculos'
 import { PastillaProfe } from '@/components/tutoriales/PiezasProfe'
 import { obtenerCoordsRapido, calentarCoords, completarUbicacionDelPago } from '@/lib/geo'
 import { useProcesando } from '@/components/cf/Procesando'
@@ -101,35 +102,10 @@ const RouteMap = dynamic(() => import('@/components/rutas/RouteMap'), {
  * de la cabecera, en una cuadrícula de cuatro: todos se ven sin arrastrar.
  * Cada acceso lleva `onClick` o `href`; los `false` (sin permiso, sin
  * ubicaciones) no se pintan. */
+/* Los círculos viven en `components/cf/AccesosCirculos.jsx` (19 nov 2026):
+ * los usan también las fichas del préstamo y del cliente. */
 function AccesosDeRuta({ accesos = [] }) {
-  const lista = accesos.filter(Boolean)
-  if (lista.length === 0) return null
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '16px 6px', padding: '20px 16px 22px' }}>
-      {lista.map((a) => {
-        const dentro = (
-          <>
-            <span aria-hidden style={{
-              width: 56, height: 56, borderRadius: 999, display: 'grid', placeItems: 'center',
-              background: 'var(--cf-card)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)',
-              boxShadow: '0 2px 8px rgba(20,20,28,.06)',
-            }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{a.icono}</svg>
-            </span>
-            <span style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.2, textAlign: 'center', color: 'var(--cf-ink-2)' }}>{a.texto}</span>
-          </>
-        )
-        const estilo = {
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, minWidth: 0,
-          background: 'none', border: 0, padding: 0, font: 'inherit', cursor: 'pointer', textDecoration: 'none',
-          opacity: a.deshabilitado ? 0.5 : 1,
-        }
-        return a.href
-          ? <Link key={a.id} href={a.href} style={estilo}>{dentro}</Link>
-          : <button key={a.id} type="button" onClick={a.onClick} disabled={a.deshabilitado} style={estilo}>{dentro}</button>
-      })}
-    </div>
-  )
+  return <AccesosCirculos accesos={accesos} style={{ padding: '20px 16px 22px' }} />
 }
 
 function CapaRecorrido({ children }) {

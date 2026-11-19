@@ -191,7 +191,10 @@ function FotoLightbox({ src, alt, onClose }) {
   )
 }
 
-export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats, onWhatsApp, puedeSubirFoto = false, onFotoActualizada, calificacion, onAbrirCalificacion }) {
+/* `enBanda` (19 nov 2026): la misma tarjeta, dentro de la banda negra de la ficha
+   en el teléfono (`CabeceraDetalle`), sin su caja: ya está sobre negro. Todo lo
+   que hace —la foto, la calificación, la cifra, llamar y WhatsApp— sigue igual. */
+export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats, onWhatsApp, puedeSubirFoto = false, onFotoActualizada, calificacion, onAbrirCalificacion, enBanda = false }) {
   const color = moodColorFromCliente(cliente, prestamosActivos)
   const label = moodLabel(cliente, prestamosActivos)
   const tieneFoto = !!cliente?.fotoUrl
@@ -293,14 +296,14 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
 
        Ahora es el bloque carbon del sistema, el mismo de caja, ruta y socios.
        El estado lo sigue diciendo la pastilla, con palabras. */
-    <div className="relative rounded-[20px] overflow-hidden" style={{
+    <div className={enBanda ? 'relative' : 'relative rounded-[20px] overflow-hidden'} style={enBanda ? undefined : {
       background: '#15161A',
       // En tema oscuro el fondo de la app es este mismo carbón: sin borde la
       // tarjeta del cliente se funde y el saldo queda flotando.
       border: '1px solid rgba(255,255,255,.09)',
     }}>
 
-      <div className="relative px-5 py-5 sm:px-6 sm:py-6">
+      <div className={enBanda ? 'relative pt-3' : 'relative px-5 py-5 sm:px-6 sm:py-6'}>
         {/* Top: avatar + nombre + cedula + chip estado + boton WA */}
         <div className="flex items-start gap-3 mb-4">
           {/* Avatar con overlay de camara si puede subir foto */}

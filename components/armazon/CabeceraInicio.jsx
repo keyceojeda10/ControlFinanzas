@@ -522,7 +522,11 @@ export function CabeceraSeccion({
  * subtítulo y las acciones DE ESE objeto— y debajo la hoja redondeada. La hoja
  * no es blanca: es lo que la pantalla le pase (en la ruta, el mapa), recortado
  * a las esquinas de 26 px de todas las cabeceras. Solo en el móvil. */
-export function CabeceraDetalle({ titulo, subtitulo = null, acciones = null, profe = null, onVolver, children = null }) {
+/* `enLaBanda` (19 nov 2026): lo que va DENTRO de lo negro, debajo del título —las
+   pastillas y la cifra grande de las fichas del préstamo y del cliente—. `children`
+   sigue siendo lo de la hoja blanca (el mapa de la ruta). `tituloHref`: el nombre
+   lleva a otra ficha (del préstamo al cliente), con su flecha. */
+export function CabeceraDetalle({ titulo, subtitulo = null, acciones = null, profe = null, onVolver, enLaBanda = null, tituloHref = null, children = null }) {
   const router = useRouter()
   const pathname = usePathname()
   const [bordeHoja, tinta] = useTintaDeLaBarra()
@@ -542,13 +546,22 @@ export function CabeceraDetalle({ titulo, subtitulo = null, acciones = null, pro
           {profe}
           <Campana />
         </div>
+        {/* Sin título: lo pone `enLaBanda` (la ficha del cliente trae su nombre en la tarjeta). */}
+        {(titulo || acciones) && (
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, padding: '12px 12px 0 20px' }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             {/* El nombre baja de renglón, no se recorta: es lo que identifica. */}
             <h1 style={{
               margin: 0, fontFamily: "var(--font-space-grotesk), 'Space Grotesk', system-ui, sans-serif",
               fontSize: 20, fontWeight: 600, letterSpacing: '-.02em', lineHeight: 1.2, overflowWrap: 'anywhere',
-            }}>{titulo}</h1>
+            }}>
+              {tituloHref ? (
+                <Link href={tituloHref} style={{ color: '#fff', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                  {titulo}
+                  <svg aria-hidden width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.55)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5l7 7-7 7" /></svg>
+                </Link>
+              ) : titulo}
+            </h1>
             {subtitulo && (
               <p style={{ margin: '4px 0 0', fontSize: 13, lineHeight: 1.35, color: 'rgba(255,255,255,.62)', display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
                 <span aria-hidden style={{ width: 6, height: 6, borderRadius: 999, background: ORO, flex: 'none' }} />
@@ -558,6 +571,8 @@ export function CabeceraDetalle({ titulo, subtitulo = null, acciones = null, pro
           </div>
           {acciones}
         </div>
+        )}
+        {enLaBanda && <div style={{ padding: '0 12px 0 20px' }}>{enLaBanda}</div>}
       </div>
       <div style={{
         position: 'relative', marginTop: -RADIO_HOJA, borderRadius: `${RADIO_HOJA}px ${RADIO_HOJA}px 0 0`,

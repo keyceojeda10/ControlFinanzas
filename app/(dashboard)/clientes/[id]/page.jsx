@@ -22,6 +22,9 @@ import { formatFechaCobroRelativa } from '@/lib/calculos'
 import { formatMoney } from '@/lib/i18n'
 import { mensajeBorrarPrestamo } from '@/lib/dinero/revertir-renovacion'
 import { useCabecera } from '@/components/armazon/Armazon'
+import { CabeceraDetalle } from '@/components/armazon/CabeceraInicio'
+import { PastillaProfe } from '@/components/tutoriales/PiezasProfe'
+import AccesosCirculos from '@/components/cf/AccesosCirculos'
 import { planTieneFotos }            from '@/lib/planes'
 import ReporteCliente                from '@/components/clientes/ReporteCliente'
 import ClienteHeroCard, { InfoContactoCard, AccionesClienteChips } from '@/components/clientes/ClienteHeroCard'
@@ -437,12 +440,16 @@ export default function ClienteDetallePage({ params }) {
     })() : null,
   })
 
+  /* La franja negra propia (lib/franja.js): la cabecera de detalle también
+     mientras carga y si falla, o no habría por dónde volver. */
   if (loading) {
-    return <SkeletonPrestamoDetalle />
+    return <><CabeceraDetalle titulo="Cliente" profe={<PastillaProfe />} /><SkeletonPrestamoDetalle /></>
   }
 
   if (error || !cliente) {
     return (
+      <>
+      <CabeceraDetalle titulo="Cliente" profe={<PastillaProfe />} />
       <div className="max-w-2xl mx-auto">
         <div className="bg-[var(--cf-red-pill-bg)] border border-[color-mix(in_srgb,var(--cf-red-dark)_30%,transparent)] text-[var(--cf-red-dark)] rounded-[20px] cf-card-shadow p-6 text-center">
           <p className="font-semibold mb-2">Cliente no encontrado</p>
@@ -452,6 +459,7 @@ export default function ClienteDetallePage({ params }) {
           </div>
         </div>
       </div>
+      </>
     )
   }
 
@@ -599,6 +607,110 @@ export default function ClienteDetallePage({ params }) {
       ejecutar: () => router.push(`/clientes/${cliente?.id}/historial`) },
   ]
 
+  /* Las acciones de la ficha, UNA lista para las dos pantallas: los círculos del
+     teléfono (`corto`, `dorado`, `alFinal`) y la lista del PC. */
+  const accionesDeLaFicha = [
+      ...(puedeCrearPrestamos ? [{
+        label: 'Nuevo préstamo',
+        corto: 'Prestarle', dorado: true,
+        color: 'var(--cf-green-dark)',
+        icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>,
+        onClick: () => router.push(`/prestamos/nuevo?clienteId=${cliente.id}`),
+      }] : []),
+      // ── «ENVIAR POR WHATSAPP», CON SU NOMBRE ─────────────────────
+      //
+      // Ya existía: es el círculo verde de la tarjeta de arriba. Pero es
+      // un ICONO PELADO, y debajo hay siete acciones CON LETRA. Un
+      // cobrador lo reportó en video: «no encuentro por dónde mandarle a
+      // WhatsApp... sé que están ahí, pero no llego fácilmente a ellas».
+      // En su grabación el botón se ve en pantalla mientras lo busca: su
+      // ojo lee la lista con nombres y el icono no se registra.
+      //
+      // Va SEGUNDA, detrás de «Nuevo préstamo», porque su ciclo es
+      // justamente ese: creo el crédito y lo mando. El icono se queda:
+      // quien ya lo aprendió no pierde su camino.
+      ...(cliente.telefono ? [{
+        label: 'Enviar por WhatsApp',
+        corto: 'Mensaje',
+        color: '#25D366',
+        icon: (
+          <svg className="w-full h-full" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+            <path d="M20.52 3.449C12.831-3.984.106 1.407.101 11.893c0 2.096.549 4.14 1.595 5.945L0 24l6.335-1.652a11.882 11.882 0 0 0 5.68 1.448h.005c9.6 0 15.24-10.4 10.5-18.35a11.83 11.83 0 0 0-2-2.997zM12.02 21.785h-.004a9.87 9.87 0 0 1-5.03-1.378l-.36-.214-3.741.981.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.263c.001-8.708 10.59-13.067 16.752-6.909 6.16 6.158 1.812 16.805-6.87 16.805z" />
+          </svg>
+        ),
+        onClick: () => setModalWA(true),
+      }] : []),
+      {
+        label: 'Reagendar visita',
+        corto: 'Reagendar',
+        color: 'var(--cf-gold-dark)',
+        icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>,
+        onClick: () => setModalReagendar(true),
+      },
+      ...(puedeEditarClientes ? [{
+        // GPS aqui mismo, en campo. Sin tener que entrar a "Editar".
+        label: fijandoGPS
+          ? 'Capturando GPS...'
+          : (cliente.latitud != null && cliente.longitud != null ? 'Actualizar ubicación' : 'Fijar ubicación (GPS)'),
+        corto: fijandoGPS ? 'Ubicando…' : 'Ubicación',
+        color: 'var(--cf-ink-2)',
+        icon: (
+          <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+          </svg>
+        ),
+        onClick: handleFijarUbicacion,
+        disabled: fijandoGPS,
+      }] : []),
+      ...(cliente.latitud != null && cliente.longitud != null ? [{
+        label: 'Cómo llegar',
+        color: '#4285f4',
+        icon: (
+          <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
+          </svg>
+        ),
+        onClick: () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${cliente.latitud},${cliente.longitud}`, '_blank'),
+      }] : []),
+      {
+        label: 'Historial',
+        color: 'var(--cf-ink-2)',
+        icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+        onClick: () => router.push(`/clientes/${id}/historial`),
+      },
+      {
+        label: 'QR',
+        color: 'var(--cf-ink-2)',
+        icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" /><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z" /></svg>,
+        onClick: () => setModalQR(true),
+      },
+      ...(puedeEditarClientes ? [{
+        label: 'Editar',
+        color: 'var(--cf-ink-2)',
+        icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg>,
+        onClick: () => router.push(`/clientes/${id}/editar`),
+      }] : []),
+      ...(esOwner ? [{
+        label: cliente.estado === 'inactivo' ? 'Activar' : 'Inactivar',
+        alFinal: true,
+        color: cliente.estado === 'inactivo' ? 'var(--cf-green-dark)' : 'var(--cf-gold-dark)',
+        icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>,
+        onClick: handleToggleInactivo,
+        disabled: actionLoading,
+      }] : []),
+      ...(esOwner ? [{
+        label: 'Eliminar',
+        alFinal: true,
+        // La unica accion que reconoce una perdida, y la unica con color.
+        peligro: true,
+        icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>,
+        onClick: () => setShowConfirmDelete(true),
+        disabled: actionLoading,
+      }] : []),
+  ]
+
   return (
     <div className="max-w-2xl lg:max-w-6xl mx-auto space-y-5 pb-4">
 
@@ -664,7 +776,49 @@ export default function ClienteDetallePage({ params }) {
         </div>
       )}
 
+      {/* ── LA BANDA NEGRA DEL TELÉFONO (19 nov 2026) ──
+          La tarjeta del cliente ES la banda: su nombre ya no se repite arriba.
+          En el PC sigue la tarjeta de siempre (`CabeceraDetalle` es lg:hidden). */}
+      <CabeceraDetalle
+        titulo={null}
+        profe={<PastillaProfe />}
+        enLaBanda={<ClienteHeroCard enBanda
+        cliente={cliente}
+        prestamosActivos={prestamosActivos}
+        /* ⚠ LA MISMA CIFRA QUE LA ESTRELLA, O NINGUNA. Aquí decía «6 préstamos
+           completados antes» justo debajo de una estrella que decía 8: dos
+           números sobre lo mismo, pegados y en desacuerdo, que es de donde
+           salen las preguntas. Contaban universos distintos —éste solo los
+           `completado`, la estrella también los `cancelado`, que también
+           terminaron—. Ahora el renglón SALE de la estrella y además dice qué
+           significa el color, que es lo que faltaba por leer sin abrir nada. */
+        stats={cliente.calificacion?.numero
+          /* Solo el CONTEO: la palabra («Buen cliente») ya la dice la marca que
+             tiene justo encima, y repetirla aquí sería decir lo mismo dos veces
+             en dos renglones seguidos. Lo que aporta es la prueba detrás del
+             color, que es cuántos ha terminado. */
+          ? `${cliente.calificacion.numero} préstamo${cliente.calificacion.numero === 1 ? '' : 's'} terminado${cliente.calificacion.numero === 1 ? '' : 's'}`
+          : (historial.length > 0
+              ? `${historial.filter(p => p.estado === 'completado').length} préstamo${historial.filter(p => p.estado === 'completado').length === 1 ? '' : 's'} completado${historial.filter(p => p.estado === 'completado').length === 1 ? '' : 's'} antes`
+              : null)}
+        onWhatsApp={cliente.telefono ? () => setModalWA(true) : null}
+        puedeSubirFoto={(puedeEditarClientes || esOwner) && planTieneFotos(plan)}
+        onFotoActualizada={(url) => setCliente(prev => ({ ...prev, fotoUrl: url }))}
+        calificacion={cliente.calificacion}
+        onAbrirCalificacion={() => setModalCalificar(true)}
+      />}
+      />
+
+      {/* Las acciones, en círculos: «Prestarle» primero y en dorado. */}
+      <div className="lg:hidden">
+        <AccesosCirculos style={{ padding: '4px 0 2px' }} accesos={accionesDeLaFicha.filter((a) => !a.alFinal).map((a) => ({
+          id: a.label, texto: a.corto ?? a.label, titulo: a.label, onClick: a.onClick, deshabilitado: a.disabled,
+          iconoCompleto: a.icon, color: a.color, dorado: a.dorado,
+        }))} />
+      </div>
+
       {/* HERO CARD: Saldo total + avatar + chip estado + WA */}
+      <div className="hidden lg:block">
       <ClienteHeroCard
         cliente={cliente}
         prestamosActivos={prestamosActivos}
@@ -690,6 +844,7 @@ export default function ClienteDetallePage({ params }) {
         calificacion={cliente.calificacion}
         onAbrirCalificacion={() => setModalCalificar(true)}
       />
+      </div>
 
       {/* ⚠ EN PERDIDOS, EN ROJO Y CON LA CIFRA (decisión del dueño, 17 oct 2026).
           «Las personas que están en clavo no se reflejan en ningún lado»: otro
@@ -924,103 +1079,29 @@ export default function ClienteDetallePage({ params }) {
           «editar clientes» perdía también WhatsApp, Reagendar, Cómo llegar,
           Historial y QR, que no piden ninguno (17 oct 2026). */}
       {(
-        <AccionesClienteChips
-          acciones={[
-            ...(puedeCrearPrestamos ? [{
-              label: 'Nuevo préstamo',
-              color: 'var(--cf-green-dark)',
-              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>,
-              onClick: () => router.push(`/prestamos/nuevo?clienteId=${cliente.id}`),
-            }] : []),
-            // ── «ENVIAR POR WHATSAPP», CON SU NOMBRE ─────────────────────
-            //
-            // Ya existía: es el círculo verde de la tarjeta de arriba. Pero es
-            // un ICONO PELADO, y debajo hay siete acciones CON LETRA. Un
-            // cobrador lo reportó en video: «no encuentro por dónde mandarle a
-            // WhatsApp... sé que están ahí, pero no llego fácilmente a ellas».
-            // En su grabación el botón se ve en pantalla mientras lo busca: su
-            // ojo lee la lista con nombres y el icono no se registra.
-            //
-            // Va SEGUNDA, detrás de «Nuevo préstamo», porque su ciclo es
-            // justamente ese: creo el crédito y lo mando. El icono se queda:
-            // quien ya lo aprendió no pierde su camino.
-            ...(cliente.telefono ? [{
-              label: 'Enviar por WhatsApp',
-              color: '#25D366',
-              icon: (
-                <svg className="w-full h-full" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
-                  <path d="M20.52 3.449C12.831-3.984.106 1.407.101 11.893c0 2.096.549 4.14 1.595 5.945L0 24l6.335-1.652a11.882 11.882 0 0 0 5.68 1.448h.005c9.6 0 15.24-10.4 10.5-18.35a11.83 11.83 0 0 0-2-2.997zM12.02 21.785h-.004a9.87 9.87 0 0 1-5.03-1.378l-.36-.214-3.741.981.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.263c.001-8.708 10.59-13.067 16.752-6.909 6.16 6.158 1.812 16.805-6.87 16.805z" />
-                </svg>
-              ),
-              onClick: () => setModalWA(true),
-            }] : []),
-            {
-              label: 'Reagendar visita',
-              color: 'var(--cf-gold-dark)',
-              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>,
-              onClick: () => setModalReagendar(true),
-            },
-            ...(puedeEditarClientes ? [{
-              // GPS aqui mismo, en campo. Sin tener que entrar a "Editar".
-              label: fijandoGPS
-                ? 'Capturando GPS...'
-                : (cliente.latitud != null && cliente.longitud != null ? 'Actualizar ubicación' : 'Fijar ubicación (GPS)'),
-              color: 'var(--cf-ink-2)',
-              icon: (
-                <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-                </svg>
-              ),
-              onClick: handleFijarUbicacion,
-              disabled: fijandoGPS,
-            }] : []),
-            ...(cliente.latitud != null && cliente.longitud != null ? [{
-              label: 'Cómo llegar',
-              color: '#4285f4',
-              icon: (
-                <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
-                </svg>
-              ),
-              onClick: () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${cliente.latitud},${cliente.longitud}`, '_blank'),
-            }] : []),
-            {
-              label: 'Historial',
-              color: 'var(--cf-ink-2)',
-              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-              onClick: () => router.push(`/clientes/${id}/historial`),
-            },
-            {
-              label: 'QR',
-              color: 'var(--cf-ink-2)',
-              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" /><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z" /></svg>,
-              onClick: () => setModalQR(true),
-            },
-            ...(puedeEditarClientes ? [{
-              label: 'Editar',
-              color: 'var(--cf-ink-2)',
-              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg>,
-              onClick: () => router.push(`/clientes/${id}/editar`),
-            }] : []),
-            ...(esOwner ? [{
-              label: cliente.estado === 'inactivo' ? 'Activar' : 'Inactivar',
-              color: cliente.estado === 'inactivo' ? 'var(--cf-green-dark)' : 'var(--cf-gold-dark)',
-              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>,
-              onClick: handleToggleInactivo,
-              disabled: actionLoading,
-            }] : []),
-            ...(esOwner ? [{
-              label: 'Eliminar',
-              // La unica accion que reconoce una perdida, y la unica con color.
-              peligro: true,
-              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>,
-              onClick: () => setShowConfirmDelete(true),
-              disabled: actionLoading,
-            }] : []),
-          ]}
-        />
+        <>
+        {/* En el teléfono, círculos arriba (19 nov 2026); aquí quedan Inactivar y
+            Eliminar, lejos del pulgar. En el PC, la lista de siempre. */}
+        <div className="hidden lg:block"><AccionesClienteChips acciones={accionesDeLaFicha} /></div>
+        {accionesDeLaFicha.some((a) => a.alFinal) && (
+          <div className="lg:hidden">
+          {/* ⚠ El `display` en línea va DENTRO: puesto junto a `lg:hidden` le gana a la clase y sale en el PC. */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--cf-ink-3)' }}>Más opciones</span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
+              {accionesDeLaFicha.filter((a) => a.alFinal).map((a) => (
+                <button key={a.label} type="button" onClick={a.onClick} disabled={a.disabled} style={{
+                  height: 48, borderRadius: 'var(--cf-r-control)', background: 'var(--cf-card)', font: 'inherit',
+                  fontSize: 14, fontWeight: 700, cursor: 'pointer', opacity: a.disabled ? .5 : 1,
+                  border: `1px solid ${a.peligro ? 'color-mix(in srgb, var(--cf-red-dark) 35%, transparent)' : 'var(--cf-border-strong)'}`,
+                  color: a.peligro ? 'var(--cf-red-dark)' : 'var(--cf-ink-2)',
+                }}>{a.label}</button>
+              ))}
+            </div>
+          </div>
+          </div>
+        )}
+        </>
       )}
 
       <ConfirmModal
