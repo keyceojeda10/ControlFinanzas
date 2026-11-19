@@ -267,6 +267,43 @@ export default function NuevoClientePage() {
           )}
         </div>
 
+        {/* ══ MUCHOS DE UNA VEZ (19 nov 2026) ══════════════════════════════════
+            Esta es la pantalla que más gente distinta abre (158 en 30 días) y lo
+            primero que hace quien llega. Solo ofrecía «uno por uno», con media
+            pantalla vacía, y pasar la cartera es el muro de la activación: los
+            mismos tres caminos que «Trae tu cartera» del Inicio. Solo el dueño
+            (los tres son suyos). */}
+        {esOwner && !ocrLoading && (
+          <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--cf-ink-3)' }}>¿Tienes muchos? Pásalos de una vez</span>
+            <div style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)', borderRadius: 'var(--cf-r-card)', overflow: 'hidden' }}>
+              {[
+                { href: '/migrador', titulo: 'Fotos del cuaderno o las cartulinas', ayuda: 'Varias fotos a la vez y la app los lee.',
+                  icono: <><path d="M4 4.5A1.5 1.5 0 015.5 3H18a1 1 0 011 1v16a1 1 0 01-1 1H5.5A1.5 1.5 0 014 19.5z" /><path d="M4 17.5h15M8 3v18" /></> },
+                { href: '/carga-masiva', titulo: 'Ya lo tengo en Excel', ayuda: 'Sube tu archivo y emparejamos las columnas.',
+                  icono: <><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M4 9h16M4 15h16M10 3v18" /></> },
+                { href: '/cargar-cartera', titulo: 'Que te la carguemos', ayuda: 'Nos mandas lo que tengas y un asesor te la deja lista.',
+                  icono: <><circle cx="9" cy="8" r="3.4" /><path d="M2.5 20a6.5 6.5 0 0113 0" /><path d="M17 4.5l1.6 1.6L22 2.7" /></> },
+              ].map((o, i) => (
+                <button key={o.href} type="button" onClick={() => router.push(o.href)} style={{
+                  display: 'flex', alignItems: 'center', gap: 12, width: '100%', minHeight: 64, padding: '12px 16px',
+                  background: 'none', border: 0, borderTop: i === 0 ? 'none' : '1px solid var(--cf-hairline)',
+                  textAlign: 'left', font: 'inherit', cursor: 'pointer',
+                }}>
+                  <span aria-hidden style={{ width: 36, height: 36, flex: 'none', borderRadius: 10, display: 'grid', placeItems: 'center', background: 'var(--cf-fill)', color: 'var(--cf-ink-2)' }}>
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{o.icono}</svg>
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--cf-ink)' }}>{o.titulo}</span>
+                    <span style={{ fontSize: 13, lineHeight: 1.4, color: 'var(--cf-ink-3)' }}>{o.ayuda}</span>
+                  </span>
+                  <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--cf-chevron)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}><path d="M9 5l7 7-7 7" /></svg>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {ocrError && (
           <div className="mt-4 flex items-center gap-2 px-4 py-3 rounded-xl text-sm"
             style={{ background: 'var(--cf-red-pill-bg)', color: 'var(--cf-red-dark)', border: '1px solid color-mix(in srgb, var(--cf-red-dark) 30%, transparent)' }}>

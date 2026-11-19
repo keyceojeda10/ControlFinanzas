@@ -278,6 +278,11 @@ function NuevoPrestamo() {
 
   const [clienteId,    setClienteId]    = useState(clienteIdParam)
   const [clientes,     setClientes]     = useState([])
+  /* 'cargando' | 'listo' | 'fallo'. ⚠ Sin esto, mientras la lista llegaba —o si
+     no llegaba, sin señal— la pantalla decía «Todavía no tienes clientes» y
+     ofrecía «Crear mi primer cliente» a quien tiene cientos (19 nov 2026). */
+  const [estadoClientes, setEstadoClientes] = useState('cargando')
+  const [reintentoClientes, setReintentoClientes] = useState(0)
   const [clienteNombre, setClienteNombre] = useState('')
   // ── LO QUE VIENE DEL SIMULADOR ──
   //
@@ -862,11 +867,15 @@ function NuevoPrestamo() {
   useEffect(() => {
     const cargar = async () => {
       let lista = []
+      let respondio = false
+      setEstadoClientes('cargando')
       if (navigator.onLine) {
         try {
           const r = await fetch('/api/clientes')
           const d = await r.json()
-          lista = Array.isArray(d) ? d : []
+          // Solo una lista de verdad cuenta como respuesta: un error del
+          // servidor ({ error }) no es «no tienes clientes».
+          if (r.ok && Array.isArray(d)) { lista = d; respondio = true }
         } catch {}
       }
       if (lista.length === 0) {
@@ -892,9 +901,10 @@ function NuevoPrestamo() {
         }
       }
       setClientes(lista)
+      setEstadoClientes(respondio || lista.length > 0 ? 'listo' : 'fallo')
     }
     cargar()
-  }, [clienteIdParam])
+  }, [clienteIdParam, reintentoClientes])
 
   // Default plazo por frecuencia (en unidades de esa frecuencia)
   const defaultPlazoPorFrecuencia = (freq) => {
@@ -1530,6 +1540,10 @@ function NuevoPrestamo() {
           «paso 1 de 3» y no tener nunca un paso 2 al que ir es prometer una
           pantalla que no existe. `paso` sigue valiendo 0·1·2 por dentro; aquí
           se traduce, que es el único sitio donde el número se lee. */}
+      {/* ⚠ EN EL TELÉFONO NO (19 nov 2026): la cabecera ya trae la barra de pasos y
+          el nombre del paso, y esta fila repetía «Cliente» debajo de «Cliente».
+          Para volver está «Atrás» abajo. En el PC sigue: allí no hay cabecera. */}
+      <div className="hidden lg:block">
       <Stepper
         steps={unaPantalla ? PASOS_PC : PASOS}
         activeIndex={unaPantalla ? (paso === 0 ? 0 : 1) : paso}
@@ -1540,6 +1554,7 @@ function NuevoPrestamo() {
           if (destino <= paso) setPaso(destino)
         }}
       />
+      </div>
 
       {/* ══ T16-00 · LAS DOS COLUMNAS ══
           La lámina de escritorio: el formulario a la izquierda y la cuenta a la
@@ -1806,7 +1821,22 @@ function NuevoPrestamo() {
             {/* RESULTADOS: solo si esta buscando */}
             {buscando && (
               <div className="mt-3 space-y-1.5">
-                {clientesFiltrados.length === 0 ? (
+                {/* Sin la lista no se sabe si existe: decir «nadie» y ofrecer
+                    crearlo duplicaría al cliente. */}
+                {clientesFiltrados.length === 0 && estadoClientes !== 'listo' ? (
+                  <div className="text-center py-8">
+                    <p className="text-sm mb-4" style={{ color: 'var(--cf-ink-2)' }}>
+                      {estadoClientes === 'cargando' ? 'Cargando tus clientes…' : 'No se pudo traer la lista de clientes para buscar.'}
+                    </p>
+                    {estadoClientes === 'fallo' && (
+                      <button type="button" onClick={() => setReintentoClientes((n) => n + 1)}
+                        className="h-11 px-5 rounded-[12px] text-sm font-semibold"
+                        style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)', color: 'var(--cf-ink)' }}>
+                        Reintentar
+                      </button>
+                    )}
+                  </div>
+                ) : clientesFiltrados.length === 0 ? (
                   /* No estaba en la lista y no había nada que hacer: «Sin
                      resultados» y a buscarse la vida. El cliente al que le vas a
                      prestar puede ser nuevo — de hecho es el caso normal cuando
@@ -1844,7 +1874,22 @@ function NuevoPrestamo() {
                 desde tres lugares distintos (el vacio de /prestamos, el nav de
                 abajo y el CTA del dashboard) y el usuario tenia que adivinar
                 solo que debia irse a /clientes/nuevo. */}
-            {!buscando && !clienteSeleccionado && recientes.length === 0 && (
+            {!buscando && !clienteSeleccionado && recientes.length === 0 && estadoClientes === 'cargando' && (
+              <p className="text-sm text-center py-8 mt-3" style={{ color: 'var(--cf-ink-3)' }}>Cargando tus clientes…</p>
+            )}
+            {!buscando && !clienteSeleccionado && recientes.length === 0 && estadoClientes === 'fallo' && (
+              <div className="text-center py-8 mt-3">
+                <p className="text-sm mb-4" style={{ color: 'var(--cf-ink-2)' }}>
+                  No se pudo traer la lista de clientes. Revisa la señal y vuelve a intentar.
+                </p>
+                <button type="button" onClick={() => setReintentoClientes((n) => n + 1)}
+                  className="h-11 px-5 rounded-[12px] text-sm font-semibold"
+                  style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)', color: 'var(--cf-ink)' }}>
+                  Reintentar
+                </button>
+              </div>
+            )}
+            {!buscando && !clienteSeleccionado && recientes.length === 0 && estadoClientes === 'listo' && (
               <div className="text-center py-8 mt-3">
                 <p className="text-sm mb-4" style={{ color: 'var(--cf-ink-3)' }}>
                   Todavía no tienes clientes. Un préstamo siempre va a nombre de alguien.
