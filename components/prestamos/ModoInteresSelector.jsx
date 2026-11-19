@@ -145,7 +145,7 @@ export function AvisoPorCobro({ aviso }) {
       style={{ background: 'var(--cf-red-bg)', border: '1px solid var(--cf-red-border)',
         color: 'var(--cf-red-darker)' }}>
       {AVISO_ICONO}
-      <p className="text-[11px] leading-snug">
+      <p className="text-[13px] leading-snug">
         <span className="font-bold">El {aviso.tasa}% se cobra {aviso.cobros} veces, una en cada cobro.</span>{' '}
         Son <span className="font-semibold tabular-nums">{formatMoney(aviso.interes)}</span> de interés
         sobre <span className="tabular-nums">{formatMoney(aviso.prestado)}</span> prestados
@@ -160,7 +160,14 @@ const CHECK = (
   <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.704 5.29a1 1 0 010 1.415l-7.997 8a1 1 0 01-1.414 0L3.296 10.71a1 1 0 011.415-1.415l3.29 3.29 7.288-7.295a1 1 0 011.415 0z" clipRule="evenodd" /></svg>
 )
 
-export default function ModoInteresSelector({ interesPorMes = false, modoInteres, onChange, calculo, monto, tasa, frecuencia, diasPlazo, preferido = null, onGuardarPreferido }) {
+/* ── ESTILO «MI CUENTA» (19 nov 2026) ──
+   Era todo a 11 px con las etiquetas en mayúsculas («RECOMENDADO»; «COMO LOS
+   BANCOS» caía sola en otro renglón). Ahora: nombre a 16, la frase al lado, la
+   etiqueta como pastilla y lo que explica a 13. `sinRotulo`: la página ya trae
+   su título («¿Cómo cobra el interés?») y «Modo de interés» lo repetía. */
+const PASTILLA = { display: 'inline-flex', alignItems: 'center', height: 24, padding: '0 9px', borderRadius: 999, fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }
+
+export default function ModoInteresSelector({ interesPorMes = false, modoInteres, onChange, calculo, monto, tasa, frecuencia, diasPlazo, preferido = null, onGuardarPreferido, sinRotulo = false }) {
   // paso: 'lista' | 'q1' | 'q2' | 'resultado'
   const [paso, setPaso] = useState('lista')
   const [sugerido, setSugerido] = useState(null)
@@ -188,24 +195,24 @@ export default function ModoInteresSelector({ interesPorMes = false, modoInteres
       <div className="rounded-[16px] p-4" style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)' }}>
         <div className="flex items-start justify-between gap-3 mb-1">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-gold)' }}>
-              {paso === 'q1' ? 'Paso 1 de 2' : 'Paso 2 de 2'}
+            <p className="text-[13px] font-semibold" style={{ color: 'var(--cf-gold-dark)' }}>
+              {paso === 'q1' ? 'Pregunta 1 de 2' : 'Pregunta 2 de 2'}
             </p>
-            <p className="text-[15px] font-bold leading-tight mt-0.5" style={{ color: 'var(--cf-ink)' }}>{preg.titulo}</p>
+            <p className="text-[17px] font-bold leading-tight mt-0.5" style={{ color: 'var(--cf-ink)' }}>{preg.titulo}</p>
           </div>
           <button type="button" onClick={() => setPaso(paso === 'q2' ? 'q1' : 'lista')}
-            className="text-[11px] font-semibold shrink-0 mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
-            {paso === 'q2' ? '← Atrás' : 'Cerrar'}
+            className="text-[14px] font-semibold shrink-0 -mt-2 -mr-2 px-2" style={{ color: 'var(--cf-ink-2)', minHeight: 44 }}>
+            {paso === 'q2' ? 'Atrás' : 'Cerrar'}
           </button>
         </div>
-        <p className="text-[11px] mb-3" style={{ color: 'var(--cf-ink-3)' }}>{preg.ayuda}</p>
+        <p className="text-[13px] mb-3" style={{ color: 'var(--cf-ink-3)' }}>{preg.ayuda}</p>
         <div className="space-y-2">
           {preg.opciones.map((op, i) => (
             <button key={i} type="button" onClick={() => elegirOpcion(op)}
               className="w-full text-left rounded-[12px] p-3 transition-all active:scale-[0.99]"
               style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
-              <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>{op.label}</p>
-              <p className="text-[12px] mt-1 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>{op.ej}</p>
+              <p className="text-[15px] font-semibold" style={{ color: 'var(--cf-ink)' }}>{op.label}</p>
+              <p className="text-[13px] mt-1 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>{op.ej}</p>
             </button>
           ))}
         </div>
@@ -214,8 +221,8 @@ export default function ModoInteresSelector({ interesPorMes = false, modoInteres
             en vez de mandarlo a un modo equivocado. */}
         {paso === 'q1' && (
           <button type="button" onClick={() => { setVerAvanzados(true); setPaso('lista') }}
-            className="w-full text-center text-[11px] font-semibold mt-3 py-1.5" style={{ color: 'var(--cf-ink-3)' }}>
-            Ninguna se parece — ver todos los modos
+            className="w-full text-center text-[14px] font-semibold mt-2" style={{ color: 'var(--cf-ink-2)', minHeight: 44 }}>
+            Ninguna se parece: ver todos los modos
           </button>
         )}
       </div>
@@ -230,14 +237,14 @@ export default function ModoInteresSelector({ interesPorMes = false, modoInteres
       <div className="rounded-[16px] p-4" style={{ background: 'color-mix(in srgb, var(--cf-gold) 8%, var(--cf-surface))', border: '1.5px solid var(--cf-gold)' }}>
         <p className="mb-1 text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>Tu modo ideal es</p>
         <p className="text-lg font-bold" style={{ color: 'var(--cf-ink)' }}>{md?.label}{md?.frase ? <span className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}> · {md.frase}</span> : null}</p>
-        {md?.base && <p className="text-[11px] font-semibold mt-0.5" style={{ color: BASES[md.base].color }}>{BASES[md.base].texto}</p>}
-        <p className="text-[12px] mt-1.5 leading-snug" style={{ color: 'var(--cf-ink-2)' }}>{md?.desc}</p>
+        {md?.base && <p className="text-[13px] font-semibold mt-0.5" style={{ color: BASES[md.base].color }}>{BASES[md.base].texto}</p>}
+        <p className="text-[13px] mt-1.5 leading-snug" style={{ color: 'var(--cf-ink-2)' }}>{md?.desc}</p>
         {ej && sugerido !== 'manual' && (
-          <p className="text-[12px] mt-2 font-medium tabular-nums" style={{ color: 'var(--cf-gold)' }}>
+          <p className="text-[14px] mt-2 font-semibold tabular-nums" style={{ color: 'var(--cf-gold-dark)' }}>
             {ej.numPeriodos} cuotas de {formatMoney(ej.cuotaDiaria)} · Total {formatMoney(ej.totalAPagar)}
           </p>
         )}
-        <p className="text-[11px] mt-2.5 leading-snug rounded-[8px] p-2" style={{ background: 'var(--cf-card)', color: 'var(--cf-ink-2)', border: '1px solid var(--cf-border)' }}>
+        <p className="text-[13px] mt-2.5 leading-snug rounded-[10px] p-2.5" style={{ background: 'var(--cf-card)', color: 'var(--cf-ink-2)', border: '1px solid var(--cf-border)' }}>
           <span className="font-semibold" style={{ color: 'var(--cf-ink-3)' }}>Cómo se calcula: </span>{md?.formula}
         </p>
         <AvisoPorCobro aviso={avisoDelPorcentaje(sugerido, ej, ctx)} />
@@ -263,7 +270,7 @@ export default function ModoInteresSelector({ interesPorMes = false, modoInteres
             </button>
           )}
           <button type="button" onClick={() => setPaso('q1')}
-            className="text-[11px] font-medium mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
+            className="text-[14px] font-semibold" style={{ color: 'var(--cf-ink-2)', minHeight: 44 }}>
             Volver a responder
           </button>
         </div>
@@ -279,27 +286,27 @@ export default function ModoInteresSelector({ interesPorMes = false, modoInteres
     const ej = calcularEjemplo(m.key, ctx)
     return (
       <button key={m.key} type="button" onClick={() => onChange(m.key)}
-        className="w-full text-left rounded-xl p-3 transition-all"
-        style={{ background: activo ? 'color-mix(in srgb, var(--cf-gold) 8%, transparent)' : 'var(--cf-surface)', border: activo ? '1.5px solid var(--cf-gold)' : '1px solid var(--cf-border)' }}>
-        <div className="flex items-start gap-2.5">
-          <div className="mt-0.5 w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center" style={{ borderColor: activo ? 'var(--cf-gold)' : 'var(--cf-border)' }}>
-            {activo && <div className="w-2 h-2 rounded-full" style={{ background: 'var(--cf-gold)' }} />}
+        className="w-full text-left rounded-[16px] p-4 transition-all"
+        style={{ background: activo ? 'color-mix(in srgb, var(--cf-gold) 8%, var(--cf-card))' : 'var(--cf-card)', border: activo ? '1.5px solid var(--cf-gold)' : '1px solid var(--cf-border)' }}>
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center" style={{ borderColor: activo ? 'var(--cf-gold)' : 'var(--cf-border-strong)' }}>
+            {activo && <div className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--cf-gold)' }} />}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-              <span className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>{m.label}</span>
-              <span className="text-[12px]" style={{ color: 'var(--cf-ink-2)' }}>· {m.frase}</span>
+            <div className="flex items-center gap-x-2 gap-y-1 mb-1 flex-wrap">
+              <span className="text-[16px] font-semibold" style={{ color: 'var(--cf-ink)' }}>{m.label}</span>
+              <span className="text-[14px]" style={{ color: 'var(--cf-ink-2)' }}>· {m.frase}</span>
               {esPreferido && (
-                <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--cf-gold) 18%, transparent)', color: 'var(--cf-gold)' }}>Tu modo habitual</span>
+                <span style={{ ...PASTILLA, background: 'var(--cf-gold-tint)', color: 'var(--cf-gold-dark)' }}>Tu modo habitual</span>
               )}
               {m.tag && !esPreferido && (
-                <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md" style={{ background: m.key === 'fijo' ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.06)', color: m.key === 'fijo' ? 'var(--cf-green-dark)' : 'var(--cf-ink-3)' }}>{m.tag}</span>
+                <span style={{ ...PASTILLA, background: m.key === 'fijo' ? 'var(--cf-green-pill-bg)' : 'var(--cf-fill)', color: m.key === 'fijo' ? 'var(--cf-green-dark)' : 'var(--cf-ink-2)' }}>{m.tag}</span>
               )}
             </div>
-            {m.base && (() => { const base = interesPorMes && m.key === 'lineal' ? BASES.mes : BASES[m.base]; return <p className="text-[11px] font-semibold mb-0.5" style={{ color: base.color }}>{base.texto}</p> })()}
-            <p className="text-[11px] leading-snug" style={{ color: 'var(--cf-ink-3)' }}>{interesPorMes && m.key === 'lineal' ? 'El capital se divide parejo. El interés baja cada mes y cada quincena paga la mitad.' : m.desc}</p>
+            {m.base && (() => { const base = interesPorMes && m.key === 'lineal' ? BASES.mes : BASES[m.base]; return <p className="text-[13px] font-semibold mb-1" style={{ color: base.color }}>{base.texto}</p> })()}
+            <p className="text-[13px] leading-snug" style={{ color: 'var(--cf-ink-3)' }}>{interesPorMes && m.key === 'lineal' ? 'El capital se divide parejo. El interés baja cada mes y cada quincena paga la mitad.' : m.desc}</p>
             {ej && m.key !== 'manual' && (
-              <p className="text-[11px] mt-1 font-medium tabular-nums" style={{ color: activo ? 'var(--cf-gold)' : 'var(--cf-ink-2)' }}>
+              <p className="text-[13px] mt-1.5 font-semibold tabular-nums" style={{ color: activo ? 'var(--cf-gold-dark)' : 'var(--cf-ink-2)' }}>
                 {ej.numPeriodos} cuotas de {formatMoney(ej.cuotaDiaria)} · Total {formatMoney(ej.totalAPagar)}
                 <span style={{ color: 'var(--cf-ink-3)' }}> · Interés {formatMoney(ej.totalInteres)}</span>
               </p>
@@ -307,7 +314,7 @@ export default function ModoInteresSelector({ interesPorMes = false, modoInteres
             {/* La formula aparece SOLO en el modo elegido (para los que quieren el
                 detalle), sin llenar todas las tarjetas de botones. */}
             {activo && (
-              <p className="text-[11px] mt-1.5 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
+              <p className="text-[13px] mt-2 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
                 <span className="font-semibold">Cómo se calcula: </span>{interesPorMes && m.key === 'lineal' ? 'Capital ÷ cobros (parejo) + la mitad del interés del mes (lo que debe al empezar el mes × %).' : m.formula}
               </p>
             )}
@@ -325,9 +332,11 @@ export default function ModoInteresSelector({ interesPorMes = false, modoInteres
 
   return (
     <div>
-      <label className="block mb-2 text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>
-        Modo de interés
-      </label>
+      {!sinRotulo && (
+        <label className="block mb-2 text-[13px] font-semibold text-[var(--cf-ink-2)]" style={{ color: 'var(--cf-ink-2)' }}>
+          Modo de interés
+        </label>
+      )}
 
       {/* Asistente: quita la fricción de leer 7 modos y decidir */}
       <button type="button" onClick={() => { setSugerido(null); setPaso('q1') }}
@@ -337,19 +346,20 @@ export default function ModoInteresSelector({ interesPorMes = false, modoInteres
           <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M12 17h.008M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
         </div>
         <div className="text-left">
-          <p className="text-sm font-bold" style={{ color: 'var(--cf-ink)' }}>¿No sabes cuál usar?</p>
-          <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Responde 2 preguntas y te decimos cuál es tu modo ideal.</p>
+          <p className="text-[15px] font-bold" style={{ color: 'var(--cf-ink)' }}>¿No sabes cuál usar?</p>
+          <p className="text-[13px]" style={{ color: 'var(--cf-ink-3)' }}>Responde 2 preguntas y te decimos cuál es tu modo ideal.</p>
         </div>
       </button>
 
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         {visibles.map(renderModo)}
       </div>
 
       {hayAvanzadosOcultos && (
         <button type="button" onClick={() => setVerAvanzados(true)}
-          className="w-full mt-2 h-9 rounded-[10px] text-[12px] font-semibold" style={{ color: 'var(--cf-ink-3)', background: 'var(--cf-surface)', border: '1px solid var(--cf-border)' }}>
-          Ver modos avanzados ▾
+          className="w-full mt-2 h-11 rounded-[12px] text-[14px] font-semibold flex items-center justify-center gap-1.5" style={{ color: 'var(--cf-ink-2)', background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
+          Ver modos avanzados
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M6 9l6 6 6-6" /></svg>
         </button>
       )}
     </div>

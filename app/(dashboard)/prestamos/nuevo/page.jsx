@@ -132,7 +132,7 @@ const SectionCard = ({ icon, title, color = 'var(--cf-gold)', children, accent }
         >
           <span className="w-3.5 h-3.5">{icon}</span>
         </div>
-        <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-2)' }}>
+        <p className="text-[15px] font-semibold" style={{ color: 'var(--cf-ink-3)' }}>
           {title}
         </p>
       </div>
@@ -1861,7 +1861,7 @@ function NuevoPrestamo() {
             {/* RECIENTES: solo si NO esta buscando y no hay cliente seleccionado (o hay uno pero queremos mostrar opciones rapidas) */}
             {!buscando && !clienteSeleccionado && recientes.length > 0 && (
               <div className="mt-5">
-                <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-2" style={{ color: 'var(--cf-ink-3)' }}>
+                <p className="text-[15px] font-semibold mb-2" style={{ color: 'var(--cf-ink-3)' }}>
                   Recientes
                 </p>
                 <div className="space-y-1.5">
@@ -1991,7 +1991,7 @@ function NuevoPrestamo() {
 
               {modo === 'mercancia' && (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
+                  <label className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
                     Nombre del producto <span style={{ opacity: 0.6 }}>(opcional)</span>
                   </label>
                   <div className="mt-1.5">
@@ -2001,7 +2001,7 @@ function NuevoPrestamo() {
               )}
 
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
+                <label className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
                   {modo === 'mercancia' ? 'Valor del artículo' : 'Monto del préstamo'}
                 </label>
                 {/* ── EL MONTO, A TAMAÑO DE PROTAGONISTA (T16-00) ──
@@ -2053,11 +2053,11 @@ function NuevoPrestamo() {
               {modo === 'mercancia' && (
                 <>
                   <div>
-                    <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Número de cuotas</label>
+                    <label className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>Número de cuotas</label>
                     <Input type="number" inputMode="numeric" value={numCuotas} onChange={(e) => setNumCuotas(e.target.value)} placeholder="10" suffix="cuotas" />
                   </div>
                   <div>
-                    <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Precio de venta</label>
+                    <label className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>Precio de venta</label>
                     <div className="mt-1.5"><MoneyInput value={precioVenta} onChange={(e) => setPrecioVenta(e.target.value)} placeholder="Ej: 120.000" /></div>
                     <p className="text-[10px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>Tu ganancia = precio de venta - valor del artículo.</p>
                     {Number(precioVenta) > 0 && Number(numCuotas) > 0 && Number(monto) > 0 && (
@@ -2133,7 +2133,7 @@ function NuevoPrestamo() {
               {/* Dia ancla para semanal */}
               {frecuencia === 'semanal' && (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>¿Qué día cobras?</label>
+                  <label className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>¿Qué día cobras?</label>
                   <p className="text-[10px] mt-0.5 mb-1.5" style={{ color: 'var(--cf-ink-3)' }}>Fija el día de la semana. «Auto» usa el día de inicio.</p>
                   {/* El día se queda en oro y no en tinta: es una elección DE
                       DENTRO de «semanal», no de las de arriba. Si todo se marca
@@ -2154,7 +2154,7 @@ function NuevoPrestamo() {
               {/* Dia ancla para quincenal */}
               {frecuencia === 'quincenal' && (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>¿Qué día cobras?</label>
+                  <label className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>¿Qué día cobras?</label>
                   <div className="flex gap-1 p-1 rounded-[12px] mb-2 mt-1.5" style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}>
                     <button type="button" onClick={() => { setModoDiaCobro('semana'); setDiaCobroMes(''); setDiaCobroMes2('') }}
                       className="flex-1 py-1.5 text-[10px] font-semibold rounded-[8px] transition-all"
@@ -2297,7 +2297,7 @@ function NuevoPrestamo() {
               {/* Dia ancla para mensual — solo dia del mes (diaCobroSemana no aplica) */}
               {frecuencia === 'mensual' && (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>¿Qué día del mes cobras?</label>
+                  <label className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>¿Qué día del mes cobras?</label>
                   <p className="text-[10px] mt-0.5 mb-1.5" style={{ color: 'var(--cf-ink-3)' }}>Si el mes no tiene ese día, se cobra el último día disponible.</p>
                   <Input type="number" inputMode="numeric" value={diaCobroMes}
                     onChange={(e) => { const v = e.target.value; if (v === '' || (Number(v) >= 1 && Number(v) <= 31)) setDiaCobroMes(v) }}
@@ -2385,7 +2385,7 @@ function NuevoPrestamo() {
               <div className="grid sm:grid-cols-2 gap-3">
                 <div>
                   <div className="flex items-center justify-between gap-2">
-                    <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
+                    <label className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
                       {/* En un abierto el % se cobra CADA período de la frecuencia (decisión
                           del dueño, 17 oct 2026): «Interés mensual» sobre un diario hacía
                           leer 20 % al mes donde se cobra 20 % al día. (DETALLES-PRESTAMOS #5.) */}
@@ -2440,7 +2440,7 @@ function NuevoPrestamo() {
                   </div>
                   {esAbierto && frecuencia === 'quincenal' && (
                     <div className="mt-2.5">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>El porcentaje es</p>
+                      <p className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>El porcentaje es</p>
                       <div className="mt-1.5">
                         <GrupoSegmentado
                           opciones={[
@@ -2482,7 +2482,7 @@ function NuevoPrestamo() {
                   </div>
                 ) : (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Cuántas cuotas</label>
+                  <label className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>Cuántas cuotas</label>
                   <div className="mt-1.5 flex items-center h-[68px] rounded-[14px] pl-4 pr-2.5 gap-2"
                     style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
                     <input
@@ -2582,11 +2582,12 @@ function NuevoPrestamo() {
               {/* En un abierto no hay «por 30 meses»: la línea de arriba ya lo dice. */}
               {!esAbierto && Number(monto) > 0 && Number(tasa) > 0 && Number(plazoUnidades) > 0 && (
                 <div className="rounded-xl px-3 py-2.5" style={{ background: 'color-mix(in srgb, var(--cf-gold) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--cf-gold) 15%, transparent)' }}>
-                  <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
+                  <p className="text-[14px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
                     {formatMoney(Number(monto))} al {formatearTasa(tasa)}% por {plazoUnidades} {frecuencia === 'diario' ? 'días' : frecuencia === 'semanal' ? 'semanas' : frecuencia === 'quincenal' ? 'quincenas' : 'meses'}
                   </p>
-                  <p className="text-[10px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
-                    La cuota exacta depende del modo de interés que elijas en el siguiente paso.
+                  <p className="text-[13px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
+                    {/* El modo está DEBAJO, en esta misma pantalla: decía «en el siguiente paso». */}
+                    La cuota exacta depende de cómo cobres el interés, aquí abajo.
                   </p>
                 </div>
               )}
@@ -2607,6 +2608,7 @@ function NuevoPrestamo() {
               </div>
 
               <ModoInteresSelector
+                sinRotulo
                 modoInteres={modoInteres}
                 onChange={(m) => {
                   setModoInteres(m)
@@ -2680,7 +2682,7 @@ function NuevoPrestamo() {
                       ajuste perdido. «Por días» es lo de siempre. */}
                   {esAbierto && (
                     <div className="mt-2.5 pt-2.5" style={{ borderTop: '1px solid var(--cf-hairline)' }}>
-                      <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>¿Cómo cobras el mes de interés?</p>
+                      <p className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>¿Cómo cobras el mes de interés?</p>
                       <div className="mt-1.5">
                         <GrupoSegmentado
                           opciones={[
@@ -2704,7 +2706,7 @@ function NuevoPrestamo() {
                           cobro lo pone él. Vacío, sale del calendario. */}
                       {interesMesCompleto && frecuencia === 'quincenal' && (
                         <div className="mt-2.5">
-                          <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Primer cobro (si no es el del calendario)</p>
+                          <p className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>Primer cobro (si no es el del calendario)</p>
                           <div className="mt-1.5">
                             <FechaConAviso value={primerCobroElegidoAb} min={fechaInicio || undefined}
                               onChange={setPrimerCobroElegidoAb} aviso="Opcional: toca y elige el día" />
@@ -2734,7 +2736,7 @@ function NuevoPrestamo() {
 
               {cuotaManualActiva && (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Cuota exacta</label>
+                  <label className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>Cuota exacta</label>
                   <div className="mt-1.5">
                     <MoneyInput value={cuotaManual} onChange={(e) => setCuotaManual(e.target.value)} placeholder="Ej: 60.000" />
                   </div>
@@ -2744,7 +2746,7 @@ function NuevoPrestamo() {
 
               {modoInteres === 'saldo' && (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Cuota fija personalizada (opcional)</label>
+                  <label className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>Cuota fija personalizada (opcional)</label>
                   <div className="mt-1.5">
                     <MoneyInput value={cuotaManual} onChange={(e) => setCuotaManual(e.target.value)} placeholder="Dejar vacío para calcular automático" />
                   </div>
@@ -2813,7 +2815,7 @@ function NuevoPrestamo() {
 
               {clienteId && (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Días sin cobro</label>
+                  <label className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>Días sin cobro</label>
                   <p className="text-[10px] mt-0.5 mb-2" style={{ color: 'var(--cf-ink-3)' }}>Días en que NO se cobra. Se guarda en la ficha del cliente.</p>
                   <DiasSinCobroSelector value={diasSinCobroCliente} onChange={(arr) => { setDiasSinCobroCliente(arr); setDiasSinCobroEditado(true) }} compact />
                 </div>
@@ -2829,7 +2831,7 @@ function NuevoPrestamo() {
               </label>
               {seguro && (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Monto del seguro</label>
+                  <label className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>Monto del seguro</label>
                   <div className="mt-1.5"><MoneyInput value={montoSeguro} onChange={(e) => setMontoSeguro(e.target.value)} placeholder="0" /></div>
                   {seguroAparte > 0 && (
                     <p className="text-[11px] mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>
@@ -2851,7 +2853,7 @@ function NuevoPrestamo() {
 
               {esOwner && listaSocios.length > 0 && (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Socio responsable</label>
+                  <label className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>Socio responsable</label>
                   <select
                     value={socioId}
                     onChange={(e) => setSocioId(e.target.value)}
@@ -2871,7 +2873,7 @@ function NuevoPrestamo() {
                   pactó y no cabe en los números. Sale al cobrar, en el préstamo
                   y en el aviso de vencido. */}
               <div>
-                <label htmlFor="nota-prestamo" className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Nota (opcional)</label>
+                <label htmlFor="nota-prestamo" className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>Nota (opcional)</label>
                 <textarea id="nota-prestamo" value={nota} onChange={(e) => setNota(e.target.value.slice(0, NOTA_MAX))}
                   rows={2} maxLength={NOTA_MAX}
                   placeholder="Ej: paga los 20. Diciembre no paga, está fuera del país."
@@ -2888,7 +2890,7 @@ function NuevoPrestamo() {
                   Al estar separadas se le puede olvidar una o la otra.» Estaban
                   con el seguro, las cuotas extra, el socio y la nota en medio. */}
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Fecha de inicio</label>
+                <label className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>Fecha de inicio</label>
                 <Input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} max={hoyISO()} />
                 <p className="mt-1 text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>
                   Si el préstamo ya venía de tu cuaderno, pon la fecha real en que lo hiciste.
@@ -2911,7 +2913,7 @@ function NuevoPrestamo() {
               </label>
               {esEnCurso && (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Monto ya abonado</label>
+                  <label className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>Monto ya abonado</label>
                   {/* Al corregir es lo que ya entró con el préstamo viejo: no se toca. */}
                   <div className="mt-1.5"><MoneyInput value={yaAbonado} readOnly={!!correccion} onChange={(e) => { if (!correccion) setYaAbonado(e.target.value) }} placeholder="0" /></div>
                   {correccion && (
@@ -2997,7 +2999,7 @@ function NuevoPrestamo() {
                     const avisoRojo = tipoAbonoPrevio === 'separado' && (!(deInteres > 0) || (!fechaAbonoCapital && deCapital > 0))
                     return (
                       <div className="mt-3">
-                        <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>¿A qué se abonó?</label>
+                        <label className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>¿A qué se abonó?</label>
                         <div className="mt-1.5">
                           <GrupoSegmentado
                             opciones={[
@@ -3016,11 +3018,11 @@ function NuevoPrestamo() {
                         {tipoAbonoPrevio === 'separado' && (
                           <div className="mt-2.5 grid grid-cols-2 gap-3">
                             <div>
-                              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>De eso, de interés</label>
+                              <label className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>De eso, de interés</label>
                               <div className="mt-1.5"><MoneyInput value={abonoDeInteres} onChange={(e) => setAbonoDeInteres(e.target.value)} placeholder="0" /></div>
                             </div>
                             <div>
-                              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>¿Qué día abonó el capital?</label>
+                              <label className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>¿Qué día abonó el capital?</label>
                               <div className="mt-1.5">
                                 <FechaConAviso value={fechaAbonoCapital} min={fechaInicio || undefined} max={hoyISO()}
                                   onChange={setFechaAbonoCapital} aviso="Toca y elige el día" falta={faltaFechaDelCapital} />
@@ -3064,7 +3066,7 @@ function NuevoPrestamo() {
                      grande, y cada renglón con su pastilla de editar. */
                   <div ref={refResumen} className="rounded-[20px] overflow-hidden" style={{ border: '1px solid var(--cf-border)', background: 'var(--cf-card)' }}>
                     <div className="px-4 pt-4 flex items-baseline justify-between gap-3">
-                      <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-2)' }}>Resumen del préstamo</p>
+                      <p className="text-[15px] font-semibold" style={{ color: 'var(--cf-ink-3)' }}>Resumen del préstamo</p>
                       <span className="text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>Toca un renglón para cambiarlo</span>
                     </div>
                     <div className="px-4 pb-3 pt-4">
