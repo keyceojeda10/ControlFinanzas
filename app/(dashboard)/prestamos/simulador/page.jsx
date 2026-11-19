@@ -240,12 +240,10 @@ export default function SimuladorPage() {
 
   return (
     <>
-      {aviso && (
-        <p className="text-[13px] mb-2 text-center" style={{ color: 'var(--cf-ink-2)' }}>{aviso}</p>
-      )}
-
       <Simulador
         sinMargen
+        cabecera={{ titulo: 'Simulador', subtitulo: 'La cuota para enseñársela, sin registrar nada' }}
+        aviso={aviso ? <p className="text-[13px] mt-3 mb-1 text-center" style={{ color: 'var(--cf-ink-2)' }}>{aviso}</p> : null}
         sinDatos={!calculo ? 'Escribe cuánto le vas a prestar y aquí sale la cuota.' : null}
         cuota={cuotaTexto}
         cada={freqInfo.cada}

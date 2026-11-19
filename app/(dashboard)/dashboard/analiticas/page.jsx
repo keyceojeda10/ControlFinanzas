@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCabecera } from '@/components/armazon/Armazon'
+import { CabeceraDetalle } from '@/components/armazon/CabeceraInicio'
+import { PastillaProfe } from '@/components/tutoriales/PiezasProfe'
 import { useAuth } from '@/hooks/useAuth'
 import { formatMoney } from '@/lib/i18n'
 import Link from 'next/link'
@@ -258,8 +260,14 @@ export default function AnaliticasPage() {
     return () => ctrl.abort()
   }, [])
 
+  /* La franja negra es propia (lib/franja.js, 19 nov 2026): la cabecera sale en
+     todos los casos, y con datos lleva dentro lo que rinde el capital. */
+  const cabeceraSola = <CabeceraDetalle titulo="Analíticas" profe={<PastillaProfe />} />
+
   if (sinPlan) {
     return (
+      <>
+      {cabeceraSola}
       <PlanGate
         titulo="Analíticas de tu negocio"
         texto="Cuánto estás ganando de verdad, quién te está quedando mal y para dónde va el mes."
@@ -274,26 +282,33 @@ export default function AnaliticasPage() {
           'Informe en PDF para el contador o el socio',
         ]}
       />
+      </>
     )
   }
 
   if (loading) {
     return (
+      <>
+      {cabeceraSola}
       <div className="p-4 lg:p-8 max-w-5xl mx-auto space-y-4">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-32" />
         <Skeleton className="h-24" />
         <Skeleton className="h-56" />
       </div>
+      </>
     )
   }
 
   if (error) {
     return (
+      <>
+      {cabeceraSola}
       <div className="p-4 lg:p-8 max-w-5xl mx-auto">
         <p className="text-[var(--cf-red-dark)] text-[14px]">{error}</p>
         <Link href="/dashboard" className="text-[13px] text-[var(--cf-ink-2)] underline mt-2 block">Volver al dashboard</Link>
       </div>
+      </>
     )
   }
 
@@ -311,33 +326,7 @@ export default function AnaliticasPage() {
   const rutasOrdenadas = todasLasRutas.filter((r) => r.rutaId).sort((a, b) => b.roi - a.roi)
   const maxRoi = Math.max(...todasLasRutas.map((r) => r.roi || 0), 1)
 
-  return (
-    <div className="py-4 lg:p-8 max-w-5xl lg:max-w-[1180px] mx-auto pb-24 space-y-4 lg:space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        {/* Titulo en la cabecera. Se queda el boton de descargar, que es la
-            unica accion de esta pantalla. */}
-        <div />
-        <button
-          onClick={verInformeDeRendimiento}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[var(--cf-fill)] text-[var(--cf-ink-2)] hover:bg-[var(--cf-border-strong)] transition-colors text-[12px] font-medium disabled:opacity-50"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-          </svg>
-          Informe
-        </button>
-      </div>
-
-      {/* === T31-02 · LO QUE RINDE TU CAPITAL, EN NEGRO ===
-          Era una tarjeta blanca mas entre siete tarjetas blancas: la cifra que
-          contesta «¿esto da o no da?» pesaba lo mismo que el resto. En carbon,
-          y con las tres cifras que la sostienen en la misma fila, es lo primero
-          que se lee al entrar — que es el trabajo de esta pantalla. */}
-      <div style={{
-        background: '#15161A', borderRadius: 'var(--cf-r-hero)',
-        padding: '22px 26px', color: '#F3F3F6',
-      }}>
+  const rinde = (
         <div className="flex flex-col lg:flex-row lg:items-center gap-5 lg:gap-9">
           <div style={{ flex: 'none' }}>
             <p className="text-[10px] font-bold uppercase tracking-[.1em]" style={{ color: '#A3A8B2' }}>
@@ -392,6 +381,48 @@ export default function AnaliticasPage() {
             </div>
           </div>
         </div>
+  )
+  return (
+    <div className="lg:p-8 max-w-5xl lg:max-w-[1180px] mx-auto pb-24 space-y-4 lg:space-y-5">
+      {/* En el teléfono, lo que rinde el capital va dentro de la banda negra y el
+          informe arriba, en ella (19 nov 2026). En el PC, como siempre. */}
+      <CabeceraDetalle titulo="Analíticas" profe={<PastillaProfe />}
+        acciones={
+          <button type="button" onClick={verInformeDeRendimiento} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6, height: 40, padding: '0 14px', borderRadius: 999, flex: 'none',
+            border: '1px solid rgba(255,255,255,.14)', background: '#24252B', color: '#fff', font: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+          }}>
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+            Informe
+          </button>
+        }
+        enLaBanda={<div style={{ paddingTop: 18, color: '#F3F3F6' }}>{rinde}</div>} />
+      {/* Header (PC) */}
+      <div className="hidden lg:flex items-center justify-between">
+        {/* Titulo en la cabecera. Se queda el boton de descargar, que es la
+            unica accion de esta pantalla. */}
+        <div />
+        <button
+          onClick={verInformeDeRendimiento}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[var(--cf-fill)] text-[var(--cf-ink-2)] hover:bg-[var(--cf-border-strong)] transition-colors text-[12px] font-medium disabled:opacity-50"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+          </svg>
+          Informe
+        </button>
+      </div>
+
+      {/* === T31-02 · LO QUE RINDE TU CAPITAL, EN NEGRO ===
+          Era una tarjeta blanca mas entre siete tarjetas blancas: la cifra que
+          contesta «¿esto da o no da?» pesaba lo mismo que el resto. En carbon,
+          y con las tres cifras que la sostienen en la misma fila, es lo primero
+          que se lee al entrar — que es el trabajo de esta pantalla. */}
+      <div className="hidden lg:block" style={{
+        background: '#15161A', borderRadius: 'var(--cf-r-hero)',
+        padding: '22px 26px', color: '#F3F3F6',
+      }}>
+        {rinde}
       </div>
 
       {/* === T31-02 · EL REPARTO EN ESCRITORIO ===
@@ -404,7 +435,7 @@ export default function AnaliticasPage() {
           de un vistazo mientras se mira lo otro.
           En móvil `lg:` no aplica y sigue siendo una columna, en el mismo
           orden de siempre. */}
-      <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-[1.55fr_1fr] lg:gap-5 lg:items-start">
+      <div className="pt-3 lg:pt-0 space-y-4 lg:space-y-0 lg:grid lg:grid-cols-[1.55fr_1fr] lg:gap-5 lg:items-start">
         {/* ── COLUMNA IZQUIERDA: lo que se estudia ── */}
         <div className="space-y-4 lg:space-y-5 min-w-0">
 

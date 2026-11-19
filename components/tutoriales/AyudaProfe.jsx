@@ -21,8 +21,13 @@ import { BLOQUE } from '@/components/cf/bloqueOscuro'
 import { IconoPlay } from './PiezasProfe'
 import ListaVideosProfe, { seriesConVideos } from './ListaVideosProfe'
 import { useProfe } from './ProfeProvider'
+import { CabeceraDetalle } from '@/components/armazon/CabeceraInicio'
+import { PastillaProfe } from './PiezasProfe'
 
-export default function AyudaProfe({ esOwner }) {
+/* `cabecera` ({ titulo, subtitulo }): en /tutoriales, en el TELÉFONO, cuánto ha
+   visto va dentro de la banda negra (19 nov 2026): quedaban la banda y debajo
+   otro bloque negro. En Configuración (sin `cabecera`) y en el PC, igual. */
+export default function AyudaProfe({ esOwner, cabecera = null }) {
   const profe = useProfe()
   const [soloSinVer, setSoloSinVer] = useState(false)
   if (!profe?.activo) return null
@@ -43,6 +48,22 @@ export default function AyudaProfe({ esOwner }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {cabecera && (
+        <CabeceraDetalle titulo={cabecera.titulo} subtitulo={cabecera.subtitulo} profe={<PastillaProfe />}
+          enLaBanda={
+            <div style={{ paddingTop: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <p style={{ margin: 0, fontSize: 11, fontWeight: 700, letterSpacing: '.12em', color: 'rgba(255,255,255,.55)' }}>VISTE</p>
+              <p className="cf-num" style={{ margin: 0, display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                <span style={{ fontFamily: "var(--font-space-grotesk), 'Space Grotesk', system-ui, sans-serif", fontSize: 40, fontWeight: 600, letterSpacing: '-.03em', lineHeight: 1.05, color: '#fff' }}>{vistos} de {total}</span>
+                <span style={{ fontSize: 13, color: 'rgba(255,255,255,.62)' }}>videos de la app</span>
+              </p>
+              <div aria-hidden style={{ height: 8, borderRadius: 999, background: 'rgba(255,255,255,.12)', overflow: 'hidden' }}>
+                <div style={{ width: `${total ? (vistos / total) * 100 : 0}%`, height: '100%', background: BLOQUE.oro }} />
+              </div>
+            </div>
+          } />
+      )}
+      <div className={cabecera ? 'hidden lg:block' : undefined}>
       <div style={{ background: BLOQUE.fondo, borderRadius: 'var(--cf-r-card)', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
           <span style={{ ...rotulo, color: BLOQUE.rotulo }}>Viste</span>
@@ -52,6 +73,7 @@ export default function AyudaProfe({ esOwner }) {
         <div aria-hidden style={{ height: 6, borderRadius: 999, background: BLOQUE.pista, overflow: 'hidden' }}>
           <div style={{ width: `${total ? (vistos / total) * 100 : 0}%`, height: '100%', background: BLOQUE.oro }} />
         </div>
+      </div>
       </div>
 
       {/* El índice: el filtro y las series, en una fila que se desliza. */}

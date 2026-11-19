@@ -12,21 +12,22 @@ import AyudaProfe from '@/components/tutoriales/AyudaProfe'
 import { useAuth } from '@/hooks/useAuth'
 import { useProfe } from '@/components/tutoriales/ProfeProvider'
 import { useCabecera } from '@/components/armazon/Armazon'
+import { CabeceraDetalle } from '@/components/armazon/CabeceraInicio'
+import { PastillaProfe } from '@/components/tutoriales/PiezasProfe'
 
 export default function TutorialesPage() {
   const profe = useProfe()
   const { esOwner } = useAuth()
-  useCabecera({
-    titulo: 'Tutoriales',
-    subtitulo: profe?.activo ? 'Los videos del profe, por sección' : 'Aprende a usar cada función del sistema paso a paso',
-  })
+  const subtitulo = profe?.activo ? 'Los videos del profe, por sección' : 'Aprende a usar cada función del sistema paso a paso'
+  useCabecera({ titulo: 'Tutoriales', subtitulo })
   // Mientras el negocio no tiene los videos (`profeHabilitado`), las guías de
   // siempre. Hasta que conteste el servidor, nada: ni una cosa ni la otra.
-  if (!profe?.activo) return profe?.cargado ? <TutorialesList showCopyButton={false} /> : null
+  // La franja negra es propia (lib/franja.js): la cabecera sale en los tres casos.
+  if (!profe?.activo) return <><CabeceraDetalle titulo="Tutoriales" subtitulo={subtitulo} profe={<PastillaProfe />} />{profe?.cargado ? <TutorialesList showCopyButton={false} /> : null}</>
 
   /* LOS VIDEOS DEL PROFE, NO LAS GUÍAS ESCRITAS (19 oct 2026). Las guías de
      `lib/tutorialesData.js` contradecían la pantalla (DETALLES-RUTAS #47). Es
      LA MISMA pantalla que Configuración → Ayuda y tutoriales, con el índice y
      los interruptores. Las guías siguen para el buscador y el panel de admin. */
-  return <AyudaProfe esOwner={esOwner} />
+  return <AyudaProfe esOwner={esOwner} cabecera={{ titulo: 'Tutoriales', subtitulo }} />
 }

@@ -24,6 +24,8 @@
 // deporte — simula porque tiene un cliente enfrente.
 
 import { BarraAccion, BotonPrimario, BotonSecundario, Tarjeta, EtiquetaCampo, Chip, Pastilla } from '@/components/cf/primitivos'
+import { CabeceraDetalle } from '@/components/armazon/CabeceraInicio'
+import { PastillaProfe } from '@/components/tutoriales/PiezasProfe'
 
 function CampoConSufijo({ etiqueta, prefijo, sufijo, valor, onCambio, marcador, enFila = false, accion = null }) {
   return (
@@ -90,27 +92,16 @@ export default function Simulador({
   // El relleno lateral lo pone el armazon. Sin esto eran 40px por lado en la
   // ruta real — lo cazo la prueba del margen doble el mismo dia que lo monte.
   sinMargen = false,
+  /* `cabecera` ({ titulo, subtitulo }): en el TELÉFONO la respuesta va dentro de
+     la banda negra (19 nov 2026) —quedaba la banda y debajo otro bloque negro—.
+     `aviso`: lo que la página quiere decir debajo de la banda. En el PC, igual. */
+  cabecera = null, aviso = null,
 }) {
   const total = (tuPlataNum ?? 0) + (ganasNum ?? 0)
   const pctCapital = total > 0 ? (tuPlataNum / total) * 100 : 0
 
-  return (
-    <div style={{
-      display: 'flex', flexDirection: 'column',
-      height: sinMargen ? 'auto' : '100%',
-    }}>
-      <div style={{
-        flex: sinMargen ? 'none' : 1, minHeight: 0,
-        overflowY: sinMargen ? 'visible' : 'auto',
-        display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)',
-        padding: sinMargen ? '8px 0 16px' : '8px var(--cf-pad-screen) 16px',
-      }}>
-
-        {/* ── LA RESPUESTA, ARRIBA ── */}
-        <div style={{
-          background: '#15161A', borderRadius: 'var(--cf-r-hero)', padding: '17px 21px 19px',
-          display: 'flex', flexDirection: 'column', gap: 13, flex: 'none',
-        }}>
+  const respuesta = (
+    <>
           <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
             <span aria-hidden style={{ width: 6, height: 6, borderRadius: 999, background: '#2FBE6A', flex: 'none' }} />
             <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: '#8A8E98' }}>
@@ -157,6 +148,32 @@ export default function Simulador({
           </div>
           </>
           )}
+    </>
+  )
+
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column',
+      height: sinMargen ? 'auto' : '100%',
+    }}>
+      {cabecera && (
+        <CabeceraDetalle titulo={cabecera.titulo} subtitulo={cabecera.subtitulo} profe={<PastillaProfe />}
+          enLaBanda={<div style={{ paddingTop: 18, display: 'flex', flexDirection: 'column', gap: 13 }}>{respuesta}</div>} />
+      )}
+      {aviso}
+      <div style={{
+        flex: sinMargen ? 'none' : 1, minHeight: 0,
+        overflowY: sinMargen ? 'visible' : 'auto',
+        display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)',
+        padding: sinMargen ? '8px 0 16px' : '8px var(--cf-pad-screen) 16px',
+      }}>
+
+        {/* ── LA RESPUESTA, ARRIBA ── En el teléfono, con `cabecera`, va en la banda. */}
+        <div className={cabecera ? 'hidden lg:block' : undefined}>
+          <div style={{
+            background: '#15161A', borderRadius: 'var(--cf-r-hero)', padding: '17px 21px 19px',
+            display: 'flex', flexDirection: 'column', gap: 13, flex: 'none',
+          }}>{respuesta}</div>
         </div>
 
         {/* ── Los datos ── */}
