@@ -96,6 +96,10 @@ const abrir = (evento) => () => { if (typeof window !== 'undefined') window.disp
  * La app instalada no depende de esto: ahí manda `apple-mobile-web-app-status-bar-style`
  * (ver `app/layout.js`). */
 const ALTO_TINTA = 12
+/* ⚠ Nada redondo puede empezar más arriba de ALTO_TINTA: la tira va encima y le
+   come el borde. Pasó con el botón de volver de los detalles (20 nov 2026), que
+   arrancaba a 10 px —«el circulito sale un poquito cortado arriba», en iPhone y
+   en Android—. Por eso su fila arranca a ALTO_TINTA + 2. */
 
 /* ══ EL BRILLO DORADO DE LA FRANJA (18 nov 2026) ══════════════════════════════
  *
@@ -535,7 +539,7 @@ export function CabeceraDetalle({ titulo, subtitulo = null, acciones = null, pro
     <div className="lg:hidden" style={{ margin: '-20px -20px 0' }}>
       <style>{ESTILO}</style>
       <div style={{ background: `${BRILLO_FRANJA}, ${NEGRO}`, paddingBottom: RADIO_HOJA + 18, color: '#fff' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: 'max(10px, env(safe-area-inset-top)) 8px 0 8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: `max(${ALTO_TINTA + 2}px, env(safe-area-inset-top)) 8px 0 8px` }}>
           <button type="button" onClick={volver} aria-label="Volver" className="cf-cab-toque" style={{
             width: 42, height: 42, borderRadius: 999, flex: 'none', border: '1px solid rgba(255,255,255,.08)',
             background: NEGRO_2, color: '#fff', display: 'grid', placeItems: 'center', cursor: 'pointer',
@@ -605,7 +609,7 @@ export function BandaDetalleArmazon({ titulo, subtitulo = null, onVolver, accion
     <div className="lg:hidden cf-no-print">
       <style>{ESTILO}</style>
       <div style={{ background: `${BRILLO_FRANJA}, ${NEGRO}`, paddingBottom: RADIO_HOJA + 16, color: '#fff' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: 'max(10px, env(safe-area-inset-top)) 8px 0 8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: `max(${ALTO_TINTA + 2}px, env(safe-area-inset-top)) 8px 0 8px` }}>
           <button type="button" onClick={onVolver} aria-label="Volver" className="cf-cab-toque" style={{
             width: 42, height: 42, borderRadius: 999, flex: 'none', border: '1px solid rgba(255,255,255,.08)',
             background: NEGRO_2, color: '#fff', display: 'grid', placeItems: 'center', cursor: 'pointer',

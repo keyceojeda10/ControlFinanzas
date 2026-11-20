@@ -1073,7 +1073,7 @@ export function PastillasDeLaBanda({ prestamo, atraso = null, statsCliente = nul
   const pastilla = (texto, tono, key) => {
     const t = TONO[tono]
     return (
-      <span key={key} className="cf-num" style={{
+      <span key={key} className="cf-num cf-cab-chip" style={{
         display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 28, padding: '4px 11px',
         borderRadius: 999, background: t.background, color: t.color, fontSize: 13, fontWeight: 700, lineHeight: 1.3,
       }}>
@@ -1093,6 +1093,11 @@ export function PastillasDeLaBanda({ prestamo, atraso = null, statsCliente = nul
 }
 
 /* Llamar y WhatsApp, en la banda negra: al alcance del pulgar. */
+/* `cf-cab-toque` y `cf-cab-chip` (20 nov 2026): su propia capa en el teléfono.
+   Sin ella, el GPU Mali de Android pintaba el brillo dorado al doble en toda la
+   franja de arriba y la cortaba en una raya a media banda («el fondo en Android
+   sale cortado con una línea en la mitad»). Es el mismo fallo de las esquinas
+   redondeadas que el de Inicio; ver «LA RAYA DE ANDROID» en CabeceraInicio. */
 export function BotonesDeLaBanda({ telefono, onWhatsApp }) {
   if (!telefono) return null
   const estilo = {
@@ -1101,11 +1106,11 @@ export function BotonesDeLaBanda({ telefono, onWhatsApp }) {
   }
   return (
     <div style={{ display: 'flex', gap: 8, flex: 'none' }}>
-      <a href={`tel:${telefono}`} aria-label="Llamar" style={{ ...estilo, color: '#fff' }}>
+      <a href={`tel:${telefono}`} aria-label="Llamar" className="cf-cab-toque" style={{ ...estilo, color: '#fff' }}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2" /></svg>
       </a>
       {onWhatsApp && (
-        <button type="button" onClick={onWhatsApp} aria-label="WhatsApp" style={{ ...estilo, color: '#25D366' }}>
+        <button type="button" onClick={onWhatsApp} aria-label="WhatsApp" className="cf-cab-toque" style={{ ...estilo, color: '#25D366' }}>
           <svg width="19" height="19" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347" />
             <path d="M20.52 3.449C12.831-3.984.106 1.407.101 11.893c0 2.096.549 4.14 1.595 5.945L0 24l6.335-1.652a11.882 11.882 0 0 0 5.68 1.448h.005c9.6 0 15.24-10.4 10.5-18.35a11.83 11.83 0 0 0-2-2.997zM12.02 21.785h-.004a9.87 9.87 0 0 1-5.03-1.378l-.36-.214-3.741.981.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.263c.001-8.708 10.59-13.067 16.752-6.909 6.16 6.158 1.812 16.805-6.87 16.805z" />
