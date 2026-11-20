@@ -817,6 +817,19 @@ export async function POST(request) {
    * sitios a propósito: la pantalla no es una frontera de confianza. */
   const esAbierto = modoValido === 'solo_interes' && !!sinPlazo
 
+  /* ⚠ QUINCENAL CON UN SOLO DÍA DEL MES = CADA 15 DÍAS DESDE ESE DÍA (20 nov 2026).
+   * Guardado con un solo día, el calendario (`fechaDePeriodo`) solo cuenta ESE
+   * día: cobraba una vez al mes, con el plazo y las cuotas de un mensual, mientras
+   * la ficha decía «el 10 de cada mes, cada 15 días». Geovanny Arce (Leyder)
+   * pagaba cada quincena y el sistema lo llevaba mes a mes. Se completa el
+   * segundo día a 15 del primero (el 10 → 10 y 25; el 30 → 15 y 30). El abierto
+   * no entra: ahí un solo día se rechaza más abajo, a propósito. Los 8 que ya
+   * existían así se dejan: su plazo y su vencimiento salieron de ese calendario. */
+  if (freq === 'quincenal' && !esAbierto && Number.isInteger(diaCobroMesDb) && !Number.isInteger(diaCobroMes2Db)) {
+    const otro = diaCobroMesDb <= 15 ? diaCobroMesDb + 15 : diaCobroMesDb - 15
+    ;[diaCobroMesDb, diaCobroMes2Db] = [Math.min(diaCobroMesDb, otro), Math.max(diaCobroMesDb, otro)]
+  }
+
   /* ══ DE QUÉ FUE EL ABONO PREVIO ═══════════════════════════════════════════
    *
    * «El sistema no está preguntando si esos abonos son a intereses, si son a

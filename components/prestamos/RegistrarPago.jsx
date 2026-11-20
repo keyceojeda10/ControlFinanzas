@@ -35,7 +35,7 @@ import { interesQueAhorraUnAbono } from '@/lib/dinero/abono-capital'
 import { efectoDelPago } from '@/lib/dinero/saldo-tras-cada-pago'
 import { cargarDiaCobrado } from '@/lib/dia-cobrado'
 import { getPlataformaInfo } from '@/components/ui/LogoPlataforma'
-import { formatFechaCobroRelativa, siguientePeriodo, interesCobrableAhora, esAbiertoConDevengo, periodoEnCursoAbierto, calcularCapitalRestante, tieneTablaAmortizacion, interesDeUnCobroAbierto } from '@/lib/calculos'
+import { formatFechaCobroRelativa, siguientePeriodo, calcularProximoCobro, interesCobrableAhora, esAbiertoConDevengo, periodoEnCursoAbierto, calcularCapitalRestante, tieneTablaAmortizacion, interesDeUnCobroAbierto } from '@/lib/calculos'
 import { FilaInterruptor } from '@/components/cf/primitivos2'
 import {
   adaptarDespuesDelPago, atajosDeMonto, mediosParaHoja, medioAGuardar,
@@ -1174,8 +1174,16 @@ export default function RegistrarPago({
    * valores derivados, que son cuentas y pueden ir donde sea. */
   const puedeAplazar = tipo === 'intereses' && subeLaDeuda && Boolean(prestamo?.proximoCobro)
 
+  /* La fecha que se anuncia es LA MISMA que va a guardar el servidor: el préstamo
+     con un período comprado más (lib/dinero/tiempo-comprado.js). Solo se puede
+     cuando llega el préstamo entero (la ficha); las tarjetas de la ruta y de
+     Cobros de hoy no traen `periodosComprados` y siguen con el salto de siempre,
+     que en los calendarios normales da lo mismo (20 nov 2026). */
   const fechaAplazada = puedeAplazar
-    ? siguientePeriodo(prestamo.proximoCobro, prestamo?.frecuencia, prestamo?.diaCobroMes, prestamo)
+    ? ((typeof prestamo?.periodosComprados === 'number' && prestamo?.fechaInicio && prestamo?.cuotaDiaria > 0
+        ? calcularProximoCobro({ ...prestamo, periodosComprados: prestamo.periodosComprados + 1, proximoCobroManual: null, proximoCobroPorInteres: false })
+        : null)
+      ?? siguientePeriodo(prestamo.proximoCobro, prestamo?.frecuencia, prestamo?.diaCobroMes, prestamo))
     : null
 
   // «¿A qué se aplica?» — las tres de la lámina.

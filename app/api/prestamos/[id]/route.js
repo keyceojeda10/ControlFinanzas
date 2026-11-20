@@ -878,6 +878,15 @@ export async function PATCH(request, { params }) {
               dataUpdate.diaCobroMes2 = v2
             }
           }
+          /* Quincenal con un solo día del mes = cada 15 días desde ese día, igual
+             que al crearlo (POST /api/prestamos, 20 nov 2026). El abierto no. */
+          const abierto = p.sinPlazo === true && p.modoInteres === 'solo_interes'
+          const segundo = body?.diaCobroMes2 === undefined ? (p.diaCobroMes2 ?? null) : (dataUpdate.diaCobroMes2 ?? null)
+          if (freq === 'quincenal' && !abierto && !Number.isInteger(segundo)) {
+            const otro = v <= 15 ? v + 15 : v - 15
+            dataUpdate.diaCobroMes = Math.min(v, otro)
+            dataUpdate.diaCobroMes2 = Math.max(v, otro)
+          }
         }
       } else {
         const raw = body?.diaCobroSemana
