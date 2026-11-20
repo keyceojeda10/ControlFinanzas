@@ -19,6 +19,7 @@ import { BarraProgreso }                      from '@/components/cf/primitivos'
 import { ModoInteres, Dato, CreadoPor, EtiquetaNuevo, TRAZO } from '@/components/cf/Metadatos'
 import { adaptarPrestamos, tresCifras, fechaCorta, fichaDe } from '@/lib/adaptadores/prestamos'
 import { BarraFiltros, EncabezadoLista, BuscadorLista } from '@/components/pantallas/ListaClientes'
+import BuscarPorVoz from '@/components/cf/BuscarPorVoz'
 import { TresCifras }                         from '@/components/pantallas/ListaPrestamos'
 import HojaFiltros, { ConmutadorVista, contarFiltros } from '@/components/pantallas/HojaFiltros'
 import { filtrarPrestamosGuardados } from '@/lib/adaptadores/filtro-prestamos'
@@ -922,6 +923,9 @@ export default function PrestamosPage() {
           valor={buscar}
           onCambiar={(e) => { setBuscar(e.target.value); setPage(1) }}
           placeholder="Nombre o cédula"
+          // Lo dicho filtra la lista a ESE cliente: por cédula, que no se
+          // confunde con otro del mismo nombre; si no tiene, por nombre.
+          voz={<BuscarPorVoz variante="icono" onAbrir={(c) => { setBuscar(c.cedula || c.nombre); setPage(1) }} />}
         />
       </div>
       {/* En las dos pantallas. Lo bajé a la fila de estados y quedó peor:

@@ -27,6 +27,7 @@ import { adaptarClientes } from '@/lib/adaptadores/clientes'
 import { desgloseDe } from '@/lib/adaptadores/prestamos'
 import CarteraVacia from '@/components/pantallas/CarteraVacia'
 import { BarraFiltros, EncabezadoLista, BuscadorLista } from '@/components/pantallas/ListaClientes'
+import BuscarPorVoz from '@/components/cf/BuscarPorVoz'
 import HojaFiltros, { ConmutadorVista, contarFiltros } from '@/components/pantallas/HojaFiltros'
 import { useRouter } from 'next/navigation'
 import { CabeceraSeccion } from '@/components/armazon/CabeceraInicio'
@@ -773,7 +774,10 @@ export default function ClientesPage() {
         <BuscadorLista
           valor={buscar}
           onCambiar={(e) => { setBuscar(e.target.value); setPage(1) }}
-          placeholder="Nombre, cédula o teléfono"
+          // «cel.» (20 nov 2026): con el micrófono al lado, «teléfono» salía cortado a 412.
+          placeholder="Nombre, cédula o cel."
+          // Como la lupa de arriba: lo dicho abre la ficha del cliente.
+          voz={<BuscarPorVoz variante="icono" onAbrir={(c) => router.push(`/clientes/${c.id}`)} />}
         />
       </div>
       {/* ── POR QUÉ VUELVE A ESTAR AQUÍ, TAMBIÉN EN MÓVIL ──

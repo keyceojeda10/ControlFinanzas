@@ -119,11 +119,15 @@ export function EncabezadoLista({ titulo, total, enMora, unidadMora = 'en mora',
  * La lección no es sobre píxeles: es que dos de los tres arreglos fueron a un
  * sitio equivocado por no medir ANTES lo que el usuario tiene delante.
  */
-export function BuscadorLista({ valor = '', onCambiar, placeholder = 'Nombre o cédula' }) {
+/* `voz` (20 nov 2026): el micrófono de «Buscar diciendo el nombre», al final
+   del campo. Un cliente lo pidió en Préstamos y Clientes: la lupa de arriba y
+   la ruta ya lo tenían, las listas no. Con él, el campo pierde 9 px de aire a
+   la derecha para que el botón de 36 quepa en los 46 de alto. */
+export function BuscadorLista({ valor = '', onCambiar, placeholder = 'Nombre o cédula', voz = null }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 10, flex: 'none',
-      height: 46, padding: '0 14px', borderRadius: 'var(--cf-r-control)',
+      height: 46, padding: voz ? '0 5px 0 14px' : '0 14px', borderRadius: 'var(--cf-r-control)',
       background: 'var(--cf-card)', border: '1px solid rgba(20,20,28,.09)',
     }}>
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-4)"
@@ -142,6 +146,7 @@ export function BuscadorLista({ valor = '', onCambiar, placeholder = 'Nombre o c
           fontFamily: 'var(--font-manrope), system-ui',
         }}
       />
+      {voz}
     </div>
   )
 }
