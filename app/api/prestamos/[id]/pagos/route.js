@@ -30,13 +30,11 @@ import {
   interesCobrableAhora,
   repartoDelPagoDeInteres,
   obtenerProximaCuotaTabla,
-  siguientePeriodo,
   esAbiertoConDevengo,
   periodoEnCursoAbierto,
   pisoDelCierreAnticipado,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
-import { desdeDondeSeAplaza } from '@/lib/dinero/calendario'
 import { registrarMovimientoCapital, asegurarCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
 import { notificar, plata } from '@/lib/notificar'
@@ -666,6 +664,10 @@ export async function POST(request, { params }) {
     const cuotaNumero = tieneTablaAmortizacion(prestamo) && !['recargo', 'descuento', 'liquidacion'].includes(tipo)
       ? obtenerProximaCuotaTabla(prestamo)?.numeroPeriodo ?? null
       : null
+    /* El interés que compra un período queda MARCADO en el pago: de esa marca
+       salen `periodosComprados` e `interesComprado` (refrescarTotalesPrestamo),
+       y de ellos el calendario corrido. Ver lib/dinero/tiempo-comprado.js. */
+    const compraPeriodo = Boolean(aplazarUnPeriodo) && tipo === 'intereses' && elInteresSubeLaDeuda(prestamo)
     if (!(tipo === 'liquidacion' && montoFinal === 0)) {
       const filaPago = await tx.pago.create({
         data: {
@@ -684,6 +686,7 @@ export async function POST(request, { params }) {
           latitud: coordsPago.latitud,
           longitud: coordsPago.longitud,
           claveCobro,
+          compraPeriodo,
         },
       })
       saldoAntesDelPagoId = filaPago.id
@@ -1322,35 +1325,24 @@ export async function POST(request, { params }) {
    *   amortización el interés ya estaba pactado y aplazar movería un calendario
    *   que nadie renegoció.
    */
-  let proximoCobroFinal = calcularProximoCobro(prestamoFinal, diasExcluidosFinal, festivos)
-  let aplazadoA = null
-  if (aplazarUnPeriodo && tipo === 'intereses' && elInteresSubeLaDeuda(prestamoFinal) && proximoCobroFinal) {
-    /* ⚠ EL SEGUNDO INTERÉS COMPRA EL PERÍODO SIGUIENTE, NO EL MISMO (19 nov 2026).
-     * `refrescarTotalesPrestamo` ya borró la fecha comprada con el interés
-     * anterior, así que `proximoCobroFinal` sale del calendario original. Cada
-     * interés compraba OTRA VEZ el mismo período: Vladimir (lei@7393.com) pagó
-     * el interés el 3 nov (aplazado al 14) y el 19 nov (aplazado… al 14), y seguía
-     * en «Cobros de hoy» con 5 días de atraso. 36 préstamos en 11 negocios.
-     * Se parte de la fecha que había comprado, leída ANTES del pago. Un aplazo
-     * sin plata no cuenta (no compra tiempo; ver `fechaInicioMora`). */
-    const desde = desdeDondeSeAplaza(prestamo, proximoCobroFinal)
-    const nueva = siguientePeriodo(desde, prestamoFinal.frecuencia, prestamoFinal.diaCobroMes, prestamoFinal)
-    if (nueva) {
-      await prisma.prestamo.update({
-        where: { id: prestamoId },
-        data: { proximoCobroManual: nueva, proximoCobroPorInteres: true },
-      })
-      proximoCobroFinal = nueva
-      aplazadoA = nueva
-      logActividad({
-        session,
-        accion: 'editar_prestamo',
-        entidadTipo: 'prestamo',
-        entidadId: prestamoId,
-        detalle: `Cobro aplazado a ${nueva.toISOString().slice(0, 10)} al recibir solo el interés`,
-        ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
-      })
-    }
+  /* ⚠ YA NO SE GUARDA UNA FECHA (19 nov 2026). El pago quedó marcado
+   *   (`compraPeriodo`) y `refrescarTotalesPrestamo` contó los períodos: el
+   *   préstamo de aquí abajo ya viene con el calendario corrido, así que su
+   *   próximo cobro ES la fecha a la que se aplazó. Con la fecha guardada, el
+   *   segundo interés compraba otra vez el mismo período (Vladimir, Leyder) y
+   *   la siguiente cuota normal la borraba (Jhon Jairo, Prestamos juan). */
+  const proximoCobroFinal = calcularProximoCobro(prestamoFinal, diasExcluidosFinal, festivos)
+  const comproPeriodo = Boolean(aplazarUnPeriodo) && tipo === 'intereses' && elInteresSubeLaDeuda(prestamo)
+  const aplazadoA = comproPeriodo ? proximoCobroFinal : null
+  if (aplazadoA) {
+    logActividad({
+      session,
+      accion: 'editar_prestamo',
+      entidadTipo: 'prestamo',
+      entidadId: prestamoId,
+      detalle: `Cobro aplazado a ${aplazadoA.toISOString().slice(0, 10)} al recibir solo el interés`,
+      ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+    })
   }
 
   const tipoLabel = { completo: 'completo', parcial: 'parcial', capital: 'abono capital', recargo: 'recargo', descuento: 'descuento' }

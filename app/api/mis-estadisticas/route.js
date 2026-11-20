@@ -136,7 +136,7 @@ export async function GET() {
             diaCobroMes: true,
             primerCobro: true, interesPorMes: true,
             diaCobroMes2: true,
-            proximoCobroManual: true, proximoCobroPorInteres: true,
+            proximoCobroManual: true, proximoCobroPorInteres: true, periodosComprados: true, interesComprado: true,
           },
         },
       },

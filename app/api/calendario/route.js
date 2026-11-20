@@ -94,7 +94,7 @@ export async function GET(request) {
             totalAPagar: true, totalPagado: true, abonadoCapital: true, frecuencia: true, fechaInicio: true,
             fechaFin: true, diasPlazo: true, diaCobroSemana: true, diaCobroMes: true, diaCobroMes2: true,
             primerCobro: true, interesPorMes: true, diasSinCobro: true, modoInteres: true, sinPlazo: true, capitalExtra: true,
-            proximoCobroManual: true, proximoCobroPorInteres: true, interesAdelantado: true,
+            proximoCobroManual: true, proximoCobroPorInteres: true, periodosComprados: true, interesComprado: true, interesAdelantado: true,
             devengos: { select: { periodo: true, interes: true } },
             cuotasAmortizacion: {
               select: { numeroPeriodo: true, cuotaTotal: true, interes: true, capital: true, pagado: true, interesPagado: true, fechaEsperada: true },

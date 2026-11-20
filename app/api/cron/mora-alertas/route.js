@@ -98,7 +98,7 @@ export async function POST(req) {
         primerCobro: true, interesPorMes: true,
         // La nota del préstamo va en el aviso (lib/prestamos/nota.js).
         nota: true,
-        proximoCobroManual: true, proximoCobroPorInteres: true, esClavo: true, diasSinCobro: true,
+        proximoCobroManual: true, proximoCobroPorInteres: true, periodosComprados: true, interesComprado: true, esClavo: true, diasSinCobro: true,
         /* ⚠ SIN ESTO UN PRÉSTAMO ABIERTO SALE «AL DÍA» SIEMPRE: su mora es el
            interés devengado sin pagar, y un campo que no se pide vale `undefined`
            —no da error, decide en silencio—. Ver lib/dinero/devengar.js. */

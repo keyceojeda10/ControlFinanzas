@@ -83,7 +83,7 @@ export async function GET(req) {
       },
       select: {
         clienteId: true, montoPrestado: true, ...CAMPOS_DEL_REPARTO, totalAPagar: true,
-        fechaInicio: true, diasPlazo: true, cuotaDiaria: true, frecuencia: true, estado: true,
+        fechaInicio: true, diasPlazo: true, cuotaDiaria: true, periodosComprados: true, interesComprado: true, frecuencia: true, estado: true,
         /* Lo mismo que pide el resumen en pantalla, que es este mismo informe:
            sin `modoInteres` ni la tabla, la mora del PDF salía por otra rama, y
            sin `devengos` el préstamo abierto salía al día debiendo el mes. */

@@ -75,7 +75,7 @@ export async function GET(req) {
         totalAPagar: true,
         fechaInicio: true,
         diasPlazo: true,
-        cuotaDiaria: true,
+        cuotaDiaria: true, periodosComprados: true, interesComprado: true,
         frecuencia: true,
         estado: true,
         // modoInteres + totalPagado + la tabla: lo que necesita

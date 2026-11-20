@@ -51,7 +51,7 @@ export async function GET(request, { params }) {
                 select: {
                   estado: true,
                   fechaInicio: true,
-                  cuotaDiaria: true,
+                  cuotaDiaria: true, periodosComprados: true, interesComprado: true,
                   diasPlazo: true,
                   frecuencia: true,
                   pagos: { select: { montoPagado: true, tipo: true } },

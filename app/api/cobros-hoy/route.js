@@ -157,7 +157,7 @@ export async function GET(request) {
           diasSinCobro: true,
           modoInteres: true,
           capitalExtra: true,
-          proximoCobroManual: true, proximoCobroPorInteres: true,
+          proximoCobroManual: true, proximoCobroPorInteres: true, periodosComprados: true, interesComprado: true,
           // «Ult. pago 21 jun», la cuarta columna de la tira de T03-01. Es la
           // que dice si el cliente esta frio o si se le vio la semana pasada.
           ultimoPagoAt: true,

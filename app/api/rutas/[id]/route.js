@@ -135,7 +135,7 @@ export async function GET(request, { params }) {
               montoSeguro: true,
               modoInteres: true,
               capitalExtra: true,
-              proximoCobroManual: true, proximoCobroPorInteres: true,
+              proximoCobroManual: true, proximoCobroPorInteres: true, periodosComprados: true, interesComprado: true,
               /* ⚠ SIN ESTO UN PRÉSTAMO ABIERTO SALE «AL DÍA» SIEMPRE: su mora es el
                  interés devengado sin pagar, y un campo que no se pide vale `undefined`
                  —no da error, decide en silencio—. Ver lib/dinero/devengar.js. */
