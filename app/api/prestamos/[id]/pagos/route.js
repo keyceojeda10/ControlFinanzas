@@ -36,6 +36,7 @@ import {
   pisoDelCierreAnticipado,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
+import { desdeDondeSeAplaza } from '@/lib/dinero/calendario'
 import { registrarMovimientoCapital, asegurarCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
 import { notificar, plata } from '@/lib/notificar'
@@ -1324,7 +1325,16 @@ export async function POST(request, { params }) {
   let proximoCobroFinal = calcularProximoCobro(prestamoFinal, diasExcluidosFinal, festivos)
   let aplazadoA = null
   if (aplazarUnPeriodo && tipo === 'intereses' && elInteresSubeLaDeuda(prestamoFinal) && proximoCobroFinal) {
-    const nueva = siguientePeriodo(proximoCobroFinal, prestamoFinal.frecuencia, prestamoFinal.diaCobroMes, prestamoFinal)
+    /* ⚠ EL SEGUNDO INTERÉS COMPRA EL PERÍODO SIGUIENTE, NO EL MISMO (19 nov 2026).
+     * `refrescarTotalesPrestamo` ya borró la fecha comprada con el interés
+     * anterior, así que `proximoCobroFinal` sale del calendario original. Cada
+     * interés compraba OTRA VEZ el mismo período: Vladimir (lei@7393.com) pagó
+     * el interés el 3 nov (aplazado al 14) y el 19 nov (aplazado… al 14), y seguía
+     * en «Cobros de hoy» con 5 días de atraso. 36 préstamos en 11 negocios.
+     * Se parte de la fecha que había comprado, leída ANTES del pago. Un aplazo
+     * sin plata no cuenta (no compra tiempo; ver `fechaInicioMora`). */
+    const desde = desdeDondeSeAplaza(prestamo, proximoCobroFinal)
+    const nueva = siguientePeriodo(desde, prestamoFinal.frecuencia, prestamoFinal.diaCobroMes, prestamoFinal)
     if (nueva) {
       await prisma.prestamo.update({
         where: { id: prestamoId },
