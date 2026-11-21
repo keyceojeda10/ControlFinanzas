@@ -316,11 +316,6 @@ function PrestamoDetalleContenido({ params }) {
   const [clavoEnviando, setClavoEnviando] = useState(false)
   const [clavoError, setClavoError] = useState('')
   // Liquidacion anticipada (cierre por pago total antes del plazo)
-  const [modalMoratorio, setModalMoratorio] = useState(false)
-  const [moratorioMonto, setMoratorioMonto] = useState(0)
-  const [moratorioNota, setMoratorioNota] = useState('')
-  const [moratorioEnviando, setMoratorioEnviando] = useState(false)
-  const [moratorioError, setMoratorioError] = useState('')
   const [modalLiquidacion, setModalLiquidacion] = useState(false)
   // ── LO QUE DEBE SI CANCELA HOY ──
   //
@@ -1160,37 +1155,6 @@ function PrestamoDetalleContenido({ params }) {
   // adelantado le salia $0 en las cuatro. Reportado por Crediya el 14 de agosto.
   const interesMonto = Math.round(interesCobrableAhora(prestamo))
 
-  /* El recargo por mora. Sale de aquí y no de un `onClick` en línea para que el
-     botón y el deslizador hagan EXACTAMENTE lo mismo: escribirlo dos veces es
-     como se acaba con dos caminos que cobran distinto. */
-  const aplicarMoratorio = async () => {
-    setMoratorioEnviando(true)
-    setMoratorioError('')
-    try {
-      const nota = moratorioNota || `Interés moratorio: ${moratorio?.diasMoraEfectivos ?? 0} días`
-      const notaFull = moratorioMonto !== (moratorio?.montoMoratorio ?? 0)
-        ? `${nota} (calculado: ${formatMoney(moratorio?.montoMoratorio ?? 0)}, aplicado: ${formatMoney(moratorioMonto)})`
-        : nota
-      const res = await fetch(`/api/prestamos/${id}/pagos`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        // `montoPagado`, como todo el que registra contra este API: con `monto` el
-        // API leía undefined y contestaba «El monto debe ser mayor a 0» (8 sep 2026).
-        body: JSON.stringify({ montoPagado: Math.round(Number(moratorioMonto)), tipo: 'recargo', nota: notaFull }),
-      })
-      if (!res.ok) {
-        const d = await res.json()
-        throw new Error(d.error || 'Error al aplicar recargo')
-      }
-      setModalMoratorio(false)
-      await fetchPrestamo()
-    } catch (e) {
-      setMoratorioError(e.message)
-    } finally {
-      setMoratorioEnviando(false)
-    }
-  }
-
   const pagarIntereses = async () => {
     if (!(interesMonto > 0)) return
     setPagandoInteres(true)
@@ -1804,9 +1768,13 @@ function PrestamoDetalleContenido({ params }) {
         </div>
       )}
 
-      {/* ── COBRAR MORA SIN HABERLA CONFIGURADO (21 nov 2026) ──────
-          Solo llega al dueño y solo si su negocio no tiene tasa de mora: con
-          tasa, sale el aviso de abajo. Ver components/prestamos/CobrarMora.jsx. */}
+      {/* ── LA MORA, UNA SOLA PUERTA (21 nov 2026) ──────────────────
+          Antes había dos: el aviso «Interés moratorio · Aplicar como recargo»
+          para quien tenía tasa configurada, y esta hoja para quien no. Ahora es
+          esta para todos: con tasa, abre con la suya marcada; sin tasa, con la
+          del préstamo. Lo que hacía el aviso viejo —calcular, dejar editar el
+          monto, confirmar deslizando— lo hace la hoja; la nota la arma sola con
+          el cálculo. Ver components/prestamos/CobrarMora.jsx. */}
       {moraAMano && estaActivo && !completado && esOwner && (
         <CobrarMora
           prestamoId={id}
@@ -1816,36 +1784,6 @@ function PrestamoDetalleContenido({ params }) {
           tactil={tactil}
           onListo={() => fetchPrestamo()}
         />
-      )}
-
-      {/* ── AVISO INTERES MORATORIO ──────────────────────────────── */}
-      {moratorio?.aplicable && estaActivo && !completado && esOwner && (
-        <div className="bg-[rgba(245,158,11,0.08)] border border-[rgba(245,158,11,0.25)] rounded-[20px] cf-card-shadow p-4 space-y-3">
-          <div className="flex items-start gap-3">
-            <svg className="w-5 h-5 text-[var(--cf-gold-dark)] shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-[var(--cf-gold-dark)]">
-                Interés moratorio: {formatMoney(moratorio.montoMoratorio)}
-              </p>
-              <p className="text-xs text-[var(--cf-ink-3)] mt-1">
-                {moratorio.diasMoraEfectivos} días efectivos de mora sobre {formatMoney(moratorio.montoBase)} en mora
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              setMoratorioMonto(moratorio.montoMoratorio)
-              setMoratorioNota(`Interés moratorio: ${moratorio.diasMoraEfectivos} días sobre ${formatMoney(moratorio.montoBase)}`)
-              setMoratorioError('')
-              setModalMoratorio(true)
-            }}
-            className="w-full h-10 rounded-[12px] text-sm font-semibold text-[var(--cf-gold-dark)] bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.3)] hover:bg-[rgba(245,158,11,0.18)] transition-all"
-          >
-            Aplicar como recargo
-          </button>
-        </div>
       )}
 
       {/* ── LO QUE SE HACE CON EL COBRO QUE SE ACABA DE REGISTRAR ──
@@ -3673,66 +3611,6 @@ function PrestamoDetalleContenido({ params }) {
         preselectedTemplateId={waSugerida}
         pago={waPago}
       />
-
-      {/* Modal: aplicar interes moratorio como recargo */}
-      <Modal
-        open={modalMoratorio}
-        onClose={() => setModalMoratorio(false)}
-        title="Aplicar interés moratorio"
-      >
-        <div className="space-y-4">
-          <div className="bg-[rgba(245,158,11,0.06)] border border-[rgba(245,158,11,0.2)] rounded-[12px] p-3">
-            <p className="text-xs text-[var(--cf-ink-3)]">
-              Calculado: {formatMoney(moratorio?.montoMoratorio ?? 0)} ({moratorio?.diasMoraEfectivos ?? 0} días sobre {formatMoney(moratorio?.montoBase ?? 0)})
-            </p>
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Monto a aplicar</label>
-            <input
-              type="number"
-              min="0"
-              value={moratorioMonto}
-              onChange={(e) => setMoratorioMonto(Number(e.target.value) || 0)}
-              className="w-full h-11 px-3 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-surface)] text-lg font-semibold font-mono-display text-[var(--cf-ink)] focus:outline-none focus:border-[var(--cf-gold)] transition-all"
-            />
-            <p className="text-[10px] text-[var(--cf-ink-3)]">
-              Puedes editar el monto. El sistema sugiere {formatMoney(moratorio?.montoMoratorio ?? 0)}.
-            </p>
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Nota (opcional)</label>
-            <input
-              type="text"
-              value={moratorioNota}
-              onChange={(e) => setMoratorioNota(e.target.value)}
-              className="w-full h-10 px-3 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-surface)] text-sm text-[var(--cf-ink)] focus:outline-none focus:border-[var(--cf-gold)] transition-all"
-            />
-          </div>
-          {moratorioError && (
-            <p className="text-xs text-[var(--cf-red-dark)]">{moratorioError}</p>
-          )}
-          {/* ⚠ EL MORATORIO TAMBIÉN SUBE LA DEUDA, así que se confirma como
-              todo lo que mueve plata: deslizando en el teléfono. Era el único
-              botón suelto que quedaba cobrando de un toque. */}
-          {tactil ? (
-            <DeslizarParaConfirmar
-              texto={`Aplicar ${formatMoney(moratorioMonto)} como recargo`}
-              cifra={moratorioMonto > 0 ? formatMoney(moratorioMonto) : null}
-              confirmando={moratorioEnviando}
-              deshabilitado={moratorioMonto <= 0}
-              onConfirmar={aplicarMoratorio}
-            />
-          ) : (
-            <button
-              disabled={moratorioEnviando || moratorioMonto <= 0}
-              onClick={aplicarMoratorio}
-              className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--cf-gold-ink)] bg-[var(--cf-gold-dark)] hover:opacity-90 disabled:opacity-50 transition-all"
-            >
-              {moratorioEnviando ? 'Aplicando...' : `Aplicar ${formatMoney(moratorioMonto)} como recargo`}
-            </button>
-          )}
-        </div>
-      </Modal>
 
       <Modal open={confirmRechazo} onClose={() => !rechazando && setConfirmRechazo(false)} title="Rechazar el préstamo" size="sm">
         <div className="space-y-4">

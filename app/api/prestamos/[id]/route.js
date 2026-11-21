@@ -39,7 +39,7 @@ import { getLocalDayRange, getLocalDateStr, getUtcOffset } from '@/lib/i18n'
 import { getCachedMutation, setCachedMutation, buildMutationKey } from '@/lib/mutation-idempotency'
 import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
 import { cuentaDelDesembolso } from '@/lib/dinero/cuenta-del-desembolso'
-import { periodosDeMas } from '@/lib/dinero/mora-a-mano'
+import { periodosDeMas, tasaMensualPactada } from '@/lib/dinero/mora-a-mano'
 import { conTiempoComprado } from '@/lib/dinero/tiempo-comprado'
 
 const REF_REVERSO_CANCELACION_DESEMBOLSO = 'prestamo_cancelado_reverso_desembolso'
@@ -123,13 +123,12 @@ export async function GET(request, { params }) {
 
   const moratorio = calcularInteresMoratorio(p, diasExcluidos, festivos, org?.tasaMoratorio ?? 0, org?.diasGraciaMoratorio ?? 5)
 
-  /* COBRAR MORA SIN HABERLA CONFIGURADO (21 nov 2026, lib/dinero/mora-a-mano.js).
-     Solo a quien NO tiene tasa de mora: el que la tiene ya ve la tarjeta de
-     arriba. Las piezas del moratorio con tasa 1 (los días, la base, el tope y lo
+  /* COBRAR MORA (21 nov 2026, lib/dinero/mora-a-mano.js). A todo dueño: es la
+     única puerta de la mora en la ficha, con o sin tasa configurada. Las piezas del moratorio con tasa 1 (los días, la base, el tope y lo
      ya aplicado no dependen de la tasa); la pantalla multiplica por la que se
      elija con `montoMoratorioCon`. Y los períodos de más para la otra forma. */
   let moraAMano = null
-  if (p.estado === 'activo' && !(org?.tasaMoratorio > 0) && session.user.rol === 'owner') {
+  if (p.estado === 'activo' && session.user.rol === 'owner') {
     const piezas = calcularInteresMoratorio(p, diasExcluidos, festivos, 1, org?.diasGraciaMoratorio ?? 5)
     // Con el tiempo que compró pagando intereses: su fecha final se corre (cf-v1309).
     const periodos = periodosDeMas(conTiempoComprado(p), { esAbierto: esAbiertoConDevengo(p) })
@@ -140,6 +139,9 @@ export async function GET(request, { params }) {
           : null,
         diasGracia: org?.diasGraciaMoratorio ?? 5,
         periodos,
+        // La de Configuración (0 = no tiene) y la de este préstamo, sacada de lo pactado.
+        tasaConfigurada: org?.tasaMoratorio > 0 ? org.tasaMoratorio : 0,
+        tasaDelPrestamo: tasaMensualPactada(p),
       }
     }
   }

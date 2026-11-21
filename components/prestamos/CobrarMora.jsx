@@ -22,6 +22,9 @@ import { formatMoney } from '@/lib/i18n'
 import { montoMoratorioCon, notaPeriodos } from '@/lib/dinero/mora-a-mano'
 
 const TASAS = [5, 10, 15, 20]
+/* «Otra quincena», «otro día»: día y mes son masculinos. */
+const MASCULINOS = new Set(['día', 'mes'])
+const pct = (t) => String(Number(t)).replace('.', ',')
 
 function Opciones({ opciones, activo, onElegir }) {
   return (
@@ -52,12 +55,17 @@ function Fila({ etiqueta, valor, fuerte = false }) {
 }
 
 export default function CobrarMora({ prestamoId, moraAMano, saldoPendiente = 0, diasMora = 0, tactil = false, onListo }) {
-  const { porTasa, periodos, diasGracia } = moraAMano || {}
+  const { porTasa, periodos, diasGracia, tasaConfigurada = 0, tasaDelPrestamo = null } = moraAMano || {}
   const hayTasa = !!porTasa
   const hayPeriodos = !!periodos?.disponible
+  /* La tasa con la que abre: la de Configuración si la tiene; si no, la del
+     préstamo («yo presto al 15 %»); si no se sabe, 10. El % va primero porque
+     es lo que pidió el cliente; «otra quincena» queda al lado. */
+  const tasaInicial = tasaConfigurada > 0 ? tasaConfigurada : (tasaDelPrestamo ?? 10)
+  const modoInicial = hayTasa ? 'tasa' : 'periodos'
   const [abierta, setAbierta] = useState(false)
-  const [modo, setModo] = useState(hayPeriodos ? 'periodos' : 'tasa')
-  const [tasa, setTasa] = useState(10)
+  const [modo, setModo] = useState(modoInicial)
+  const [tasa, setTasa] = useState(tasaInicial)
   const [n, setN] = useState(Math.max(1, periodos?.porCobrar || 1))
   const [montoEditado, setMontoEditado] = useState(null)
   const [paraTodos, setParaTodos] = useState(false)
@@ -65,24 +73,32 @@ export default function CobrarMora({ prestamoId, moraAMano, saldoPendiente = 0, 
   const [error, setError] = useState('')
 
   const [uno, varios] = periodos?.nombre ?? ['quincena', 'quincenas']
+  const masc = MASCULINOS.has(uno)
+  const otro = masc ? 'Otro' : 'Otra'
   const calculado = useMemo(() => (modo === 'tasa'
     ? montoMoratorioCon(porTasa, Number(tasa) || 0)
     : Math.round((periodos?.interesPorPeriodo || 0) * n)), [modo, porTasa, tasa, periodos, n])
   const monto = montoEditado ?? calculado
   const maxPeriodos = Math.max(1, (periodos?.porCobrar || 0) + 1)
+  // Con tasa configurada, lo que ofrece hoy con ella (ya descontado lo aplicado).
+  const conSuTasa = tasaConfigurada > 0 ? montoMoratorioCon(porTasa, tasaConfigurada) : 0
 
   if (!moraAMano || (!hayTasa && !hayPeriodos)) return null
+  /* Con tasa configurada y todo ya cobrado, no hay nada que avisar (como hacía
+     la tarjeta vieja con `aplicable`). Sin tasa, el aviso sigue: es justo lo
+     que nadie le estaba diciendo. */
+  if (tasaConfigurada > 0 && !(conSuTasa > 0) && !(periodos?.porCobrar > 0)) return null
 
   const abrir = () => {
     setMontoEditado(null); setError(''); setParaTodos(false)
-    setModo(hayPeriodos ? 'periodos' : 'tasa'); setN(Math.max(1, periodos?.porCobrar || 1))
+    setModo(modoInicial); setTasa(tasaInicial); setN(Math.max(1, periodos?.porCobrar || 1))
     setAbierta(true)
   }
   const cambiarModo = (m) => { setModo(m); setMontoEditado(null) }
 
   const nota = () => {
     const base = modo === 'tasa'
-      ? `Interés moratorio: ${tasa} % al mes · ${porTasa.diasMoraEfectivos} días sobre ${formatMoney(porTasa.montoBase)}`
+      ? `Interés moratorio: ${pct(tasa)} % al mes · ${porTasa.diasMoraEfectivos} días sobre ${formatMoney(porTasa.montoBase)}`
       : notaPeriodos(n, periodos.frecuencia, periodos.vencio)
     return montoEditado != null && montoEditado !== calculado
       ? `${base} (calculado: ${formatMoney(calculado)}, aplicado: ${formatMoney(montoEditado)})`
@@ -101,7 +117,7 @@ export default function CobrarMora({ prestamoId, moraAMano, saldoPendiente = 0, 
       })
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'No se pudo aplicar la mora')
       if (modo === 'tasa' && paraTodos) {
-        // Desde aquí la tarjeta de siempre sale sola en todos los préstamos en mora.
+        // Queda como la tasa del negocio: la hoja abre con ella en todos los préstamos.
         await fetch('/api/configuracion/organizacion', {
           method: 'PATCH', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ tasaMoratorio: Number(tasa), diasGraciaMoratorio: Number(diasGracia ?? 5) }),
@@ -128,7 +144,9 @@ export default function CobrarMora({ prestamoId, moraAMano, saldoPendiente = 0, 
           <div className="min-w-0">
             <p className="text-sm font-semibold" style={{ color: 'var(--cf-red-dark)' }}>{titulo}</p>
             <p className="text-xs mt-1" style={{ color: 'var(--cf-ink-3)' }}>
-              No tienes mora configurada, así que no se le está sumando. Puedes cobrarla aquí.
+              {tasaConfigurada > 0 && conSuTasa > 0
+                ? <>Con tu {pct(tasaConfigurada)} % al mes, la mora va en <strong className="cf-num" style={{ color: 'var(--cf-ink)' }}>{formatMoney(conSuTasa)}</strong>. No se suma sola: cóbrala aquí.</>
+                : 'No tienes mora configurada, así que no se le está sumando. Puedes cobrarla aquí.'}
             </p>
           </div>
         </div>
@@ -142,26 +160,34 @@ export default function CobrarMora({ prestamoId, moraAMano, saldoPendiente = 0, 
         <div className="space-y-4">
           {hayTasa && hayPeriodos && (
             <Opciones activo={modo} onElegir={cambiarModo} opciones={[
-              { id: 'periodos', etiqueta: `Otra ${uno} de interés` },
-              { id: 'tasa', etiqueta: '% al mes sobre lo atrasado' },
+              { id: 'tasa', etiqueta: '% al mes sobre lo que debe' },
+              { id: 'periodos', etiqueta: `${otro} ${uno} de interés` },
             ]} />
           )}
 
           {modo === 'tasa' ? (
             <div className="space-y-3">
               <p className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>
-                Un porcentaje al mes sobre {formatMoney(porTasa.montoBase)} atrasados, por {porTasa.diasMoraEfectivos} días de mora
+                Un porcentaje al mes sobre {formatMoney(porTasa.montoBase)} que debe, por {porTasa.diasMoraEfectivos} días de mora
                 {diasGracia > 0 ? ` (después de ${diasGracia} días de gracia)` : ''}.
               </p>
               <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', alignItems: 'center' }}>
-                {TASAS.map((t) => (
-                  <button key={t} type="button" onClick={() => { setTasa(t); setMontoEditado(null) }} aria-pressed={Number(tasa) === t}
+                {[
+                  ...(tasaConfigurada > 0 ? [{ t: tasaConfigurada, nombre: 'tu tasa' }] : []),
+                  ...(tasaDelPrestamo && tasaDelPrestamo !== tasaConfigurada ? [{ t: tasaDelPrestamo, nombre: 'la de este préstamo' }] : []),
+                  ...TASAS.filter((t) => t !== tasaConfigurada && t !== tasaDelPrestamo).map((t) => ({ t })),
+                ].map(({ t, nombre }) => (
+                  <button key={`${t}-${nombre ?? ''}`} type="button" onClick={() => { setTasa(t); setMontoEditado(null) }} aria-pressed={Number(tasa) === t}
                     className="cf-num" style={{
-                      minWidth: 56, height: 40, borderRadius: 12, cursor: 'pointer', font: 'inherit', fontSize: 14, fontWeight: 700,
+                      minWidth: 56, minHeight: 40, borderRadius: 12, cursor: 'pointer', font: 'inherit', fontSize: 14, fontWeight: 700, padding: '4px 12px',
+                      display: 'inline-flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', lineHeight: 1.15,
                       ...(Number(tasa) === t
                         ? { background: 'var(--cf-ink)', color: 'var(--cf-surface)', border: 'none' }
                         : { background: 'var(--cf-card)', color: 'var(--cf-ink-2)', border: '1px solid var(--cf-border)' }),
-                    }}>{t} %</button>
+                    }}>
+                    {pct(t)} %
+                    {nombre && <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.8 }}>{nombre}</span>}
+                  </button>
                 ))}
                 <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--cf-ink-3)' }}>
                   Otro
@@ -183,10 +209,10 @@ export default function CobrarMora({ prestamoId, moraAMano, saldoPendiente = 0, 
                 {periodos.yaCobrados > 0 ? ` y ya le cobraste ${periodos.yaCobrados}` : ''}.
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <button type="button" aria-label={`Una ${uno} menos`} onClick={() => { setN((x) => Math.max(1, x - 1)); setMontoEditado(null) }}
+                <button type="button" aria-label={`${masc ? 'Un' : 'Una'} ${uno} menos`} onClick={() => { setN((x) => Math.max(1, x - 1)); setMontoEditado(null) }}
                   style={{ width: 44, height: 44, borderRadius: 12, border: '1px solid var(--cf-border)', background: 'var(--cf-card)', fontSize: 20, fontWeight: 700, color: 'var(--cf-ink)', cursor: 'pointer' }}>−</button>
                 <span className="cf-num" style={{ fontSize: 17, fontWeight: 700, color: 'var(--cf-ink)', minWidth: 120, textAlign: 'center' }}>{n} {n === 1 ? uno : varios}</span>
-                <button type="button" aria-label={`Una ${uno} más`} onClick={() => { setN((x) => Math.min(maxPeriodos, x + 1)); setMontoEditado(null) }}
+                <button type="button" aria-label={`${masc ? 'Un' : 'Una'} ${uno} más`} onClick={() => { setN((x) => Math.min(maxPeriodos, x + 1)); setMontoEditado(null) }}
                   style={{ width: 44, height: 44, borderRadius: 12, border: '1px solid var(--cf-border)', background: 'var(--cf-card)', fontSize: 20, fontWeight: 700, color: 'var(--cf-ink)', cursor: 'pointer' }}>+</button>
               </div>
             </div>
@@ -206,10 +232,10 @@ export default function CobrarMora({ prestamoId, moraAMano, saldoPendiente = 0, 
             <Fila etiqueta="Para saldar hoy" valor={formatMoney(saldoPendiente + (monto || 0))} fuerte />
           </div>
 
-          {modo === 'tasa' && (
+          {modo === 'tasa' && Number(tasa) > 0 && Number(tasa) !== tasaConfigurada && (
             <Checkbox checked={paraTodos} onChange={setParaTodos}
-              label="Cobrar así en todos mis préstamos en mora"
-              description={`Guarda ${tasa} % al mes en tu configuración: desde ahí el sistema te la calcula sola en cada préstamo atrasado.`} />
+              label={tasaConfigurada > 0 ? `Cambiar tu tasa de mora a ${pct(tasa)} %` : 'Cobrar así en todos mis préstamos en mora'}
+              description={`Guarda ${pct(tasa)} % al mes en tu configuración (Intereses moratorios): desde ahí te la calcula en cada préstamo atrasado. Cobrarla sigue siendo un toque tuyo.`} />
           )}
 
           {error && <p className="text-xs" style={{ color: 'var(--cf-red-dark)' }}>{error}</p>}
