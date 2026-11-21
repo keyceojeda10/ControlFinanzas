@@ -3451,7 +3451,9 @@ export default function RutaDetallePage({ params }) {
               type="text"
               value={busquedaRuta}
               onChange={(e) => setBusquedaRuta(e.target.value)}
-              placeholder="Buscar cliente por nombre o cédula"
+              // «Nombre o cédula» (21 nov 2026), como Préstamos: «Buscar cliente por…» no
+              // cabía a 360 ni a 13 px, y lo que decía de más ya lo dice la lupa.
+              placeholder="Nombre o cédula"
               /* 48 px y 16 px de letra (18 nov 2026): a 12 px el iPhone hacía
                  zoom al tocarlo, y era el control más chico de la pantalla. */
               className="w-full h-12 pl-10 pr-9 rounded-[14px] text-[16px] bg-[var(--cf-card)] border border-[var(--cf-border)] text-[var(--cf-ink)] placeholder:text-[var(--cf-ink-3)] focus:outline-none focus:border-[var(--cf-gold)] transition-colors"

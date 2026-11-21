@@ -1560,3 +1560,14 @@ html[data-theme="light"] [class*="hover:border-[#4"]:hover { border-color: rgba(
   .cf-crear-sticky { bottom: 0; padding-bottom: 16px; align-items: center; }
   .cf-crear-sticky > button { max-width: 420px; }
 }
+
+/* ─── El marcador que cabe (21 nov 2026) ─────────────────────────
+   `MarcadoresQueCaben` pone `data-marcador` cuando el texto gris de un
+   campo no entra a su tamaño: baja un punto, dentro de la escala cerrada.
+   Solo el marcador: lo que se escribe sigue a 16 (zoom del iPhone). */
+input[data-marcador="15"]::placeholder { font-size: 15px; }
+input[data-marcador="14"]::placeholder { font-size: 14px; }
+input[data-marcador="13"]::placeholder { font-size: 13px; }
+/* La lupa del buscador de las listas, cuando hay micrófono, en lo muy angosto
+   (BuscadorLista). */
+@media (max-width: 359px) { .cf-lupa-prescindible { display: none; } }

@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 import Script from "next/script";
 import { SCRIPT_CAPTURA_INSTALAR } from '@/lib/instalar'
 import ReparoTecladoIOS from '@/components/armazon/ReparoTecladoIOS'
+import MarcadoresQueCaben from '@/components/armazon/MarcadoresQueCaben'
 import { CON_CABECERA_PROPIA, DETALLES_CON_CABECERA_PROPIA, MEDIA_MOVIL, NEGRO_FRANJA } from '@/lib/franja'
 
 // Script anti-FOUC: corre antes de cualquier render y setea data-theme + background
@@ -141,6 +142,8 @@ export default async function RootLayout({ children }) {
         <body className={`${manrope.variable} ${spaceGrotesk.variable} antialiased`} suppressHydrationWarning>
           {/* El teclado del iPhone deja encogida la app instalada (lib/ios-teclado.js). */}
           <ReparoTecladoIOS />
+        {/* El texto gris de los campos baja de letra hasta caber (lib/marcador-que-cabe.js). */}
+        <MarcadoresQueCaben />
           {children}
         </body>
       </html>
@@ -162,6 +165,8 @@ export default async function RootLayout({ children }) {
         {/* El teclado del iPhone deja encogida la app instalada (lib/ios-teclado.js).
             En el layout raíz: el error 6 empezó en /login, que no tiene armazón. */}
         <ReparoTecladoIOS />
+        {/* El texto gris de los campos baja de letra hasta caber (lib/marcador-que-cabe.js). */}
+        <MarcadoresQueCaben />
         <ThemeProvider>
           <SessionProvider session={session}>
             <OfflineProvider>

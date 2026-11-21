@@ -130,8 +130,11 @@ export function BuscadorLista({ valor = '', onCambiar, placeholder = 'Nombre o c
       height: 46, padding: voz ? '0 5px 0 14px' : '0 14px', borderRadius: 'var(--cf-r-control)',
       background: 'var(--cf-card)', border: '1px solid rgba(20,20,28,.09)',
     }}>
+      {/* Con micrófono y en pantallas muy angostas (Android con el texto agrandado
+          mide ~320) la lupa se va: el micrófono ya dice que es un buscador, y esos
+          27 px son los que le faltaban a «Nombre o cédula». Ver globals. */}
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-4)"
-        strokeWidth="2" strokeLinecap="round" style={{ flex: 'none' }}>
+        strokeWidth="2" strokeLinecap="round" style={{ flex: 'none' }} className={voz ? 'cf-lupa-prescindible' : undefined}>
         <circle cx="11" cy="11" r="6.5" /><path d="M16 16l4 4" />
       </svg>
       <input
