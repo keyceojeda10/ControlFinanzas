@@ -56,13 +56,13 @@ export default function SuscripcionesPage() {
 
   useEffect(() => { fetchSubs() }, [fetchSubs])
 
-  const ejecutar = async (subId, accion) => {
+  const ejecutar = async (subId, accion, extra = {}) => {
     setAccionando(`${subId}-${accion}`)
     try {
       const res = await fetch(`/api/admin/suscripciones/${subId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accion }),
+        body: JSON.stringify({ accion, ...extra }),
       })
       if (res.ok) await fetchSubs()
       else alert((await res.json()).error ?? 'Error')
@@ -241,7 +241,14 @@ export default function SuscripcionesPage() {
                   </a>
                 )}
                 <button
-                  onClick={() => ejecutar(s.id, 'renovar')}
+                  onClick={() => {
+                    // Renovar apunta el pago en el libro (21 nov 2026): hay que decir cuánto.
+                    const r = prompt('¿Cuánto te pagó? (0 si es una cortesía)', String(s.montoCOP ?? ''))
+                    if (r == null) return
+                    const limpio = String(r).replace(/[^0-9]/g, '')
+                    if (limpio === '') { alert('Escribe un número (0 si es una cortesía)'); return }
+                    ejecutar(s.id, 'renovar', { montoCobrado: Number(limpio) })
+                  }}
                   disabled={!!accionando}
                   className="px-2 py-1 rounded-[6px] text-[10px] font-medium bg-[rgba(16,185,129,0.12)] text-[var(--cf-green-dark)] hover:bg-[rgba(16,185,129,0.2)] transition-all disabled:opacity-50"
                 >

@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { adicionalesAlCambiarA } from '@/lib/planes'
+import { registrarPagoSuscripcion } from '@/lib/libro-pagos'
 
 /* Los mismos del enum `Plan` de Prisma. Se escriben aquí porque el enum no se
    puede importar en tiempo de ejecución, y una lista suelta que no se comprueba
@@ -53,48 +54,77 @@ export async function PATCH(req, { params }) {
 
   const orgNombre = sub.organization.nombre
 
+  /* ⚠ RENOVAR DICE CUÁNTO SE COBRÓ (21 nov 2026).
+   *
+   * Antes copiaba el monto de la suscripción y no apuntaba nada en el libro de
+   * pagos: el panel contaba al negocio como «pagando» y el libro no veía el
+   * pago. Salió en la auditoría del crecimiento (Soluciones Díaz, renovado a
+   * mano dos meses sin un solo apunte): o faltaba plata en las cifras, o era un
+   * mes regalado contado como cliente, y no había forma de saber cuál.
+   *
+   * Ahora el panel tiene que decirlo: `montoCobrado` > 0 se apunta en el libro
+   * en la misma transacción; 0 es una cortesía y queda escrito así en el
+   * AdminLog. Sin el dato no se renueva. */
   if (accion === 'renovar') {
     const dias    = parseInt(body.dias) || 30
     const diaFijo = parseInt(body.diaFijo) || null
     if (dias < 1 || dias > 365) {
       return NextResponse.json({ error: 'Días debe estar entre 1 y 365' }, { status: 400 })
     }
+    const cobrado = body.montoCobrado === '' || body.montoCobrado == null ? NaN : Math.round(Number(body.montoCobrado))
+    if (!Number.isFinite(cobrado) || cobrado < 0) {
+      return NextResponse.json({ error: 'Escribe cuánto te pagó (0 si es una cortesía)' }, { status: 400 })
+    }
+    const periodo = dias >= 360 ? 'anual' : dias >= 175 ? 'semestral' : dias >= 85 ? 'trimestral' : 'mensual'
 
     const ahora = new Date()
     const base  = new Date(sub.fechaVencimiento) > ahora ? new Date(sub.fechaVencimiento) : ahora
     const nuevaFecha = calcularNuevaFecha(base, dias, diaFijo)
 
-    await prisma.$transaction([
-      prisma.suscripcion.update({
+    await prisma.$transaction(async (tx) => {
+      await tx.suscripcion.update({
         where: { id },
         data: { estado: 'vencida' },
-      }),
-      prisma.suscripcion.create({
+      })
+      await tx.suscripcion.create({
         data: {
           organizationId:   sub.organization.id,
           plan:             sub.plan,
           estado:           'activa',
           fechaInicio:      ahora,
           fechaVencimiento: nuevaFecha,
-          montoCOP:         sub.montoCOP,
+          /* Una cortesía conserva el monto de antes: lo lee el cobro automático
+             para saber cuánto cobrar el mes que viene (lib/precio-plan.js). */
+          montoCOP:         cobrado > 0 ? cobrado : sub.montoCOP,
           /* Lo mismo que el pago que se copia: si no, «por revisar» toma sus
              adicionales por plan (lib/precio-plan.js#precioPorRevisar). */
           montoAdicionales: sub.montoAdicionales ?? 0,
         },
-      }),
-      prisma.organization.update({
+      })
+      await tx.organization.update({
         where: { id: sub.organization.id },
         data: { waChurnSent: false, waPreVencSent: false },
-      }),
-      prisma.adminLog.create({
+      })
+      if (cobrado > 0) {
+        await registrarPagoSuscripcion(tx, {
+          organizationId: sub.organization.id,
+          plan:           sub.plan,
+          montoCOP:       cobrado,
+          periodo,
+          gateway:        'manual',
+          adminId:        session.user.id,
+          referencia:     'renovar desde el panel',
+        })
+      }
+      await tx.adminLog.create({
         data: {
           adminId:        session.user.id,
           organizacionId: sub.organization.id,
           accion:         'renovar_suscripcion',
-          detalle:        `Suscripción de "${orgNombre}" renovada ${diaFijo ? `${dias}d (día fijo: ${diaFijo})` : `${dias} días`} hasta ${nuevaFecha.toISOString().slice(0, 10)}`,
+          detalle:        `Suscripción de "${orgNombre}" renovada ${diaFijo ? `${dias}d (día fijo: ${diaFijo})` : `${dias} días`} hasta ${nuevaFecha.toISOString().slice(0, 10)} · ${cobrado > 0 ? `cobrado $${cobrado.toLocaleString('es-CO')}` : 'cortesía, sin pago'}`,
         },
-      }),
-    ])
+      })
+    })
     return NextResponse.json({ ok: true, mensaje: `Suscripción renovada hasta ${nuevaFecha.toISOString().slice(0, 10)}` })
   }
 

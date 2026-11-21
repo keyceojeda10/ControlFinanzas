@@ -39,6 +39,8 @@ export default function OrgDetallePage() {
   const [adicRutasInput, setAdicRutasInput] = useState('')
   const [extensionDias, setExtensionDias] = useState('')
   const [diaFijoPago, setDiaFijoPago] = useState('')
+  // Lo que pagó al renovar: va al libro de pagos. 0 = cortesía (21 nov 2026).
+  const [cobradoRenovar, setCobradoRenovar] = useState('')
 
   const fetchOrg = useCallback(async () => {
     try {
@@ -289,6 +291,20 @@ export default function OrgDetallePage() {
                     className="w-20 h-9 px-3 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-card)] text-sm text-[var(--cf-ink)] focus:outline-none focus:border-[var(--cf-gold)]"
                   />
                 </div>
+                <div className="flex flex-col gap-1">
+                  {/* Renovar apunta el pago en el libro: sin esto el panel contaba
+                      «pagando» a quien el libro no le veía ningún pago. */}
+                  <label className="text-[10px] text-[var(--cf-ink-3)]">Te pagó $ (0 = cortesía)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    inputMode="numeric"
+                    value={cobradoRenovar}
+                    onChange={(e) => setCobradoRenovar(e.target.value)}
+                    placeholder={String(sub.montoCOP ?? '')}
+                    className="w-28 h-9 px-3 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-card)] text-sm text-[var(--cf-ink)] focus:outline-none focus:border-[var(--cf-gold)]"
+                  />
+                </div>
                 <Button
                   variant="primary"
                   size="sm"
@@ -296,9 +312,13 @@ export default function OrgDetallePage() {
                   onClick={() => {
                     const dias = parseInt(extensionDias) || 30
                     const diaFijo = parseInt(diaFijoPago) || null
+                    if (cobradoRenovar === '' || Number(cobradoRenovar) < 0) { alert('Escribe cuánto te pagó (0 si es una cortesía)'); return }
+                    const montoCobrado = Math.round(Number(cobradoRenovar))
                     const label = diaFijo ? `${dias} días (día fijo: ${diaFijo})` : `${dias} días`
-                    if (confirm(`Renovar suscripcion de "${org.nombre}" por ${label}?`)) {
-                      accionSuscripcion(sub.id, 'renovar', { dias, diaFijo })
+                    const cobro = montoCobrado > 0 ? `cobrando ${formatMoney(montoCobrado)}` : 'como cortesía, sin pago'
+                    if (confirm(`Renovar suscripcion de "${org.nombre}" por ${label}, ${cobro}?`)) {
+                      accionSuscripcion(sub.id, 'renovar', { dias, diaFijo, montoCobrado })
+                      setCobradoRenovar('')
                     }
                   }}
                 >
