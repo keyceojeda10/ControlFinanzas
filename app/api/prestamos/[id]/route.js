@@ -17,6 +17,7 @@ import {
   calcularMontoParaPonerseAlDia,
   calcularCuotaQueToca,
   calcularInteresMoratorio,
+  esAbiertoConDevengo,
   calcularPrestamo,
   calcularCapitalRestante,
   minimoParaRenovar,
@@ -38,6 +39,8 @@ import { getLocalDayRange, getLocalDateStr, getUtcOffset } from '@/lib/i18n'
 import { getCachedMutation, setCachedMutation, buildMutationKey } from '@/lib/mutation-idempotency'
 import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
 import { cuentaDelDesembolso } from '@/lib/dinero/cuenta-del-desembolso'
+import { periodosDeMas } from '@/lib/dinero/mora-a-mano'
+import { conTiempoComprado } from '@/lib/dinero/tiempo-comprado'
 
 const REF_REVERSO_CANCELACION_DESEMBOLSO = 'prestamo_cancelado_reverso_desembolso'
 const REF_REVERSO_CANCELACION_RECAUDO = 'prestamo_cancelado_reverso_recaudo'
@@ -120,6 +123,27 @@ export async function GET(request, { params }) {
 
   const moratorio = calcularInteresMoratorio(p, diasExcluidos, festivos, org?.tasaMoratorio ?? 0, org?.diasGraciaMoratorio ?? 5)
 
+  /* COBRAR MORA SIN HABERLA CONFIGURADO (21 nov 2026, lib/dinero/mora-a-mano.js).
+     Solo a quien NO tiene tasa de mora: el que la tiene ya ve la tarjeta de
+     arriba. Las piezas del moratorio con tasa 1 (los días, la base, el tope y lo
+     ya aplicado no dependen de la tasa); la pantalla multiplica por la que se
+     elija con `montoMoratorioCon`. Y los períodos de más para la otra forma. */
+  let moraAMano = null
+  if (p.estado === 'activo' && !(org?.tasaMoratorio > 0) && session.user.rol === 'owner') {
+    const piezas = calcularInteresMoratorio(p, diasExcluidos, festivos, 1, org?.diasGraciaMoratorio ?? 5)
+    // Con el tiempo que compró pagando intereses: su fecha final se corre (cf-v1309).
+    const periodos = periodosDeMas(conTiempoComprado(p), { esAbierto: esAbiertoConDevengo(p) })
+    if (piezas.diasMoraEfectivos > 0 || periodos.disponible) {
+      moraAMano = {
+        porTasa: piezas.diasMoraEfectivos > 0
+          ? { diasMoraEfectivos: piezas.diasMoraEfectivos, montoBase: piezas.montoBase, tope: piezas.tope, yaAplicado: piezas.yaAplicado ?? 0 }
+          : null,
+        diasGracia: org?.diasGraciaMoratorio ?? 5,
+        periodos,
+      }
+    }
+  }
+
   // El número de este crédito entre los del cliente (lib/prestamos/numero.js):
   // lo dicen las plantillas de WhatsApp y el comprobante.
   const numeros = await numerosDeClientes(prisma, { organizationId: session.user.organizationId, clienteIds: [p.clienteId] })
@@ -158,6 +182,7 @@ export async function GET(request, { params }) {
        del préstamo, sin la herencia del cliente, la ruta ni la organización. */
     diasExcluidos,
     moratorio,
+    moraAMano,
   })
 }
 

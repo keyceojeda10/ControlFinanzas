@@ -69,6 +69,7 @@ import HojaInferior from '@/components/cf/HojaInferior'
 import FinanciarSaldo from '@/components/prestamos/FinanciarSaldo'
 import { MoverAPerdidos, CerrarAnticipado, PieGestion, Recargo, Descuento } from '@/components/pantallas/Gestion'
 import DeslizarParaConfirmar from '@/components/cf/DeslizarParaConfirmar'
+import CobrarMora from '@/components/prestamos/CobrarMora'
 import { useTactil } from '@/lib/tactil'
 import { adaptarPerdidos, adaptarCerrar, resumenCerrar , adaptarRecargo, adaptarDescuento, montoDesdePorcentaje } from '@/lib/adaptadores/gestion'
 import { ChecklistCamposRecibo, getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
@@ -778,6 +779,7 @@ function PrestamoDetalleContenido({ params }) {
     cuotasAmortizacion = [],
     creadoPor,
     moratorio = null,
+    moraAMano = null,
     createdAt: entregadoEl,
   } = prestamo
   /* La API ya los manda así, pero sin señal la ficha sale de la copia del
@@ -1800,6 +1802,20 @@ function PrestamoDetalleContenido({ params }) {
             {montoEnMora > 0 ? ` · ${formatMoney(montoEnMora)}` : ''}
           </p>
         </div>
+      )}
+
+      {/* ── COBRAR MORA SIN HABERLA CONFIGURADO (21 nov 2026) ──────
+          Solo llega al dueño y solo si su negocio no tiene tasa de mora: con
+          tasa, sale el aviso de abajo. Ver components/prestamos/CobrarMora.jsx. */}
+      {moraAMano && estaActivo && !completado && esOwner && (
+        <CobrarMora
+          prestamoId={id}
+          moraAMano={moraAMano}
+          saldoPendiente={Math.round(saldoPendiente ?? 0)}
+          diasMora={diasMora ?? 0}
+          tactil={tactil}
+          onListo={() => fetchPrestamo()}
+        />
       )}
 
       {/* ── AVISO INTERES MORATORIO ──────────────────────────────── */}
