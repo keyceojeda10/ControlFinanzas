@@ -1,5 +1,6 @@
 // app/api/admin/organizaciones/[id]/route.js — Detalle y gestión de organización
 import { NextResponse }     from 'next/server'
+import { sumarPeriodo } from '@/lib/mes-de-suscripcion'
 import { getServerSession } from 'next-auth'
 import bcrypt               from 'bcryptjs'
 import { authOptions }      from '@/lib/auth'
@@ -452,8 +453,6 @@ export async function PATCH(req, { params }) {
       return NextResponse.json({ error: 'Plan no válido' }, { status: 400 })
     }
     const periodoValido = ['mensual', 'trimestral', 'semestral', 'anual'].includes(periodo) ? periodo : 'mensual'
-    // Días fijos, 30 por mes, como ya hacían el mensual y el trimestral (90).
-    const diasExtension = { mensual: 30, trimestral: 90, semestral: 180, anual: 365 }[periodoValido]
     const montoCOP = parseInt(monto) || 0
 
     const ahora = new Date()
@@ -474,8 +473,9 @@ export async function PATCH(req, { params }) {
       && subExistente.estado === 'activa'
       && new Date(subExistente.fechaVencimiento) > ahora
       && subExistente.plan === planNuevo
-    const fechaVencimiento = new Date(debeExtender ? new Date(subExistente.fechaVencimiento) : ahora)
-    fechaVencimiento.setDate(fechaVencimiento.getDate() + diasExtension)
+    // El mensual renueva el mismo día del mes (1 al 28); el resto, sus días de
+    // siempre (lib/mes-de-suscripcion.js, 21 nov 2026).
+    const fechaVencimiento = sumarPeriodo(debeExtender ? new Date(subExistente.fechaVencimiento) : ahora, periodoValido)
 
     /* ══ ¿Y LOS COBROS QUE VIENEN? ═════════════════════════════════════════
      *
