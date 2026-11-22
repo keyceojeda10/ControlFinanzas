@@ -2,6 +2,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { fronterasBogota } from '@/lib/admin/dias-bogota'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -10,7 +11,7 @@ export async function GET() {
   }
 
   const now = new Date()
-  const day1 = new Date(now); day1.setHours(0, 0, 0, 0)
+  const { inicioHoy: day1 } = fronterasBogota(now) // medianoche de Bogotá, no del servidor (UTC)
   const day7 = new Date(day1); day7.setDate(day7.getDate() - 7)
   const day30 = new Date(day1); day30.setDate(day30.getDate() - 30)
 

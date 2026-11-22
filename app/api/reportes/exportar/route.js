@@ -3,6 +3,7 @@ import { NextResponse }     from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { getLocalDateStr }  from '@/lib/i18n'
 import * as XLSX            from 'xlsx'
 import { exigeNivelReportes } from '@/lib/plan-servidor'
 import { construirCuentaCompleta } from '@/lib/reportes/cuenta-completa'
@@ -67,8 +68,9 @@ export async function GET(req) {
   const orgId = session.user.organizationId
   const { searchParams } = new URL(req.url)
   const tipo  = searchParams.get('tipo')  ?? 'clientes' // clientes | prestamos | pagos | cobradores
-  const desde = searchParams.get('desde') ?? new Date(new Date().setDate(1)).toISOString().slice(0, 10)
-  const hasta = searchParams.get('hasta') ?? new Date().toISOString().slice(0, 10)
+  const hoyLocal = getLocalDateStr(session.user.country ?? 'co') // hoy en el país, no en UTC: desde las 7 p. m. de Bogotá eso ya era mañana (22 nov 2026)
+  const desde = searchParams.get('desde') ?? `${hoyLocal.slice(0, 7)}-01`
+  const hasta = searchParams.get('hasta') ?? hoyLocal
 
   // Rango en timezone Colombia (UTC-5). Sin esto, `new Date(desde)` interpreta
   // la cadena como UTC y trae pagos del dia anterior.

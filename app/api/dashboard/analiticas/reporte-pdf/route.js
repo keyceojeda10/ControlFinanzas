@@ -294,9 +294,16 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
    * Se usa solo `tocaCobrarEn` y no `esperadoDePrestamo` a proposito: esa
    * ademas calcula lo ATRASADO recorriendo hasta 370 dias hacia atras, y aqui
    * serian once millones de vueltas por cada carga de la pantalla. */
+  /* ⚠ CADA DÍA A LAS 05:00Z, NO CON `new Date(año, mes, día)` (22 nov 2026).
+   * Ese constructor usa la hora del servidor, y producción corre en UTC: daba
+   * medianoche UTC = 7 p. m. del día ANTERIOR en Bogotá, y `tocaCobrarEn` lo
+   * leía como ese día anterior. La meta recorría del 31 oct al 29 nov: medido
+   * en el espejo, 35 de 40 negocios con la meta mal; un negocio 100 % mensual
+   * perdía exactamente los 11 préstamos que cobran el 30 ($2.631.000) y otro
+   * decía 65 % de avance cuando iba en 28 %. En local no se ve (corre en Bogotá). */
   const diasDelMes = []
   for (let d = 1; d <= ultimoDiaMes; d++) {
-    diasDelMes.push(new Date(hoy.getFullYear(), hoy.getMonth(), d))
+    diasDelMes.push(new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth(), d, HORA_CORTE)))
   }
 
   const esperadoMes = prestamosActivosDetalle.reduce((suma, p) => {

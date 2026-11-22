@@ -22,7 +22,7 @@ import { obtenerDiasSinCobro, validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
 import { geocodeAddress }   from '@/lib/geocoding'
 import { trackEvent } from '@/lib/analytics'
-import { getUtcOffset, validateDocument, getDocumentConfig, inicioDelDiaLocal } from '@/lib/i18n'
+import { getUtcOffset, validateDocument, getDocumentConfig, inicioDelDiaLocal, getLocalDateStr } from '@/lib/i18n'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { rutaPermitida } from '@/lib/limites-plan'
 import { dispararTrasCrear } from '@/lib/capi-activacion'
@@ -526,7 +526,7 @@ export async function GET(request) {
   }
 
   let filtrado = resultado
-  const hoyISO = new Date().toISOString().slice(0, 10)
+  const hoyISO = getLocalDateStr(session.user.country ?? 'co') // hoy en el país, no en UTC: desde las 7 p. m. de Bogotá eso ya era mañana (22 nov 2026)
   if (filtraCalculado) {
     filtrado = resultado.filter((c) => {
       /* ══ LOS CINCO ESTADOS, Y LO QUE CONTESTA CADA UNO ═══════════════════

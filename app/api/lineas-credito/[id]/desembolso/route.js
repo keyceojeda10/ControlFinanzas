@@ -3,6 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { isHoy }            from '@/lib/i18n'
 import { puedeDesembolsar } from '@/lib/linea-credito'
 import { registrarMovimientoCapital } from '@/lib/capital'
 
@@ -38,9 +39,9 @@ export async function DELETE(request, { params }) {
       return Response.json({ error: 'Desembolso no encontrado' }, { status: 404 })
     }
 
-    const hoy = new Date()
-    const creado = new Date(desembolso.createdAt)
-    if (creado.toDateString() !== hoy.toDateString()) {
+    // «Hoy» en el país del negocio, no en el del servidor (UTC): con
+    // toDateString() el día cambiaba a las 7 p. m. de Bogotá (22 nov 2026).
+    if (!isHoy(desembolso.createdAt, session.user.country ?? 'co')) {
       return Response.json({ error: 'Solo se pueden eliminar desembolsos del día de hoy' }, { status: 400 })
     }
 

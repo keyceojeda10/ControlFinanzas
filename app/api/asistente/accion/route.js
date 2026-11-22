@@ -6,6 +6,7 @@ import { clearCachedContexto } from '@/lib/asistente-cache'
 import { generarTextoComprobante, formatearTelefono } from '@/lib/whatsapp'
 import { asegurarToken, urlDeTarjeta } from '@/lib/tarjeta/enlace'
 import { prisma } from '@/lib/prisma'
+import { getLocalDateStr } from '@/lib/i18n'
 
 export const dynamic = 'force-dynamic'
 
@@ -56,7 +57,7 @@ export async function POST(req) {
       }
 
       case 'create_loan': {
-        const hoy = new Date().toISOString().split('T')[0]
+        const hoy = getLocalDateStr(session.user.country ?? 'co') // hoy en el país, no en UTC: desde las 7 p. m. de Bogotá eso ya era mañana (22 nov 2026)
         // Validar fechaInicio: si Claude la calculó mal (>30 días en el pasado o en el futuro lejano), usar hoy
         let fechaInicio = hoy
         if (input.fechaInicio) {

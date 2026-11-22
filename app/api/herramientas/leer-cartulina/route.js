@@ -22,6 +22,7 @@ import {
   PROMPT_UNO, procesarImagen, normalizarCliente, limiteDelDia,
 } from '@/lib/cartulina'
 import { trackEvent } from '@/lib/analytics'
+import { inicioDelDiaLocal } from '@/lib/i18n'
 
 const MAX_FOTOS = 5
 const MAX_MB = 10 * 1024 * 1024
@@ -86,7 +87,7 @@ export async function POST(req) {
   })
 
   const limite = limiteDelDia(session.user.plan ?? 'basic', org?.createdAt)
-  const hoy = new Date(); hoy.setHours(0, 0, 0, 0)
+  const hoy = inicioDelDiaLocal(session.user.country ?? 'co') // el cupo se renueva a medianoche del país, no a las 7 p. m. (servidor en UTC)
   const fechaOrg = org?.cartulinasFecha ? new Date(org.cartulinasFecha) : null
   const usadasHoy = (fechaOrg && fechaOrg >= hoy) ? (org.cartulinasHoy ?? 0) : 0
 

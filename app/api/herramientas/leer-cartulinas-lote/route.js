@@ -33,6 +33,7 @@ import {
   PROMPT_LOTE, procesarImagen, normalizarCliente, escalaDeLaHoja, semaforo, limiteDelDia,
 } from '@/lib/cartulina'
 import { dudasDe, cuadreDelTotal } from '@/lib/cartulina-dudas'
+import { inicioDelDiaLocal } from '@/lib/i18n'
 
 /* Cuántas fotos entran de una vez. Treinta es un cuaderno entero; por encima
    la espera se hace larga y conviene partir en dos tandas. */
@@ -74,7 +75,7 @@ export async function POST(req) {
   })
 
   const limite = limiteDelDia(session.user.plan ?? 'basic', org?.createdAt)
-  const hoy = new Date(); hoy.setHours(0, 0, 0, 0)
+  const hoy = inicioDelDiaLocal(session.user.country ?? 'co') // el cupo se renueva a medianoche del país, no a las 7 p. m. (servidor en UTC)
   const fechaOrg = org?.cartulinasFecha ? new Date(org.cartulinasFecha) : null
   const usadasHoy = (fechaOrg && fechaOrg >= hoy) ? (org.cartulinasHoy ?? 0) : 0
 

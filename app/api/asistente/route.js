@@ -10,6 +10,7 @@ import { planTieneIA } from '@/lib/planes'
 import { TOOLS_OWNER, TOOLS_COBRADOR } from '@/lib/asistente-tools'
 import { calcularPrestamo } from '@/lib/calculos'
 import { prisma } from '@/lib/prisma'
+import { getLocalDateStr } from '@/lib/i18n'
 import { obtenerMemorias, extraerYGuardarMemoria } from '@/lib/asistente-memoria'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
@@ -144,7 +145,7 @@ async function buildDisplayData(toolName, input, orgId) {
       }
     }
     case 'create_loan': {
-      const hoy = new Date().toISOString().split('T')[0]
+      const hoy = getLocalDateStr() // hoy en el país, no en UTC: desde las 7 p. m. de Bogotá eso ya era mañana (22 nov 2026)
       const calc = calcularPrestamo({
         montoPrestado: input.montoPrestado,
         tasaInteres: input.tasaInteres,
