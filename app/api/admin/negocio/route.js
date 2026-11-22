@@ -3,6 +3,7 @@ import { NextResponse }     from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { fronterasBogota } from '@/lib/admin/dias-bogota'
 import { PLANES_CONFIG }    from '@/lib/planes'
 import { mensualDe, periodosDelUltimoPago } from '@/lib/admin/mrr'
 import { paraAtender } from '@/lib/seguimiento/para-atender'
@@ -23,10 +24,8 @@ export async function GET() {
   const ahora = new Date()
   const hace15min  = new Date(ahora - 15 * 60 * 1000)
   const hace30min  = new Date(ahora - 30 * 60 * 1000)
-  const inicioHoy  = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate())
-  const inicioAyer = new Date(inicioHoy - 86400000)
-  const inicioSemana = new Date(inicioHoy - (inicioHoy.getDay() === 0 ? 6 : inicioHoy.getDay() - 1) * 86400000)
-  const inicioMes  = new Date(ahora.getFullYear(), ahora.getMonth(), 1)
+  // Días en hora de Bogotá: el servidor corre en UTC (ver lib/admin/dias-bogota.js).
+  const { inicioHoy, inicioAyer, inicioSemanaLunes: inicioSemana, inicioMes } = fronterasBogota(ahora)
 
   // Activos en tiempo real: owners con lastActivityAt reciente (excluye internos)
   const [activosAhora, activosHoy30min, registrosHoy, registrosAyer, registrosSemana, registrosMes,

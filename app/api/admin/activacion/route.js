@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { fronterasBogota } from '@/lib/admin/dias-bogota'
 
 export async function GET() {
   try {
@@ -26,10 +27,8 @@ export async function GET() {
     })
 
     const now = new Date()
-    const hoy = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const ayer = new Date(hoy.getTime() - 86400000)
-    const inicioSemana = new Date(hoy.getTime() - hoy.getDay() * 86400000)
-    const inicioMes = new Date(now.getFullYear(), now.getMonth(), 1)
+    // Días en hora de Bogotá: el servidor corre en UTC (ver lib/admin/dias-bogota.js).
+    const { inicioHoy: hoy, inicioAyer: ayer, inicioSemanaDomingo: inicioSemana, inicioMes } = fronterasBogota(now)
 
     let registrosHoy = 0, registrosAyer = 0, registrosSemana = 0, registrosMes = 0
     let totalActivos = 0, totalInactivos = 0, trialPorVencer = 0

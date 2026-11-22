@@ -3,6 +3,7 @@ import { NextResponse }     from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { fronterasBogota }  from '@/lib/admin/dias-bogota'
 
 import { PLANES_CONFIG } from '@/lib/planes'
 const PRECIOS = Object.fromEntries(Object.entries(PLANES_CONFIG).map(([k, v]) => [k, v.precio]))
@@ -14,7 +15,7 @@ export async function GET() {
   }
 
   const ahora = new Date()
-  const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1)
+  const { inicioMes } = fronterasBogota(ahora)
   const en7Dias   = new Date(ahora.getTime() + 7 * 24 * 60 * 60 * 1000)
 
   const [
