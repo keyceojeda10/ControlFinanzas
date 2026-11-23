@@ -50,9 +50,16 @@ function IconoArchivo({ tipo }) {
 export default function CargarCartera() {
   const router = useRouter()
   const { rol } = useAuth()
-  useCabecera({ titulo: 'Cargar mi cartera', subtitulo: 'Lo leemos y tú lo revisas', onVolver: () => router.back() })
-
   const [estado, setEstado] = useState({ cargando: true, solicitud: null, revision: null, max: 40 })
+  /* ⚠ CON EL LOTE A LA VISTA NO HAY PASTILLA. `LoteFotos` lleva su «Crear N
+     clientes» en un pie fijo abajo, donde se sienta la pastilla: en el espejo a
+     412 px (piloto del 23 nov 2026) `elementFromPoint` sobre «Crear» daba la
+     pastilla, y tocarlo era navegar a otra parte. En `/migrador` no pasaba porque
+     es una tarea. La lección de `Armazon.jsx`: se quita la pastilla, no se sube
+     el botón. Mientras se lee, con Carlos o ya cargada, la pastilla vuelve. */
+  const conLote = estado.solicitud?.estado === 'en_revision' && !estado.revision?.bloqueada && (estado.revision?.filas?.length ?? 0) > 0
+  useCabecera({ titulo: 'Cargar mi cartera', subtitulo: 'Lo leemos y tú lo revisas', onVolver: () => router.back(), tarea: conLote })
+
   const [elegidos, setElegidos] = useState([])
   const [nota, setNota] = useState('')
   const [subiendo, setSubiendo] = useState(null) // { hechos, total }
