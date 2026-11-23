@@ -10,6 +10,7 @@ import { PLANES_VALIDOS, PLANES_CONFIG, adicionalesAlCambiarA } from '@/lib/plan
 import { registrarPagoSuscripcion } from '@/lib/libro-pagos'
 import { ultimoPago, ultimaSuscripcion } from '@/lib/cobro-intento'
 import { registrarAdminLog }  from '@/lib/admin-log'
+import { darPremioReferido } from '@/lib/premio-referido'
 import { cortarCuentasGuardadas } from '@/lib/cuentas-guardadas'
 import { normalizarEmail, formasDelEmail } from '@/lib/normalizar-email'
 import {
@@ -571,32 +572,9 @@ export async function PATCH(req, { params }) {
       })
     })
 
-    // Recompensa de referido (mismo flujo que webhook MP)
-    if (org.referidoPorId) {
-      const pagosAnteriores = await prisma.suscripcion.count({
-        where: { organizationId: id },
-      })
-      if (pagosAnteriores <= 1) {
-        const subReferidor = await prisma.suscripcion.findFirst({
-          where: {
-            organizationId: org.referidoPorId,
-            OR: [{ mpStatus: null }, { mpStatus: { not: 'pending' } }],
-          },
-          orderBy: { fechaVencimiento: 'desc' },
-        })
-        if (subReferidor) {
-          const baseRef = subReferidor.estado === 'activa' && new Date(subReferidor.fechaVencimiento) > ahora
-            ? new Date(subReferidor.fechaVencimiento)
-            : ahora
-          const nuevaFechaRef = new Date(baseRef)
-          nuevaFechaRef.setDate(nuevaFechaRef.getDate() + 30)
-          await prisma.suscripcion.update({
-            where: { id: subReferidor.id },
-            data: { fechaVencimiento: nuevaFechaRef },
-          })
-        }
-      }
-    }
+    /* El premio de quien lo refirió, si éste es su primer pago. La misma
+       función que la pasarela: ver lib/premio-referido.js. */
+    await darPremioReferido({ organizationId: id, ahora, adminId: session.user.id })
 
     /* ⚠ Después de la transacción: el pago YA está apuntado. Un registro que
        falle aquí (el preferencial con nota pasa de 191 caracteres) respondía
