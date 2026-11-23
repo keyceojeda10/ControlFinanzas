@@ -638,6 +638,27 @@ export async function POST(request) {
 
   const { organizationId, plan } = session.user
 
+  /* ⚠ EL REINTENTO DE UNA FILA DE LA CARGA DEL DUEÑO, ANTES DEL TOPE (piloto
+     del 22 nov 2026). Si el cliente que se cortó era el último del cupo, el
+     reintento chocaba con «Llegaste a los N clientes» (403) y esa fila ya no
+     podía crear su préstamo: el cliente existe, así que no ocupa otro cupo.
+     Solo para `SIN-C_…` (`marcadorDeFila`, lib/carga-asesor/al-lote.js); se
+     lee una copia del cuerpo para no cambiar nada del resto. El eliminado no
+     sale aquí: reactivarlo sí ocupa cupo, y se decide más abajo. */
+  const cuerpoCopia = await request.clone().json().catch(() => null)
+  const cedulaCopia = typeof cuerpoCopia?.cedula === 'string' ? cuerpoCopia.cedula.trim() : ''
+  let fichasDeLaFila = null
+  if (cedulaCopia.startsWith(PREFIJO_FILA)) {
+    fichasDeLaFila = await prisma.cliente.findMany({
+      where: { organizationId, cedula: cedulaCopia },
+      select: { id: true, estado: true },
+    })
+    const viva = fichasDeLaFila.find((f) => f.estado !== 'eliminado')
+    if (viva) {
+      return Response.json({ error: 'Ya existe un cliente con esa cédula', existingId: viva.id }, { status: 409 })
+    }
+  }
+
   /* ══ EL LÍMITE DE CLIENTES, CON SU CUPO EXTRA ════════════════════════════
    *
    * ⚠ ESTE ES EL SITIO QUE DE VERDAD BLOQUEA. Los otros tres —`limites-plan`,
@@ -771,7 +792,7 @@ export async function POST(request) {
      sigue siendo el mismo cliente. Si está eliminado se reactiva, como
      cualquier cédula. */
   if (cedula.trim().startsWith(PREFIJO_FILA)) {
-    const deLaFila = await prisma.cliente.findMany({
+    const deLaFila = fichasDeLaFila && cedula.trim() === cedulaCopia ? fichasDeLaFila : await prisma.cliente.findMany({
       where: { organizationId, cedula: cedula.trim() },
       select: { id: true, estado: true },
     })

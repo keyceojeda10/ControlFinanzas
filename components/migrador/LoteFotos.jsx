@@ -605,8 +605,14 @@ export default function LoteFotos({
                 ...(Number.isInteger(f.diaCobro) && { diaCobroMes: f.diaCobro }),
                 ...(Number(f.yaAbonado) > 0 && { yaAbonado: Number(f.yaAbonado) }),
                 /* Si el navegador cortó el intento anterior y el servidor sí lo
-                   creó, devuelve ese mismo (`yaExistia`) en vez de otro. */
-                ...(solicitud && { idempotente: true }),
+                   creó, devuelve ese mismo (`yaExistia`) en vez de otro.
+                   ⚠ NO EN LA FILA QUE EL DUEÑO DIJO «NO ES LA MISMA». Esa fila
+                   salió «Repetida» porque trae la misma cédula y la misma huella
+                   que otra: con `idempotente`, el servidor le devolvería el
+                   préstamo de la otra y el segundo se perdería sin aviso. El
+                   dueño dijo que son dos préstamos. Se acepta el riesgo, raro,
+                   de que un corte de red justo en esa fila la cree dos veces. */
+                ...(solicitud && f.noEsLaMisma !== true && { idempotente: true }),
               }),
             })
             const dataP = await resP.json()
