@@ -19,10 +19,6 @@ const ESTADO = {
   aprobada: { texto: 'Cargada', color: 'var(--cf-green-dark)' },
   rechazada: { texto: 'Rechazada', color: 'var(--cf-red-dark)' },
 }
-/* Lo abierto, escrito a mano porque esta página es de cliente y `ESTADOS_ABIERTOS`
-   vive en un módulo de servidor (trae prisma). Una prueba lo compara con el del
-   servidor: sin «esperando» (todavía no llega nada) y con «importando». */
-const ABIERTA = ['recibida', 'leyendo', 'en_revision', 'ayuda', 'importando']
 
 function hace(d, ahora) {
   const h = Math.floor((ahora - new Date(d)) / 3600000)
@@ -64,7 +60,12 @@ export default function CargasAdmin() {
             <tbody>
               {datos.cargas.map((c) => {
                 const e = ESTADO[c.estado] ?? { texto: c.estado, color: 'var(--cf-ink-2)' }
-                const tarde = ABIERTA.includes(c.estado) && datos.ahora - new Date(c.creada) > 20 * 3600000
+                /* «Tarde» es de la que pidió ayuda y se mide desde que la pidió (`resumen.ayuda.at`,
+                   como el recordatorio de las 20 h): lo que el dueño todavía revisa no es de Carlos
+                   por viejo que sea. Sin hora legible no se inventa una. */
+                const t = c.estado === 'ayuda' ? Date.parse(c.resumen?.ayuda?.at) : NaN
+                const ayudaAt = Number.isFinite(t) ? t : null
+                const tarde = ayudaAt != null && datos.ahora - ayudaAt > 20 * 3600000
                 return (
                   <tr key={c.id} style={{ borderTop: '1px solid var(--cf-border)' }}>
                     <td style={{ padding: '10px 12px' }}>
@@ -72,7 +73,12 @@ export default function CargasAdmin() {
                       <span style={{ display: 'block', fontSize: 11, color: 'var(--cf-ink-3)' }}>{c.negocio?.plan} · {c.origen}</span>
                     </td>
                     <td style={{ padding: '10px 12px', color: e.color, fontWeight: 600, whiteSpace: 'nowrap' }}>{e.texto}{c.errorLectura ? ' · con error' : ''}</td>
-                    <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', color: tarde ? 'var(--cf-red-dark)' : 'var(--cf-ink-2)', fontWeight: tarde ? 700 : 400 }}>{hace(c.creada, datos.ahora)}</td>
+                    <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', color: 'var(--cf-ink-2)' }}>
+                      {hace(c.creada, datos.ahora)}
+                      {ayudaAt != null && (
+                        <span style={{ display: 'block', fontSize: 11, color: tarde ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)', fontWeight: tarde ? 700 : 400 }}>pidió ayuda {hace(ayudaAt, datos.ahora)}</span>
+                      )}
+                    </td>
                     <td className="cf-fig" style={{ padding: '10px 12px' }}>{c.archivos}</td>
                     <td className="cf-fig" style={{ padding: '10px 12px' }}>{c.resumen?.filas ?? '—'}</td>
                     <td className="cf-fig" style={{ padding: '10px 12px' }}>{c.resumen?.importado?.clientesCreados ?? c.resumen?.aCrear ?? '—'}</td>

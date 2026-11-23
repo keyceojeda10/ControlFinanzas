@@ -305,12 +305,15 @@ export default function RevisarCarga() {
                   {ocupado === 'aprobar' ? 'Importando…' : `Aprobar e importar ${resumenPorImportar.aCrear}`}
                 </button>
               </div>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                <input value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Motivo del rechazo (se guarda, no se le manda)" style={{ ...campo, flex: 1, minWidth: 220, height: 40 }} aria-label="Motivo del rechazo" />
-                <button type="button" disabled={!!ocupado || !motivo.trim()} onClick={() => accion({ accion: 'rechazar', motivo }, () => 'Rechazada.')} style={{ ...boton(false), color: 'var(--cf-red-dark)', opacity: motivo.trim() ? 1 : 0.5 }}>
-                  Rechazar
-                </button>
-              </div>
+              {/* Rechazar con el dueño cargando dejaría sus préstamos sin apuntar: el servidor tampoco lo deja. */}
+              {!duenoCargando && (
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <input value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Motivo del rechazo (se guarda, no se le manda)" style={{ ...campo, flex: 1, minWidth: 220, height: 40 }} aria-label="Motivo del rechazo" />
+                  <button type="button" disabled={!!ocupado || !motivo.trim()} onClick={() => accion({ accion: 'rechazar', motivo }, () => 'Rechazada.')} style={{ ...boton(false), color: 'var(--cf-red-dark)', opacity: motivo.trim() ? 1 : 0.5 }}>
+                    Rechazar
+                  </button>
+                </div>
+              )}
             </section>
           )}
           {s.estado === 'aprobada' && r.importado && (
