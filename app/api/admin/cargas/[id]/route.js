@@ -4,13 +4,16 @@
 // PATCH → { filas } guarda lo corregido y lo vuelve a validar.
 // POST  → { accion: 'aprobar', ruta?, noCobrarDomingos? } importa con el MISMO
 //         camino que la carga masiva (lib/importar-cartera.js);
-//         { accion: 'rechazar', motivo }; { accion: 'releer' } vuelve a validar.
+//         { accion: 'rechazar', motivo }; { accion: 'releer' } vuelve a validar;
+//         { accion: 'devolver' } se la devuelve al dueño («ayuda» → «en_revision»).
 
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { archivosDe, filasDe, resumenDeSolicitud, guardarFilas, aprobarSolicitud, rechazarSolicitud } from '@/lib/carga-asesor/solicitud'
+import {
+  archivosDe, filasDe, resumenDeSolicitud, creadasDe, quitadasDe, guardarFilas, aprobarSolicitud, rechazarSolicitud, devolverAlDueno,
+} from '@/lib/carga-asesor/solicitud'
 
 export const runtime = 'nodejs'
 
@@ -24,7 +27,10 @@ export async function GET(_req, { params }) {
   const { id } = await params
   const sol = await prisma.solicitudCarga.findUnique({
     where: { id },
-    include: { organization: { select: { id: true, nombre: true, plan: true, diasSinCobro: true, _count: { select: { clientes: true } } } } },
+    /* `modoInteresDefault`: con él la ficha avisa que «Aprobar e importar» crea los
+       préstamos con interés fijo. Sin pedirlo aquí llegaría `undefined` y el aviso
+       no saldría nunca, sin error. */
+    include: { organization: { select: { id: true, nombre: true, plan: true, diasSinCobro: true, modoInteresDefault: true, _count: { select: { clientes: true } } } } },
   })
   if (!sol) return NextResponse.json({ error: 'No existe' }, { status: 404 })
   const [dueno, rutas] = await Promise.all([
@@ -35,6 +41,8 @@ export async function GET(_req, { params }) {
     solicitud: {
       id: sol.id, estado: sol.estado, origen: sol.origen, nota: sol.nota, creada: sol.createdAt, aprobada: sol.aprobadaAt,
       errorLectura: sol.errorLectura, archivos: archivosDe(sol), filas: filasDe(sol), resumen: resumenDeSolicitud(sol),
+      // Los ids de fila que el dueño ya creó y los que quitó: la ficha los marca y no los importa.
+      creadas: Object.keys(creadasDe(sol)), quitadas: quitadasDe(sol),
     },
     negocio: { ...sol.organization, clientes: sol.organization._count.clientes, _count: undefined },
     dueno, rutas,
@@ -62,6 +70,8 @@ export async function POST(req, { params }) {
     r = await aprobarSolicitud({ id, adminId: session.user.id, ruta: body.ruta, noCobrarDomingos: body.noCobrarDomingos === true })
   } else if (body.accion === 'rechazar') {
     r = await rechazarSolicitud({ id, adminId: session.user.id, motivo: String(body.motivo ?? '').slice(0, 500) })
+  } else if (body.accion === 'devolver') {
+    r = await devolverAlDueno({ id, adminId: session.user.id })
   } else if (body.accion === 'releer') {
     const sol = await prisma.solicitudCarga.findUnique({ where: { id } })
     r = sol ? await guardarFilas(id, filasDe(sol)) : { error: 'No existe', status: 404 }

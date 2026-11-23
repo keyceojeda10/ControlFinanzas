@@ -24,13 +24,15 @@ import { Tarjeta, FilaTarjeta, BloqueOscuro, TiraCifras, Pastilla, EstadoVacio }
 import { BarrasVerticales, PilaEsqueletos } from '@/components/cf/primitivos2'
 import { SEGMENTOS } from '@/lib/admin/segmentos'
 
-/* Las cargas de cartera con asesor por revisar (bloque 4): se le prometió al
-   cliente en 24 h, así que el número va a la vista, no escondido en un menú. */
+/* Las cargas de cartera abiertas (bloque 4), con las que piden ayuda («ayuda»)
+   incluidas: el número va a la vista, no escondido en un menú. La lista de estados
+   está escrita a mano (esta página es de cliente y `ESTADOS_ABIERTOS` trae prisma);
+   una prueba la compara con la del servidor. */
 function EnlaceCargas() {
   const [n, setN] = useState(null)
   useEffect(() => {
     fetch('/api/admin/cargas').then((r) => (r.ok ? r.json() : null))
-      .then((j) => j && setN(j.cargas.filter((c) => ['recibida', 'leyendo', 'en_revision', 'importando'].includes(c.estado)).length))
+      .then((j) => j && setN(j.cargas.filter((c) => ['recibida', 'leyendo', 'en_revision', 'ayuda', 'importando'].includes(c.estado)).length))
       .catch(() => {})
   }, [])
   return (

@@ -1,7 +1,8 @@
 'use client'
 // app/admin/cargas/page.jsx — las cargas de cartera con asesor (bloque 4).
-// Abiertas primero y de la más vieja a la más nueva: se le prometió al cliente
-// en máximo 24 h. Se llega desde Inicio (el menú tiene nueve entradas a propósito).
+// Abiertas primero y de la más vieja a la más nueva. Desde el 22 nov 2026 la
+// revisa y la carga el dueño: a Carlos le toca la que pide ayuda («ayuda»).
+// Se llega desde Inicio (el menú tiene nueve entradas a propósito).
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -12,12 +13,16 @@ const ESTADO = {
   esperando: { texto: 'Esperando archivos', color: 'var(--cf-ink-3)' },
   recibida: { texto: 'Recibida', color: 'var(--cf-ink-2)' },
   leyendo: { texto: 'Leyendo', color: 'var(--cf-ink-2)' },
-  en_revision: { texto: 'Por revisar', color: 'var(--cf-gold-dark)' },
+  en_revision: { texto: 'Con el dueño', color: 'var(--cf-ink-2)' },
+  ayuda: { texto: 'Pide ayuda', color: 'var(--cf-gold-dark)' },
   importando: { texto: 'Importando', color: 'var(--cf-gold-dark)' },
   aprobada: { texto: 'Cargada', color: 'var(--cf-green-dark)' },
   rechazada: { texto: 'Rechazada', color: 'var(--cf-red-dark)' },
 }
-const ABIERTA = ['recibida', 'leyendo', 'en_revision', 'importando']
+/* Lo abierto, escrito a mano porque esta página es de cliente y `ESTADOS_ABIERTOS`
+   vive en un módulo de servidor (trae prisma). Una prueba lo compara con el del
+   servidor: sin «esperando» (todavía no llega nada) y con «importando». */
+const ABIERTA = ['recibida', 'leyendo', 'en_revision', 'ayuda', 'importando']
 
 function hace(d, ahora) {
   const h = Math.floor((ahora - new Date(d)) / 3600000)
