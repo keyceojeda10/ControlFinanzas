@@ -1762,7 +1762,7 @@ model EnvioSeguimiento {
 model SolicitudCarga {
   id             String    @id @default(cuid())
   organizationId String
-  /// recibida | leyendo | en_revision | aprobada | rechazada
+  /// esperando | recibida | leyendo | en_revision | ayuda | importando | aprobada | rechazada
   estado         String    @default("recibida") @db.VarChar(16)
   /// web | whatsapp
   origen         String    @default("web") @db.VarChar(12)
@@ -1770,8 +1770,11 @@ model SolicitudCarga {
   archivos       String    @db.Text
   /// JSON: las filas planas para el importador, con `_archivo`, `_confianza` y `_dudas`.
   filas          String?   @db.LongText
-  /// JSON: { clientes, prestado, enLaCalle, dudosas, errores, fallos }
-  resumen        String?   @db.Text
+  /// JSON: { filas, aCrear, prestado, conError, dudosas, fallos, … } y, de la vida de la
+  /// solicitud, `creadas` (una entrada por fila que el dueño ya creó), `quitadas`,
+  /// `ayuda` e `importado`. LONGTEXT: `creadas` crece ~90 bytes por fila y hay
+  /// negocios con más de 1.400 clientes (era TEXT, 64 KB, y truncaba en silencio).
+  resumen        String?   @db.LongText
   nota           String?   @db.Text
   errorLectura   String?   @db.Text
   revisadaPorId  String?
