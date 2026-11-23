@@ -24,15 +24,17 @@ import { Tarjeta, FilaTarjeta, BloqueOscuro, TiraCifras, Pastilla, EstadoVacio }
 import { BarrasVerticales, PilaEsqueletos } from '@/components/cf/primitivos2'
 import { SEGMENTOS } from '@/lib/admin/segmentos'
 
-/* Las cargas de cartera abiertas (bloque 4), con las que piden ayuda («ayuda»)
-   incluidas: el número va a la vista, no escondido en un menú. La lista de estados
-   está escrita a mano (esta página es de cliente y `ESTADOS_ABIERTOS` trae prisma);
-   una prueba la compara con la del servidor. */
+/* Las cargas de cartera que tiene que atender Carlos (bloque 4): las que el dueño
+   le pasó con «Necesito ayuda» («ayuda») y las que se quedaron pegadas
+   importando. Lo que el dueño todavía revisa NO cuenta: no es suyo. El número va a
+   la vista, no escondido en un menú. Los estados están escritos a mano (esta
+   página es de cliente y `ESTADOS_POR_ATENDER` trae prisma); una prueba los
+   compara con los del servidor. */
 function EnlaceCargas() {
   const [n, setN] = useState(null)
   useEffect(() => {
     fetch('/api/admin/cargas').then((r) => (r.ok ? r.json() : null))
-      .then((j) => j && setN(j.cargas.filter((c) => ['recibida', 'leyendo', 'en_revision', 'ayuda', 'importando'].includes(c.estado)).length))
+      .then((j) => j && setN(j.cargas.filter((c) => ['ayuda', 'importando'].includes(c.estado)).length))
       .catch(() => {})
   }, [])
   return (
@@ -42,7 +44,7 @@ function EnlaceCargas() {
       border: `1px solid ${n ? 'var(--cf-gold-border)' : 'var(--cf-border)'}`,
       color: 'var(--cf-ink)', textDecoration: 'none', fontSize: 13, fontWeight: 600,
     }}>
-      <span>Cargas de cartera <span style={{ fontWeight: 400, color: 'var(--cf-ink-3)' }}>· {n == null ? 'con asesor' : `${n} por revisar`}</span></span>
+      <span>Cargas de cartera <span style={{ fontWeight: 400, color: 'var(--cf-ink-3)' }}>· {n == null ? 'con asesor' : `${n} por atender`}</span></span>
       <span aria-hidden style={{ color: 'var(--cf-gold-dark)' }}>→</span>
     </Link>
   )
