@@ -68,6 +68,7 @@ const COLOR = {
 }
 const ROTULO = { verde: 'Lista', ambar: 'Revisar', rojo: 'Falta lo básico' }
 const NO_APUNTADA = 'Se guardó pero no se pudo apuntar: toca Crear otra vez'
+const SIN_APUNTAR = 'Falta cómo apuntar la carga'
 
 /* ══ ⚠ LO QUE DE VERDAD SE VA A GUARDAR, EN UNA SOLA FUNCIÓN ══════════════
  *
@@ -185,6 +186,25 @@ function motivoRojo(f, base) {
   return ROTULO.rojo
 }
 
+/* Lo de arriba al abrir la pantalla. */
+export function baseDeArranque(solicitud, baseInicial) {
+  return solicitud
+    ? { tasa: '', frecuencia: '', modoInteres: 'fijo', rutaId: '', ...(baseInicial ?? {}) }
+    : { tasa: '20', frecuencia: 'diario', modoInteres: 'fijo', rutaId: '' }
+}
+
+/* Lo que dice la fila cerrada: monto, frecuencia, tasa.
+   ⚠ La fila cuyo préstamo YA SE CREÓ lo dice desde `_ficha`, lo que se guardó:
+   si se cambia lo de arriba después, `efectivo` daría otra cosa y la fila
+   enseñaría un préstamo que no es el que existe. */
+export function resumenDeLaFila(f, base) {
+  if (f._prestamoId && f._ficha) {
+    const c = f._ficha
+    return `${formatMoney(c.monto ?? 0)} · ${c.frecuencia} ${c.tasa}% · ${etiquetaModo(c.modoInteres)}`
+  }
+  return `${formatMoney(efectivo(f, base).monto ?? 0)} · ${efectivo(f, base).frecuencia} ${efectivo(f, base).tasa}%`
+}
+
 /* La clave del lote del migrador: una por negocio, en el teléfono. */
 function claveDelMigrador(organizationId) {
   const claveLote = `migrador:lote:${organizationId || 'sin-negocio'}`
@@ -235,9 +255,10 @@ export default function LoteFotos({
      El OCR no va a leer nunca en qué modo de interés trabaja el negocio ni a
      qué ruta va la cartera: no está escrito en la cartulina. Pedirlo por fila
      serían treinta veces la misma respuesta. */
-  const [base, setBase] = useState(baseInicial
-    ? { tasa: '', frecuencia: '', modoInteres: 'fijo', rutaId: '', ...baseInicial }
-    : { tasa: '20', frecuencia: 'diario', modoInteres: 'fijo', rutaId: '' })
+  /* En la carga del dueño lo de arriba sale de «Cómo prestas por defecto» y, si
+     no lo hay, VACÍO: nunca se supone «diario» ni «20 %», ni siquiera si la
+     página no manda `baseInicial`. */
+  const [base, setBase] = useState(baseDeArranque(solicitud, baseInicial))
 
   /* ══ EL LOTE SE QUEDA GUARDADO EN EL TELÉFONO (inducción del 18 nov 2026) ══
      «Estaba pasando su cartera tomando fotos desde el cuaderno, se salió y ya
@@ -439,16 +460,27 @@ export default function LoteFotos({
   /* En la carga del dueño, lo quitado se apunta: la solicitud no se puede
      cerrar mientras le queden filas sin crear ni quitar. Si se quitan las
      últimas sin crear nada más, la página la cierra (`onQuitadas`). */
+  const avisarQuitadas = useRef(false)   // se quitaron las últimas: avisar a la página
   const quitar = (id) => {
     if (!solicitud) { quitarDelLote(id); return }
     // Mientras se crea no se quita nada: la fila podría estar creándose ahora mismo.
     if (creando) return
-    const quedan = filas.filter((f) => f._id !== id)
-    const todas = quitadas.includes(id) ? quitadas : [...quitadas, id]
-    setQuitadas(todas)
-    setFilas(quedan)
-    if (!quedan.length) onQuitadas?.(todas)
+    /* Con el estado de verdad (`prev`), no con el de la última pintada: dos
+       toques seguidos sobre filas distintas verían la lista vieja. El aviso a
+       la página va en un efecto, no dentro del `setFilas` (React puede llamar
+       dos veces a la función que se le pasa). */
+    setQuitadas((q) => (q.includes(id) ? q : [...q, id]))
+    setFilas((prev) => {
+      const quedan = prev.filter((f) => f._id !== id)
+      if (!quedan.length && prev.length) avisarQuitadas.current = true
+      return quedan
+    })
   }
+  useEffect(() => {
+    if (!avisarQuitadas.current || filas.length) return
+    avisarQuitadas.current = false
+    onQuitadas?.(quitadas)
+  }, [filas, quitadas, onQuitadas])
 
   const conEstado = filas.map((f) => ({ ...f, _estado: estadoDe(f, base) }))
   const cuenta = {
@@ -472,6 +504,15 @@ export default function LoteFotos({
      ver que avanza. */
   const crear = async () => {
     if (abonosPorResolver) return
+    /* ⚠ SIN CÓMO APUNTAR, NO SE CREA NADA. En la carga del dueño, un préstamo
+       creado y no apuntado en la solicitud vuelve a salir al entrar otra vez y
+       se crearía dos veces. Es un fallo de la página que monta esto, no del
+       dueño: se dice y no se toca la plata. */
+    if (solicitud && typeof onCreada !== 'function') {
+      console.error('LoteFotos: modo solicitud sin onCreada; no se crea nada')
+      setError(SIN_APUNTAR)
+      return
+    }
     setCreando({ hechos: 0, total: creables.length, fallos: [] })
     const fallos = []
     let hechos = 0
@@ -1060,8 +1101,7 @@ function Fila({ f, base, onAbrir, abierta, onEditar, onQuitar, enlaceArchivo, ti
           <span className="cf-num" style={{ fontSize: 11, color: 'var(--cf-ink-3)' }}>
             {/* Del mismo resolvedor que el guardado: si la fila dice una cosa
                 y se guarda otra, nadie lo nota hasta que no cuadra la plata. */}
-            {motivo && !soloRepetida ? motivo
-              : `${formatMoney(efectivo(f, base).monto ?? 0)} · ${efectivo(f, base).frecuencia} ${efectivo(f, base).tasa}%`}
+            {motivo && !soloRepetida ? motivo : resumenDeLaFila(f, base)}
             {f._foto ? ` · foto ${f._foto}` : ''}
             {/* El original, en otra pestaña: el dueño mira la foto o la hoja de
                 donde salió y confirma la cifra sin salir de la lista. */}
@@ -1102,7 +1142,8 @@ function Fila({ f, base, onAbrir, abierta, onEditar, onQuitar, enlaceArchivo, ti
               Las dos cifras con su nombre y, si hay una forma de cobro que da
               la del papel, el botón para usarla. */}
           {(() => {
-            const ch = choqueDeLaFila(f, base)
+            // El préstamo ya creado no se cambia desde aquí: ni aviso ni botón.
+            const ch = yaCreada ? null : choqueDeLaFila(f, base)
             if (!ch) return null
             return (
               <span style={{ fontSize: 11, lineHeight: 1.4, color: 'var(--cf-ink-2)' }}>
