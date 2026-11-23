@@ -50,6 +50,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { formatMoney } from '@/lib/i18n'
 import { montoConTasa, inicioPorLoAbonado, choqueDeCuota } from '@/lib/cartulina-datos'
 import { MODOS_EN_ORDEN, etiquetaModo } from '@/lib/dinero/modos'
+import { unirFilasDelLote } from '@/lib/carga-asesor/al-lote'
 
 const FRECUENCIAS = [
   { key: 'diario', label: 'Diario' },
@@ -66,6 +67,7 @@ const COLOR = {
   rojo: 'var(--cf-red)',
 }
 const ROTULO = { verde: 'Lista', ambar: 'Revisar', rojo: 'Falta lo básico' }
+const NO_APUNTADA = 'Se guardó pero no se pudo apuntar: toca Crear otra vez'
 
 /* ══ ⚠ LO QUE DE VERDAD SE VA A GUARDAR, EN UNA SOLA FUNCIÓN ══════════════
  *
@@ -89,7 +91,7 @@ const ROTULO = { verde: 'Lista', ambar: 'Revisar', rojo: 'Falta lo básico' }
    llamaran distinto, el mismo préstamo tendría dos nombres según dónde se mire. */
 const MODOS = MODOS_EN_ORDEN.filter((m) => m !== 'manual').map((m) => ({ valor: m, nombre: etiquetaModo(m) }))
 
-function efectivo(f, base) {
+export function efectivo(f, base) {
   const num = (v) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : null }
   const frecuencia = f.frecuencia || base.frecuencia
   return {
@@ -134,9 +136,19 @@ function choqueDeLaFila(f, base) {
    marcar en ámbar un dato que nadie puede rellenar. */
 const MODOS_SIN_PLAZO = ['solo_interes']
 
-function estadoDe(f, base) {
+export function estadoDe(f, base) {
   const e = efectivo(f, base)
   if (!e.nombre || !e.monto) return 'rojo'
+  /* ⚠ SIN FRECUENCIA O SIN TASA NO SE CREA NADA. En el migrador nunca pasa: lo
+     de arriba arranca en «diario» y «20». La carga que revisa el dueño arranca
+     de «Cómo prestas por defecto» del negocio y, si no lo tiene, VACÍO —nunca
+     se supone—, así que la fila sin lo suyo y sin lo de arriba no tiene con qué
+     crearse. Sin esto se mandaba `tasaInteres: null`: el API lo rechaza DESPUÉS
+     de haber creado el cliente, y queda un cliente sin préstamo. */
+  if (!e.frecuencia || e.tasa == null) return 'rojo'
+  /* La fila que el lector vio repetida no se crea hasta que el dueño diga
+     «No es la misma»: crearla sin mirar es el mismo préstamo dos veces. */
+  if (f._repetidaDe && !f.noEsLaMisma) return 'rojo'
 
   /* ⚠ ÁMBAR SOLO POR LO QUE NO SE PUEDE RESOLVER. La tasa y el plazo ahora
      SIEMPRE tienen valor —el de arriba o el del defecto— así que marcarlos en
@@ -162,7 +174,46 @@ function estadoDe(f, base) {
   return 'verde'
 }
 
-export default function LoteFotos({ rutas = [], onListo, onSalir }) {
+/* Por qué está en rojo, dicho en la fila. Lo de nombre y monto es lo de
+   siempre («Falta lo básico»); lo demás solo sale en la carga del dueño. */
+function motivoRojo(f, base) {
+  const e = efectivo(f, base)
+  if (!e.nombre || !e.monto) return ROTULO.rojo
+  if (!e.frecuencia) return 'Falta cada cuánto se cobra'
+  if (e.tasa == null) return 'Falta el interés'
+  if (f._repetidaDe && !f.noEsLaMisma) return 'Parece repetida'
+  return ROTULO.rojo
+}
+
+/* La clave del lote del migrador: una por negocio, en el teléfono. */
+function claveDelMigrador(organizationId) {
+  const claveLote = `migrador:lote:${organizationId || 'sin-negocio'}`
+  return claveLote
+}
+
+/* ══ DOS ENTRADAS: LAS FOTOS QUE SE SUBEN AQUÍ, O LO QUE YA LEYÓ UNA SOLICITUD ══
+ *
+ * Sin `filasIniciales` es el migrador de siempre (`/migrador` y el asistente).
+ * Con ellas es la carga que el dueño revisa y carga: las filas que leyó una
+ * `SolicitudCarga`, y cada préstamo creado se APUNTA en ella (`onCreada`) antes
+ * de salir del lote. Si no se apunta, el préstamo existe y la solicitud no lo
+ * sabe: al volver a entrar la fila saldría otra vez y se crearía dos veces.
+ *
+ *   filasIniciales  filas de `filasParaLote` (lib/carga-asesor/al-lote.js)
+ *   creadas         ids de fila ya creados: no salen nunca
+ *   baseInicial     lo de arriba, de «Cómo prestas por defecto» del negocio
+ *   claveLote       dónde se guarda el lote en el teléfono (`carga:<id>`)
+ *   enlaceArchivo   (n) => url del archivo original; tipoArchivo (n) => 'imagen'|'excel'|'pdf'
+ *   onCreada        (fila, { clienteId, prestamoId }) => Promise: apuntar el préstamo
+ *   onQuitadas      (ids) => quitó las últimas filas sin crear: se cierra la solicitud
+ *   sinSubir        sin los botones de galería y cámara
+ */
+export default function LoteFotos({
+  rutas = [], onListo, onSalir,
+  filasIniciales, creadas, baseInicial, claveLote: claveDeFuera,
+  enlaceArchivo, tipoArchivo, onCreada, onQuitadas, sinSubir = false,
+}) {
+  const solicitud = Array.isArray(filasIniciales)
   /* ⚠ DOS ENTRADAS, NO UNA. La única que había llevaba `capture="environment"`
      y el botón decía «Elegir las fotos»: en Android `capture` abre la CÁMARA
      directamente y, con él puesto, el navegador IGNORA el `multiple`. O sea que
@@ -184,7 +235,9 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
      El OCR no va a leer nunca en qué modo de interés trabaja el negocio ni a
      qué ruta va la cartera: no está escrito en la cartulina. Pedirlo por fila
      serían treinta veces la misma respuesta. */
-  const [base, setBase] = useState({ tasa: '20', frecuencia: 'diario', modoInteres: 'fijo', rutaId: '' })
+  const [base, setBase] = useState(baseInicial
+    ? { tasa: '', frecuencia: '', modoInteres: 'fijo', rutaId: '', ...baseInicial }
+    : { tasa: '20', frecuencia: 'diario', modoInteres: 'fijo', rutaId: '' })
 
   /* ══ EL LOTE SE QUEDA GUARDADO EN EL TELÉFONO (inducción del 18 nov 2026) ══
      «Estaba pasando su cartera tomando fotos desde el cuaderno, se salió y ya
@@ -196,23 +249,73 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
      cliente creado se anota en su fila antes del préstamo: si sale a mitad de
      «Crear», al retomar no se duplica nadie (ver `crear`). */
   const { organizationId } = useAuth()
-  const claveLote = `migrador:lote:${organizationId || 'sin-negocio'}`
+  const claveLote = (solicitud && claveDeFuera) || claveDelMigrador(organizationId)
   const [pendiente, setPendiente] = useState(null)   // { filas, base, guardadoEn }
   const loteLeido = useRef(false)
   useEffect(() => {
-    if (!organizationId) return
+    if (!organizationId || solicitud) return
     let vivo = true
     leerDeCache(claveLote)
       .then((g) => { if (vivo && g?.filas?.length) setPendiente(g) })
       .catch(() => {})
       .finally(() => { loteLeido.current = true })
     return () => { vivo = false }
-  }, [organizationId, claveLote])
+  }, [organizationId, claveLote, solicitud])
+  /* ── LA CARGA DEL DUEÑO: lo que ya leyó la solicitud ──
+     Arranca de lo guardado en el teléfono si lo hay (lo que el dueño corrigió no
+     se pisa) y se le suma lo del servidor que no esté ya. Sin «Seguir donde
+     iba»: esta carga es una sola y no hay otra que empezar.
+     ⚠ LO YA CREADO SALE AUNQUE ESTUVIERA GUARDADO. Si la pantalla se cerró
+     justo después de apuntar un préstamo, el teléfono aún tiene la fila; si no
+     se quitara aquí, se podría crear otra vez. Las quitadas también se guardan:
+     si no, al volver a entrar el servidor las devolvería. */
+  const [quitadas, setQuitadas] = useState([])
+  const [solicitudLista, setSolicitudLista] = useState(false)
+  const creadasAqui = useRef(new Set())   // ids creados en esta pantalla, antes de que `creadas` se entere
+  const servidor = useRef({ filas: filasIniciales, creadas })
+  servidor.current = { filas: filasIniciales, creadas }
+  const conocidas = (quit) => [...(servidor.current.creadas ?? []), ...creadasAqui.current, ...quit]
+  useEffect(() => {
+    if (!organizationId || !solicitud) return
+    let vivo = true
+    const arrancar = (g) => {
+      if (!vivo) return
+      const yaCreadas = new Set([...(servidor.current.creadas ?? []), ...creadasAqui.current])
+      const quit = Array.isArray(g?.quitadas) ? g.quitadas : []
+      const locales = (Array.isArray(g?.filas) ? g.filas : []).filter((f) => !yaCreadas.has(f._id))
+      loteLeido.current = true
+      setQuitadas(quit)
+      setFilas(unirFilasDelLote(locales, servidor.current.filas, conocidas(quit)))
+      if (g?.base) setBase(g.base)
+      setSolicitudLista(true)
+    }
+    leerDeCache(claveLote).then(arrancar).catch(() => arrancar(null))
+    return () => { vivo = false }
+  }, [organizationId, claveLote, solicitud])
+
+  /* Lo que llega del servidor DESPUÉS (la lectura sigue, o se creó algo en otro
+     teléfono): se suma lo nuevo y sale lo que ya se creó. Se compara por ids,
+     no por el arreglo: la página puede mandar uno nuevo en cada pintada. */
+  const llaveServidor = solicitud
+    ? `${(filasIniciales ?? []).map((f) => f._id).join('|')}#${(creadas ?? []).join('|')}`
+    : ''
+  useEffect(() => {
+    if (!solicitud || !solicitudLista) return
+    const yaCreadas = new Set(servidor.current.creadas ?? [])
+    setFilas((prev) => unirFilasDelLote(
+      prev.filter((f) => !yaCreadas.has(f._id)), servidor.current.filas, conocidas(quitadas)))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [llaveServidor, solicitudLista])
+
   useEffect(() => {
     // Mientras se ofrece el lote de antes no se pisa: la pantalla está vacía.
     if (!organizationId || !loteLeido.current || pendiente) return
+    if (solicitud) {
+      guardarEnCache(claveLote, filas.length || quitadas.length ? { filas, base, quitadas, guardadoEn: Date.now() } : null).catch(() => {})
+      return
+    }
     guardarEnCache(claveLote, filas.length ? { filas, base, guardadoEn: Date.now() } : null).catch(() => {})
-  }, [filas, base, organizationId, claveLote, pendiente])
+  }, [filas, base, organizationId, claveLote, pendiente, solicitud, quitadas])
   const seguirLote = () => { setFilas(pendiente.filas); if (pendiente.base) setBase(pendiente.base); setPendiente(null) }
   const descartarLote = () => { guardarEnCache(claveLote, null).catch(() => {}); setPendiente(null) }
 
@@ -332,7 +435,20 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
       const dudas = (f._dudas ?? []).filter((d) => d.campo !== campo)
       return { ...f, [campo]: valor, _dudas: dudas }
     }))
-  const quitar = (id) => setFilas((prev) => prev.filter((f) => f._id !== id))
+  const quitarDelLote = (id) => setFilas((prev) => prev.filter((f) => f._id !== id))
+  /* En la carga del dueño, lo quitado se apunta: la solicitud no se puede
+     cerrar mientras le queden filas sin crear ni quitar. Si se quitan las
+     últimas sin crear nada más, la página la cierra (`onQuitadas`). */
+  const quitar = (id) => {
+    if (!solicitud) { quitarDelLote(id); return }
+    // Mientras se crea no se quita nada: la fila podría estar creándose ahora mismo.
+    if (creando) return
+    const quedan = filas.filter((f) => f._id !== id)
+    const todas = quitadas.includes(id) ? quitadas : [...quitadas, id]
+    setQuitadas(todas)
+    setFilas(quedan)
+    if (!quedan.length) onQuitadas?.(todas)
+  }
 
   const conEstado = filas.map((f) => ({ ...f, _estado: estadoDe(f, base) }))
   const cuenta = {
@@ -341,9 +457,13 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
     rojo: conEstado.filter((f) => f._estado === 'rojo').length,
   }
   const visibles = soloRevisar ? conEstado.filter((f) => f._estado !== 'verde') : conEstado
-  const creables = conEstado.filter((f) => f._estado !== 'rojo')
+  /* ⚠ LA FILA CUYO PRÉSTAMO YA EXISTE ES CREABLE SIEMPRE: solo le falta
+     apuntarlo. Si se cambiara lo de arriba y se pusiera en rojo, se quedaría
+     sin apuntar para siempre. */
+  const creables = conEstado.filter((f) => f._prestamoId || f._estado !== 'rojo')
+  const rojasSinCrear = conEstado.filter((f) => f._estado === 'rojo' && !f._prestamoId).length
   // ¿$80 o $80.000? Mientras alguna fila no conteste, no se crea nada de la tanda.
-  const abonosPorResolver = creables.filter((f) => abonoSinResolver({ abono: f.yaAbonado, montoPrestado: efectivo(f, base).monto, confirmado: f.abonoConfirmado })).length
+  const abonosPorResolver = creables.filter((f) => !f._prestamoId && abonoSinResolver({ abono: f.yaAbonado, montoPrestado: efectivo(f, base).monto, confirmado: f.abonoConfirmado })).length
 
   /* ── CREAR ──
      De tres en tres. En serie, treinta clientes son sesenta viajes seguidos y
@@ -367,6 +487,11 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
            crear el cliente —409 «ya existe» con cédula, o un duplicado sin
            ella— y esa persona se quedaba sin préstamo y sin salida. */
         let clienteId = f._clienteId || null
+        /* ⚠ Y EL PRÉSTAMO QUE YA SE CREÓ, TAMPOCO. En la carga del dueño, si se
+           creó pero no se pudo apuntar en la solicitud, la fila se queda con
+           `_prestamoId`: el reintento SOLO lo apunta. Crearlo otra vez sería
+           el mismo préstamo dos veces, con su desembolso. */
+        let prestamoId = f._prestamoId || null
         try {
           /* ⚠ `modoInteres` sale de `efectivo`, que ya cae al de la tanda si la
              fila no tiene el suyo. Antes se cogía `base.modoInteres` a pelo, así
@@ -375,54 +500,59 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
           const { monto, tasa, frecuencia, plazoUnidades: plazo, modoInteres } = efectivo(f, base)
           const diasPlazo = plazo * (DIAS_POR_PERIODO[frecuencia] || 1)
 
-          if (!clienteId) {
-            const resC = await fetch('/api/clientes', {
+          if (!prestamoId) {
+            if (!clienteId) {
+              const resC = await fetch('/api/clientes', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  nombre: f.nombre.trim(),
+                  // Sin cédula el API la rechaza, y la cartulina casi nunca la
+                  // trae: 1.683 clientes de producción ya viven con este marcador.
+                  cedula: f.cedula?.trim() || `SIN-${Date.now()}${Math.floor(Math.random() * 1000)}`,
+                  telefono: f.telefono?.trim() || '',
+                  ...(f.direccion?.trim() && { direccion: f.direccion.trim() }),
+                  ...(base.rutaId && { rutaId: base.rutaId }),
+                }),
+              })
+              const dataC = await resC.json()
+              if (!resC.ok) throw new Error(dataC.error || 'no se pudo crear el cliente')
+              clienteId = dataC.id
+              // Anotado YA: si sale antes del préstamo, al retomar no lo crea otra vez.
+              const idCliente = clienteId
+              setFilas((prev) => prev.map((x) => (x._id === f._id ? { ...x, _clienteId: idCliente } : x)))
+            }
+
+            const resP = await fetch('/api/prestamos', {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                nombre: f.nombre.trim(),
-                // Sin cédula el API la rechaza, y la cartulina casi nunca la
-                // trae: 1.683 clientes de producción ya viven con este marcador.
-                cedula: f.cedula?.trim() || `SIN-${Date.now()}${Math.floor(Math.random() * 1000)}`,
-                telefono: f.telefono?.trim() || '',
-                ...(f.direccion?.trim() && { direccion: f.direccion.trim() }),
-                ...(base.rutaId && { rutaId: base.rutaId }),
+                clienteId,
+                montoPrestado: monto,
+                tasaInteres: tasa,
+                diasPlazo,
+                fechaInicio: inicioDeLaFila(f, base),
+                frecuencia,
+                // Ya estaba en la calle: no es plata de hoy (DETALLES-CARTERA #2).
+                yaEstabaEnLaCalle: true,
+                modoInteres,
+                /* El día del mes en que cobra, cuando el papel solo traía eso.
+                   `Prestamo.diaCobroMes` ya existe: sin pasarlo, el préstamo
+                   estrena un calendario que no es el que el prestamista cobra. */
+                ...(Number.isInteger(f.diaCobro) && { diaCobroMes: f.diaCobro }),
+                ...(Number(f.yaAbonado) > 0 && { yaAbonado: Number(f.yaAbonado) }),
               }),
             })
-            const dataC = await resC.json()
-            if (!resC.ok) throw new Error(dataC.error || 'no se pudo crear el cliente')
-            clienteId = dataC.id
-            // Anotado YA: si sale antes del préstamo, al retomar no lo crea otra vez.
-            const idCliente = clienteId
-            setFilas((prev) => prev.map((x) => (x._id === f._id ? { ...x, _clienteId: idCliente } : x)))
+            const dataP = await resP.json()
+            if (!resP.ok) throw new Error(`${dataP.error || 'no se pudo crear el préstamo'}. ${f.nombre?.trim() || 'El cliente'} ya quedó guardado: al tocar «Crear» otra vez se guarda solo su préstamo`)
+            prestamoId = dataP.id
           }
-
-          const resP = await fetch('/api/prestamos', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              clienteId,
-              montoPrestado: monto,
-              tasaInteres: tasa,
-              diasPlazo,
-              fechaInicio: inicioDeLaFila(f, base),
-              frecuencia,
-              // Ya estaba en la calle: no es plata de hoy (DETALLES-CARTERA #2).
-              yaEstabaEnLaCalle: true,
-              modoInteres,
-              /* El día del mes en que cobra, cuando el papel solo traía eso.
-                 `Prestamo.diaCobroMes` ya existe: sin pasarlo, el préstamo
-                 estrena un calendario que no es el que el prestamista cobra. */
-              ...(Number.isInteger(f.diaCobro) && { diaCobroMes: f.diaCobro }),
-              ...(Number(f.yaAbonado) > 0 && { yaAbonado: Number(f.yaAbonado) }),
-            }),
-          })
-          const dataP = await resP.json()
-          if (!resP.ok) throw new Error(`${dataP.error || 'no se pudo crear el préstamo'}. ${f.nombre?.trim() || 'El cliente'} ya quedó guardado: al tocar «Crear» otra vez se guarda solo su préstamo`)
 
           /* Se devuelve la ficha ENTERA, no solo los ids: la pantalla de
              `/migrador` pinta un resumen de cartera con el capital y el total a
              cobrar, y para eso necesita el monto, la tasa y el plazo de cada
              uno. Devolver solo el id la obligaría a volver a pedirlos. */
-          creados.push({
+          /* La ficha de un préstamo creado en un intento anterior es la que se
+             guardó entonces (`_ficha`), no la de la fila ahora. */
+          const ficha = f._ficha ?? {
             nombre: f.nombre.trim(),
             cedula: f.cedula?.trim() ?? '',
             telefono: f.telefono?.trim() ?? '',
@@ -432,14 +562,32 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
             modoInteres,
             fechaInicio: inicioDeLaFila(f, base),
             diasSinCobro: [],
-            clienteId, prestamoId: dataP.id,
-          })
+            clienteId, prestamoId,
+          }
+
+          /* ── ⚠ APUNTADO EN LA SOLICITUD ANTES DE SALIR DEL LOTE ──
+             El préstamo se anota primero en la fila (si se cierra la pantalla
+             ahora, el teléfono ya sabe que existe) y se espera a que la
+             solicitud lo apunte. Si no se pudo, la fila se queda con su
+             préstamo y el reintento solo lo apunta. */
+          if (onCreada) {
+            const idCliente = clienteId, idPrestamo = prestamoId
+            setFilas((prev) => prev.map((x) => (x._id === f._id ? { ...x, _clienteId: idCliente, _prestamoId: idPrestamo, _ficha: ficha } : x)))
+            try {
+              await onCreada(f, { clienteId, prestamoId })
+            } catch {
+              throw new Error(NO_APUNTADA)
+            }
+          }
+          creadasAqui.current.add(f._id)
+
+          creados.push(ficha)
           // Guardada: sale del lote en el acto (no al final de la tanda entera).
           setFilas((prev) => prev.filter((x) => x._id !== f._id))
         } catch (e) {
           // El motivo viaja PEGADO A LA FILA, no en una lista aparte: «1 no se
           // pudo crear» sin decir cuál ni por qué es un callejón sin salida.
-          fallos.push({ _id: f._id, nombre: f.nombre || '(sin nombre)', error: e.message, clienteId })
+          fallos.push({ _id: f._id, nombre: f.nombre || '(sin nombre)', error: e.message, clienteId, prestamoId })
         }
         hechos++
         setCreando({ hechos, total: creables.length, fallos: [...fallos] })
@@ -449,6 +597,8 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
     // ── Telemetría: qué trajo la IA y qué quedó guardado ──
     // No hay forma de saber si el OCR acierta sin fotos de prueba; esto lo
     // averigua solo, con los primeros usuarios reales.
+    // En la carga del dueño no hay qué medir: esas filas no vienen de la IA de fotos.
+    if (!solicitud) {
     fetch('/api/herramientas/precision-cartulina', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -464,6 +614,7 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
         })),
       }),
     }).catch(() => {})
+    }
 
     setCreando(null)
 
@@ -475,6 +626,28 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
        Las que se crearon se van —ya están guardadas, repetirlas sería
        duplicarlas— y las que fallaron se quedan con su motivo escrito, listas
        para corregir y volver a pulsar. */
+    /* ⚠ EN LA CARGA DEL DUEÑO NO SE TIRA NINGUNA FILA. En el migrador las rojas
+       «se quedan fuera»: no se crean y se van. Aquí cada fila de la solicitud
+       tiene que acabar creada o quitada A PROPÓSITO —si no, la solicitud no se
+       puede cerrar y lo que se tiró sin decir vuelve a salir—, así que las que
+       no se crearon se quedan en la lista. */
+    if (solicitud) {
+      const conFallo = new Map(fallos.map((x) => [x._id, x]))
+      setFilas((prev) => prev.map((f) => {
+        const x = conFallo.get(f._id)
+        if (!x) return f
+        return { ...f, _error: x.error, _clienteId: x.clienteId || f._clienteId || null, _prestamoId: x.prestamoId || f._prestamoId || null }
+      }))
+      if (fallos.length) {
+        setError(creados.length
+          ? `Se guardaron ${creados.length}. Estos ${fallos.length} no: revisa el motivo en cada uno.`
+          : `No se pudo guardar ninguno. El motivo está en cada fila.`)
+      }
+      const quedan = filas.filter((f) => !creadasAqui.current.has(f._id)).length
+      onListo?.({ creados, fallos, ...(quedan > 0 && { quedanFilas: true }), quitadas })
+      return
+    }
+
     if (fallos.length) {
       const conFallo = new Map(fallos.map((x) => [x._id, x]))
       setFilas((prev) => prev
@@ -494,6 +667,39 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
   // ══ VACÍO: todavía no ha subido nada ══
   // (Mientras se crea, las filas van saliendo: sin `!creando` la pantalla
   // volvía a «sube tus fotos» antes de terminar la última tanda.)
+  /* La carga del dueño, mientras se lee lo guardado en el teléfono: sin esto se
+     vería un instante «Tómale foto a todo el cuaderno». */
+  if (solicitud && !solicitudLista) {
+    return (
+      <div role="status" style={{ padding: '22px 18px', fontSize: 14, color: 'var(--cf-ink-3)', textAlign: 'center' }}>
+        Cargando lo que se leyó…
+      </div>
+    )
+  }
+
+  if (solicitud && !filas.length && !creando) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div role="status" style={{
+          padding: '22px 18px', borderRadius: 'var(--cf-r-card)', background: 'var(--cf-card)',
+          border: '1px solid var(--cf-border)', display: 'flex', flexDirection: 'column', gap: 6,
+        }}>
+          <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--cf-ink)' }}>No queda nada por cargar</span>
+          <span style={{ fontSize: 14, lineHeight: 1.45, color: 'var(--cf-ink-2)' }}>
+            Todas las filas de esta carga ya se crearon o se quitaron.
+          </span>
+        </div>
+        {error && (
+          <div style={{
+            padding: '12px 14px', borderRadius: 12, fontSize: 13, lineHeight: 1.4,
+            background: 'var(--cf-red-pill-bg)', border: '1px solid var(--cf-red-pill-border)',
+            color: 'var(--cf-red-dark)',
+          }}>{error}</div>
+        )}
+      </div>
+    )
+  }
+
   if (!filas.length && !creando) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -545,14 +751,16 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
           }}>{error}</div>
         )}
 
-        <BotonPrimario onClick={() => inputRef.current?.click()} disabled={subiendo}>
-          {subiendo ? 'Leyendo las fotos…' : 'Elegir las fotos'}
-        </BotonPrimario>
+        {!sinSubir && (
+          <BotonPrimario onClick={() => inputRef.current?.click()} disabled={subiendo}>
+            {subiendo ? 'Leyendo las fotos…' : 'Elegir las fotos'}
+          </BotonPrimario>
+        )}
 
         {/* La cámara sigue estando, pero de segunda: casi todo el mundo
             fotografía el cuaderno primero y sube después, y es la única vía que
             admite las 30 de una vez. */}
-        {!subiendo && (
+        {!subiendo && !sinSubir && (
           <button type="button" onClick={() => camaraRef.current?.click()} style={{
             background: 'none', border: 0, cursor: 'pointer', font: 'inherit',
             fontSize: 13, fontWeight: 700, color: 'var(--cf-ink-2)', padding: 8,
@@ -619,6 +827,9 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
                 border: '1px solid var(--cf-border-strong)', background: 'var(--cf-card)',
                 color: 'var(--cf-ink)', font: 'inherit', fontSize: 15, fontWeight: 700,
               }}>
+              {/* Sin frecuencia arriba (el negocio no la tiene), el selector lo dice:
+                  enseñar «Diario» con el valor vacío sería decir una y guardar otra. */}
+              {!base.frecuencia && <option value="">Elige cada cuánto</option>}
               {FRECUENCIAS.map((f) => <option key={f.key} value={f.key}>{f.label}</option>)}
             </select>
           </label>
@@ -672,15 +883,17 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
         <Chip activo={soloRevisar} onClick={() => setSoloRevisar(true)} conteo={cuenta.ambar + cuenta.rojo}>
           Hay que revisar
         </Chip>
-        <button type="button" onClick={() => inputRef.current?.click()} disabled={subiendo}
-          style={{
-            marginLeft: 'auto', height: 36, padding: '0 12px', cursor: 'pointer',
-            borderRadius: 'var(--cf-r-pill)', background: 'var(--cf-card)',
-            border: '1px solid var(--cf-border-strong)', font: 'inherit',
-            fontSize: 12, fontWeight: 700, color: 'var(--cf-ink-2)',
-          }}>
-          {subiendo ? 'Leyendo…' : '+ Más fotos'}
-        </button>
+        {!sinSubir && (
+          <button type="button" onClick={() => inputRef.current?.click()} disabled={subiendo}
+            style={{
+              marginLeft: 'auto', height: 36, padding: '0 12px', cursor: 'pointer',
+              borderRadius: 'var(--cf-r-pill)', background: 'var(--cf-card)',
+              border: '1px solid var(--cf-border-strong)', font: 'inherit',
+              fontSize: 12, fontWeight: 700, color: 'var(--cf-ink-2)',
+            }}>
+            {subiendo ? 'Leyendo…' : '+ Más fotos'}
+          </button>
+        )}
       </div>
 
       {/* ── ⚠ EL CUADRE CONTRA EL TOTAL DE LA HOJA ──────────────────────────
@@ -726,6 +939,7 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
         {visibles.map((f) => (
           <Fila
             key={f._id} f={f} base={base} rutas={rutas}
+            enlaceArchivo={enlaceArchivo} tipoArchivo={tipoArchivo}
             abierta={abierta === f._id}
             onAbrir={(caja) => {
               const abrir = abierta !== f._id
@@ -758,7 +972,12 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
         borderTop: '1px solid var(--cf-border)', zIndex: 20,
         display: 'flex', flexDirection: 'column', gap: 8,
       }}>
-        {cuenta.rojo > 0 && (
+        {solicitud && rojasSinCrear > 0 && (
+          <span style={{ fontSize: 12, color: 'var(--cf-ink-3)', textAlign: 'center' }}>
+            {rojasSinCrear === 1 ? 'Una fila en rojo no se crea' : `${rojasSinCrear} filas en rojo no se crean`}: ábrelas para ver qué les falta, o quítalas.
+          </span>
+        )}
+        {!solicitud && cuenta.rojo > 0 && (
           <span style={{ fontSize: 12, color: 'var(--cf-ink-3)', textAlign: 'center' }}>
             {cuenta.rojo === 1 ? 'Una fila' : `${cuenta.rojo} filas`} sin nombre o sin monto se {cuenta.rojo === 1 ? 'queda' : 'quedan'} fuera
           </span>
@@ -782,9 +1001,29 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
    Cerrada enseña lo que decide si hay que abrirla: el semáforo, el nombre y el
    monto. Abierta, todo lo demás. Con treinta filas, una tarjeta completa cada
    una es una pantalla de scroll infinito donde no se distingue cuál falta. */
-function Fila({ f, base, onAbrir, abierta, onEditar, onQuitar }) {
+/* De qué archivo salió la fila, dicho como lo diría el dueño. */
+function nombreDelArchivo(f, tipoArchivo) {
+  const n = f._archivo
+  if (tipoArchivo?.(n) === 'imagen') return `foto ${n}`
+  if (f._hoja) return `Excel, hoja ${f._hoja}`
+  return `archivo ${n}`
+}
+
+function Fila({ f, base, onAbrir, abierta, onEditar, onQuitar, enlaceArchivo, tipoArchivo }) {
   const refCaja = useRef(null)
   const color = COLOR[f._estado]
+  /* El préstamo de esta fila YA EXISTE, solo falta apuntarlo: no se edita ni se
+     quita. Cambiarle el monto aquí no cambiaría el préstamo creado, y quitarla
+     dejaría un préstamo de verdad sin apuntar en la solicitud. */
+  const yaCreada = !!f._prestamoId
+  const repetida = f._repetidaDe && !f.noEsLaMisma && !yaCreada
+  // Lo que se dice cuando está en rojo; la repetida lo explica en su renglón.
+  const motivo = f._estado === 'rojo' && !yaCreada ? motivoRojo(f, base) : null
+  const soloRepetida = motivo === 'Parece repetida'
+  const boton = {
+    height: 32, padding: '0 12px', cursor: 'pointer', font: 'inherit', fontSize: 12, fontWeight: 700,
+    borderRadius: 'var(--cf-r-pill)', background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+  }
   const campo = {
     width: '100%', height: 44, padding: '0 11px', borderRadius: 'var(--cf-r-pill)',
     border: '1px solid var(--cf-border-strong)', background: 'var(--cf-card)',
@@ -815,16 +1054,41 @@ function Fila({ f, base, onAbrir, abierta, onEditar, onQuitar }) {
             }} />
           {f._error && (
             <span style={{ fontSize: 11, lineHeight: 1.35, color: 'var(--cf-red-dark)', fontWeight: 700 }}>
-              No se guardó: {f._error}
+              {yaCreada ? f._error : `No se guardó: ${f._error}`}
             </span>
           )}
           <span className="cf-num" style={{ fontSize: 11, color: 'var(--cf-ink-3)' }}>
             {/* Del mismo resolvedor que el guardado: si la fila dice una cosa
                 y se guarda otra, nadie lo nota hasta que no cuadra la plata. */}
-            {f._estado === 'rojo' ? ROTULO.rojo
+            {motivo && !soloRepetida ? motivo
               : `${formatMoney(efectivo(f, base).monto ?? 0)} · ${efectivo(f, base).frecuencia} ${efectivo(f, base).tasa}%`}
             {f._foto ? ` · foto ${f._foto}` : ''}
+            {/* El original, en otra pestaña: el dueño mira la foto o la hoja de
+                donde salió y confirma la cifra sin salir de la lista. */}
+            {enlaceArchivo && f._archivo != null && (
+              <>
+                {' · '}
+                <a href={enlaceArchivo(f._archivo)} target="_blank" rel="noopener"
+                  style={{ color: 'var(--cf-ink-2)', fontWeight: 700, textDecoration: 'underline', textUnderlineOffset: 2 }}>
+                  {nombreDelArchivo(f, tipoArchivo)}
+                </a>
+              </>
+            )}
           </span>
+          {/* ── LA QUE PARECE REPETIDA ──
+              El lector la vio igual a otra fila. No se crea hasta que el dueño
+              decida: es la misma (se quita) o no lo es (sigue su camino). */}
+          {repetida && (
+            <span style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 2 }}>
+              <span style={{ fontSize: 12, lineHeight: 1.4, fontWeight: 700, color: 'var(--cf-red-dark)' }}>
+                Parece la misma que la fila {f._repetidaDe}
+              </span>
+              <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button type="button" onClick={onQuitar} style={{ ...boton, color: 'var(--cf-red-dark)' }}>Quitar</button>
+                <button type="button" onClick={() => onEditar('noEsLaMisma', true)} style={{ ...boton, color: 'var(--cf-ink)' }}>No es la misma</button>
+              </span>
+            </span>
+          )}
           {/* ⚠ SE DICE LO QUE SE CORRIGIÓ. En la cartulina de Lorena hay dos
               préstamos y el viejo está escrito arriba en grande: se toma el
               vivo, pero el prestamista tiene el papel en la mano y ve el otro
@@ -884,7 +1148,8 @@ function Fila({ f, base, onAbrir, abierta, onEditar, onQuitar }) {
             </span>
           ))}
         </div>
-        {f._estado !== 'verde' && <Pastilla tono={f._estado === 'rojo' ? 'mora' : 'atraso'}>{ROTULO[f._estado]}</Pastilla>}
+        {f._estado !== 'verde' && !yaCreada && <Pastilla tono={f._estado === 'rojo' ? 'mora' : 'atraso'}>{soloRepetida ? 'Repetida' : ROTULO[f._estado]}</Pastilla>}
+        {!yaCreada && (
         <button type="button" onClick={() => onAbrir(refCaja.current)} aria-label={abierta ? 'Cerrar' : 'Abrir'}
           style={{ background: 'none', border: 0, cursor: 'pointer', padding: 4, flex: 'none' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-3)"
@@ -893,9 +1158,10 @@ function Fila({ f, base, onAbrir, abierta, onEditar, onQuitar }) {
             <path d="M6 9l6 6 6-6" />
           </svg>
         </button>
+        )}
       </div>
 
-      {abierta && (
+      {abierta && !yaCreada && (
         <div style={{
           padding: '4px 13px 13px', display: 'flex', flexDirection: 'column', gap: 10,
           borderTop: '1px solid var(--cf-border-soft)',
@@ -929,6 +1195,7 @@ function Fila({ f, base, onAbrir, abierta, onEditar, onQuitar }) {
             <EtiquetaCampo>Cada cuánto</EtiquetaCampo>
             <select value={f.frecuencia || base.frecuencia}
               onChange={(e) => onEditar('frecuencia', e.target.value)} style={campo}>
+              {!(f.frecuencia || base.frecuencia) && <option value="">Elige cada cuánto</option>}
               {FRECUENCIAS.map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}
             </select>
           </label>

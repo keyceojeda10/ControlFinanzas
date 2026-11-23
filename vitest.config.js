@@ -27,6 +27,12 @@ export default defineConfig({
     // 20s y sale igual. Lo que evita es rojo falso.
     testTimeout: 20_000,
   },
+  /* JSX EN LAS PRUEBAS. `tsconfig.json` dice `jsx: preserve` (lo pide Next), y
+     vite lo hereda: un `.jsx` importado desde una prueba no se transformaba y
+     reventaba al parsearlo. Por eso todas las pruebas de componentes leían el
+     fuente como texto. Con esto se puede importar una función pura que vive
+     dentro de un componente (`estadoDe` de `LoteFotos`) y probarla de verdad. */
+  oxc: { jsx: { runtime: 'automatic' } },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, '.'),
