@@ -263,6 +263,7 @@ export default function RevisionDeLaCarga({ solicitud, revision, rutas = [], onC
           creadas={revision.creadas ?? []}
           baseInicial={revision.base}
           claveLote={`carga:${solicitud.id}`}
+          solicitudId={solicitud.id}
           enlaceArchivo={enlaceArchivo}
           tipoArchivo={tipoArchivo}
           sinSubir

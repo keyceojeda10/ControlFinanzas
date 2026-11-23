@@ -41,6 +41,7 @@ import { perdidosDelCliente, textoClienteEnPerdidos } from '@/lib/dinero/cliente
 import { chocanEnLaRuta } from '@/lib/clientes/misma-persona'
 import { situacionParaPrestar, textoNecesitaPermiso } from '@/lib/dinero/permiso-prestamo'
 import { jsonComprimido } from '@/lib/http/json-comprimido'
+import { prestamoYaCreado } from '@/lib/prestamos/ya-creado'
 
 // ─── GET /api/prestamos ─────────────────────────────────────────
 export async function GET(request) {
@@ -696,6 +697,20 @@ export async function POST(request) {
     where: { id: clienteId, organizationId },
   })
   if (!cliente) return Response.json({ error: 'Cliente no encontrado' }, { status: 404 })
+
+  /* ⚠ EL REINTENTO DE LA CARGA DEL DUEÑO NO CREA EL MISMO PRÉSTAMO DOS VECES
+     (piloto del 22 nov 2026). Solo con `idempotente: true`, y ANTES de escribir
+     nada: ni capital, ni desembolso, ni abonos previos, ni la ruta del cliente.
+     Ver lib/prestamos/ya-creado.js. */
+  if (body.idempotente === true) {
+    const yaCreado = await prestamoYaCreado(prisma, {
+      organizationId, clienteId, montoPrestado,
+      fechaInicio: new Date(`${fechaInicio}T05:00:00.000Z`), frecuencia: freq,
+    })
+    if (yaCreado) {
+      return Response.json({ ...yaCreado, pendienteAprobacion: yaCreado.estado === 'pendiente_aprobacion', yaExistia: true }, { status: 200 })
+    }
+  }
 
   /* ⚠ CORREGIR UN PRÉSTAMO DE OTRO DÍA EN VEZ DE BORRARLO Y CREARLO (15 nov
      2026). El viejo se borra sin tocar sus asientos y este nace sin mover la

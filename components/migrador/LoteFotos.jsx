@@ -50,7 +50,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { formatMoney } from '@/lib/i18n'
 import { montoConTasa, inicioPorLoAbonado, choqueDeCuota } from '@/lib/cartulina-datos'
 import { MODOS_EN_ORDEN, etiquetaModo } from '@/lib/dinero/modos'
-import { unirFilasDelLote } from '@/lib/carga-asesor/al-lote'
+import { unirFilasDelLote, marcadorDeFila } from '@/lib/carga-asesor/al-lote'
 
 const FRECUENCIAS = [
   { key: 'diario', label: 'Diario' },
@@ -231,12 +231,15 @@ function claveDelMigrador(organizationId) {
  *                   archivos, pide ayuda): no se crea ni se quita nada nuevo
  *   onCreando       (bool) => avisa cuándo empieza y acaba «Crear», para que la
  *                   página no desmonte el lote ni cambie la carga a mitad
+ *   solicitudId     el id de la `SolicitudCarga`: con él, reintentar «Crear»
+ *                   tras un corte de red no repite clientes ni préstamos
+ *                   (`marcadorDeFila`, `idempotente`; ver `crear`)
  */
 export default function LoteFotos({
   rutas = [], onListo, onSalir,
   filasIniciales, creadas, baseInicial, claveLote: claveDeFuera,
   enlaceArchivo, tipoArchivo, onCreada, onQuitadas, sinSubir = false,
-  bloqueada = false, onCreando,
+  bloqueada = false, onCreando, solicitudId,
 }) {
   const solicitud = Array.isArray(filasIniciales)
   /* ⚠ DOS ENTRADAS, NO UNA. La única que había llevaba `capture="environment"`
@@ -557,15 +560,28 @@ export default function LoteFotos({
                   nombre: f.nombre.trim(),
                   // Sin cédula el API la rechaza, y la cartulina casi nunca la
                   // trae: 1.683 clientes de producción ya viven con este marcador.
-                  cedula: f.cedula?.trim() || `SIN-${Date.now()}${Math.floor(Math.random() * 1000)}`,
+                  /* ⚠ EN LA CARGA DEL DUEÑO, EL MISMO EN CADA INTENTO (piloto
+                     del 22 nov 2026). Con el aleatorio, el cliente que entró
+                     justo antes de cortarse la red se creaba otra vez al
+                     reintentar. `marcadorDeFila` sale de la solicitud y la
+                     fila: `/api/clientes` lo reconoce y contesta 409. */
+                  cedula: f.cedula?.trim() || (solicitud && marcadorDeFila(solicitudId, f._id)) || `SIN-${Date.now()}${Math.floor(Math.random() * 1000)}`,
                   telefono: f.telefono?.trim() || '',
                   ...(f.direccion?.trim() && { direccion: f.direccion.trim() }),
                   ...(base.rutaId && { rutaId: base.rutaId }),
                 }),
               })
               const dataC = await resC.json()
-              if (!resC.ok) throw new Error(dataC.error || 'no se pudo crear el cliente')
-              clienteId = dataC.id
+              /* En la carga del dueño, «ya existe» es el cliente que creó el
+                 intento anterior (o el que ya tenía esa cédula en el negocio):
+                 se sigue con él. Si está bloqueado en otra ruta, no. */
+              if (solicitud && resC.status === 409 && dataC.existingId && !dataC.bloqueada) {
+                clienteId = dataC.existingId
+              } else if (!resC.ok) {
+                throw new Error(dataC.error || 'no se pudo crear el cliente')
+              } else {
+                clienteId = dataC.id
+              }
               // Anotado YA: si sale antes del préstamo, al retomar no lo crea otra vez.
               const idCliente = clienteId
               setFilas((prev) => prev.map((x) => (x._id === f._id ? { ...x, _clienteId: idCliente } : x)))
@@ -588,6 +604,9 @@ export default function LoteFotos({
                    estrena un calendario que no es el que el prestamista cobra. */
                 ...(Number.isInteger(f.diaCobro) && { diaCobroMes: f.diaCobro }),
                 ...(Number(f.yaAbonado) > 0 && { yaAbonado: Number(f.yaAbonado) }),
+                /* Si el navegador cortó el intento anterior y el servidor sí lo
+                   creó, devuelve ese mismo (`yaExistia`) en vez de otro. */
+                ...(solicitud && { idempotente: true }),
               }),
             })
             const dataP = await resP.json()

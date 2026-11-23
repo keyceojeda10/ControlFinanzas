@@ -32,6 +32,7 @@ import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
 import { jsonComprimido } from '@/lib/http/json-comprimido'
 import { planSiguiente } from '@/lib/cupo-clientes'
 import { PLANES_CONFIG } from '@/lib/planes'
+import { PREFIJO_FILA } from '@/lib/carga-asesor/al-lote'
 
 // ─── GET /api/clientes ──────────────────────────────────────────
 export async function GET(request) {
@@ -760,6 +761,21 @@ export async function POST(request) {
         existingId: laFicha?.id ?? null, bloqueada: true,
       }, { status: 409 })
     } else yaEnOtraRuta = laFicha
+  }
+  /* ⚠ EL MARCADOR DE UNA FILA DE LA CARGA DEL DUEÑO SÍ SE RECONOCE (piloto del
+     22 nov 2026). Los demás `SIN-` son únicos por construcción y se crean
+     siempre; `SIN-C_…` lo arma `marcadorDeFila` (lib/carga-asesor/al-lote.js)
+     con la solicitud y la fila, y se repite solo cuando esa fila se reintenta
+     porque la red se cortó después de crear el cliente. Se busca en todo el
+     negocio, no por ruta: si el dueño cambió la ruta entre un intento y otro,
+     sigue siendo el mismo cliente. Si está eliminado se reactiva, como
+     cualquier cédula. */
+  if (cedula.trim().startsWith(PREFIJO_FILA)) {
+    const deLaFila = await prisma.cliente.findMany({
+      where: { organizationId, cedula: cedula.trim() },
+      select: { id: true, estado: true },
+    })
+    existe = deLaFila.find((f) => f.estado !== 'eliminado') ?? deLaFila[0] ?? null
   }
   /* ⚠ UN CLIENTE ELIMINADO CON ESA CÉDULA SE REACTIVA, pero DESPUÉS de validar
      la ruta y con los mismos datos que un cliente nuevo. Antes se reactivaba
