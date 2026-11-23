@@ -59,6 +59,9 @@ export default function CargarCartera() {
   const [error, setError] = useState('')
   const [rechazados, setRechazados] = useState([])
   const [agregar, setAgregar] = useState(false)   // en la revisión, la subida va plegada
+  /* De que empieza a subir hasta que llega el refresco: el servidor ya pasó la
+     carga a «recibida» y el lote no puede crear (`RevisionDeLaCarga subiendo`). */
+  const [enviando, setEnviando] = useState(false)
   const [rutas, setRutas] = useState([])
   const input = useRef(null)
 
@@ -66,7 +69,11 @@ export default function CargarCartera() {
      suelto de red; el siguiente lo vuelve a intentar. */
   const cargar = useCallback(({ callado = false } = {}) => fetch('/api/carga-asesor')
     .then((r) => (r.ok ? r.json() : Promise.reject(new Error('No pudimos ver tu carga'))))
-    .then((j) => setEstado({ cargando: false, solicitud: j.solicitud, revision: j.revision ?? null, max: j.maxArchivos ?? 40 }))
+    .then((j) => {
+      setEstado({ cargando: false, solicitud: j.solicitud, revision: j.revision ?? null, max: j.maxArchivos ?? 40 })
+      // Un error de recarga anterior ya no vale (el de subida va con `callado`).
+      if (!callado) setError('')
+    })
     .catch((e) => { setEstado((s) => ({ ...s, cargando: false })); if (!callado) setError(e.message) }), [])
 
   useEffect(() => { cargar() }, [cargar])
@@ -92,6 +99,11 @@ export default function CargarCartera() {
 
   const mandar = async () => {
     if (!elegidos.length) return
+    setEnviando(true)
+    try { await subirTodo() } finally { setEnviando(false) }
+  }
+
+  const subirTodo = async () => {
     setError('')
     setRechazados([])
     setSubiendo({ hechos: 0, total: elegidos.length })
@@ -111,7 +123,7 @@ export default function CargarCartera() {
         setError(`${e.message}. Lo que ya subió quedó guardado; intenta de nuevo con el resto.`)
         setElegidos((prev) => prev.slice(i))
         setSubiendo(null)
-        if (ultima) cargar({ callado: true })
+        if (ultima) await cargar({ callado: true })
         return
       }
       setSubiendo({ hechos: Math.min(i + POR_TANDA, elegidos.length), total: elegidos.length })
@@ -122,7 +134,7 @@ export default function CargarCartera() {
     setSubiendo(null)
     setAgregar(false)
     // El GET trae también la revisión (el POST solo dice la solicitud).
-    cargar()
+    await cargar()
   }
 
   if (rol && rol !== 'owner') {
@@ -142,6 +154,8 @@ export default function CargarCartera() {
   const quedan = Math.max(0, estado.max - (abierta ? sol.archivos.length : 0))
   // Mientras Carlos importa, el servidor no admite archivos nuevos.
   const sePuedeSubir = !cargada && !importando
+  // El error de la página vive dentro de `subida`; si la subida no se ve, va suelto.
+  const subidaVisible = sePuedeSubir && (!enRevision || agregar)
 
   const listaDeArchivos = abierta && (
     <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -272,11 +286,16 @@ export default function CargarCartera() {
         </section>
       )}
 
+      {error && !subidaVisible && (
+        <span role="alert" style={{ fontSize: 13, color: 'var(--cf-red-dark)', lineHeight: 1.45 }}>{error}</span>
+      )}
+
       {enRevision && (
-        <RevisionDeLaCarga solicitud={sol} revision={estado.revision} rutas={rutas} onCambio={cargar}>
+        <RevisionDeLaCarga solicitud={sol} revision={estado.revision} rutas={rutas} onCambio={cargar} subiendo={enviando}>
           {agregar ? subida : (
             <button type="button" onClick={() => setAgregar(true)} style={{
-              background: 'none', border: 0, padding: 8, cursor: 'pointer', font: 'inherit',
+              minHeight: 44, padding: '0 8px', display: 'inline-flex', alignItems: 'center',
+              background: 'none', border: 0, cursor: 'pointer', font: 'inherit',
               fontSize: 13, fontWeight: 700, color: 'var(--cf-gold-dark)', alignSelf: 'flex-start',
             }}>¿Te faltó algo? Agregar más archivos</button>
           )}

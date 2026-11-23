@@ -54,17 +54,26 @@ function IconoAyuda() {
   )
 }
 
-export default function RevisionDeLaCarga({ solicitud, revision, rutas = [], onCambio, children }) {
+export default function RevisionDeLaCarga({ solicitud, revision, rutas = [], onCambio, subiendo = false, children }) {
   const [error, setError] = useState('')
   const [terminando, setTerminando] = useState(false)
   const [ayudaAbierta, setAyudaAbierta] = useState(false)
   const [nota, setNota] = useState('')
   const [pidiendo, setPidiendo] = useState(false)
+  const [ayudaEnviada, setAyudaEnviada] = useState(false)
+  const [creandoLote, setCreandoLote] = useState(false)
 
   /* Solo en `en_revision` se crea: en «ayuda» la tiene Carlos y mientras se lee
      las filas cambian (`bloqueada`). Y nunca sin las filas: sin ellas `LoteFotos`
      arrancaría como el migrador, con «diario» y «20 %». */
-  const puedeCargar = !revision?.bloqueada && solicitud?.estado === 'en_revision' && Array.isArray(revision?.filas)
+  const sePuedeMontar = !revision?.bloqueada && solicitud?.estado === 'en_revision' && Array.isArray(revision?.filas)
+  /* ⚠ EL SERVIDOR SE BLOQUEA ANTES DE QUE LA PANTALLA SE ENTERE. Al subir más
+     archivos o pedir ayuda, la carga pasa a «recibida» o «ayuda» al instante,
+     pero el lote sigue montado hasta el refresco: en esa ventana «Crear» crearía
+     préstamos que chocan con lo que se relee o con lo que importe Carlos. El
+     lote se queda a la vista, pero sin crear ni quitar (`bloqueada`). */
+  const congelada = subiendo || pidiendo || ayudaEnviada
+  const puedeCargar = sePuedeMontar && !congelada
   const v = veredictoDe(revision)
   const problemas = Array.isArray(revision?.problemas) ? revision.problemas : []
   const creadas = Array.isArray(revision?.creadas) ? revision.creadas : []
@@ -125,6 +134,7 @@ export default function RevisionDeLaCarga({ solicitud, revision, rutas = [], onC
       })
       const j = await r.json().catch(() => ({}))
       if (!r.ok) { setError(j.error || 'No pudimos pedir la ayuda. Intenta de nuevo.'); return }
+      setAyudaEnviada(true)
       await onCambio?.()
     } catch {
       setError('No se pudo conectar. Revisa tu internet e intenta de nuevo.')
@@ -148,7 +158,7 @@ export default function RevisionDeLaCarga({ solicitud, revision, rutas = [], onC
         </Tarjeta>
       )}
 
-      {v.leidos === 0 && puedeCargar && creadas.length === 0 && (
+      {v.leidos === 0 && sePuedeMontar && creadas.length === 0 && (
         <Tarjeta>
           <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--cf-ink)', lineHeight: 1.4 }}>
             No encontramos clientes para cargar
@@ -159,13 +169,13 @@ export default function RevisionDeLaCarga({ solicitud, revision, rutas = [], onC
         </Tarjeta>
       )}
 
-      {v.leidos === 0 && puedeCargar && creadas.length > 0 && (
+      {v.leidos === 0 && sePuedeMontar && creadas.length > 0 && (
         <Tarjeta>
           <span className="cf-num" style={{ fontSize: 15, fontWeight: 600, color: 'var(--cf-ink)', lineHeight: 1.4 }}>
             Ya creaste {creadas.length} {creadas.length === 1 ? 'préstamo' : 'préstamos'} de esta carga
           </span>
           <span style={{ fontSize: 13, color: 'var(--cf-ink-2)', lineHeight: 1.5 }}>No queda nada por revisar.</span>
-          <BotonPrimario onClick={() => terminar([])} disabled={terminando}>
+          <BotonPrimario onClick={() => terminar([])} disabled={terminando || !puedeCargar}>
             {terminando ? 'Terminando…' : 'Terminar la carga'}
           </BotonPrimario>
         </Tarjeta>
@@ -211,10 +221,10 @@ export default function RevisionDeLaCarga({ solicitud, revision, rutas = [], onC
         </Tarjeta>
       )}
 
-      {solicitud?.estado === 'en_revision' && (
+      {solicitud?.estado === 'en_revision' && !ayudaEnviada && (
         <Tarjeta>
           {!ayudaAbierta ? (
-            <BotonSecundario onClick={() => setAyudaAbierta(true)}>
+            <BotonSecundario onClick={() => setAyudaAbierta(true)} disabled={creandoLote}>
               <IconoAyuda /><span>Necesito ayuda</span>
             </BotonSecundario>
           ) : (
@@ -228,7 +238,7 @@ export default function RevisionDeLaCarga({ solicitud, revision, rutas = [], onC
                   placeholder="Por ejemplo: no sé qué poner en el interés"
                   style={{ borderRadius: 14, border: '1px solid var(--cf-border)', background: 'var(--cf-surface)', color: 'var(--cf-ink)', padding: 12, font: 'inherit', fontSize: 16, resize: 'vertical' }} />
               </label>
-              <BotonSecundario onClick={pedirAyuda} disabled={pidiendo}>
+              <BotonSecundario onClick={pedirAyuda} disabled={pidiendo || creandoLote}>
                 {pidiendo ? 'Enviando…' : 'Pedir ayuda'}
               </BotonSecundario>
               <BotonSecundario cancelar onClick={() => setAyudaAbierta(false)} disabled={pidiendo}>Cancelar</BotonSecundario>
@@ -239,9 +249,14 @@ export default function RevisionDeLaCarga({ solicitud, revision, rutas = [], onC
 
       {error && <span role="alert" style={{ fontSize: 13, color: 'var(--cf-red-dark)', lineHeight: 1.45 }}>{error}</span>}
 
-      {children}
+      {ayudaEnviada && (
+        <Aviso tono="neutro">Pediste ayuda. Carlos la está revisando y te avisamos cuando esté.</Aviso>
+      )}
 
-      {puedeCargar && revision.filas.length > 0 && (
+      {/* Mientras el lote crea no se sube nada: la carga cambiaría a mitad. */}
+      {!creandoLote && children}
+
+      {sePuedeMontar && revision.filas.length > 0 && (
         <LoteFotos
           rutas={rutas}
           filasIniciales={revision.filas}
@@ -254,6 +269,8 @@ export default function RevisionDeLaCarga({ solicitud, revision, rutas = [], onC
           onCreada={apuntar}
           onQuitadas={terminar}
           onListo={listo}
+          bloqueada={!puedeCargar}
+          onCreando={setCreandoLote}
         />
       )}
     </div>

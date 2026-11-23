@@ -227,11 +227,16 @@ function claveDelMigrador(organizationId) {
  *   onCreada        (fila, { clienteId, prestamoId }) => Promise: apuntar el préstamo
  *   onQuitadas      (ids) => quitó las últimas filas sin crear: se cierra la solicitud
  *   sinSubir        sin los botones de galería y cámara
+ *   bloqueada       la página sabe que el servidor ya no deja crear (sube más
+ *                   archivos, pide ayuda): no se crea ni se quita nada nuevo
+ *   onCreando       (bool) => avisa cuándo empieza y acaba «Crear», para que la
+ *                   página no desmonte el lote ni cambie la carga a mitad
  */
 export default function LoteFotos({
   rutas = [], onListo, onSalir,
   filasIniciales, creadas, baseInicial, claveLote: claveDeFuera,
   enlaceArchivo, tipoArchivo, onCreada, onQuitadas, sinSubir = false,
+  bloqueada = false, onCreando,
 }) {
   const solicitud = Array.isArray(filasIniciales)
   /* ⚠ DOS ENTRADAS, NO UNA. La única que había llevaba `capture="environment"`
@@ -250,6 +255,8 @@ export default function LoteFotos({
   const [soloRevisar, setSoloRevisar] = useState(false)
   const [abierta, setAbierta] = useState(null)
   const [creando, setCreando] = useState(null)  // { hechos, total, fallos: [] }
+  const enCurso = !!creando
+  useEffect(() => { onCreando?.(enCurso) }, [enCurso, onCreando])
 
   /* ── LO QUE SE PONE UNA VEZ ──
      El OCR no va a leer nunca en qué modo de interés trabaja el negocio ni a
@@ -464,7 +471,8 @@ export default function LoteFotos({
   const quitar = (id) => {
     if (!solicitud) { quitarDelLote(id); return }
     // Mientras se crea no se quita nada: la fila podría estar creándose ahora mismo.
-    if (creando) return
+    // Ni con la carga bloqueada: quitar la última la cerraría (`onQuitadas`).
+    if (creando || bloqueada) return
     /* Con el estado de verdad (`prev`), no con el de la última pintada: dos
        toques seguidos sobre filas distintas verían la lista vieja. El aviso a
        la página va en un efecto, no dentro del `setFilas` (React puede llamar
@@ -503,7 +511,7 @@ export default function LoteFotos({
      peticiones de golpe. Y va contando: quien sube su cuaderno entero necesita
      ver que avanza. */
   const crear = async () => {
-    if (abonosPorResolver) return
+    if (abonosPorResolver || bloqueada) return
     /* ⚠ SIN CÓMO APUNTAR, NO SE CREA NADA. En la carga del dueño, un préstamo
        creado y no apuntado en la solicitud vuelve a salir al entrar otra vez y
        se crearía dos veces. Es un fallo de la página que monta esto, no del
@@ -1028,7 +1036,7 @@ export default function LoteFotos({
             {abonosPorResolver === 1 ? 'Una fila tiene' : `${abonosPorResolver} filas tienen`} un abono por revisar: ábrelas en «¿Ya te ha abonado algo?».
           </span>
         )}
-        <BotonPrimario onClick={crear} disabled={!creables.length || !!creando || abonosPorResolver > 0}>
+        <BotonPrimario onClick={crear} disabled={!creables.length || !!creando || abonosPorResolver > 0 || bloqueada}>
           {creando
             ? `Creando… ${creando.hechos} de ${creando.total}`
             : `Crear ${creables.length} cliente${creables.length === 1 ? '' : 's'}`}
