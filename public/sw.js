@@ -1,5 +1,5 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v1322'
+const CACHE_NAME   = 'cf-v1323'
 // API_CACHE solo sube cuando cambian las CIFRAS que devuelve el servidor.
 //
 // Este release SÍ las cambia, en `/api/cobros-hoy` (Adenda 5):
@@ -323,7 +323,7 @@ const DYNAMIC_ROUTE_FALLBACKS = [
 ]
 
 /**
- * ── MODO RÁPIDO (apagado para todo el mundo) ──────────────────────────────
+ * ── MODO RÁPIDO (encendido para todos; lo apaga el superadmin desde su panel) ──
  *
  * Sirve el ARMAZÓN de la pantalla desde el teléfono y lo refresca por detrás,
  * en vez de esperar el viaje a Boston (~90 ms de ida y vuelta, más el resto).
@@ -333,10 +333,16 @@ const DYNAMIC_ROUTE_FALLBACKS = [
  * página guardada no lleva plata dentro: lleva el marco, y las cifras siguen
  * yendo a la red como siempre. Ni una sola ruta de `/api/` cambia aquí.
  *
- * Está detrás de un interruptor porque el dueño no puede juzgarlo en el espejo
- * —sus palabras: «el espejo te sirve es a ti»— y necesita sentirlo en la app de
- * verdad, con su cartera, sin exponer a nadie más. Se enciende por dispositivo
- * con `?rapido=1` y se apaga con `?rapido=0`.
+ * QUIÉN LO ENCIENDE (23 nov 2026). Este worker NO decide: guarda lo que la app
+ * le manda con el mensaje `MODO_RAPIDO` y, si nunca le han dicho nada, se
+ * comporta como siempre (espera a la red). Quien se lo dice es
+ * `OfflineProvider`, que pregunta a `GET /api/ajustes/modo-rapido` al abrir y al
+ * volver a la pestaña: nace ENCENDIDO para todos y el superadmin lo apaga para
+ * todos con el interruptor «Modo rápido para todos» de /admin/inicio, sin
+ * desplegar. Cada teléfono puede mandar sobre el panel con `?rapido=0` (apagado
+ * solo ahí) o `?rapido=1` (encendido solo ahí): es la salida de soporte cuando a
+ * una persona le va raro. Quién manda y qué pasa si la petición falla:
+ * `decidirModoRapido`, en lib/modo-rapido.js.
  */
 const AJUSTES_CACHE = 'cf-ajustes'
 const CLAVE_MODO_RAPIDO = '/__modo-rapido'

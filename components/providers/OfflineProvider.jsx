@@ -6,6 +6,8 @@ import { OfflineContext, useOffline } from '@/components/providers/offline-conte
 import { iniciarAutoSync, obtenerPagosPendientes, obtenerPagosFallidos, eliminarPagoFallido, sincronizarPagos, sincronizarOrdenes, sincronizarTodo, obtenerSyncMeta, sincronizarCreaciones, obtenerClientesPendientes, obtenerPrestamosPendientes, obtenerClientesFallidos, obtenerPrestamosFallidos, obtenerMutacionesPendientes, obtenerMutacionesFallidas, obtenerMutacionesConflicto, sincronizarMutaciones, eliminarClienteFallido, eliminarPrestamoFallido, eliminarMutacion, reintentarMutacion, reencolarPagoFallido } from '@/lib/offline'
 import { ultimoEstadoConexion, hayInternetReal, invalidarCacheConexion } from '@/lib/connectivity'
 import { setMutationCallback } from '@/lib/fetch-timeout'
+import { useSession } from 'next-auth/react'
+import { decidirModoRapido, CADA_CUANTO_SE_PREGUNTA_MS, CLAVE_LOCAL_MODO_RAPIDO } from '@/lib/modo-rapido'
 
 // El contexto vive aparte para no cerrar el ciclo con `SyncDrawer`, que tambien
 // lo necesita. Se reexporta `useOffline` porque media app lo importa desde aqui
@@ -356,37 +358,6 @@ export default function OfflineProvider({ children }) {
 
     navigator.serviceWorker.register('/sw.js').catch(() => {})
 
-    /* ── EL INTERRUPTOR DEL MODO RÁPIDO ──────────────────────────────────────
-     *
-     * Con él encendido, el ARMAZÓN de cada pantalla sale del teléfono y se
-     * refresca por detrás, en vez de esperar el viaje a Boston. Las cifras no
-     * cambian de camino: cada sección las sigue pidiendo al API, y el API sigue
-     * yendo a la red primero. Un saldo guardado es un saldo que miente.
-     *
-     * Va por DISPOSITIVO y no por cuenta a propósito. El dueño no puede juzgar
-     * esto en el espejo —«el espejo te sirve es a ti»— y necesita sentirlo en la
-     * app de verdad, con su cartera, sin que nadie más lo tenga encima hasta que
-     * él diga. Se enciende una vez con `?rapido=1` y queda; se apaga con
-     * `?rapido=0`. Quien no lo active no nota absolutamente nada.
-     */
-    try {
-      const parametro = new URLSearchParams(window.location.search).get('rapido')
-      if (parametro === '1' || parametro === '0') {
-        localStorage.setItem('cf-modo-rapido', parametro)
-      }
-      const activo = localStorage.getItem('cf-modo-rapido') === '1'
-      // El service worker que ya manda, o el que acabe de tomar el mando: sin
-      // esperar a `ready` el mensaje se pierde en la primera carga.
-      navigator.serviceWorker.ready
-        .then((reg) => (reg.active ?? navigator.serviceWorker.controller)?.postMessage({
-          type: 'MODO_RAPIDO', activo,
-        }))
-        .catch(() => {})
-    } catch {
-      // localStorage puede estar bloqueado (modo privado). Sin interruptor, la
-      // app se comporta como siempre, que es justo lo que debe pasar.
-    }
-
     // ── Y QUE LA APP SE ENTERE DE QUE HAY VERSION NUEVA ──
     //
     // `sw.js` ya hace `skipWaiting()` y `clients.claim()`, asi que el service
@@ -436,6 +407,71 @@ export default function OfflineProvider({ children }) {
       navigator.serviceWorker.removeEventListener('controllerchange', alCambiar)
     }
   }, [programarRecarga])
+
+  /* ── EL MODO RÁPIDO ──────────────────────────────────────────────────────────
+   *
+   * Con él encendido, el ARMAZÓN de cada pantalla sale del teléfono y se
+   * refresca por detrás, en vez de esperar el viaje a Boston. Las cifras no
+   * cambian de camino: cada sección las sigue pidiendo al API, y el API sigue
+   * yendo a la red primero. Un saldo guardado es un saldo que miente.
+   *
+   * Desde el 23 nov 2026 NACE ENCENDIDO PARA TODOS y lo mueve el superadmin
+   * desde su panel (`AjusteGlobal`): si alguien reporta algo raro, lo apaga para
+   * todos sin desplegar. Aquí se pregunta al servidor al abrir y al volver a la
+   * pestaña (si pasaron 30 minutos), y se le dice al service worker lo que toca.
+   *
+   * Cada teléfono puede mandar sobre el panel con su propia salida de soporte:
+   * `?rapido=0` lo apaga solo ahí y `?rapido=1` lo enciende solo ahí (queda en
+   * `localStorage`). El usuario final no lo ve ni lo elige.
+   *
+   * Quién manda y qué pasa si la petición falla: `decidirModoRapido`
+   * (lib/modo-rapido.js). Si no hay decisión, no se manda nada y el service
+   * worker se queda como estaba. La sesión entra en la cuenta para no apagarlo
+   * en /login (sin sesión el servidor contesta «apagado» por defecto) y para
+   * preguntar de nuevo al iniciar sesión sin recargar la pantalla.
+   */
+  const { status: estadoSesion } = useSession()
+  useEffect(() => {
+    if (!('serviceWorker' in navigator) || process.env.NODE_ENV !== 'production') return
+
+    try {
+      const parametro = new URLSearchParams(window.location.search).get('rapido')
+      if (parametro === '1' || parametro === '0') {
+        localStorage.setItem(CLAVE_LOCAL_MODO_RAPIDO, parametro)
+      }
+    } catch {
+      // localStorage puede estar bloqueado (modo privado): sin salida propia,
+      // manda el panel, que es lo que debe pasar.
+    }
+
+    let ultimaConsulta = 0
+    const decidir = async () => {
+      let propio = null
+      try { propio = localStorage.getItem(CLAVE_LOCAL_MODO_RAPIDO) } catch {}
+      const activo = await decidirModoRapido({
+        propio,
+        autenticado: estadoSesion === 'authenticated',
+        consultar: () => fetch('/api/ajustes/modo-rapido').then((r) => (r.ok ? r.json() : null)),
+      })
+      if (activo !== null) {
+        ultimaConsulta = Date.now()
+        // El service worker que ya manda, o el que acabe de tomar el mando: sin
+        // esperar a `ready` el mensaje se pierde en la primera carga.
+        navigator.serviceWorker.ready
+          .then((reg) => (reg.active ?? navigator.serviceWorker.controller)?.postMessage({
+            type: 'MODO_RAPIDO', activo,
+          }))
+          .catch(() => {})
+      }
+    }
+    decidir()
+
+    const alVolver = () => {
+      if (document.visibilityState === 'visible' && Date.now() - ultimaConsulta >= CADA_CUANTO_SE_PREGUNTA_MS) decidir()
+    }
+    document.addEventListener('visibilitychange', alVolver)
+    return () => document.removeEventListener('visibilitychange', alVolver)
+  }, [estadoSesion])
 
   // Start auto-sync safety net (30s interval)
   useEffect(() => {

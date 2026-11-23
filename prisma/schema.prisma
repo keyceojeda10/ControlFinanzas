@@ -1809,3 +1809,14 @@ model ReclamoPago {
   @@index([organizationId, revisadoEn])
   @@index([clienteId, createdAt])
 }
+
+/// Interruptores de TODO el sistema que el superadmin enciende y apaga desde su
+/// panel sin desplegar (23 nov 2026). Hoy: `modo_rapido` ('1' encendido, '0'
+/// apagado; sin fila = encendido, decisión del dueño). Sin llave foránea a
+/// propósito: `actualizadoPorId` es solo memoria de quién lo tocó.
+model AjusteGlobal {
+  clave            String   @id @db.VarChar(64)
+  valor            String   @db.Text
+  updatedAt        DateTime @updatedAt
+  actualizadoPorId String?
+}

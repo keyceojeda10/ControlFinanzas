@@ -23,6 +23,7 @@ import { formatMoney } from '@/lib/i18n'
 import { Tarjeta, FilaTarjeta, BloqueOscuro, TiraCifras, Pastilla, EstadoVacio } from '@/components/cf/primitivos'
 import { BarrasVerticales, PilaEsqueletos } from '@/components/cf/primitivos2'
 import { SEGMENTOS } from '@/lib/admin/segmentos'
+import { Toggle } from '@/components/ui/Toggle'
 
 /* Las cargas de cartera que tiene que atender Carlos (bloque 4): las que el dueño
    le pasó con «Necesito ayuda» («ayuda») y las que se quedaron pegadas
@@ -47,6 +48,64 @@ function EnlaceCargas() {
       <span>Cargas de cartera <span style={{ fontWeight: 400, color: 'var(--cf-ink-3)' }}>· {n == null ? 'con asesor' : `${n} por atender`}</span></span>
       <span aria-hidden style={{ color: 'var(--cf-gold-dark)' }}>→</span>
     </Link>
+  )
+}
+
+/* ══ MODO RÁPIDO PARA TODOS ═══════════════════════════════════════════════════
+ *
+ * El «modo rápido» sirve el armazón de cada pantalla desde el teléfono y lo
+ * refresca por detrás; las cifras siguen yendo a la red. Nace ENCENDIDO para
+ * todos (decisión del dueño, 23 nov 2026) y este interruptor lo apaga para todos
+ * sin desplegar: la app lo vuelve a preguntar al abrir y al volver a la pestaña
+ * (a más tardar a los 30 minutos).
+ *
+ * El interruptor no se mueve hasta que el servidor contesta, y tampoco inventa
+ * su estado si la lectura falla: un interruptor que miente es peor que uno quieto.
+ */
+function ModoRapidoParaTodos() {
+  const [encendido, setEncendido] = useState(null) // null = el servidor aún no contestó
+  const [guardando, setGuardando] = useState(false)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    fetch('/api/admin/ajustes')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => (typeof j?.modoRapido === 'boolean' ? setEncendido(j.modoRapido) : setError('No se pudo leer el ajuste')))
+      .catch(() => setError('No se pudo leer el ajuste'))
+  }, [])
+
+  const cambiar = async (nuevo) => {
+    setGuardando(true)
+    setError(null)
+    try {
+      const r = await fetch('/api/admin/ajustes', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ modoRapido: nuevo }),
+      })
+      const j = await r.json().catch(() => null)
+      if (!r.ok || typeof j?.modoRapido !== 'boolean') throw new Error(j?.error || 'No se pudo guardar')
+      setEncendido(j.modoRapido)
+    } catch (e) {
+      setError(e?.message || 'No se pudo guardar')
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  return (
+    <Tarjeta style={{ gridColumn: '1 / -1' }}>
+      <Toggle
+        label="Modo rápido para todos"
+        checked={!!encendido}
+        disabled={encendido === null || guardando}
+        onChange={cambiar}
+      />
+      <p style={{ fontSize: 12, color: 'var(--cf-ink-3)', lineHeight: 1.45 }}>
+        Las pantallas salen al instante desde el teléfono y las cifras se traen de la red. Si alguien reporta algo raro, apágalo aquí y en unos minutos todos vuelven al modo de siempre.
+      </p>
+      {error && <p style={{ fontSize: 12, color: 'var(--cf-red)' }}>{error}</p>}
+    </Tarjeta>
   )
 }
 
@@ -233,6 +292,7 @@ export default function AdminInicio() {
         <span aria-hidden style={{ color: 'var(--cf-gold-dark)' }}>→</span>
       </Link>
       <EnlaceCargas />
+      <ModoRapidoParaTodos />
 
       {/* ── 1 · CUÁNTO ENTRÓ ─────────────────────────────────────────────── */}
       <Seccion

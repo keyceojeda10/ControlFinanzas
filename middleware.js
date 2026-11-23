@@ -85,6 +85,12 @@ export async function middleware(request) {
     const EXENTAS = ['/api/auth/', '/api/pagos/', '/api/plan/', '/api/webhook/',
       '/api/cron/', '/api/admin/', '/api/health', '/api/ping', '/api/analytics/',
       '/api/unsubscribe', '/api/logo', '/api/telegram/', '/api/uploads/', '/api/portal/', '/api/tarjeta/reclamo/',
+      // La pregunta de la app «¿modo rápido encendido?» (solo lectura, un booleano).
+      // Exenta a propósito: si Carlos lo apaga porque algo salió raro, el apagado
+      // tiene que llegar TAMBIÉN a quien tiene el plan vencido, que es justo quien
+      // está en la pantalla de pagar. Exacta, no `/api/ajustes/`: lo que se añada
+      // mañana bajo ese prefijo no entra por esta puerta.
+      '/api/ajustes/modo-rapido',
       // «Cómo pagar tu plan» sale en la pantalla de vencida: apuntar que se vio
       // no toca nada del negocio (solo `Evento`).
       '/api/tutoriales']
