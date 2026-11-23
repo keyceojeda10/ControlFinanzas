@@ -51,6 +51,7 @@ import { formatMoney } from '@/lib/i18n'
 import { montoConTasa, inicioPorLoAbonado, choqueDeCuota } from '@/lib/cartulina-datos'
 import { MODOS_EN_ORDEN, etiquetaModo } from '@/lib/dinero/modos'
 import { unirFilasDelLote, marcadorDeFila } from '@/lib/carga-asesor/al-lote'
+import { VENTANA_REINTENTO_MS } from '@/lib/prestamos/ya-creado'
 
 const FRECUENCIAS = [
   { key: 'diario', label: 'Diario' },
@@ -113,11 +114,25 @@ export function efectivo(f, base) {
   }
 }
 
-const hoyBogota = () => new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 10)
+const hoyBogota = (ahora = Date.now()) => new Date(ahora - 5 * 3600 * 1000).toISOString().slice(0, 10)
+
+/* ⚠ EL «HOY» DEL PRIMER INTENTO, MIENTRAS DURA EL REINTENTO (carga del dueño).
+   Sin fecha en el papel, la fecha de inicio sale de hoy. Si «Crear» se cortó a
+   las 11:58 p. m. y se reintenta a las 12:01 a. m., la fecha cambiaba, la
+   huella del préstamo también, y `idempotente` no reconocía el que el servidor
+   ya había creado: dos préstamos. Por eso, en la carga del dueño, el primer
+   intento guarda su día en la fila (`_hoy`, `_hoyAt`) y los reintentos lo usan.
+   Solo dentro de la ventana del reintento del servidor (`VENTANA_REINTENTO_MS`):
+   pasada, ya no hay nada que reconocer y la fila vuelve a contar desde hoy.
+   La pantalla usa la misma cuenta, así que enseña la fecha que se guardará. */
+export function hoyDeLaFila(f, ahora = Date.now()) {
+  const vigente = f?._hoy && Number.isFinite(f._hoyAt) && ahora - f._hoyAt < VENTANA_REINTENTO_MS
+  return vigente ? f._hoy : hoyBogota(ahora)
+}
 
 /* Sin fecha en el papel y con abonos, el préstamo no empezó hoy: ver
    `inicioPorLoAbonado` (lib/cartulina-datos.js, DETALLES-CARTERA #2). */
-function inicioDeLaFila(f, base, hoy = hoyBogota()) {
+export function inicioDeLaFila(f, base, hoy = hoyDeLaFila(f)) {
   return inicioPorLoAbonado({ ...efectivo(f, base), fechaInicio: f.fechaInicio, yaAbonado: f.yaAbonado, hoy })
 }
 
@@ -544,6 +559,16 @@ export default function LoteFotos({
            `_prestamoId`: el reintento SOLO lo apunta. Crearlo otra vez sería
            el mismo préstamo dos veces, con su desembolso. */
         let prestamoId = f._prestamoId || null
+        /* El día del primer intento se queda en la fila ANTES de mandar nada:
+           ver `hoyDeLaFila`. Solo en la carga del dueño, que es la que reintenta
+           con `idempotente`. */
+        let fila = f
+        if (solicitud && hoyDeLaFila(f) !== f._hoy) {
+          const marca = { _hoy: hoyBogota(), _hoyAt: Date.now() }
+          fila = { ...f, ...marca }
+          setFilas((prev) => prev.map((x) => (x._id === f._id ? { ...x, ...marca } : x)))
+        }
+        const fechaDelPrestamo = inicioDeLaFila(fila, base)
         try {
           /* ⚠ `modoInteres` sale de `efectivo`, que ya cae al de la tanda si la
              fila no tiene el suyo. Antes se cogía `base.modoInteres` a pelo, así
@@ -594,7 +619,7 @@ export default function LoteFotos({
                 montoPrestado: monto,
                 tasaInteres: tasa,
                 diasPlazo,
-                fechaInicio: inicioDeLaFila(f, base),
+                fechaInicio: fechaDelPrestamo,
                 frecuencia,
                 // Ya estaba en la calle: no es plata de hoy (DETALLES-CARTERA #2).
                 yaEstabaEnLaCalle: true,
@@ -634,7 +659,7 @@ export default function LoteFotos({
             monto, tasa,
             frecuencia, plazoUnidades: plazo,
             modoInteres,
-            fechaInicio: inicioDeLaFila(f, base),
+            fechaInicio: fechaDelPrestamo,
             diasSinCobro: [],
             clienteId, prestamoId,
           }

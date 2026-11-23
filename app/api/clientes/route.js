@@ -644,11 +644,14 @@ export async function POST(request) {
      podía crear su préstamo: el cliente existe, así que no ocupa otro cupo.
      Solo para `SIN-C_…` (`marcadorDeFila`, lib/carga-asesor/al-lote.js); se
      lee una copia del cuerpo para no cambiar nada del resto. El eliminado no
-     sale aquí: reactivarlo sí ocupa cupo, y se decide más abajo. */
+     sale aquí: reactivarlo sí ocupa cupo, y se decide más abajo.
+     Solo para el dueño: es el único que carga su solicitud (y el único flujo
+     que manda este marcador). Para cualquier otro rol, un `SIN-C_` es un
+     `SIN-` más y se crea siempre. */
   const cuerpoCopia = await request.clone().json().catch(() => null)
   const cedulaCopia = typeof cuerpoCopia?.cedula === 'string' ? cuerpoCopia.cedula.trim() : ''
   let fichasDeLaFila = null
-  if (cedulaCopia.startsWith(PREFIJO_FILA)) {
+  if (session.user.rol === 'owner' && cedulaCopia.startsWith(PREFIJO_FILA)) {
     fichasDeLaFila = await prisma.cliente.findMany({
       where: { organizationId, cedula: cedulaCopia },
       select: { id: true, estado: true },
@@ -791,7 +794,7 @@ export async function POST(request) {
      negocio, no por ruta: si el dueño cambió la ruta entre un intento y otro,
      sigue siendo el mismo cliente. Si está eliminado se reactiva, como
      cualquier cédula. */
-  if (cedula.trim().startsWith(PREFIJO_FILA)) {
+  if (session.user.rol === 'owner' && cedula.trim().startsWith(PREFIJO_FILA)) {
     const deLaFila = fichasDeLaFila && cedula.trim() === cedulaCopia ? fichasDeLaFila : await prisma.cliente.findMany({
       where: { organizationId, cedula: cedula.trim() },
       select: { id: true, estado: true },
