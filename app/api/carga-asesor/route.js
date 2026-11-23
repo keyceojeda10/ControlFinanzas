@@ -1,15 +1,21 @@
 // app/api/carga-asesor/route.js — «Cargar mi cartera con asesor» (bloque 4).
 //
-// GET  → cómo va su carga (la última de los últimos 60 días).
+// GET  → cómo va su carga (la última de los últimos 60 días) y, mientras la
+//        revisa, lo que el sistema leyó (`revision`).
 // POST → sube fotos, Excel o PDF (campo `archivos`, varios) y una nota opcional.
 //        Se guardan, se confirma «recibido» y se leen en segundo plano al área de
 //        espera. Ver lib/carga-asesor/solicitud.js.
 
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
-import { guardarArchivos, confirmarRecibida, procesarSolicitud, archivosDe, resumenDeSolicitud, MAX_ARCHIVOS } from '@/lib/carga-asesor/solicitud'
+import { validarCartera } from '@/lib/importar-cartera'
+import { sesionDueno } from '@/lib/carga-asesor/sesion-dueno'
+import { limpiarFila } from '@/lib/carga-asesor/filas'
+import { filasParaLote, baseDesdeNegocio, problemasPorArchivo } from '@/lib/carga-asesor/al-lote'
+import {
+  guardarArchivos, confirmarRecibida, procesarSolicitud, archivosDe, resumenDeSolicitud, creadasDe, filasPendientes,
+  ESTADOS_EDITABLES, MAX_ARCHIVOS,
+} from '@/lib/carga-asesor/solicitud'
 
 export const runtime = 'nodejs'
 
@@ -30,11 +36,52 @@ function vista(sol) {
   }
 }
 
-async function sesionDueno() {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.organizationId) return { error: Response.json({ error: 'No autorizado' }, { status: 401 }) }
-  if (session.user.rol !== 'owner') return { error: Response.json({ error: 'Solo el administrador de la cuenta puede pedir la carga' }, { status: 403 }) }
-  return { session }
+/* Donde el dueño ve lo que el sistema leyó: con él (`en_revision`), con Carlos
+   (`ayuda`) y mientras se lee (`recibida`, `leyendo`: las filas pueden ser pocas o
+   ninguna, y los archivos que ya se leyeron enseñan lo que falló). */
+const CON_REVISION = [...ESTADOS_EDITABLES, 'recibida', 'leyendo']
+
+/**
+ * Lo que el dueño revisa: las filas POR CARGAR (las que ya creó o quitó no
+ * vuelven), en la forma que trabaja `LoteFotos`, y con qué base y cuánto espacio.
+ *
+ * ⚠ `bloqueada`: solo en `en_revision` puede crear. En «ayuda» la tiene Carlos y
+ * en «leyendo»/«recibida» las filas todavía cambian; si el dueño creara ahora, lo
+ * suyo podría chocar con lo que importe Carlos (préstamos dobles).
+ */
+async function revisionDe(sol) {
+  const org = await prisma.organization.findUnique({
+    where: { id: sol.organizationId },
+    select: { plan: true, tasaDefault: true, frecuenciaDefault: true, modoInteresDefault: true },
+  })
+  const pendientes = filasPendientes(sol)
+
+  /* El espacio se mide sobre lo que FALTA por cargar (lo creado ya cuenta en los
+     clientes del negocio). Mientras se lee no hay nada que medir y la pantalla
+     refresca cada pocos segundos: ahí no se valida. Si no se puede medir, la
+     pantalla sigue, solo que sin la cifra del plan (`espacio` null). */
+  let espacio = null
+  let excedePlan = false
+  if (ESTADOS_EDITABLES.includes(sol.estado)) {
+    try {
+      const v = await validarCartera({ organizationId: sol.organizationId, plan: org?.plan, filas: pendientes.map(limpiarFila) })
+      espacio = v.resumen.espacioDisponible
+      excedePlan = v.resumen.excedePlan === true
+    } catch (e) {
+      console.error('[carga-asesor] espacio del plan:', e?.message)
+    }
+  }
+
+  return {
+    filas: filasParaLote(pendientes),
+    base: baseDesdeNegocio(org),
+    problemas: problemasPorArchivo(archivosDe(sol)),
+    creadas: Object.keys(creadasDe(sol)),
+    espacio,
+    excedePlan,
+    errorLectura: sol.errorLectura ?? null,
+    bloqueada: sol.estado !== 'en_revision',
+  }
 }
 
 export async function GET() {
@@ -44,7 +91,8 @@ export async function GET() {
     where: { organizationId: session.user.organizationId, createdAt: { gte: new Date(Date.now() - 60 * 86400000) } },
     orderBy: { createdAt: 'desc' },
   })
-  return Response.json({ solicitud: vista(sol), maxArchivos: MAX_ARCHIVOS })
+  const revision = sol && CON_REVISION.includes(sol.estado) ? await revisionDe(sol) : null
+  return Response.json({ solicitud: vista(sol), maxArchivos: MAX_ARCHIVOS, revision })
 }
 
 export async function POST(request) {
