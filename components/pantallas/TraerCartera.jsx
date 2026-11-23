@@ -304,7 +304,7 @@ export default function TraerCartera({
                 {/* Desde el 12 oct 2026 hay un flujo detrás (lib/carga-asesor/):
                     antes el botón mandaba a soporte y esta frase era una promesa
                     que nadie atendía por un camino propio. */}
-                {ayudaTexto ?? 'Sube las fotos del cuaderno o el Excel tal cual y un asesor te la deja cargada en máximo 24 horas.'}
+                {ayudaTexto ?? 'Sube las fotos del cuaderno, el Excel o el PDF tal cual. Lo leemos en unos minutos y te enseñamos lo que encontramos para que lo revises y lo cargues.'}
               </p>
               <button type="button" onClick={onEscribirnos} style={{
                 display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 14,
@@ -316,7 +316,7 @@ export default function TraerCartera({
                   strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="M12 16V4M7 9l5-5 5 5" /><path d="M4 16v2.5A1.5 1.5 0 005.5 20h13a1.5 1.5 0 001.5-1.5V16" />
                 </svg>
-                Que me la carguen
+                Cargar mi cartera
               </button>
             </Tarjeta>
           )}

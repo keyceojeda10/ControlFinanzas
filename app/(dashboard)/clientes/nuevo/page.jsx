@@ -282,7 +282,7 @@ export default function NuevoClientePage() {
                   icono: <><path d="M4 4.5A1.5 1.5 0 015.5 3H18a1 1 0 011 1v16a1 1 0 01-1 1H5.5A1.5 1.5 0 014 19.5z" /><path d="M4 17.5h15M8 3v18" /></> },
                 { href: '/carga-masiva', titulo: 'Ya lo tengo en Excel', ayuda: 'Sube tu archivo y emparejamos las columnas.',
                   icono: <><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M4 9h16M4 15h16M10 3v18" /></> },
-                { href: '/cargar-cartera', titulo: 'Que te la carguemos', ayuda: 'Nos mandas lo que tengas y un asesor te la deja lista.',
+                { href: '/cargar-cartera', titulo: 'Manda todo junto', ayuda: 'Fotos, Excel o PDF: lo leemos y tú lo revisas y lo cargas.',
                   icono: <><circle cx="9" cy="8" r="3.4" /><path d="M2.5 20a6.5 6.5 0 0113 0" /><path d="M17 4.5l1.6 1.6L22 2.7" /></> },
               ].map((o, i) => (
                 <button key={o.href} type="button" onClick={() => router.push(o.href)} style={{
