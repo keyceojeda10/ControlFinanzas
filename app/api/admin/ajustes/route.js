@@ -33,7 +33,9 @@ export async function PATCH(req) {
   const session = await superadmin()
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
 
-  const { modoRapido } = await req.json().catch(() => ({}))
+  // `null` es JSON válido (y `5`, y `[]`): desestructurarlo tiraba un TypeError, un 500.
+  const cuerpo = await req.json().catch(() => null)
+  const modoRapido = cuerpo?.modoRapido
   if (typeof modoRapido !== 'boolean') {
     return NextResponse.json({ error: 'Falta modoRapido (true o false)' }, { status: 400 })
   }

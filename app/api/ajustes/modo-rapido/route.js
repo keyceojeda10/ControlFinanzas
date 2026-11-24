@@ -7,12 +7,13 @@
 //
 // Cualquier rol con sesión. Sin sesión: `{ activo: false }` y sin guardar en el
 // navegador, o la pantalla de entrada dejaría un «apagado» de 60 s que la
-// persona vería justo después de iniciar sesión.
+// persona vería justo después de iniciar sesión. Si la base falla: 503, no
+// «apagado» (ver el `catch`).
 
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { modoRapidoGlobal } from '@/lib/ajustes-globales'
+import { modoRapidoConCache } from '@/lib/ajustes-globales'
 
 export const runtime = 'nodejs'
 
@@ -21,6 +22,15 @@ export async function GET() {
   if (!session?.user) {
     return NextResponse.json({ activo: false }, { headers: { 'Cache-Control': 'no-store' } })
   }
-  const activo = await modoRapidoGlobal()
-  return NextResponse.json({ activo }, { headers: { 'Cache-Control': 'private, max-age=60' } })
+  try {
+    const activo = await modoRapidoConCache()
+    return NextResponse.json({ activo }, { headers: { 'Cache-Control': 'private, max-age=60' } })
+  } catch (err) {
+    /* ⚠ Un bache de la base NO es «apagado». Contestar { activo: false } le diría a
+       cada teléfono que apague el modo rápido (y el navegador se lo guardaría 60 s).
+       503, sin `activo` y sin guardar: la app no decide nada y el service worker se
+       queda como estaba (`decidirModoRapido` → null). */
+    console.warn('[ajustes/modo-rapido] no se pudo leer:', err?.message || err)
+    return NextResponse.json({ error: 'No se pudo leer el ajuste' }, { status: 503, headers: { 'Cache-Control': 'no-store' } })
+  }
 }
