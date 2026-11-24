@@ -1,7 +1,8 @@
 // app/api/carga-asesor/route.js — «Cargar mi cartera con asesor» (bloque 4).
 //
 // GET  → cómo va su carga (la última de los últimos 60 días) y, mientras la
-//        revisa, lo que el sistema leyó (`revision`).
+//        revisa, lo que el sistema leyó (`revision`). Con `?solo=estado`, solo
+//        la solicitud (lo que mira «Crear» antes de cada tanda).
 // POST → sube fotos, Excel o PDF (campo `archivos`, varios) y una nota opcional.
 //        Se guardan, se confirma «recibido» y se leen en segundo plano al área de
 //        espera. Ver lib/carga-asesor/solicitud.js.
@@ -84,14 +85,19 @@ async function revisionDe(sol) {
   }
 }
 
-export async function GET() {
+export async function GET(request) {
   const { session, error } = await sesionDueno()
   if (error) return error
+  /* `?solo=estado`: la pregunta que hace «Crear» antes de cada tanda (¿sigue la
+     carga conmigo?). Va cada tres filas, así que no arma la revisión ni valida
+     la cartera entera. */
+  let soloEstado = false
+  try { soloEstado = new URL(request?.url ?? '', 'http://x').searchParams.get('solo') === 'estado' } catch { /* sin URL: la de siempre */ }
   const sol = await prisma.solicitudCarga.findFirst({
     where: { organizationId: session.user.organizationId, createdAt: { gte: new Date(Date.now() - 60 * 86400000) } },
     orderBy: { createdAt: 'desc' },
   })
-  const revision = sol && CON_REVISION.includes(sol.estado) ? await revisionDe(sol) : null
+  const revision = !soloEstado && sol && CON_REVISION.includes(sol.estado) ? await revisionDe(sol) : null
   return Response.json({ solicitud: vista(sol), maxArchivos: MAX_ARCHIVOS, revision })
 }
 

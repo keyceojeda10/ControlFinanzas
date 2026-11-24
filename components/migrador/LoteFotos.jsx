@@ -50,7 +50,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { formatMoney } from '@/lib/i18n'
 import { montoConTasa, inicioPorLoAbonado, choqueDeCuota } from '@/lib/cartulina-datos'
 import { MODOS_EN_ORDEN, etiquetaModo } from '@/lib/dinero/modos'
-import { unirFilasDelLote, marcadorDeFila } from '@/lib/carga-asesor/al-lote'
+import { unirFilasDelLote, marcadorDeFila, PREFIJO_FILA } from '@/lib/carga-asesor/al-lote'
 import { VENTANA_REINTENTO_MS } from '@/lib/prestamos/ya-creado'
 
 const FRECUENCIAS = [
@@ -70,6 +70,34 @@ const COLOR = {
 const ROTULO = { verde: 'Lista', ambar: 'Revisar', rojo: 'Falta lo básico' }
 const NO_APUNTADA = 'Se guardó pero no se pudo apuntar: toca Crear otra vez'
 const SIN_APUNTAR = 'Falta cómo apuntar la carga'
+const YA_EN_LA_CARTERA = 'Ya está en tu cartera'
+const DETENIDO = 'Se detuvo antes de terminar: toca Crear otra vez.'
+
+/* Las filas cuyo préstamo YA EXISTE y todavía no se apuntó en la solicitud (el
+   apunte falló: «toca Crear otra vez»). Las apuntadas salen del lote, así que
+   toda fila que sigue con `_prestamoId` está a medias. */
+export function filasAMedias(filas) {
+  return (Array.isArray(filas) ? filas : []).filter((f) => f?._prestamoId).length
+}
+
+/* ══ ⚠ LO QUE CONTESTA `/api/clientes`, EN LA CARGA DEL DUEÑO (final review, 23 nov 2026) ══
+   Un 409 con `existingId` quiere decir dos cosas distintas:
+   - con la cédula `SIN-C_` de la fila, es el cliente que creó el intento
+     anterior de ESTA fila: se sigue con él (el reintento).
+   - con una cédula REAL, es alguien que ya estaba en la cartera. Sumarle un
+     préstamo sin preguntar carga dos veces lo que el dueño ya tenía (volvió a
+     subir lo mismo): la fila se para y pregunta «¿es otro préstamo?». Si dice
+     que sí (`esOtro`), se sigue con ese cliente.
+   Devuelve { clienteId } | { yaTiene: id } | { error }. */
+export function clienteDeLaRespuesta({ solicitud, ok, status, data, cedula, esOtro = false }) {
+  const d = data ?? {}
+  if (solicitud && status === 409 && d.existingId && !d.bloqueada) {
+    if (String(cedula ?? '').startsWith(PREFIJO_FILA) || esOtro) return { clienteId: d.existingId }
+    return { yaTiene: d.existingId }
+  }
+  if (!ok) return { error: d.error || 'no se pudo crear el cliente' }
+  return { clienteId: d.id }
+}
 
 /* ══ ⚠ LO QUE DE VERDAD SE VA A GUARDAR, EN UNA SOLA FUNCIÓN ══════════════
  *
@@ -176,6 +204,8 @@ export function estadoDe(f, base) {
   /* La fila que el lector vio repetida no se crea hasta que el dueño diga
      «No es la misma»: crearla sin mirar es el mismo préstamo dos veces. */
   if (f._repetidaDe && !f.noEsLaMisma) return 'rojo'
+  /* Ya estaba en la cartera (cédula real): no se crea hasta que diga «Sí, es otro». */
+  if (f._yaTiene && !f._esOtro) return 'rojo'
 
   /* ⚠ ÁMBAR SOLO POR LO QUE NO SE PUEDE RESOLVER. La tasa y el plazo ahora
      SIEMPRE tienen valor —el de arriba o el del defecto— así que marcarlos en
@@ -209,6 +239,7 @@ function motivoRojo(f, base) {
   if (!e.frecuencia) return 'Falta cada cuánto se cobra'
   if (e.tasa == null) return 'Falta el interés'
   if (f._repetidaDe && !f.noEsLaMisma) return 'Parece repetida'
+  if (f._yaTiene && !f._esOtro) return YA_EN_LA_CARTERA
   return ROTULO.rojo
 }
 
@@ -260,12 +291,17 @@ function claveDelMigrador(organizationId) {
  *   solicitudId     el id de la `SolicitudCarga`: con él, reintentar «Crear»
  *                   tras un corte de red no repite clientes ni préstamos
  *                   (`marcadorDeFila`, `idempotente`; ver `crear`)
+ *   onPendientesDeApuntar (n) => cuántas filas tienen el préstamo creado y
+ *                   sin apuntar: la página no deja pedir ayuda con ellas así
+ *   antesDeCrear    () => Promise<true | false | string>: se pregunta antes de
+ *                   cada tanda; si no es `true`, se para (el texto, si lo hay,
+ *                   es lo que se dice). Otro teléfono pudo pedir ayuda.
  */
 export default function LoteFotos({
   rutas = [], onListo, onSalir,
   filasIniciales, creadas, baseInicial, claveLote: claveDeFuera,
   enlaceArchivo, tipoArchivo, onCreada, onQuitadas, sinSubir = false,
-  bloqueada = false, onCreando, solicitudId,
+  bloqueada = false, onCreando, solicitudId, onPendientesDeApuntar, antesDeCrear,
 }) {
   const solicitud = Array.isArray(filasIniciales)
   /* ⚠ DOS ENTRADAS, NO UNA. La única que había llevaba `capture="environment"`
@@ -490,6 +526,8 @@ export default function LoteFotos({
          `monto` cubre las dudas que hablan del importe; el resto casa por
          nombre de campo. */
       const dudas = (f._dudas ?? []).filter((d) => d.campo !== campo)
+      /* Otra cédula ya no es la persona que estaba en la cartera: se vuelve a preguntar al crear. */
+      if (campo === 'cedula' && f._yaTiene) return { ...f, [campo]: valor, _dudas: dudas, _yaTiene: null, _esOtro: false }
       return { ...f, [campo]: valor, _dudas: dudas }
     }))
   const quitarDelLote = (id) => setFilas((prev) => prev.filter((f) => f._id !== id))
@@ -531,6 +569,13 @@ export default function LoteFotos({
      sin apuntar para siempre. */
   const creables = conEstado.filter((f) => f._prestamoId || f._estado !== 'rojo')
   const rojasSinCrear = conEstado.filter((f) => f._estado === 'rojo' && !f._prestamoId).length
+  /* ⚠ LAS FILAS A MEDIAS SE AVISAN A LA PÁGINA (final review, 23 nov 2026). Con
+     una fila así, pedir ayuda desmontaba el lote y el apunte no se reintentaba
+     nunca: Carlos la importaba otra vez. La página no deja pedir ayuda mientras
+     queden (y el servidor, al aprobar, las encuentra igual). */
+  const aMedias = filasAMedias(filas)
+  useEffect(() => { onPendientesDeApuntar?.(aMedias) }, [aMedias, onPendientesDeApuntar])
+  useEffect(() => () => { onPendientesDeApuntar?.(0) }, [onPendientesDeApuntar])
   // ¿$80 o $80.000? Mientras alguna fila no conteste, no se crea nada de la tanda.
   const abonosPorResolver = creables.filter((f) => !f._prestamoId && abonoSinResolver({ abono: f.yaAbonado, montoPrestado: efectivo(f, base).monto, confirmado: f.abonoConfirmado })).length
 
@@ -556,7 +601,16 @@ export default function LoteFotos({
     const creados = []
 
     const A_LA_VEZ = 3
+    let detenido = null
     for (let i = 0; i < creables.length; i += A_LA_VEZ) {
+      /* ⚠ ANTES DE CADA TANDA, ¿SIGUE LA CARGA CON EL DUEÑO? Desde otro teléfono
+         pudo pedir ayuda: lo que se cree desde aquí chocaría con lo que importe
+         Carlos. Si la página dice que no (o no se puede saber), se para. */
+      if (solicitud && typeof antesDeCrear === 'function') {
+        let sigue
+        try { sigue = await antesDeCrear() } catch { sigue = false }
+        if (sigue !== true) { detenido = typeof sigue === 'string' && sigue ? sigue : DETENIDO; break }
+      }
       const tanda = creables.slice(i, i + A_LA_VEZ)
       await Promise.all(tanda.map(async (f) => {
         /* ⚠ EL CLIENTE QUE YA QUEDÓ GUARDADO NO SE VUELVE A CREAR (DETALLES-
@@ -564,7 +618,8 @@ export default function LoteFotos({
            con `_clienteId`: el reintento crea SOLO el préstamo. Antes volvía a
            crear el cliente —409 «ya existe» con cédula, o un duplicado sin
            ella— y esa persona se quedaba sin préstamo y sin salida. */
-        let clienteId = f._clienteId || null
+        /* La que el dueño confirmó «Sí, es otro» sigue con el cliente que ya tenía. */
+        let clienteId = f._clienteId || (f._esOtro && f._yaTiene?.id) || null
         /* ⚠ Y EL PRÉSTAMO QUE YA SE CREÓ, TAMPOCO. En la carga del dueño, si se
            creó pero no se pudo apuntar en la solicitud, la fila se queda con
            `_prestamoId`: el reintento SOLO lo apunta. Crearlo otra vez sería
@@ -590,34 +645,37 @@ export default function LoteFotos({
 
           if (!prestamoId) {
             if (!clienteId) {
+              // Sin cédula el API la rechaza, y la cartulina casi nunca la
+              // trae: 1.683 clientes de producción ya viven con este marcador.
+              /* ⚠ EN LA CARGA DEL DUEÑO, EL MISMO EN CADA INTENTO (piloto
+                 del 22 nov 2026). Con el aleatorio, el cliente que entró
+                 justo antes de cortarse la red se creaba otra vez al
+                 reintentar. `marcadorDeFila` sale de la solicitud y la
+                 fila: `/api/clientes` lo reconoce y contesta 409. */
+              const cedula = f.cedula?.trim() || (solicitud && marcadorDeFila(solicitudId, f._id)) || `SIN-${Date.now()}${Math.floor(Math.random() * 1000)}`
               const resC = await fetch('/api/clientes', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   nombre: f.nombre.trim(),
-                  // Sin cédula el API la rechaza, y la cartulina casi nunca la
-                  // trae: 1.683 clientes de producción ya viven con este marcador.
-                  /* ⚠ EN LA CARGA DEL DUEÑO, EL MISMO EN CADA INTENTO (piloto
-                     del 22 nov 2026). Con el aleatorio, el cliente que entró
-                     justo antes de cortarse la red se creaba otra vez al
-                     reintentar. `marcadorDeFila` sale de la solicitud y la
-                     fila: `/api/clientes` lo reconoce y contesta 409. */
-                  cedula: f.cedula?.trim() || (solicitud && marcadorDeFila(solicitudId, f._id)) || `SIN-${Date.now()}${Math.floor(Math.random() * 1000)}`,
+                  cedula,
                   telefono: f.telefono?.trim() || '',
                   ...(f.direccion?.trim() && { direccion: f.direccion.trim() }),
                   ...(base.rutaId && { rutaId: base.rutaId }),
                 }),
               })
               const dataC = await resC.json()
-              /* En la carga del dueño, «ya existe» es el cliente que creó el
-                 intento anterior (o el que ya tenía esa cédula en el negocio):
-                 se sigue con él. Si está bloqueado en otra ruta, no. */
-              if (solicitud && resC.status === 409 && dataC.existingId && !dataC.bloqueada) {
-                clienteId = dataC.existingId
-              } else if (!resC.ok) {
-                throw new Error(dataC.error || 'no se pudo crear el cliente')
-              } else {
-                clienteId = dataC.id
+              /* En la carga del dueño, «ya existe» con la cédula de la fila es el
+                 cliente que creó el intento anterior: se sigue con él. Con una
+                 cédula real es alguien que ya estaba: la fila pregunta. Si está
+                 bloqueado en otra ruta, no. Ver `clienteDeLaRespuesta`. */
+              const r = clienteDeLaRespuesta({ solicitud, ok: resC.ok, status: resC.status, data: dataC, cedula, esOtro: f._esOtro === true })
+              if (r.yaTiene) {
+                const idYa = r.yaTiene
+                setFilas((prev) => prev.map((x) => (x._id === f._id ? { ...x, _yaTiene: { id: idYa }, _esOtro: false } : x)))
+                throw new Error(YA_EN_LA_CARTERA)
               }
+              if (r.error) throw new Error(r.error)
+              clienteId = r.clienteId
               // Anotado YA: si sale antes del préstamo, al retomar no lo crea otra vez.
               const idCliente = clienteId
               setFilas((prev) => prev.map((x) => (x._id === f._id ? { ...x, _clienteId: idCliente } : x)))
@@ -753,6 +811,7 @@ export default function LoteFotos({
           ? `Se guardaron ${creados.length}. Estos ${fallos.length} no: revisa el motivo en cada uno.`
           : `No se pudo guardar ninguno. El motivo está en cada fila.`)
       }
+      if (detenido) setError(detenido)
       const quedan = filas.filter((f) => !creadasAqui.current.has(f._id)).length
       onListo?.({ creados, fallos, ...(quedan > 0 && { quedanFilas: true }), quitadas })
       return
@@ -1127,9 +1186,13 @@ function Fila({ f, base, onAbrir, abierta, onEditar, onQuitar, enlaceArchivo, ti
      dejaría un préstamo de verdad sin apuntar en la solicitud. */
   const yaCreada = !!f._prestamoId
   const repetida = f._repetidaDe && !f.noEsLaMisma && !yaCreada
+  /* Ya estaba en la cartera con esa cédula: la pregunta va en su renglón, y el
+     error del intento no se repite debajo. */
+  const yaTiene = f._yaTiene && !f._esOtro && !yaCreada
+  const conError = f._error && !f._yaTiene
   // Lo que se dice cuando está en rojo; la repetida lo explica en su renglón.
   const motivo = f._estado === 'rojo' && !yaCreada ? motivoRojo(f, base) : null
-  const soloRepetida = motivo === 'Parece repetida'
+  const soloRepetida = motivo === 'Parece repetida' || motivo === YA_EN_LA_CARTERA
   const boton = {
     height: 32, padding: '0 12px', cursor: 'pointer', font: 'inherit', fontSize: 12, fontWeight: 700,
     borderRadius: 'var(--cf-r-pill)', background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
@@ -1143,7 +1206,7 @@ function Fila({ f, base, onAbrir, abierta, onEditar, onQuitar, enlaceArchivo, ti
   return (
     <div ref={refCaja} style={{
       borderRadius: 'var(--cf-r-card)', background: 'var(--cf-card)',
-      border: `1px solid ${f._error ? 'var(--cf-red-pill-border)' : 'var(--cf-border)'}`,
+      border: `1px solid ${conError || yaTiene ? 'var(--cf-red-pill-border)' : 'var(--cf-border)'}`,
       overflow: 'hidden',
       /* ⚠ POR DEBAJO DE LA CABECERA, que también es fija. Con 12px la fila
          subía tanto que su nombre quedaba tapado por el título de la pantalla:
@@ -1162,7 +1225,7 @@ function Fila({ f, base, onAbrir, abierta, onEditar, onQuitar, enlaceArchivo, ti
               border: 0, background: 'none', padding: 0, font: 'inherit',
               fontSize: 15, fontWeight: 700, color: 'var(--cf-ink)', minWidth: 0, width: '100%',
             }} />
-          {f._error && (
+          {conError && (
             <span style={{ fontSize: 11, lineHeight: 1.35, color: 'var(--cf-red-dark)', fontWeight: 700 }}>
               {yaCreada ? f._error : `No se guardó: ${f._error}`}
             </span>
@@ -1195,6 +1258,21 @@ function Fila({ f, base, onAbrir, abierta, onEditar, onQuitar, enlaceArchivo, ti
               <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button type="button" onClick={onQuitar} style={{ ...boton, color: 'var(--cf-red-dark)' }}>Quitar</button>
                 <button type="button" onClick={() => onEditar('noEsLaMisma', true)} style={{ ...boton, color: 'var(--cf-ink)' }}>No es la misma</button>
+              </span>
+            </span>
+          )}
+          {/* ── LA QUE YA ESTABA EN LA CARTERA (final review, 23 nov 2026) ──
+              Esa cédula ya es de un cliente del negocio. Sumarle un préstamo
+              sin preguntar carga dos veces lo que ya tenía: «Sí, es otro» sigue
+              con ese cliente; si es el mismo préstamo, se quita. */}
+          {yaTiene && (
+            <span style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 2 }}>
+              <span style={{ fontSize: 12, lineHeight: 1.4, fontWeight: 700, color: 'var(--cf-red-dark)', overflowWrap: 'anywhere' }}>
+                Ya tienes a {f.nombre?.trim() || 'este cliente'} en tu cartera: ¿es otro préstamo?
+              </span>
+              <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button type="button" onClick={onQuitar} style={{ ...boton, color: 'var(--cf-red-dark)' }}>Quitar</button>
+                <button type="button" onClick={() => onEditar('_esOtro', true)} style={{ ...boton, color: 'var(--cf-ink)' }}>Sí, es otro</button>
               </span>
             </span>
           )}

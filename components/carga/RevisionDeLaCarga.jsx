@@ -20,7 +20,7 @@
  *   «Necesito ayuda» y los avisos van ARRIBA del lote.
  */
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import LoteFotos, { estadoDe, baseDeArranque } from '@/components/migrador/LoteFotos'
 import { Tarjeta, Aviso, BotonPrimario, BotonSecundario, EtiquetaCampo } from '@/components/cf/primitivos'
 import { invalidarCachePorPrefijo } from '@/lib/offline'
@@ -46,6 +46,18 @@ export function motivoParaElDueno(m) {
   return MOTIVO_CLARO[t] ?? t
 }
 
+export const A_MEDIAS = 'Primero toca Crear para terminar de guardar las filas que quedaron a medias'
+export const CAMBIO_FUERA = 'Esta carga cambió desde otro teléfono o computador: ya no se puede crear desde aquí.'
+const SIN_COMPROBAR = 'No pudimos comprobar tu carga. Revisa tu internet y toca Crear otra vez.'
+
+/** Lo que contesta `GET /api/carga-asesor?solo=estado` antes de cada tanda de
+    «Crear»: `true` si la carga sigue con el dueño (la misma solicitud, en
+    `en_revision`), o el texto de por qué se para. */
+export function sigueConElDueno(j, solicitudId) {
+  const s = j?.solicitud
+  return s && s.id === solicitudId && s.estado === 'en_revision' ? true : CAMBIO_FUERA
+}
+
 function IconoAyuda() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -62,6 +74,11 @@ export default function RevisionDeLaCarga({ solicitud, revision, rutas = [], onC
   const [pidiendo, setPidiendo] = useState(false)
   const [ayudaEnviada, setAyudaEnviada] = useState(false)
   const [creandoLote, setCreandoLote] = useState(false)
+  /* ⚠ FILAS A MEDIAS: su préstamo ya existe y el apunte falló. Pedir ayuda así
+     desmontaba el lote, el apunte no se reintentaba nunca y Carlos la importaba
+     otra vez (final review, 23 nov 2026). Primero se terminan de guardar. */
+  const [aMedias, setAMedias] = useState(0)
+  const cambioFuera = useRef(false)
 
   /* Solo en `en_revision` se crea: en «ayuda» la tiene Carlos y mientras se lee
      las filas cambian (`bloqueada`). Y nunca sin las filas: sin ellas `LoteFotos`
@@ -88,6 +105,20 @@ export default function RevisionDeLaCarga({ solicitud, revision, rutas = [], onC
     })
     const j = await r.json().catch(() => ({}))
     if (!r.ok) throw new Error(j.error || 'No se pudo apuntar')
+  }
+
+  /* ⚠ ANTES DE CADA TANDA, ¿SIGUE CONMIGO? Desde otro teléfono pudo pedir ayuda:
+     esta pantalla seguiría creando lo que Carlos va a importar. */
+  const antesDeCrear = async () => {
+    try {
+      const r = await fetch('/api/carga-asesor?solo=estado', { cache: 'no-store' })
+      if (!r.ok) return SIN_COMPROBAR
+      const sigue = sigueConElDueno(await r.json().catch(() => null), solicitud.id)
+      if (sigue !== true) cambioFuera.current = true
+      return sigue
+    } catch {
+      return SIN_COMPROBAR
+    }
   }
 
   const terminar = async (quitadas = []) => {
@@ -117,6 +148,13 @@ export default function RevisionDeLaCarga({ solicitud, revision, rutas = [], onC
   const listo = ({ creados, quedanFilas, quitadas } = {}) => {
     if (creados?.length) invalidarCachePorPrefijo('clientes:').catch(() => {})
     if (quedanFilas) {
+      // La carga cambió en otro lado: se dice aquí arriba (el lote se va al refrescar) y se refresca.
+      if (cambioFuera.current) {
+        cambioFuera.current = false
+        setError(CAMBIO_FUERA)
+        onCambio?.()
+        return
+      }
       // Las que no se crearon se quedan en el lote con su motivo; arriba, las cifras al día.
       if (creados?.length) onCambio?.()
       return
@@ -125,6 +163,7 @@ export default function RevisionDeLaCarga({ solicitud, revision, rutas = [], onC
   }
 
   const pedirAyuda = async () => {
+    if (aMedias > 0) { setError(A_MEDIAS); return }
     setPidiendo(true)
     setError('')
     try {
@@ -224,9 +263,14 @@ export default function RevisionDeLaCarga({ solicitud, revision, rutas = [], onC
       {solicitud?.estado === 'en_revision' && !ayudaEnviada && (
         <Tarjeta>
           {!ayudaAbierta ? (
-            <BotonSecundario onClick={() => setAyudaAbierta(true)} disabled={creandoLote}>
-              <IconoAyuda /><span>Necesito ayuda</span>
-            </BotonSecundario>
+            <>
+              <BotonSecundario onClick={() => setAyudaAbierta(true)} disabled={creandoLote || aMedias > 0}>
+                <IconoAyuda /><span>Necesito ayuda</span>
+              </BotonSecundario>
+              {aMedias > 0 && (
+                <span style={{ fontSize: 13, color: 'var(--cf-ink-2)', lineHeight: 1.45 }}>{A_MEDIAS}</span>
+              )}
+            </>
           ) : (
             <>
               <span style={{ fontSize: 14, color: 'var(--cf-ink-2)', lineHeight: 1.45 }}>
@@ -238,7 +282,10 @@ export default function RevisionDeLaCarga({ solicitud, revision, rutas = [], onC
                   placeholder="Por ejemplo: no sé qué poner en el interés"
                   style={{ borderRadius: 14, border: '1px solid var(--cf-border)', background: 'var(--cf-surface)', color: 'var(--cf-ink)', padding: 12, font: 'inherit', fontSize: 16, resize: 'vertical' }} />
               </label>
-              <BotonSecundario onClick={pedirAyuda} disabled={pidiendo || creandoLote}>
+              {aMedias > 0 && (
+                <span style={{ fontSize: 13, color: 'var(--cf-ink-2)', lineHeight: 1.45 }}>{A_MEDIAS}</span>
+              )}
+              <BotonSecundario onClick={pedirAyuda} disabled={pidiendo || creandoLote || aMedias > 0}>
                 {pidiendo ? 'Enviando…' : 'Pedir ayuda'}
               </BotonSecundario>
               <BotonSecundario cancelar onClick={() => setAyudaAbierta(false)} disabled={pidiendo}>Cancelar</BotonSecundario>
@@ -272,6 +319,8 @@ export default function RevisionDeLaCarga({ solicitud, revision, rutas = [], onC
           onListo={listo}
           bloqueada={!puedeCargar}
           onCreando={setCreandoLote}
+          onPendientesDeApuntar={setAMedias}
+          antesDeCrear={antesDeCrear}
         />
       )}
     </div>
