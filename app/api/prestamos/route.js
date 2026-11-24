@@ -705,7 +705,7 @@ export async function POST(request) {
   if (body.idempotente === true) {
     const yaCreado = await prestamoYaCreado(prisma, {
       organizationId, clienteId, montoPrestado,
-      fechaInicio: new Date(`${fechaInicio}T05:00:00.000Z`), frecuencia: freq,
+      fechaInicio: new Date(`${fechaInicio}T05:00:00.000Z`), frecuencia: freq, cedula: cliente.cedula,
     })
     if (yaCreado) {
       return Response.json({ ...yaCreado, pendienteAprobacion: yaCreado.estado === 'pendiente_aprobacion', yaExistia: true }, { status: 200 })
