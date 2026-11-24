@@ -125,9 +125,20 @@ const hoyBogota = (ahora = Date.now()) => new Date(ahora - 5 * 3600 * 1000).toIS
    Solo dentro de la ventana del reintento del servidor (`VENTANA_REINTENTO_MS`):
    pasada, ya no hay nada que reconocer y la fila vuelve a contar desde hoy.
    La pantalla usa la misma cuenta, así que enseña la fecha que se guardará. */
+export function selloVigente(f, ahora = Date.now()) {
+  return !!(f?._hoy && Number.isFinite(f._hoyAt) && ahora - f._hoyAt < VENTANA_REINTENTO_MS)
+}
 export function hoyDeLaFila(f, ahora = Date.now()) {
-  const vigente = f?._hoy && Number.isFinite(f._hoyAt) && ahora - f._hoyAt < VENTANA_REINTENTO_MS
-  return vigente ? f._hoy : hoyBogota(ahora)
+  return selloVigente(f, ahora) ? f._hoy : hoyBogota(ahora)
+}
+/* El sello que se pone a la fila al empezar un intento, o null si el que tiene
+   sigue valiendo.
+   ⚠ POR VIGENCIA, NO POR TEXTO (final review, 23 nov 2026). Comparar el día
+   («22» === «22») dejaba puesto un sello vencido del mismo día: el intento de
+   las 11:58 p. m. no lo renovaba y el reintento de las 12:01 a. m. ya contaba
+   desde el día siguiente, con otra huella y un segundo préstamo. */
+export function selloDelIntento(f, ahora = Date.now()) {
+  return selloVigente(f, ahora) ? null : { _hoy: hoyBogota(ahora), _hoyAt: ahora }
 }
 
 /* Sin fecha en el papel y con abonos, el préstamo no empezó hoy: ver
@@ -563,8 +574,8 @@ export default function LoteFotos({
            ver `hoyDeLaFila`. Solo en la carga del dueño, que es la que reintenta
            con `idempotente`. */
         let fila = f
-        if (solicitud && hoyDeLaFila(f) !== f._hoy) {
-          const marca = { _hoy: hoyBogota(), _hoyAt: Date.now() }
+        const marca = solicitud ? selloDelIntento(f) : null
+        if (marca) {
           fila = { ...f, ...marca }
           setFilas((prev) => prev.map((x) => (x._id === f._id ? { ...x, ...marca } : x)))
         }
